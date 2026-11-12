@@ -1,0 +1,153 @@
+#include "CGPSHuntingItem.h"
+
+#include "App.h"
+#include "CApplet.h"
+#include "CBH_Player.h"
+#include "CNGS.h"
+#include "CNGS_Platform.h"
+#include "CNGSLocalUser.h"
+#include "CNGSRemoteUser.h"
+#include "CNGSRemoteUserList.h"
+#include "CNGSSocialInterface.h"
+#include "CRandGen.h"
+#include "CXmlHelper.h"
+
+CGPSHuntingItem::CGPSHuntingItem(CGPSHauntCamera* camera)
+    : m_experienceReward(0), m_moneyReward(0), m_experiencePenalty(0), m_moneyPenalty(0),
+      m_boss(NULL), m_bossIsMan(true), m_energyCost(0), m_civilianCount(0), m_alertSeconds(0),
+      m_escapeSeconds(0), m_warTimer(false), m_bossFirst(false), m_bossWins(false),
+      m_tranquillize(false), m_bossSpawnsLast(false), m_silentKill(false), m_targetFriendId(-1),
+      m_revenge(false), m_minWeaponRange(-1.0f), m_gatedWeapon(-1), m_weaponGated(false),
+      m_randomWeapon(-1), m_hasBonus(false), m_camera(camera)
+{
+    m_seed = CRandGen::GetInstance()->GetRand(0x0fffffff);
+    m_playerLevel = CBH_Player::GetInstance()->GetLevel();
+    m_creationTime = App::GetTime();
+}
+
+void CGPSHuntingItem::Load(TiXmlElement* element)
+{
+    m_moneyReward = CXmlHelper::GetAttributeValue(element, "awardMoney").ToInt();
+    m_experienceReward = CXmlHelper::GetAttributeValue(element, "awardXp").ToInt();
+    m_moneyPenalty = CXmlHelper::GetAttributeValue(element, "punishMoney").ToInt();
+    m_experiencePenalty = CXmlHelper::GetAttributeValue(element, "punishXp").ToInt();
+    m_bossName = CXmlHelper::GetAttributeValue(element, "bossScreenName");
+    m_squadName = CXmlHelper::GetAttributeValue(element, "squadName");
+    m_energyCost = CXmlHelper::GetAttributeValue(element, "energyReduce").ToInt();
+    m_civilianCount = CXmlHelper::GetAttributeValue(element, "civiliansCount").ToInt();
+    m_tranquillize = CXmlHelper::GetAttributeValue(element, "tranquillizeGoal").ToBool();
+    m_alertSeconds = CXmlHelper::GetAttributeValue(element, "timeSecAlert").ToInt();
+    m_escapeSeconds = CXmlHelper::GetAttributeValue(element, "timeSecRunAway").ToInt();
+    m_warTimer = CXmlHelper::GetAttributeValue(element, "isWarTimerEnabled").ToBool();
+    m_bossFirst = CXmlHelper::GetAttributeValue(element, "isBossKillingFirst").ToBool();
+    m_bossWins = CXmlHelper::GetAttributeValue(element, "isBossKillingWin").ToBool();
+    m_bossSpawnsLast = CXmlHelper::GetAttributeValue(element, "isBossSpawnWhenAllDead").ToBool();
+    m_silentKill = CXmlHelper::GetAttributeValueOptional(element, "silentKill").ToBool();
+    m_seed = CXmlHelper::GetAttributeValue(element, "seed").ToInt();
+    m_playerLevel = CXmlHelper::GetAttributeValue(element, "playerLevel").ToInt();
+    m_targetFriendId = CXmlHelper::GetIntAttributeValueOrUseDefault(element, "targetFriendId", -1);
+    m_targetFBUser = CXmlHelper::GetAttributeValueOptional(element, "targetFBUser");
+    m_revenge = CXmlHelper::GetBoolAttributeValueOrUseDefault(element, "isRevenge", false);
+    m_gatedWeapon = CXmlHelper::GetIntAttributeValueOrUseDefault(element, "gatedWeaponID", -1);
+    m_weaponGated = CXmlHelper::GetBoolAttributeValueOrUseDefault(element, "isWeaponGated", false);
+    m_randomWeapon = CXmlHelper::GetIntAttributeValueOrUseDefault(element, "randomWeapon", -1);
+    m_hasBonus = CXmlHelper::GetBoolAttributeValueOrUseDefault(element, "hasBonus", false);
+    m_minWeaponRange = CXmlHelper::GetAttributeValueOrUseDefault(element, "minimalWeaponRange", XString("-1.0")).ToFloat();
+    if (CXmlHelper::HasAttribute(element, "creationTime")) {
+        m_creationTime = CXmlHelper::GetAttributeValue(element, "creationTime").ToInt();
+    }
+}
+
+TiXmlElement* CGPSHuntingItem::Save(TiXmlElement* parent)
+{
+    TiXmlElement* element = new TiXmlElement("huntingItem");
+    element->SetAttribute("awardMoney", m_moneyReward);
+    element->SetAttribute("awardXp", m_experienceReward);
+    element->SetAttribute("punishMoney", m_moneyPenalty);
+    element->SetAttribute("punishXp", m_experiencePenalty);
+    element->SetAttribute("bossScreenName", XString::AnsiString(m_bossName.c_str()));
+    element->SetAttribute("squadName", XString::AnsiString(m_squadName.c_str()));
+    element->SetAttribute("energyReduce", m_energyCost);
+    element->SetAttribute("civiliansCount", m_civilianCount);
+    element->SetAttribute("tranquillizeGoal", m_tranquillize);
+    element->SetAttribute("timeSecAlert", m_alertSeconds);
+    element->SetAttribute("timeSecRunAway", m_escapeSeconds);
+    element->SetAttribute("isWarTimerEnabled", m_warTimer);
+    element->SetAttribute("isBossKillingFirst", m_bossFirst);
+    element->SetAttribute("isBossKillingWin", m_bossWins);
+    element->SetAttribute("isBossSpawnWhenAllDead", m_bossSpawnsLast);
+    element->SetAttribute("silentKill", m_silentKill);
+    element->SetAttribute("seed", m_seed);
+    element->SetAttribute("playerLevel", m_playerLevel);
+    element->SetAttribute("targetFriendId", m_targetFriendId);
+    element->SetAttribute("targetFBUser", XString::AnsiString(m_targetFBUser.c_str()));
+    element->SetAttribute("isRevenge", m_revenge);
+    element->SetAttribute("gatedWeaponID", m_gatedWeapon);
+    element->SetAttribute("isWeaponGated", m_weaponGated);
+    element->SetAttribute("randomWeapon", m_randomWeapon);
+    element->SetAttribute("hasBonus", m_hasBonus);
+    element->SetAttribute("minimalWeaponRange", static_cast<int>(m_minWeaponRange));
+    element->SetAttribute("creationTime", static_cast<int>(m_creationTime));
+    parent->LinkEndChild(element);
+    return element;
+}
+
+XString CGPSHuntingItem::ParametrizeText(const XString& text) const
+{
+    return ParametrizeTextWithParams(text, m_bossName, m_bossIsMan);
+}
+
+bool CGPSHuntingItem::SetTargetFriendId(int friendId)
+{
+    m_targetFriendId = friendId;
+    CNGSLocalUser* local = CNGS::GetInstance()->GetLocalUser();
+    CNGSRemoteUser* target = local->m_remoteUserLists[0]->findRemoteUserByID(friendId);
+    if (target == NULL) {
+        m_targetFriendId = -1;
+        return false;
+    }
+    CStrWChar nickname = target->GetNickName();
+    SetBossScreenName(nickname.GetWCharPtr());
+    return true;
+}
+
+bool CGPSHuntingItem::SetTargetFBUser(CStrWChar identity)
+{
+    m_targetFBUser = identity.GetWCharPtr();
+    if (m_targetFBUser.Length() == 0) {
+        return false;
+    }
+    CNGSSocialInterface* facebook = CNGS_Platform::GetInstance()->getSocialInterface(SOCIAL_INTERFACE_FACEBOOK);
+    if (facebook == NULL) {
+        return false;
+    }
+    CStrWChar alias = facebook->getFriendNameFromSortedListWithId(identity);
+    XString name(alias.GetWCharPtr());
+    if (name.Length() == 0 || name == XString(L"unknown")) {
+        return false;
+    }
+    SetBossScreenName(name);
+    return true;
+}
+
+XString CGPSHuntingItem::ParametrizeTextWithParams(const XString& text, XString bossName, bool isMan)
+{
+    XString result = text.Replace(L"[BossName]", bossName.c_str(), true);
+    result = result.Replace(L"[PlayerName]", CBH_Player::GetInstance()->m_playerName.c_str(), true);
+    if (isMan) {
+        result = result.Replace(L"[he]", L"he", true);
+        result = result.Replace(L"[He]", L"He", true);
+        result = result.Replace(L"[his]", L"his", true);
+        result = result.Replace(L"[His]", L"His", true);
+        result = result.Replace(L"[himself]", L"himself", true);
+    } else {
+        result = result.Replace(L"[he]", L"she", true);
+        result = result.Replace(L"[He]", L"She", true);
+        result = result.Replace(L"[his]", L"her", true);
+        result = result.Replace(L"[His]", L"Her", true);
+        result = result.Replace(L"[himself]", L"herself", true);
+    }
+    return result;
+}
+
+typedef char AssertGPSHuntingItemSize[sizeof(CGPSHuntingItem) == 0x6c ? 1 : -1];
