@@ -12,6 +12,7 @@
 #include "CDebug_Cocoa.h"
 #include "CStdUtil_Cocoa.h"
 #include "CHash.h"
+#include "bvsprintf.h"
 
 ICCore* ICCore::CreateInstance() { return new CCore_Cocoa; }
 
@@ -83,17 +84,19 @@ int CStdUtil_Cocoa::WcsICmp(const wchar_t* left, const wchar_t* right) { return 
 wchar_t CStdUtil_Cocoa::ToWUpper(wchar_t character) { return static_cast<wchar_t>(towupper(character)); }
 wchar_t CStdUtil_Cocoa::ToWLower(wchar_t character) { return static_cast<wchar_t>(towlower(character)); }
 
+// Glu's own formatter, as on iOS: its wide version reads %s as a wchar_t string, while the
+// C library (ISO wide specifiers) reads it as a char string and stops after the first letter.
 int CStdUtil_Cocoa::VSPrintF(char* buffer, const char* format, void* arguments)
 {
-    return vsprintf(buffer, format, static_cast<va_list>(arguments));
+    return bvsprintf(buffer, format, static_cast<va_list>(arguments));
 }
 int CStdUtil_Cocoa::VSPrintF_S(char* buffer, int size, const char* format, void* arguments)
 {
-    return vsnprintf(buffer, size, format, static_cast<va_list>(arguments));
+    return bvsprintf_s(buffer, size, format, static_cast<va_list>(arguments));
 }
 int CStdUtil_Cocoa::VSWPrintF(wchar_t* buffer, const wchar_t* format, void* arguments)
 {
-    return _vsnwprintf(buffer, 10240, format, static_cast<va_list>(arguments));
+    return bwsprintf(buffer, format, static_cast<va_list>(arguments));
 }
 
 CStdTime* CStdUtil_Cocoa::LocalTime(unsigned int seconds)
