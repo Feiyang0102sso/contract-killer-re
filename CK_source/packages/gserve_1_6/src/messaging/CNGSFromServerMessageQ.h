@@ -45,7 +45,7 @@ public:
     /** Queue `messageId` for acknowledgement and send the acks when idle. */
     void AckMessageById(long long messageId);
     /** The message was handled: drop it and acknowledge it; false when unknown. */
-    bool MarkMessageForAck(long long messageId);
+    unsigned char MarkMessageForAck(long long messageId);
     /** Send the queued acknowledgements; returns the request id (0 when nothing went out). */
     int AckMessages(CNGSNotifyFunctor* notify);
     CNGSFromServerMessage* GetMessageById(long long messageId);

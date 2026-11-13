@@ -53,7 +53,7 @@ public:
                                 unsigned int offset, unsigned int span, void** formatArguments);
     /** Render the text into the surface with the system font. */
     unsigned char AssocSystemFont();
-    /** Create and register an empty render surface. Returns 0 when it already exists or creation fails. */
+    /** Create and register an empty render surface. Returns 0 when it already exists. */
     unsigned char CreateUninitializedSurface();
 
     TextModel m_model;                  // 0x08

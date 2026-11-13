@@ -9,7 +9,9 @@
 
 class CNGSSession : public CNGSServerObject {
 public:
-    /** Loads the session id saved in "Session.dat"; valid when one was found. */
+    static const wchar_t* LocalFileName;
+
+    /** Loads the saved session id, with fallback to the legacy "Session.dat". */
     CNGSSession();
     virtual ~CNGSSession() {}
 

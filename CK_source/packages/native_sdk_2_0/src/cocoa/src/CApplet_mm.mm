@@ -77,9 +77,10 @@ void CApplet::HandleTimer()
 {
     // gyroscope: three 21-bit attitude angles packed into the two event parameters
     if (m_gyroscope != NULL && m_gyroscope->CanSample()) {
-        int pitch = (int)m_gyroscope->GetAttitude().x;
-        int roll = (int)m_gyroscope->GetAttitude().y;
-        int yaw = (int)m_gyroscope->GetAttitude().z;
+        const CGyroscope_Cocoa::FixedAttitude& attitude = m_gyroscope->GetAttitude();
+        unsigned int pitch = attitude.pitch;
+        unsigned int roll = attitude.roll;
+        unsigned int yaw = attitude.yaw;
         unsigned int param1 = (pitch & 0x1fffff) | (roll << 21);
         unsigned int param2 = ((roll & 0x1fffff) >> 11) | ((yaw & 0x1fffff) << 10);
         m_eventQueue.Queue(SystemEvent_Gyroscope, param1, param2);

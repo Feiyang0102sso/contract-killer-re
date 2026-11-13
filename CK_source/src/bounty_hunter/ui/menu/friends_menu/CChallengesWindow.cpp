@@ -92,7 +92,8 @@ Window* CChallengesWindow::CreateChallengesList()
     App* app = static_cast<App*>(WindowApp::m_instance);
     Vector<CChallenge*> challenges = app->m_challengeManager->GetActiveChallenges();
     for (int index = 0; index < challenges.size(); ++index) {
-        CChallengeWindow* card = new CChallengeWindow(challenges[index]);
+        const CChallenge* challenge = challenges[index];
+        CChallengeWindow* card = new CChallengeWindow(challenge);
         card->SetPercentHeight(60, 0, 0);
         list->AddToFront(card, 0, index);
         card->SetOutsetSpacing(SScreenAdaptingConstant(0, 0, 10)(), SScreenAdaptingConstant(0, 0, 50)());

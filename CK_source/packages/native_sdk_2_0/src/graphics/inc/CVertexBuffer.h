@@ -57,7 +57,10 @@ public:
         Type_IndexVertex = 0xae7e140f
     };
 
-    explicit CVertexBuffer(unsigned int type) : m_field4(type), m_attributes(NULL), m_attributeCount(0) {}
+    explicit CVertexBuffer(unsigned int type) : m_attributes(NULL), m_attributeCount(0)
+    {
+        m_field4 = type;
+    }
 
     inline virtual ~CVertexBuffer()
     {

@@ -2,7 +2,6 @@
 
 #include <OpenGLES/ES1/gl.h>
 #include <OpenGLES/ES1/glext.h>
-#include <string.h>
 #include "CApplet.h"
 #include "CRenderSurface_OGLES_Window_Cocoa.h"
 #include "ICCore.h"
@@ -42,26 +41,24 @@ unsigned char CGraphics_OGLES_Cocoa::Initialize(const Param* params)
 
     CGraphics_OGLES_Cocoa_GetEAGLVersion(&m_eaglMajor, &m_eaglMinor);
     RSBFormat format = RSBFormat_A8B8G8R8;
-    if (m_colorBits < 17) {
+    if ((int)m_colorBits < 17) {
         format = RSBFormat_R5G6B5;
     }
     void* context = CreateContext((void*)format, NULL);
-    if (context == NULL) {
-        return 0;
-    }
     SetCurrentContext(context);
     m_version = (const char*)glGetString(GL_VERSION);
+    ReleaseContext(context);
     m_fielda8 = 1;
     m_fieldac = 1;
-    GLint maxTexture = 0;
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTexture);
-    for (int index = 0; index < 4; index++) {
-        m_textureLimits[index] = maxTexture;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &m_textureLimits[0]);
+    for (int index = 1; index < 4; index++) {
+        m_textureLimits[index] = m_textureLimits[0];
     }
     InitializeIntrinsicHardwareShaderManagement();
     m_description.m_abstraction = Abstraction_Hardware;
     m_description.m_renderer = &m_version;
-    m_description.m_maxTextureSize = maxTexture;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, (GLint*)&m_description.m_maxTextureSize);
+    unsigned int maxTexture = m_description.m_maxTextureSize;
     m_description.m_maxTextureWidth = maxTexture;
     m_description.m_maxTextureHeight = maxTexture;
     m_description.m_maxRenderTargetSize = maxTexture;
@@ -69,25 +66,26 @@ unsigned char CGraphics_OGLES_Cocoa::Initialize(const Param* params)
     m_description.m_maxRenderTargetHeight = maxTexture;
     m_description.m_maxViewportWidth = maxTexture;
     m_description.m_maxViewportHeight = maxTexture;
-    GLint textureUnits = 0;
-    glGetIntegerv(GL_MAX_TEXTURE_UNITS, &textureUnits);
-    m_description.m_maxTextureUnits = textureUnits;
+    glGetIntegerv(GL_MAX_TEXTURE_UNITS, (GLint*)&m_description.m_maxTextureUnits);
     m_description.m_maxVertexAttributes = 96;
     m_description.m_maxShaderParameters = 192;
 
     ICCore* core = CApplet::m_pCore;
-    for (int index = 1; index < 5; index++) {
-        core->m_canSetDeviceOrientation[index] = 1;
-    }
+    core->m_canSetDeviceOrientation[0] = 0;
+    core->m_canSetDeviceOrientation[1] = 1;
+    core->m_canSetDeviceOrientation[2] = 1;
+    core->m_canSetDeviceOrientation[3] = 1;
+    core->m_canSetDeviceOrientation[4] = 1;
     core->m_applicationCanSetOrientation = 1;
-    const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
-    m_canDiscardFramebuffer = extensions != NULL && strstr(extensions, "GL_EXT_discard_framebuffer") != NULL;
-    m_npotTextures = extensions != NULL && strstr(extensions, "GL_OES_texture_npot") != NULL;
-    m_npotRenderTargets = extensions != NULL && strstr(extensions, "GL_APPLE_texture_2D_limited_npot") != NULL;
-    SetCurrentContext(NULL);
-    ReleaseContext(context);
-    m_hardwareReady = m_resources.Init(100, 50, 1) != 0;
-    if (!m_hardwareReady) {
+    core->m_orientationFlags1f[0] = 0;
+    core->m_orientationFlags1f[1] = 0;
+    core->m_reserved21[0] = 0;
+    {
+        CStrChar extensions((const char*)glGetString(GL_EXTENSIONS));
+        m_canDiscardFramebuffer = extensions.Find("GL_EXT_discard_framebuffer", 0) >= 0;
+    }
+    m_hardwareReady = true;
+    if (!m_resources.Init(100, 50, 1)) {
         Destroy();
     }
     return m_hardwareReady;
@@ -95,11 +93,12 @@ unsigned char CGraphics_OGLES_Cocoa::Initialize(const Param* params)
 
 void CGraphics_OGLES_Cocoa::RenderBegin(const RenderBeginSettings* settings)
 {
-    if (m_target != NULL && (m_target->m_flags & ICRenderSurface::Flag_ContentsDiscarded)) {
+    ICRenderSurface* target = m_target;
+    if (target != NULL && (target->m_flags & ICRenderSurface::Flag_ContentsDiscarded)) {
         if (settings == NULL || !settings->m_preserveContents) {
             ClearBuffers(ClearFlag_Color | ClearFlag_Depth | ClearFlag_Stencil);
         }
-        m_target->m_flags &= ~ICRenderSurface::Flag_ContentsDiscarded;
+        target->m_flags &= ~ICRenderSurface::Flag_ContentsDiscarded;
     }
     m_rendering = true;
 }
@@ -111,13 +110,16 @@ void CGraphics_OGLES_Cocoa::RenderEnd()
 
 void CGraphics_OGLES_Cocoa::SwapBuffers()
 {
-    if (m_target == NULL || (m_target->m_flags & ICRenderSurface::Flag_Window) == 0) {
+    ICRenderSurface* target = m_target;
+    if (target == NULL || (target->m_flags & ICRenderSurface::Flag_Targetable) == 0) {
         return;
     }
-    CRenderSurface_OGLES_Window_Cocoa* window = static_cast<CRenderSurface_OGLES_Window_Cocoa*>(m_target);
+    CRenderSurface_OGLES_Window_Cocoa* window = static_cast<CRenderSurface_OGLES_Window_Cocoa*>(target);
     if ((window->m_flags & ICRenderSurface::Flag_MultisampleMask) == 0) {
         if (m_canDiscardFramebuffer) {
-            const GLenum attachments[] = { GL_DEPTH_ATTACHMENT_OES, GL_STENCIL_ATTACHMENT_OES };
+            GLenum attachments[2];
+            attachments[1] = GL_STENCIL_ATTACHMENT_OES;
+            attachments[0] = GL_DEPTH_ATTACHMENT_OES;
             glDiscardFramebufferEXT(GL_FRAMEBUFFER_OES, 2, attachments);
         }
     } else {
@@ -126,7 +128,10 @@ void CGraphics_OGLES_Cocoa::SwapBuffers()
         glBindFramebufferOES(GL_DRAW_FRAMEBUFFER_APPLE, window->m_framebuffer);
         glResolveMultisampleFramebufferAPPLE();
         if (m_canDiscardFramebuffer) {
-            const GLenum attachments[] = { GL_COLOR_ATTACHMENT0_OES, GL_DEPTH_ATTACHMENT_OES, GL_STENCIL_ATTACHMENT_OES };
+            GLenum attachments[3];
+            attachments[0] = GL_COLOR_ATTACHMENT0_OES;
+            attachments[1] = GL_DEPTH_ATTACHMENT_OES;
+            attachments[2] = GL_STENCIL_ATTACHMENT_OES;
             glDiscardFramebufferEXT(GL_READ_FRAMEBUFFER_APPLE, 3, attachments);
         }
         glBindRenderbufferOES(GL_RENDERBUFFER_OES, window->m_colorRenderbuffer);
@@ -143,13 +148,15 @@ void CGraphics_OGLES_Cocoa::ReleaseDevice()
 
 void* CGraphics_OGLES_Cocoa::CreateContext(void* format, const int*)
 {
-    if (format == (void*)RSBFormat_A8B8G8R8) {
-        return CGraphics_OGLES_Cocoa_CreateContext_A8B8G8R8(m_layer);
-    }
+    void* context;
     if (format == (void*)RSBFormat_R5G6B5) {
-        return CGraphics_OGLES_Cocoa_CreateContext_R5G6B5(m_layer);
+        context = CGraphics_OGLES_Cocoa_CreateContext_R5G6B5(m_layer);
+    } else if (format == (void*)RSBFormat_A8B8G8R8) {
+        context = CGraphics_OGLES_Cocoa_CreateContext_A8B8G8R8(m_layer);
+    } else {
+        context = NULL;
     }
-    return NULL;
+    return context;
 }
 
 void CGraphics_OGLES_Cocoa::ReleaseContext(void* context)

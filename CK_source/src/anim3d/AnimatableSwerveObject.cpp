@@ -105,9 +105,9 @@ void AnimatableSwerveObject::setRotationChannelQauternionValue(int channel, Quat
 {
     Transformable transformable(m_nodes[channel]);
     if (transformable != NULL) {
+        Transform transform(CSwerve::GetInstance()->m_swerve);
         float matrix[16];
         QuaternionFixed::toMatrix(rotation, matrix);
-        Transform transform(CSwerve::GetInstance()->m_swerve);
         transform.set(matrix);
         transformable.setTransform(transform);
         float angleAxis[4] = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -230,9 +230,6 @@ void AnimatableSwerveObject::animate()
                 continue;
             }
             int channel = animation->getTrackTargetChannelIndex(track);
-            if (channel < 0 || channel >= m_channelsCount) {
-                continue;
-            }
             int totalWeight = m_channelWeights[channel];
             if (totalWeight <= 0) {
                 continue;
@@ -369,18 +366,16 @@ void AnimatableSwerveObject::animate()
                 } else if (alpha < 0) {
                     alpha = 0;
                 }
-                float alphaFactor = Fixed::toFloat(alpha);
                 mesh.setRenderingEnable(alpha != 0);
+                float alphaFactor = Fixed::toFloat(alpha);
                 mesh.setAlphaFactor(alphaFactor);
                 Node parent = mesh.getParent();
-                if (parent != NULL) {
-                    float parentAlpha = alphaFactor + 0.4960784316f;
-                    if (parentAlpha > 1.0f) {
-                        parentAlpha = 1.0f;
-                    }
-                    parent.setAlphaFactor(parentAlpha);
-                    parent.setRenderingEnable(parentAlpha >= 0.5f);
+                float parentAlpha = alphaFactor + 0.4960784316f;
+                if (parentAlpha > 1.0f) {
+                    parentAlpha = 1.0f;
                 }
+                parent.setAlphaFactor(parentAlpha);
+                parent.setRenderingEnable(parentAlpha >= 0.5f);
             }
             break;
         }

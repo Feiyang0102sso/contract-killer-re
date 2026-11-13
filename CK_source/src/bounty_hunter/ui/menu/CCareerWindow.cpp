@@ -18,13 +18,15 @@ const SScreenAdaptingConstant RowInsetY(5, 10);
 
 int Percent(int count, int total)
 {
-    if (total <= 0 || count <= 0) {
-        return 0;
+    int percent = static_cast<int>(static_cast<float>(count) / static_cast<float>(total) * 100.0f);
+    int result = 0;
+    if (percent >= 0) {
+        if (percent > 100) {
+            percent = 100;
+        }
+        result = percent;
     }
-    if (count >= total) {
-        return 100;
-    }
-    return static_cast<int>(static_cast<float>(count) / static_cast<float>(total) * 100.0f);
+    return result;
 }
 }
 
@@ -34,57 +36,51 @@ CCareerWindow::CCareerWindow()
     SetTitleText(ResString("IDS_TITLE_CAREER"));
     FillStats();
 
-    int margin = ContentRight();
-    int width = m_content->m_width - 2 * margin;
-    int height = m_content->m_height;
-    int headingHeight = height * 12 / 100;
-    TextWindow* heading = new TextWindow(XString("GAME STATISTIC"), CFontMgr::GetInstance()->GetFont(10));
-    heading->SetLayoutType(LAYOUT_NONE);
-    heading->SetRect(margin, 0, width - TitleRight(), headingHeight, false);
+    int titleHeight = m_titleHeight;
+    SetInsetSpacing(titleHeight, 0, ContentRight(), 0);
+    CFont* headingFont = CFontMgr::GetInstance()->GetFont(10);
+    Window* headingRow = new Window(false);
+    headingRow->SetPercentHeight(12, 0, 0);
+    TextWindow* heading = new TextWindow(XString("GAME STATISTIC"), headingFont);
+    heading->SetLayoutType(LAYOUT_SIMPLE);
     heading->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    m_content->AddToFront(heading);
+    headingRow->AddToFront(createTD(heading, 3), 0, 0);
+    AddToFront(headingRow, 0, 0);
+    headingRow->SetOutsetSpacing(0, 0, TitleRight(), 0);
 
     SeparateLineRed* line = new SeparateLineRed();
-    line->SetLayoutType(LAYOUT_NONE);
-    line->SetRect(margin, headingHeight, width, 2 * App::Scale(), false);
-    m_content->AddToFront(line);
+    line->SetPercentHeight(2, 0, 0);
+    AddToFront(line, 0, 1);
 
-    int listTop = headingHeight + 4 * App::Scale();
-    int listHeight = height - listTop - ScrollBottom();
     m_careerContent = new Window(false);
-    m_careerContent->SetLayoutType(LAYOUT_NONE);
-    m_careerContent->SetRect(margin, listTop, width, listHeight, false);
-    m_careerContent->ClearFlags(FLAG_EVENTS_TO_CHILDREN);
-    m_content->AddToFront(m_careerContent);
-
-    ImageRes frame("SUR_FRAME_RED_CAREER");
-    int frameWidth = ImageWidth(frame.GetSurface());
-    int frameHeight = ImageHeight(frame.GetSurface());
-    int scrollWidth = width - 4 * ScrollWidth();
-    if (frameWidth > 0 && frameWidth < scrollWidth) {
-        scrollWidth = frameWidth + RowRight();
-    }
-    int x = (width - scrollWidth - 2 * ScrollWidth()) / 2;
+    m_careerContent->SetLayoutType(LAYOUT_SIMPLE);
+    m_careerContent->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+    m_careerContent->SetPercentHeight(100, 0, 0);
+    m_careerContent->SetWidthByContent(0, 0);
     ScrollingContainer* scroll = new ScrollingContainer();
-    scroll->SetLayoutType(LAYOUT_NONE);
-    scroll->SetRect(x, 0, scrollWidth, listHeight, false);
-    m_careerContent->AddToFront(scroll);
+    scroll->SetCellPos(0, 0, 1, 1);
+    scroll->SetDesiredWidth(ImageWidth(ImageRes("SUR_FRAME_RED_CAREER").GetSurface()));
 
     WindowTransparent* rows = new WindowTransparent(false);
     rows->SetLayoutType(LAYOUT_NONE);
-    rows->SetSize(scrollWidth, (frameHeight + App::Scale()) * m_stats.size());
-    scroll->AddToFront(rows);
+    rows->SetHeightByContent(0, 0);
+    rows->SetWidthByContent(0, 0);
     for (int index = 0; index < m_stats.size(); ++index) {
         StatItem* row = new StatItem(m_stats[index], index);
-        row->SetLayoutType(LAYOUT_NONE);
-        row->SetRect(0, index * (frameHeight + App::Scale()), scrollWidth - RowRight(), frameHeight, false);
-        rows->AddToFront(row);
+        row->SetOutsetSpacing(0, 0, RowRight(), 0);
+        rows->AddToFront(row, 0, index);
     }
+    scroll->AddToFront(rows);
+    m_careerContent->AddToFront(scroll);
 
     VertScrollerSimpleRed* scroller = new VertScrollerSimpleRed(scroll);
-    scroller->SetLayoutType(LAYOUT_NONE);
-    scroller->SetRect(x + scrollWidth, 0, 2 * ScrollWidth(), listHeight, false);
+    scroller->SetOutsetSpacing(0, 0, 0, ScrollBottom());
+    scroller->SetCellPos(1, 0, 1, 1);
     m_careerContent->AddToFront(scroller);
+    Window* contentCell = createTD(m_careerContent, 3);
+    AddToFront(contentCell, 0, 2);
+    m_careerContent->ClearFlags(FLAG_EVENTS_TO_CHILDREN);
+    contentCell->SetPercentHeight(92, 0, 0);
 }
 
 void CCareerWindow::FillStats()
@@ -145,17 +141,22 @@ void VertScrollerSimpleRed::Paint(ICGraphics2d&)
         return;
     }
     float position = m_container->ScrollPos();
-    float fraction = static_cast<float>(m_container->m_height) / static_cast<float>(m_container->m_contentHeight);
-    if (fraction < 0.15f) {
-        fraction = 0.15f;
+    float visibleFraction = static_cast<float>(m_container->m_height) / static_cast<float>(m_container->m_contentHeight);
+    float fraction = 0.15f;
+    if (visibleFraction > fraction) {
+        fraction = visibleFraction;
     }
     float height = m_height;
     int top = MathLib::Round(height * ((1.0f - fraction) * position));
     int barHeight = MathLib::Round(height * fraction);
     int middle = m_width / 2;
-    CDrawUtil::Fill(middle - ScrollWidth(), 0, middle + ScrollWidth(), m_height,
+    int leftWidth = ScrollWidth();
+    int rightWidth = ScrollWidth();
+    CDrawUtil::Fill(middle - leftWidth, 0, middle + rightWidth, m_height,
                     0xff820b0b, ICGraphics2d::Primitive_Rectangles);
-    CDrawUtil::Fill(middle - ScrollWidth(), top, middle + ScrollWidth(), top + barHeight,
+    leftWidth = ScrollWidth();
+    rightWidth = ScrollWidth();
+    CDrawUtil::Fill(middle - leftWidth, top, middle + rightWidth, top + barHeight,
                     0xffff0000, ICGraphics2d::Primitive_Rectangles);
 }
 
@@ -186,28 +187,30 @@ void SimpleGreyProgressBar::Paint(ICGraphics2d& graphics)
 }
 
 StatItem::StatItem(const CCareerWindow::StatItemInfo& info, int index)
-    : Window(false), m_index(index), m_started(false)
+    : Window(false), m_index(index)
 {
     CFont* labelFont = CFontMgr::GetInstance()->GetFont(9);
     CFont* valueFont = CFontMgr::GetInstance()->GetFont(11);
-    ImageWindow* frame = new ImageWindow();
-    frame->SetImage(ImageRes("SUR_FRAME_RED_CAREER"));
-    frame->SetInsetSpacing(RowInsetX(), RowInsetY());
+    ImageWindow* frame = new ImageWindow(ImageWindow::FILL_NONE, ImageRes("SUR_FRAME_RED_CAREER"));
+    int insetX = RowInsetX();
+    int insetY = RowInsetY();
+    frame->SetInsetSpacing(insetX, insetY);
 
     WindowTransparent* label = new WindowTransparent(false);
     label->SetLayoutType(LAYOUT_SIMPLE);
     label->SetAlign(ALIGN_LEFT);
     label->SetWidthByContent(0, 0);
     label->SetHeightByContent(0, 0);
-    int column = 0;
+    int labelColumn = 0;
     if (info.m_gameCenter) {
         ImageWindow* icon = new ImageWindow();
         icon->SetImage(ImageRes("SUR_GAMECENTER_ICON"));
         icon->SetOutsetSpacing(4 * App::Scale(), 0, 0, 0);
-        label->AddToFront(icon, column, 0);
-        ++column;
+        label->AddToFront(icon, 0, 0);
+        labelColumn = 1;
     }
-    label->AddToFront(new TextWindow(ResString(info.m_name).Upper(), labelFont), column, 0);
+    TextWindow* caption = new TextWindow(ResString(info.m_name).Upper(), labelFont);
+    label->AddToFront(caption, labelColumn, 0);
     frame->AddToFront(label);
 
     Window* value = new Window(false);
@@ -215,24 +218,29 @@ StatItem::StatItem(const CCareerWindow::StatItemInfo& info, int index)
     value->SetAlign(ALIGN_RIGHT | ALIGN_VCENTER);
     value->SetHeightByContent(0, 0);
     value->SetPercentWidth(42, 0, 0);
-    column = 0;
-    XString valueText(info.m_value);
+    int valueColumn = 0;
     if (info.m_percent) {
         SimpleGreyProgressBar* bar = new SimpleGreyProgressBar(static_cast<float>(info.m_value) * 0.01f);
         bar->SetLayoutType(LAYOUT_SIMPLE);
         bar->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-        value->AddToFront(createTD(bar, 3), column, 0);
-        ++column;
-        valueText.Append(XString(" %"));
+        value->AddToFront(createTD(bar, 3), 0, 0);
+        valueColumn = 1;
     }
-    TextWindow* number = new TextWindow(valueText, valueFont);
-    number->SetAlign(ALIGN_RIGHT | ALIGN_VCENTER);
-    number->SetPercentWidth(22, 0, 0);
-    value->AddToFront(number, column, 0);
+    {
+        XString valueText(info.m_value);
+        if (info.m_percent) {
+            valueText.Append(XString(" %"));
+        }
+        TextWindow* number = new TextWindow(valueText, valueFont);
+        number->SetAlign(ALIGN_RIGHT | ALIGN_VCENTER);
+        number->SetPercentWidth(22, 0, 0);
+        value->AddToFront(number, valueColumn, 0);
+    }
     frame->AddToFront(value);
     AddToFront(frame);
     SetHeightByContent(0, 0);
     SetWidthByContent(0, 0);
+    m_started = false;
 }
 
 void StatItem::OnStartupEasy()

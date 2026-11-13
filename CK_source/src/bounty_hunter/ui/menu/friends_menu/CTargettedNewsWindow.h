@@ -14,10 +14,9 @@ public:
 private:
     void CreateUserInterface();
     void HandleRevengePressed();
-    void DismissMessage();
 
     int m_senderId;
-    bool m_revengeAvailable;
+    bool m_revengeAvailable;  // 0xa8 reserved; the message supplies the highlight flag
     CNGSRemoteUser* m_sender;
     const STargettedMessage* m_message;
     int m_messageId;

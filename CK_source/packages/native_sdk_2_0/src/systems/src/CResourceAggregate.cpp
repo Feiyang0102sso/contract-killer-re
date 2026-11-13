@@ -48,13 +48,14 @@ unsigned int CResourceAggregate::CreateInternal(unsigned int handle, const char*
     m_aggregate = new CAggregateResource();
     unsigned int result = CreateResult_Created;
     if (stream != NULL) {
-        if (!m_aggregate->Load(*stream, mimeType)) {
-            Destroy();
-            return CreateResult_Failed;
-        }
-        result = CreateResult_Loaded;
+        result = m_aggregate->Load(*stream, mimeType) ? CreateResult_Loaded : CreateResult_Failed;
     }
-    SetName(name, copyName);
-    m_isCreated = 1;
+    if (result != CreateResult_Failed) {
+        SetName(name, copyName);
+        m_isCreated = 1;
+    } else {
+        Destroy();
+        result = CreateResult_Failed;
+    }
     return result;
 }

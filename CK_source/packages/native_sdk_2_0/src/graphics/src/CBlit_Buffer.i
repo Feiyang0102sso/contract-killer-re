@@ -42,12 +42,16 @@
                     count--;
                 }
                 int pairs = count & ~1;
+                if (pairs < 0) {
+                    pairs = 0;
+                }
                 for (int x = 0; x < pairs; x += 2) {
                     unsigned int two = *(const unsigned int*)sourcePixel;
                     pixel[x] = (unsigned short)two;
                     pixel[x + 1] = (unsigned short)(two >> 16);
                     sourcePixel += sourceStep * 2;
                 }
+                // A nonpositive pair count leaves the destination at the current pixel.
                 pixel += pairs;
                 if (count & 1) {
                     *pixel = *(const unsigned short*)sourcePixel;
@@ -65,12 +69,16 @@
                     sourcePixel += sourceStep;
                 }
                 int pairs = count & ~1;
+                if (pairs < 0) {
+                    pairs = 0;
+                }
                 for (int x = 0; x < pairs; x += 2) {
                     unsigned int two = *(const unsigned int*)sourcePixel;
                     sourcePixel += sourceStep * 2;
                     pixel[x + 1] = (unsigned short)two;
                     pixel[x] = (unsigned short)(two >> 16);
                 }
+                // A nonpositive pair count leaves the destination at the current pixel.
                 pixel += pairs;
                 if (count & 1) {
                     if (count > 1) {
@@ -84,6 +92,9 @@
             const unsigned char* sourcePixel = sourceRow;
             unsigned int* pixel = (unsigned int*)destination;
             int pairs = count & ~1;
+            if (pairs < 0) {
+                pairs = 0;
+            }
             for (int x = 0; x < pairs; x += 2) {
                 pixel[x] = *(const unsigned int*)sourcePixel;
                 pixel[x + 1] = *(const unsigned int*)(sourcePixel + sourceStep);

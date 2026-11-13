@@ -4,6 +4,7 @@
 #include "App.h"
 #include "CBH_Player.h"
 #include "CDH_WeaponsManager.h"
+#include "CSwerveGame.h"
 
 CDH_BasicGameData::CDH_BasicGameData()
     : m_name("")
@@ -14,7 +15,7 @@ CDH_BasicGameData::CDH_BasicGameData()
     m_field0e = false;
     m_weaponIds[0] = 0;
     m_weaponIds[1] = 1;
-    m_activeWeaponId = -1;
+    m_activeWeaponId = 0;
     Init();
 }
 
@@ -49,7 +50,11 @@ void CDH_BasicGameData::FinishGame(bool won)
 
 CDH_Weapon* CDH_BasicGameData::GetWeaponImpl(int id, bool useOverride)
 {
-    if (useOverride) {
+    if (useOverride == true) {
+        CSwerveGame* game = CSwerveGame::m_pInstance;
+        if (game != NULL && game->m_specialWeapon != NULL) {
+            return game->m_specialWeapon;
+        }
         CDH_Weapon* estimated = CBH_Player::GetInstance()->m_estimatedWeapon;
         if (estimated != NULL) {
             return estimated;

@@ -31,7 +31,6 @@ public:
 
     ResourceQueue()
     {
-        m_state = State_Idle;
         m_spritesToLoad = NULL;
     }
 

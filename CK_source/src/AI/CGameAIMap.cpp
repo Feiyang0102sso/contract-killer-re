@@ -6,6 +6,7 @@
 #include "App.h"
 #include "CBH_Player.h"
 #include "CPath.h"
+#include "CSwerveGame.h"
 #include "CRandGen.h"
 #include "CUnitBody.h"
 #include "DGHelper.h"
@@ -15,11 +16,8 @@ namespace {
 typedef ::Group Group;
 typedef ::Mesh Mesh;
 typedef ::Transform Transform;
-typedef int (*GetObject)(IQueryInterface*, IQueryInterface**);
 typedef int (*GetIndexedObject)(IQueryInterface*, int, IQueryInterface**);
 typedef int (*GetCount)(IQueryInterface*, int*);
-typedef int (*GetPositions)(IQueryInterface*, int, float*, IQueryInterface**);
-typedef int (*GetVertexValues)(IQueryInterface*, int, int, int, short*);
 typedef int (*GetIndexValues)(IQueryInterface*, int, int*);
 
 const vec3 EmptyPosition;
@@ -80,46 +78,42 @@ void CGameAIMap::CreateNavigationMeshVertices(World& world)
         return;
     }
     Group root(world.find(DGHelper::getSwerveID("navigation_meshTransform")));
+    if (root == NULL) {
+        return;
+    }
     Mesh mesh(world.find(DGHelper::getSwerveID("navigation_mesh")));
-    if (root == NULL || mesh == NULL) {
+    if (mesh == NULL) {
         return;
     }
     Transform toWorld(CSwerve::GetInstance()->m_swerve);
-    mesh.getTransformTo(world, toWorld);
-    IQueryInterface* vertexBuffer = NULL;
-    CKMethod<GetObject>(mesh.m_interface, 0xc4)(mesh.m_interface, &vertexBuffer);
-    if (vertexBuffer == NULL) {
-        return;
-    }
-    IQueryInterface* positions = NULL;
-    float scaleBias[4] = {1.0f, 0.0f, 0.0f, 0.0f};
-    CKMethod<GetPositions>(vertexBuffer, 0x68)(vertexBuffer, 4, scaleBias, &positions);
-    vertexBuffer->Release();
-    if (positions == NULL) {
-        return;
-    }
-    int count = 0;
-    CKMethod<GetCount>(positions, 0x50)(positions, &count);
-    if (count > 0) {
-        short* values = new short[count * 3];
-        CKMethod<GetVertexValues>(positions, 0x5c)(positions, 0, count, count * 3, values);
-        m_vertices.ensureCapacity(count);
-        for (int index = 0; index < count; ++index) {
-            float point[4] = {
-                values[index * 3] * scaleBias[0] + scaleBias[1],
-                values[index * 3 + 1] * scaleBias[0] + scaleBias[2],
-                values[index * 3 + 2] * scaleBias[0] + scaleBias[3],
-                1.0f
-            };
-            toWorld.transform(4, point);
-            SPointAI vertex;
-            vertex.m_position = vec3(point[0], point[1], point[2]);
-            vertex.m_boundary = false;
-            m_vertices.addElement(vertex);
+    CSwerveGame* game = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame;
+    mesh.getTransformTo(game->m_world, toWorld);
+    VertexBuffer vertexBuffer = mesh.getVertexBuffer();
+    if (vertexBuffer != NULL) {
+        float scaleBias[4];
+        VertexArray positions = vertexBuffer.getPositions(scaleBias);
+        if (positions != NULL) {
+            int count = positions.getVertexCount();
+            m_vertices.ensureCapacity(count);
+            short* values = new short[count * 3];
+            positions.get(0, count, count * 3, values);
+            for (int index = 0; index < count; ++index) {
+                float point[4];
+                point[0] = values[index * 3] * scaleBias[0] + scaleBias[1];
+                point[1] = values[index * 3 + 1] * scaleBias[0] + scaleBias[2];
+                point[2] = values[index * 3 + 2] * scaleBias[0] + scaleBias[3];
+                point[3] = 1.0f;
+                toWorld.transform(4, point);
+                SPointAI vertex;
+                vertex.m_position.m_x = point[0];
+                vertex.m_position.m_y = point[1];
+                vertex.m_position.m_z = point[2];
+                vertex.m_boundary = false;
+                m_vertices.addElement(vertex);
+            }
+            delete[] values;
         }
-        delete[] values;
     }
-    positions->Release();
 }
 
 void CGameAIMap::CreateNavigationMeshCells(World& world)
@@ -148,7 +142,7 @@ void CGameAIMap::CreateNavigationMeshCells(World& world)
         }
     }
 
-    int meshParts = 0;
+    int meshParts;
     CKMethod<GetCount>(mesh.m_interface, 0xc0)(mesh.m_interface, &meshParts);
     int totalIndices = 0;
     for (int part = 0; part < meshParts; ++part) {
@@ -164,12 +158,12 @@ void CGameAIMap::CreateNavigationMeshCells(World& world)
     m_openCells.reserve(totalIndices / 3);
     m_cells.ensureCapacity(totalIndices / 3);
     for (int part = 0; part < meshParts; ++part) {
-        IQueryInterface* indices = NULL;
+        IQueryInterface* indices;
         CKMethod<GetIndexedObject>(mesh.m_interface, 0xc8)(mesh.m_interface, part, &indices);
         if (indices == NULL) {
             continue;
         }
-        int count = 0;
+        int count;
         CKMethod<GetCount>(indices, 0x4c)(indices, &count);
         if (count % 3 == 0) {
             int* values = new int[count];
@@ -198,21 +192,13 @@ void CGameAIMap::CreateNavigationMeshCells(World& world)
                 cell.m_vertices[2] = &m_vertices[c];
                 cell.m_center = vec3(0.0f, 0.0f, 0.0f);
                 for (int side = 0; side < 3; ++side) {
-                    cell.m_center = cell.m_center + cell.m_vertices[side]->m_position;
+                    cell.m_center.m_x += cell.m_vertices[side]->m_position.m_x;
+                    cell.m_center.m_y += cell.m_vertices[side]->m_position.m_y;
+                    cell.m_center.m_z += cell.m_vertices[side]->m_position.m_z;
                 }
                 cell.m_center.m_x /= 3.0f;
                 cell.m_center.m_y /= 3.0f;
                 cell.m_center.m_z /= 3.0f;
-                for (int side = 0; side < 3; ++side) {
-                    cell.m_gates[side] = NULL;
-                    cell.m_boundaries[side] = NULL;
-                    cell.m_neighbours[side] = NULL;
-                }
-                cell.m_parentCost = 0.0f;
-                cell.m_parent = NULL;
-                cell.m_searchState = 0;
-                cell.m_distance = 0.0f;
-                cell.m_priority = 0.0f;
                 m_cells.addElement(cell);
             }
             delete[] values;
@@ -326,8 +312,15 @@ void CGameAIMap::CreateNavigationMeshGates()
     if (edgeCount > 0) {
         m_gates.ensureCapacity(edgeCount);
         for (int index = 0; index < edgeCount; ++index) {
-            SGateAI gate = {index, &m_vertices[edges[index].m_x], &m_vertices[edges[index].m_y], 0.0f};
-            m_gates.addElement(gate);
+            SPointAI* start = m_vertices.m_items + edges[index].m_x;
+            SPointAI* end = m_vertices.m_items + edges[index].m_y;
+            if (start != NULL && end != NULL) {
+                SGateAI gate;
+                gate.m_id = index;
+                gate.m_start = start;
+                gate.m_end = end;
+                m_gates.addElement(gate);
+            }
         }
     }
 }
@@ -351,14 +344,15 @@ void CGameAIMap::CreateNavigationMeshCohesion()
     for (int index = 0; index < cellCount; ++index) {
         SCellAI& cell = m_cells[index];
         for (int side = 0; side < 3; ++side) {
-            cell.m_boundaries[side] = NULL;
+            SGateAI* boundaryGate = NULL;
             if (cell.m_gates[side] == NULL) {
-                SPointAI* a = cell.m_vertices[side];
-                SPointAI* b = cell.m_vertices[(side + 1) % 3];
-                SGateAI boundary = {m_boundaries.size(), a, b, 0.0f};
+                SGateAI boundary;
+                boundary.m_start = cell.m_vertices[side];
+                boundary.m_end = cell.m_vertices[(side + 1) % 3];
                 m_boundaries.addElement(boundary);
-                cell.m_boundaries[side] = &m_boundaries[m_boundaries.size() - 1];
+                boundaryGate = &m_boundaries[m_boundaries.size() - 1];
             }
+            cell.m_boundaries[side] = boundaryGate;
         }
     }
     for (int index = 0; index < boundaryCount; ++index) {
@@ -369,13 +363,14 @@ void CGameAIMap::CreateNavigationMeshCohesion()
         SCellAI& cell = m_cells[index];
         for (int side = 0; side < 3; ++side) {
             SGateAI* gate = cell.m_gates[side];
-            cell.m_neighbours[side] = NULL;
             if (gate != NULL) {
                 SCellAI* neighbour = FindNeighbour(&cell, gate);
                 cell.m_neighbours[side] = neighbour;
                 if (neighbour != NULL) {
-                    gate->m_cost = MathLib::Sqrt((cell.m_center - neighbour->m_center).LengthSqr());
+                    cell.m_gates[side]->m_cost = MathLib::Sqrt((cell.m_center - neighbour->m_center).LengthSqr());
                 }
+            } else {
+                cell.m_neighbours[side] = NULL;
             }
         }
     }
@@ -398,7 +393,8 @@ void CGameAIMap::LoadSpecialPoint(World& world)
             break;
         }
         // the original appends an empty point first and fills the stored copy
-        m_specialPoints.addElement(SSpecialPointAI());
+        SSpecialPointAI emptyPoint;
+        m_specialPoints.addElement(emptyPoint);
         SSpecialPointAI& point = m_specialPoints[m_specialPoints.size() - 1];
         float position[3];
         node.getTranslation(position);
@@ -714,47 +710,59 @@ bool CGameAIMap::DoesGateCollideWithBody(SGateAI* gate, CUnitBody* body, vec3* p
     }
     const vec3& start = gate->m_start->m_position;
     const vec3& end = gate->m_end->m_position;
-    const vec3& position = body->m_position;
     vec3 direction = NormalizePlanar(PlanarOffset(start, end));
-    vec3 fromStart = PlanarOffset(position, start);
+    vec3 fromStart = NormalizePlanar(PlanarOffset(body->m_position, start));
     vec3 normal(-direction.m_y, direction.m_x, 0.0f);
-    if (direction.Dot(NormalizePlanar(fromStart)) < 0.0f) {
-        normal = vec3(direction.m_y, -direction.m_x, -0.0f);
+    if (direction.Dot(fromStart) < 0.0f) {
+        normal.m_x = direction.m_y;
+        normal.m_y = -direction.m_x;
+        normal.m_z = -0.0f;
     }
+    fromStart = PlanarOffset(body->m_position, start);
+    float distance = normal.m_x * fromStart.m_x + normal.m_y * fromStart.m_y;
     float radius = body->GetRadius();
-    float distance = normal.Dot(fromStart);
     if (distance > radius) {
         return false;
     }
 
-    const vec3 endpoints[] = { PlanarOffset(start, position), PlanarOffset(end, position) };
-    float penetration = radius - distance;
-    if (CrossXY(normal, endpoints[0]) * CrossXY(normal, endpoints[1]) >= 0.0f) {
-        float endpointPenetration[2] = { 0.0f, 0.0f };
-        bool touchesEndpoint = false;
-        for (int index = 0; index < 2; ++index) {
-            const vec3& endpoint = endpoints[index];
-            float lengthSquared = endpoint.LengthSqr();
-            float length = MathLib::InvSqrt(lengthSquared) * lengthSquared;
-            if (length < radius) {
-                touchesEndpoint = true;
-                float fraction = fabs(direction.Dot(endpoint)) / radius;
-                float perpendicularSquared = 1.0f - fraction * fraction;
-                float scale = MathLib::InvSqrt(perpendicularSquared) * perpendicularSquared;
-                endpointPenetration[index] = radius / scale - fabs(normal.Dot(endpoint));
-            }
-        }
-        if (!touchesEndpoint) {
+    vec3 endpoints[2];
+    endpoints[0] = PlanarOffset(start, body->m_position);
+    endpoints[1] = PlanarOffset(end, body->m_position);
+    float lengthSquared = endpoints[0].LengthSqr();
+    float lengths[2];
+    lengths[0] = MathLib::InvSqrt(lengthSquared) * lengthSquared;
+    lengthSquared = endpoints[1].LengthSqr();
+    lengths[1] = MathLib::InvSqrt(lengthSquared) * lengthSquared;
+    float sideProduct = CrossXY(normal, endpoints[0]) * CrossXY(normal, endpoints[1]);
+    float penetration;
+    if (sideProduct < 0.0f) {
+        penetration = radius - distance;
+    } else {
+        if (!(lengths[0] < radius) && !(lengths[1] < radius)) {
             return false;
+        }
+        float endpointPenetration[2];
+        endpointPenetration[0] = 0.0f;
+        endpointPenetration[1] = 0.0f;
+        for (int index = 0; index < 2; ++index) {
+            if (lengths[index] < radius) {
+                const vec3& endpoint = endpoints[index];
+                float fraction = fabs(static_cast<double>(direction.Dot(endpoint))) / radius;
+                float fractionSquared = fraction * fraction;
+                float perpendicularSquared = 1.0f - fractionSquared;
+                float scale = MathLib::InvSqrt(perpendicularSquared) * perpendicularSquared;
+                float normalDistance = fabs(static_cast<double>(normal.Dot(endpoint)));
+                endpointPenetration[index] = radius / scale - normalDistance;
+            }
         }
         penetration = endpointPenetration[1];
         if (endpointPenetration[0] > penetration) {
             penetration = endpointPenetration[0];
         }
     }
-    if (pushOut != NULL) {
-        *pushOut = normal * -penetration;
-    }
+    pushOut->m_x = -(normal.m_x * penetration);
+    pushOut->m_y = -(normal.m_y * penetration);
+    pushOut->m_z = -(normal.m_z * penetration);
     return true;
 }
 
@@ -763,14 +771,12 @@ bool CGameAIMap::DoesCellCollideWithBody(SCellAI* cell, CUnitBody* body) const
     if (cell == NULL || body == NULL) {
         return false;
     }
-    const vec3& position = body->m_position;
+    float positionX = body->m_position.m_x;
+    float positionY = body->m_position.m_y;
     for (int edge = 0; edge < 3; ++edge) {
         const SGateAI* gate = cell->m_gates[edge];
         if (gate == NULL) {
             gate = cell->m_boundaries[edge];
-        }
-        if (gate == NULL) {
-            return false;
         }
         const vec3& start = gate->m_start->m_position;
         const vec3& end = gate->m_end->m_position;
@@ -780,7 +786,8 @@ bool CGameAIMap::DoesCellCollideWithBody(SCellAI* cell, CUnitBody* body) const
         if (CrossXY(direction, PlanarOffset(start, opposite)) < 0.0f) {
             normal = vec3(direction.m_y, -direction.m_x, 0.0f);
         }
-        if (normal.Dot(PlanarOffset(position, start)) > body->GetRadius()) {
+        float distance = normal.m_x * (positionX - start.m_x) + normal.m_y * (positionY - start.m_y);
+        if (distance > body->GetRadius()) {
             return false;
         }
     }
@@ -791,7 +798,8 @@ bool CGameAIMap::DoesCellCollideWithBody(SCellAI* cell, CUnitBody* body) const
         const vec3& previous = cell->m_vertices[(index + 2) % 3]->m_position;
         vec3 bisector = NormalizePlanar(PlanarOffset(vertex, next)) + NormalizePlanar(PlanarOffset(vertex, previous));
         bisector = NormalizePlanar(bisector);
-        if (bisector.Dot(PlanarOffset(position, vertex)) > body->GetRadius()) {
+        float distance = bisector.m_x * (positionX - vertex.m_x) + bisector.m_y * (positionY - vertex.m_y);
+        if (distance > body->GetRadius()) {
             return false;
         }
     }
@@ -800,17 +808,24 @@ bool CGameAIMap::DoesCellCollideWithBody(SCellAI* cell, CUnitBody* body) const
 
 void CGameAIMap::RegisterStaticCollisionImpl(SCellAI* cell, CUnitBody* body) const
 {
-    unsigned int sessionLow = static_cast<unsigned int>(m_byPassSessionID);
-    unsigned int sessionHigh = static_cast<unsigned int>(m_byPassSessionID >> 32);
-    if (cell == NULL || (cell->m_field00 == sessionLow && cell->m_field04 == sessionHigh)) {
+    if (cell == NULL) {
         return;
     }
-    cell->m_field00 = sessionLow;
-    cell->m_field04 = sessionHigh;
+    unsigned long long lastSession = static_cast<unsigned int>(cell->m_field00);
+    lastSession |= static_cast<unsigned long long>(static_cast<unsigned int>(cell->m_field04)) << 32;
+    unsigned long long session = m_byPassSessionID;
+    if (lastSession == session) {
+        return;
+    }
+    cell->m_field00 = static_cast<unsigned int>(session);
+    cell->m_field04 = static_cast<unsigned int>(session >> 32);
     if (!DoesCellCollideWithBody(cell, body)) {
         return;
     }
-    vec3 pushOut(0.0f, 0.0f, 0.0f);
+    vec3 pushOut;
+    pushOut.m_z = 0.0f;
+    pushOut.m_y = 0.0f;
+    pushOut.m_x = 0.0f;
     for (int side = 0; side < 3; ++side) {
         if (cell->m_boundaries[side] != NULL && DoesGateCollideWithBody(cell->m_boundaries[side], body, &pushOut)) {
             SGateAI* boundary = cell->m_boundaries[side];
@@ -824,9 +839,13 @@ void CGameAIMap::RegisterStaticCollisionImpl(SCellAI* cell, CUnitBody* body) con
 
 void CGameAIMap::RegisterStaticCollision(CUnitBody* body) const
 {
-    if (body->m_cellId >= 0 && body->m_cellId < m_cells.size() && m_cells.m_items != NULL) {
-        ++m_byPassSessionID;
-        RegisterStaticCollisionImpl(&m_cells.m_items[body->m_cellId], body);
+    int cellId = body->m_cellId;
+    if (cellId >= 0 && cellId < m_cells.size()) {
+        SCellAI* cell = m_cells.m_items + cellId;
+        if (cell != NULL) {
+            ++m_byPassSessionID;
+            RegisterStaticCollisionImpl(cell, body);
+        }
     }
 }
 
@@ -926,18 +945,18 @@ void CGameAIMap::OpenCellListPushBack(SCellAI* cell, SCellAI* target, SCellAI* p
     cell->m_parent = parent;
     cell->m_searchState = 1;
     cell->m_priority = MathLib::InvSqrt(lengthSquared) * lengthSquared;
-    cell->m_distance = distance;
+    cell->m_distance = cell->m_parentCost;
     if (parent != NULL) {
-        cell->m_distance += parent->m_distance;
+        cell->m_distance = cell->m_distance + parent->m_distance;
     }
     if (m_openCells.m_size < m_openCells.m_capacity) {
-        m_openCells.m_data[m_openCells.m_size++] = cell;
+        m_openCells.m_data[m_openCells.m_size] = cell;
+        ++m_openCells.m_size;
     }
 }
 
 bool CGameAIMap::FindPathAStarImpl(CPath* path, SCellAI* start, SSpecialPointAI* end)
 {
-    path->Clear();
     if (start == NULL || end == NULL || end->m_cell == NULL) {
         return false;
     }
@@ -946,6 +965,7 @@ bool CGameAIMap::FindPathAStarImpl(CPath* path, SCellAI* start, SSpecialPointAI*
         path->m_targetPoint = end->m_id;
         return true;
     }
+    path->Clear();
     AStarInit();
     OpenCellListPushBack(start, target, NULL, 0.0f);
     bool found = false;
@@ -961,18 +981,17 @@ bool CGameAIMap::FindPathAStarImpl(CPath* path, SCellAI* start, SSpecialPointAI*
                 return false;
             }
             float distance = gate->m_cost;
-            if (next->m_searchState == 1) {
-                if (cell->m_distance + distance < next->m_distance) {
-                    // The original replaces the incoming edge cost in the existing total.
-                    next->m_distance = next->m_distance - next->m_parentCost + distance;
-                    next->m_parentCost = distance;
-                    next->m_parent = cell;
-                }
-            } else if (next->m_searchState == 0) {
+            if (next->m_searchState == 0) {
                 OpenCellListPushBack(next, target, cell, distance);
                 if (next == target) {
                     found = true;
                 }
+            } else if (next->m_searchState == 1 && cell->m_distance + distance < next->m_distance) {
+                // The original replaces the incoming edge cost in the existing total.
+                float total = next->m_distance - next->m_parentCost + distance;
+                next->m_parentCost = distance;
+                next->m_distance = total;
+                next->m_parent = cell;
             }
         }
     }
@@ -980,17 +999,17 @@ bool CGameAIMap::FindPathAStarImpl(CPath* path, SCellAI* start, SSpecialPointAI*
         return false;
     }
     path->m_targetPoint = end->m_id;
-    for (SCellAI* cell = target; cell != NULL; cell = cell->m_parent) {
-        if (!path->AddCell(cell->m_id)) {
-            path->Clear();
-            return false;
-        }
+    for (SCellAI* cell = end->m_cell; cell != NULL;) {
+        int cellId = cell->m_id;
+        cell = cell->m_parent;
+        path->AddCell(cellId);
     }
     return true;
 }
 
 // Original 0xcc9ac: breadth over the open list; the first neighbour with an appropriate point ends the
 // search. The cell list is filled from the point's cell up the parent chain (AddCell overflow ignored).
+// Both success branches assign the target ID twice.
 bool CGameAIMap::FindPathDijkstraImpl(CPath* path, SCellAI* start, PointCondition condition, int camera)
 {
     if (start == NULL) {
@@ -1005,8 +1024,11 @@ bool CGameAIMap::FindPathDijkstraImpl(CPath* path, SCellAI* start, PointConditio
             return false;
         }
         path->m_targetPoint = point->m_id;
-        for (SCellAI* cell = point->m_cell; cell != NULL; cell = cell->m_parent) {
-            path->AddCell(cell->m_id);
+        path->m_targetPoint = point->m_id;
+        for (SCellAI* cell = point->m_cell; cell != NULL;) {
+            int cellId = cell->m_id;
+            cell = cell->m_parent;
+            path->AddCell(cellId);
         }
         return true;
     }
@@ -1023,8 +1045,11 @@ bool CGameAIMap::FindPathDijkstraImpl(CPath* path, SCellAI* start, PointConditio
                     return false;
                 }
                 path->m_targetPoint = point->m_id;
-                for (SCellAI* found = point->m_cell; found != NULL; found = found->m_parent) {
-                    path->AddCell(found->m_id);
+                path->m_targetPoint = point->m_id;
+                for (SCellAI* found = point->m_cell; found != NULL;) {
+                    int cellId = found->m_id;
+                    found = found->m_parent;
+                    path->AddCell(cellId);
                 }
                 return true;
             }
@@ -1039,7 +1064,11 @@ bool CGameAIMap::FindPathDijkstraImpl(CPath* path, SCellAI* start, PointConditio
             if (gate == NULL) {
                 return false;
             }
-            float cost = gate->m_cost + cell->m_parentCost;
+            float cost = gate->m_cost;
+            float parentCost = cell->m_parentCost;
+            if (parentCost >= 0.0f) {
+                cost += parentCost;
+            }
             if (cost < next->m_parentCost || next->m_parentCost < 0.0f) {
                 next->m_parentCost = cost;
                 next->m_parent = cell;
@@ -1064,40 +1093,48 @@ void CGameAIMap::ConstructPrecisePath(CPath* path)
 void CGameAIMap::DefineGatesForPath(CPath* path)
 {
     // The original gate walk adjusts only the endpoints that touch the mesh boundary.
-    int cellCount = path->m_cellCount;
-    for (int index = 0; index + 1 < cellCount; ++index) {
+    int lastCell = path->m_cellCount - 1;
+    for (int index = 0; index < lastCell; ++index) {
         int targetCell = path->GetCellID(index);
         int startCell = path->GetCellID(index + 1);
         if (targetCell < 0 || targetCell >= m_cells.size() || startCell < 0 || startCell >= m_cells.size()) {
             continue;
         }
-        SCellAI& towardTarget = m_cells[targetCell];
-        SCellAI& towardStart = m_cells[startCell];
+        SCellAI* towardTarget = m_cells.m_items + targetCell;
+        SCellAI* towardStart = m_cells.m_items + startCell;
+        if (towardTarget == NULL || towardStart == NULL) {
+            continue;
+        }
         float radius = path->m_body->GetRadius();
         for (int side = 0; side < 3; ++side) {
-            if (towardTarget.m_neighbours[side] != &towardStart) {
+            if (towardTarget->m_neighbours[side] != towardStart) {
                 continue;
             }
-            const SGateAI& gate = *towardTarget.m_gates[side];
-            vec3 left = gate.m_start->m_position;
-            vec3 right = gate.m_end->m_position;
-            vec3 across = left - right;
+            SGateAI& gate = *towardTarget->m_gates[side];
+            vec3 across = gate.m_start->m_position - gate.m_end->m_position;
             float lengthSquared = across.LengthSqr();
             float length = MathLib::InvSqrt(lengthSquared) * lengthSquared;
-            if (length >= radius + radius) {
-                vec3 toRight = right - left;
-                toRight = toRight * MathLib::InvSqrt(toRight.LengthSqr());
-                vec3 toLeft = across * MathLib::InvSqrt(lengthSquared);
-                if (gate.m_start->m_boundary) {
-                    left = left + toRight * radius;
+            if (!(length < radius + radius)) {
+                vec3 reverse = gate.m_end->m_position - gate.m_start->m_position;
+                vec3 directions[2] = {
+                    reverse * MathLib::InvSqrt(reverse.LengthSqr()),
+                    across * MathLib::InvSqrt(lengthSquared)
+                };
+                vec3 endpoints[2] = {gate.m_start->m_position, gate.m_end->m_position};
+                for (int endpoint = 0; endpoint < 2; ++endpoint) {
+                    SPointAI* point = gate.m_start;
+                    if (endpoint == 1) {
+                        point = gate.m_end;
+                    }
+                    if (point->m_boundary) {
+                        endpoints[endpoint] = endpoints[endpoint] + directions[endpoint] * radius;
+                    }
                 }
-                if (gate.m_end->m_boundary) {
-                    right = right + toLeft * radius;
-                }
-                path->AddGateWayPoint((left + right) * 0.5f, towardTarget.m_id, left, right);
+                path->AddGateWayPoint((endpoints[0] + endpoints[1]) * 0.5f,
+                                      towardTarget->m_id, endpoints[0], endpoints[1]);
             } else {
-                vec3 center = (left + right) * 0.5f;
-                path->AddGateWayPoint(center, towardTarget.m_id, center, center);
+                vec3 center = (gate.m_start->m_position + gate.m_end->m_position) * 0.5f;
+                path->AddGateWayPoint(center, towardTarget->m_id, center, center);
             }
             break;
         }

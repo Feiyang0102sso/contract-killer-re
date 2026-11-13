@@ -16,32 +16,20 @@ const int SelectAvatar = 0x665212fc;
 }
 
 CChangeAvatarWindow::CChangeAvatarWindow()
-    : CBaseScreen(false, true, true, false, true, false),
-      m_selectedId(-1), m_selectedFrame(NULL), m_selectedButton(NULL)
+    : CBaseScreen(false, true, true, false, true, false)
 {
     SetTitleText(ResString("IDS_CHANGE_AVATAR_TITLE"));
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CAvatarManager* manager = app->InitAvatarManager();
-    CBH_Player* player = CBH_Player::GetInstance();
-    if (player->m_avatar != NULL) {
-        m_selectedId = player->m_avatar->m_id;
-    }
-
-    int pageWidth = m_content->m_width;
-    int pageHeight = app->m_screenHeight - 20 - GetTitleBarHeight();
     CScrollWindow* scroll = new CScrollWindow(false);
-    scroll->SetSize(pageWidth, m_content->m_height);
     m_content->AddToFront(scroll);
-    CAutoArrangedWindow* page = new CAutoArrangedWindow(pageWidth, pageHeight);
+    CAutoArrangedWindow* page = new CAutoArrangedWindow(
+        scroll->m_width, static_cast<App*>(WindowApp::m_instance)->m_screenHeight - 20 - GetTitleBarHeight());
     scroll->Add(page);
 
-    CFont* font = CFontMgr::GetInstance()->GetFont(11);
-    for (int index = 0; index < manager->m_avatars.size(); ++index) {
+    m_selectedId = CBH_Player::GetInstance()->m_avatar->m_id;
+    for (int index = 0;
+         index < static_cast<App*>(WindowApp::m_instance)->InitAvatarManager()->m_avatars.size(); ++index) {
+        CAvatarManager* manager = static_cast<App*>(WindowApp::m_instance)->InitAvatarManager();
         const CAvatar* avatar = manager->GetAvatar(index);
-        if (avatar == NULL || avatar->m_imageResId == NULL) {
-            continue;
-        }
-
         WindowTransparent* cell = new WindowTransparent(false);
         CImageButton* button = new CImageButton();
         button->m_command = 0;
@@ -50,37 +38,46 @@ CChangeAvatarWindow::CChangeAvatarWindow()
         button->m_commandParameter3 = 0;
         button->AddImage(avatar->m_imageResId, 0, 0);
 
-        ImageWindow* frame = new ImageWindow();
-        frame->SetImageById("IDB_FRAME_UNLOCKED");
-        button->AddToFront(frame);
+        m_selectedFrame = new ImageWindow();
+        m_selectedFrame->SetImageById("IDB_FRAME_UNLOCKED");
+        button->AddToFront(m_selectedFrame);
         button->SetHeightByContent(0, 0);
         button->SetWidthByContent(0, 0);
-        if (player->GetLevel() < avatar->m_unlockLvl) {
+        int unlockLevel = avatar->m_unlockLvl;
+        int playerLevel = CBH_Player::GetInstance()->GetLevel();
+        if (unlockLevel > playerLevel) {
             button->AddImage("IDB_FRAME_LOCKED", 0, 0);
         } else {
+            int avatarId = avatar->m_id;
+            int selectedId = m_selectedId;
             button->m_command = SelectAvatar;
             button->m_commandParameter1 = index;
             button->m_commandParameter2 = reinterpret_cast<int>(button);
-            if (avatar->m_id == m_selectedId) {
-                frame->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
-                m_selectedFrame = frame;
+            button->m_commandParameter3 = 0;
+            if (avatarId == selectedId) {
                 m_selectedButton = button;
+                button->m_firstChild->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
             }
         }
         cell->AddToFront(button);
 
-        TextWindow* level = new TextWindow(XString::Format(L"LVL %d", avatar->m_unlockLvl), font);
+        XString label = XString::Format(L"LVL %d", avatar->m_unlockLvl);
+        TextWindow* level = new TextWindow(label, CFontMgr::GetInstance()->GetFont(11));
         level->SetAlign(ALIGN_HCENTER | ALIGN_BOTTOM);
         level->SetSize(0, 0);
         cell->AddToFront(level);
-        int cellWidth = button->m_width;
-        if (level->m_width > cellWidth) {
-            cellWidth = level->m_width;
+        int labelWidth = level->m_width;
+        int labelHeight = level->m_height;
+        int buttonWidth = button->m_width;
+        int buttonHeight = button->m_height;
+        if (buttonWidth > labelWidth) {
+            labelWidth = buttonWidth;
         }
-        cell->SetSize(cellWidth, button->m_height + level->m_height);
+        cell->SetSize(labelWidth, buttonHeight + labelHeight);
         if (!page->Add(cell)) {
             scroll->Add(page);
-            page = new CAutoArrangedWindow(pageWidth, pageHeight);
+            page = new CAutoArrangedWindow(
+                scroll->m_width, static_cast<App*>(WindowApp::m_instance)->m_screenHeight - 20 - GetTitleBarHeight());
             page->Add(cell);
         }
     }

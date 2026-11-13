@@ -49,13 +49,21 @@ void WrapSmokeAngle(float& angle)
 }
 
 Ballistics::Ballistics(int capacity, float maxAge, vec3 gravity, CCollision* collision)
-    : m_capacity(capacity), m_next(0), m_activeCount(0), m_activeIndices(new int[capacity]),
-      m_projectiles(new Projectile[capacity]), m_maxAge(maxAge), m_gravity(gravity),
-      m_collision(collision), m_normalBounce(0.5f), m_tangentRetention(0.5f)
+    : m_gravity()
 {
+    m_collision = collision;
+    m_capacity = capacity;
+    m_next = 0;
+    m_activeCount = 0;
+    m_activeIndices = new int[capacity];
+    m_projectiles = new Projectile[m_capacity];
+    m_maxAge = maxAge;
+    m_gravity = gravity;
     for (int index = 0; index < m_capacity; ++index) {
         m_projectiles[index].m_active = false;
     }
+    m_normalBounce = 0.5f;
+    m_tangentRetention = 0.5f;
 }
 
 Ballistics::~Ballistics()
@@ -146,7 +154,7 @@ int Ballistics::AddProjectile(const vec3& position, const vec3& velocity, float 
     projectile.m_previous = position;
     projectile.m_velocity = velocity;
     if (spread != 0.0f) {
-        vec3 forward = Unit(velocity);
+        vec3 forward = Unit(projectile.m_velocity);
         vec3 right = Unit(vec3(forward.m_y, forward.m_z, forward.m_x).Cross(forward));
         vec3 up = Unit(forward.Cross(right));
         Angles angles(forward, up);
@@ -156,9 +164,8 @@ int Ballistics::AddProjectile(const vec3& position, const vec3& velocity, float 
         memset(&orientation, 0, sizeof(orientation));
         matrix.ToQuaternion(orientation);
 
-        CRandGen* random = CRandGen::GetInstance();
-        float yaw = (10000 - static_cast<int>(random->GetRand(20000))) * 0.0001f * spread;
-        float pitch = (10000 - static_cast<int>(random->GetRand(20000))) * 0.0001f * spread;
+        float yaw = (10000 - static_cast<int>(CRandGen::GetInstance()->GetRand(20000))) * 0.0001f * spread;
+        float pitch = (10000 - static_cast<int>(CRandGen::GetInstance()->GetRand(20000))) * 0.0001f * spread;
         Quaternion horizontal;
         horizontal.m_x = right.m_x;
         horizontal.m_y = right.m_y;
@@ -171,7 +178,10 @@ int Ballistics::AddProjectile(const vec3& position, const vec3& velocity, float 
         vertical.m_w = pitch * 3.1415925f / 360.0f;
         orientation = orientation.Mul(horizontal.Mul(vertical));
         orientation.ToAngles_ByKashtur(angles);
-        projectile.m_velocity = Unit(angles.Forward()) * Length(velocity);
+        vec3 direction = Unit(angles.Forward());
+        float speedSquared = projectile.m_velocity.LengthSqr();
+        float speed = speedSquared * MathLib::InvSqrt(speedSquared);
+        projectile.m_velocity = direction * speed;
     }
     projectile.m_userData = userData;
     OnActivate(&projectile);
@@ -179,22 +189,19 @@ int Ballistics::AddProjectile(const vec3& position, const vec3& velocity, float 
 }
 
 SmokeTrail::SmokeTrail(int capacity, float age, CCollision* collision)
-    : Ballistics(capacity, age, vec3(), collision), m_rotationNext(0),
-      m_rotations(new Rotation[capacity]), m_basis(CSwerve::GetInstance()->m_swerve),
-      m_scratch(CSwerve::GetInstance()->m_swerve)
+    : Ballistics(capacity, age, vec3(), collision)
 {
     m_scene = World(App::LoadObject3D("BIN_M3G_EFFECT_SMOKE_SYSTEM"));
-    if (m_scene == NULL) {
-        return;
-    }
     m_root = Group(m_scene.find(DGHelper::getSwerveID("RootNode")));
-    if (m_root != NULL) {
-        for (int index = 0; index < 16; ++index) {
-            XString name = XString::Format(L"Particle%02dTransform", index + 1);
-            XString::AnsiString ansiName(name.c_str());
-            m_variants[index] = Group(m_root.find(DGHelper::getSwerveID(ansiName)));
-        }
+    for (int index = 0; index < 16; ++index) {
+        XString name = XString::Format(L"Particle%02dTransform", index + 1);
+        XString::AnsiString ansiName(name.c_str());
+        m_variants[index] = Group(m_root.find(DGHelper::getSwerveID(ansiName)));
     }
+    m_rotationNext = 0;
+    m_rotations = new Rotation[capacity];
+    m_basis = Transform(CSwerve::GetInstance()->m_swerve);
+    m_scratch = Transform(CSwerve::GetInstance()->m_swerve);
 }
 
 SmokeTrail::~SmokeTrail()
@@ -204,12 +211,26 @@ SmokeTrail::~SmokeTrail()
 
 int SmokeTrail::AddProjectile(const vec3& position, const vec3& velocity, float spread)
 {
-    CRandGen* random = CRandGen::GetInstance();
-    Rotation& spin = m_rotations[m_rotationNext];
-    spin.m_angle = static_cast<float>(random->GetRand(720)) - 360.0f;
-    spin.m_speed = static_cast<float>(random->GetRand(180)) - 90.0f;
-    WrapSmokeAngle(spin.m_angle);
-    int index = Ballistics::AddProjectile(position, velocity, spread, &spin);
+    float angle = static_cast<float>(CRandGen::GetInstance()->GetRand(720)) - 360.0f;
+    m_rotations[m_rotationNext].m_angle = angle;
+    float speed = static_cast<float>(CRandGen::GetInstance()->GetRand(180)) - 90.0f;
+    m_rotations[m_rotationNext].m_speed = speed;
+
+    // The shipped add path stores the angle after each of the two bounds checks.
+    float& initialAngle = m_rotations[m_rotationNext].m_angle;
+    float wrapped = initialAngle;
+    if (initialAngle < -180.0f) {
+        wrapped = initialAngle + 360.0f;
+    }
+    initialAngle = wrapped;
+    float& storedAngle = m_rotations[m_rotationNext].m_angle;
+    wrapped = storedAngle;
+    if (storedAngle > 180.0f) {
+        wrapped = 360.0f - storedAngle;
+    }
+    storedAngle = wrapped;
+
+    int index = Ballistics::AddProjectile(position, velocity, spread, &m_rotations[m_rotationNext]);
     ++m_rotationNext;
     if (m_rotationNext == m_capacity) {
         m_rotationNext = 0;
@@ -231,48 +252,48 @@ void SmokeTrail::Simulate(float elapsed)
 
 void SmokeTrail::Paint3D(Graphics3D& graphics)
 {
-    if (m_activeCount == 0 || m_root == NULL) {
-        return;
-    }
-    for (int index = 0; index < 16; ++index) {
-        if (m_variants[index] == NULL) {
-            return;
-        }
-    }
-    CSwerveGame* game = CSwerveGame::m_pInstance;
-    vec3 camera = game->GetCurrentCameraPos();
-    vec3 viewDirection = game->m_camera->GetViewDirection();
+    int count = m_activeCount;
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    vec3 camera = app->m_helper->m_swerveGame->GetCurrentCameraPos();
+    app = static_cast<App*>(WindowApp::m_instance);
+    vec3 viewDirection = app->m_helper->m_swerveGame->m_camera->GetViewDirection();
     float values[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
     Transform renderTransform(CSwerve::GetInstance()->m_swerve);
     renderTransform.setIdentity();
     int batch = 0;
-    for (int index = 0; index < m_activeCount; ++index) {
+    for (int index = 0; index < count; ++index) {
         Projectile& projectile = m_projectiles[m_activeIndices[index]];
         if (!projectile.m_active) {
             continue;
         }
         Rotation* spin = static_cast<Rotation*>(projectile.m_userData);
         float age = projectile.m_age / m_maxAge;
+        if (age > 1.0f) {
+            age = 1.0f;
+        }
         float scale = MathLib::Pow(age, 0.5f);
         if (scale < 0.01f) {
             scale = 0.01f;
         }
         vec3 center = projectile.m_previous + (projectile.m_position - projectile.m_previous) * 0.5f;
         vec3 front = Unit(center - camera);
-        vec3 up(0.0f, 0.0f, 1.0f);
+        vec3 up = Unit(vec3(0.0f, 0.0f, 1.0f));
         vec3 side = Unit(up.Cross(front));
-        up = up * (scale * 75.0f);
-        side = side * (scale * 75.0f);
-        vec3 depth = front * (scale * 75.0f);
+        up = up * scale * 100.0f;
+        side = side * scale * 100.0f;
+        vec3 depth = front * scale * 100.0f;
         values[0] = up.m_x;
         values[1] = side.m_x;
         values[2] = depth.m_x;
+        values[3] = 0.0f;
         values[4] = up.m_y;
         values[5] = side.m_y;
         values[6] = depth.m_y;
+        values[7] = 0.0f;
         values[8] = up.m_z;
         values[9] = side.m_z;
         values[10] = depth.m_z;
+        values[11] = 0.0f;
         m_basis.set(values);
         m_scratch.setIdentity();
         float rotation[4] = {spin->m_angle, depth.m_x, depth.m_y, depth.m_z};
@@ -283,7 +304,7 @@ void SmokeTrail::Paint3D(Graphics3D& graphics)
         m_scratch.postTranslate(&center.m_x);
         m_scratch.postMultiply(m_basis);
         m_variants[batch].setTransform(m_scratch);
-        m_variants[batch].setAlphaFactor(1.0f - age);
+        m_variants[batch].setAlphaFactor(1.0f - projectile.m_age / m_maxAge);
         ++batch;
         if (batch == 16) {
             graphics.render(m_root, renderTransform);
@@ -304,10 +325,12 @@ void SmokeTrail::Paint3D(Graphics3D& graphics)
 }
 
 GrenadeLauncher::GrenadeLauncher(CCollision* collision, const Vector<CUnit*>& units, const char* model)
-    : Ballistics(32, 10.0f, vec3(), collision), m_model(App::LoadObject3D(model)),
-      m_smoke(new SmokeTrail(128, 0.5f, NULL)), m_flightNext(0),
-      m_flights(new Flight[32]), m_units(units)
+    : Ballistics(32, 10.0f, vec3(), collision), m_units(units)
 {
+    m_model = World(App::LoadObject3D(model));
+    m_smoke = new SmokeTrail(128, 0.5f, NULL);
+    m_flightNext = 0;
+    m_flights = new Flight[32];
 }
 
 GrenadeLauncher::~GrenadeLauncher()

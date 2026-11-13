@@ -9,30 +9,20 @@
 #include "CChallengeManager.h"
 #include "CDialogWindow.h"
 #include "CFontMgr.h"
-#include "CGServeHelper.h"
 #include "CGiftRecievedNewsWindow.h"
 #include "CGuildNewsWindow.h"
 #include "CMissionInviteNewsWindow.h"
 #include "CNewsFeedManager.h"
+#include "CNGS.h"
+#include "CNGSLocalUser.h"
+#include "CNGSRemoteUser.h"
+#include "CNGSRemoteUserList.h"
 #include "CShopItem.h"
 #include "CSocialGiftsManager.h"
 #include "CTargettedNewsWindow.h"
+#include "ICSystemFont.h"
 #include "SScreenAdaptingConstant.h"
 #include "ServiceWindows.h"
-
-namespace {
-const SScreenAdaptingConstant s_topMargin(15, 30);
-const SScreenAdaptingConstant s_rowMargin(5, 10);
-const SScreenAdaptingConstant s_emptyWidth(350, 800);
-
-void AddAwardAmount(XString& text, int amount, const char* label)
-{
-    if (amount > 0) {
-        XString name = Window::ResString(label);
-        text.Append(XString::Format(L"\n %d %ls", amount, name.c_str()));
-    }
-}
-}
 
 CNewsFeedWindow::CNewsFeedWindow()
     : Window(false)
@@ -47,11 +37,12 @@ CNewsFeedWindow::~CNewsFeedWindow()
 void CNewsFeedWindow::CreateUserInterface()
 {
     Window* list = new Window(false);
-    list->SetInsetSpacing(s_topMargin(), 0, 0, 0);
-    list->SetLayoutType(LAYOUT_SIMPLE);
+    list->SetInsetSpacing(SScreenAdaptingConstant(15, 30)(), 0, 0, 0);
+    list->SetLayoutType(LAYOUT_NONE);
     list->SetPercentHeight(100, 0, 0);
-    m_rows = new Window(false);
-    m_rows->SetHeightByContent(0, 0);
+    Window* rows = new Window(false);
+    m_rows = rows;
+    rows->SetHeightByContent(0, 0);
     m_rows->SetLayoutType(LAYOUT_NONE);
     m_nextRow = 0;
     m_column = 0;
@@ -68,210 +59,202 @@ void CNewsFeedWindow::CreateUserInterface()
     AddToFront(list);
 }
 
-int CNewsFeedWindow::Populate()
-{
-    ClearNews();
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CNewsFeedManager* feed = app->m_newsFeedManager;
-    int count = feed->GetNewsCount();
-    for (int index = count - 1; index >= 0; --index) {
-        const SMessage* message = feed->GetNewsAt(index);
-        int before = m_nextRow;
-        switch (message->m_type) {
-        case NEWS_TARGETTED:
-            Targetted(static_cast<const STargettedMessage*>(message));
-            break;
-        case NEWS_MISSION_INVITE:
-            MissionInvite(static_cast<const SMissionInviteMessage*>(message));
-            break;
-        case NEWS_FRIEND_JOINED:
-            FriendInstall(static_cast<const SFriendJoinedGameMessage*>(message));
-            break;
-        case NEWS_FRIEND_INVITED:
-            AddText(static_cast<const STargettedMessage*>(message)->m_text.GetWCharPtr(), ALIGN_LEFT | ALIGN_VCENTER);
-            break;
-        case NEWS_GIFT:
-            ReceiveGift(static_cast<const SGiftReceivedMessage*>(message));
-            break;
-        case NEWS_AWARD:
-            ReceiveAward(static_cast<const SServerAwardMessage*>(message));
-            break;
-        case NEWS_GUILD_INVITE:
-            ShowGuildInvite(static_cast<const STargettedMessage*>(message));
-            break;
-        case NEWS_GUILD_ACCEPTED:
-        case NEWS_GUILD_DECLINED:
-            ShowGuildInviteResponse(message, message->m_type == NEWS_GUILD_ACCEPTED);
-            break;
-        case NEWS_CHALLENGE_INVITE:
-            ShowChallengeInvite(static_cast<const SMissionInviteMessage*>(message));
-            break;
-        case NEWS_CHALLENGE_ACCEPTED:
-        case NEWS_CHALLENGE_DECLINED:
-            ShowChallengeInviteResponse(static_cast<const SMissionInviteMessage*>(message),
-                                        message->m_type == NEWS_CHALLENGE_ACCEPTED);
-            break;
-        default:
-            break;
-        }
-        if (m_nextRow != before) {
-            message->m_read = true;
-        }
-    }
-    if (m_nextRow == 0) {
-        ShowEmptyNews();
-    }
-    return count;
-}
-
-void CNewsFeedWindow::AddRow(Window* row)
-{
-    row->SetOutsetSpacing(0, 0, 0, s_rowMargin());
-    m_rows->AddToFront(row, m_column, m_nextRow++);
-}
-
-void CNewsFeedWindow::AddText(const XString& text, int align)
-{
-    if (text.Length() == 0) {
-        return;
-    }
-    TextWindow* label = new TextWindow(text, CFontMgr::GetInstance()->GetFont(15));
-    label->SetHeightByContent(0, 0);
-    label->SetAlign(align);
-    AddRow(label);
-    AddSeparator();
-}
-
-void CNewsFeedWindow::AddSeparator()
-{
-    SeparateLineRed* line = new SeparateLineRed();
-    line->SetDesiredHeight(s_rowMargin());
-    AddRow(line);
-}
-
 void CNewsFeedWindow::ReceiveGift(const SGiftReceivedMessage* message)
 {
-    AddRow(new CGiftRecievedNewsWindow(message));
+    CGiftRecievedNewsWindow* row = new CGiftRecievedNewsWindow(message);
+    row->SetOutsetSpacing(0, 0, 0, SScreenAdaptingConstant(5, 10)());
+    m_rows->AddToFront(row, m_column, m_nextRow++);
 }
 
 void CNewsFeedWindow::ReceiveAward(const SServerAwardMessage* message)
 {
-    if (message->m_read
-        || (message->m_rareCurrency <= 0 && message->m_commonCurrency <= 0
-            && message->m_experience <= 0 && message->m_itemIndex < 0)) {
+    if (message->m_rareCurrency <= 0 && message->m_commonCurrency <= 0
+        && message->m_experience <= 0 && message->m_itemIndex < 0) {
         return;
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    SGift* gift = app->m_socialGiftManager->GetGift(message->m_itemIndex);
-    CItem* item = NULL;
-    if (gift != NULL) {
-        item = gift->GetItem();
-    }
-    bool ownsWeapon = item != NULL && item->getType() == 0 && item->isAvailable();
-    XString text = message->m_text.GetWCharPtr();
-    if (text.Length() == 0) {
-        XString contents;
-        AddAwardAmount(contents, message->m_rareCurrency, "IDS_AWARD_CREDITS");
-        AddAwardAmount(contents, message->m_commonCurrency, "IDS_AWARD_MONEY");
-        AddAwardAmount(contents, message->m_experience, "IDS_AWARD_XP");
-        if (ownsWeapon) {
-            contents.Append(ResString("IDS_GIFT_WEAPON_ALREADY_OWNED"));
-        } else if (item != NULL) {
-            contents.Append(XString::Format(L"\n %ls", item->GetName().c_str()));
-        }
-        text = XString::Format(L"%ls %ls", ResString("IDS_AWARD_FROM_SERVER").c_str(), contents.c_str());
-    } else if (ownsWeapon) {
-        text = ResString("IDS_GIFT_WEAPON_ALREADY_OWNED");
-    }
+
     CServerGiftDialog* award = new CServerGiftDialog(message);
-    award->SetTitleText("IDS_AWARD_FROM_SERVER_TITLE");
-    award->SetMessageText(text);
+    award->SetTitleText(ResString("IDS_AWARD_FROM_SERVER_TITLE"));
+    const wchar_t* messageText = message->m_text.GetWCharPtr();
+    if (messageText != NULL && message->m_text.GetLength() > 0) {
+        if (message->m_itemIndex >= 0) {
+            SGift* gift = static_cast<App*>(WindowApp::m_instance)->m_socialGiftManager->GetGift(message->m_itemIndex);
+            if (gift != NULL) {
+                CItem* item = gift->GetItem();
+                if (item->getType() == CItem::ITEM_TYPE_FIRST && item->isAvailable() == true) {
+                    award->SetMessageText(ResString("IDS_GIFT_WEAPON_ALREADY_OWNED"));
+                } else {
+                    award->SetMessageText(XString(message->m_text.GetWCharPtr()));
+                }
+            }
+        } else {
+            award->SetMessageText(XString(messageText));
+        }
+    } else {
+        XString contents;
+        int amountCredits = message->m_rareCurrency;
+        if (amountCredits > 0) {
+            contents.Append(XString::Format(L"\n %d %s", amountCredits, ResString("IDS_AWARD_CREDITS").c_str()));
+        }
+        int amountMoney = message->m_commonCurrency;
+        if (amountMoney > 0) {
+            contents.Append(XString::Format(L"\n %d %s", amountMoney, ResString("IDS_AWARD_MONEY").c_str()));
+        }
+        int amountXp = message->m_experience;
+        if (amountXp > 0) {
+            contents.Append(XString::Format(L"\n %d %s", amountXp, ResString("IDS_AWARD_XP").c_str()));
+        }
+        if (message->m_itemIndex >= 0) {
+            SGift* gift = static_cast<App*>(WindowApp::m_instance)->m_socialGiftManager->GetGift(message->m_itemIndex);
+            if (gift != NULL) {
+                CItem* item = gift->GetItem();
+                if (item->getType() == CItem::ITEM_TYPE_FIRST && item->isAvailable() == true) {
+                    contents.Append(ResString("IDS_GIFT_WEAPON_ALREADY_OWNED"));
+                } else {
+                    contents.Append(XString::Format(L"\n %s", item->GetName().c_str()));
+                }
+            }
+        }
+        award->SetMessageText(XString::Format(L"%s %s", ResString("IDS_AWARD_FROM_SERVER").c_str(), contents.c_str()));
+    }
     award->SetButtons(CDialogWindow::BUTTON_OK);
-    message->m_read = true;
-    app->m_mainLayer->AddModal(award);
+    static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(award);
 }
 
 void CNewsFeedWindow::FriendInstall(const SFriendJoinedGameMessage* message)
 {
-    XString format = ResString("IDS_FRIEND_JOINED_GAME_NEWSFEED");
-    AddText(XString::Format(format.c_str(), message->m_text.GetWCharPtr()), ALIGN_LEFT | ALIGN_VCENTER);
+    XString text = XString::Format(ResString("IDS_FRIEND_JOINED_GAME_NEWSFEED").c_str(),
+                                  message->m_text.GetWCharPtr());
+    TextWindow* label = new TextWindow(text, CFontMgr::GetInstance()->GetFont(15));
+    ICSystemFont* font = ICSystemFont::CreateInstance();
+    font->Initialize(SScreenAdaptingConstant(12, 25)(), NULL, 1);
+    label->SetFont(font);
+    label->SetAlign(ALIGN_LEFT | ALIGN_VCENTER);
+    label->SetOutsetSpacing(0, 0, 0, SScreenAdaptingConstant(5, 10)());
+    m_rows->AddToFront(label, m_column, m_nextRow++);
+    SeparateLineRed* line = new SeparateLineRed();
+    line->SetDesiredHeight(SScreenAdaptingConstant(5, 10)());
+    line->SetOutsetSpacing(0, 0, 0, SScreenAdaptingConstant(5, 10)());
+    m_rows->AddToFront(line, m_column, m_nextRow++);
 }
 
 void CNewsFeedWindow::Targetted(const STargettedMessage* message)
 {
     CTargettedNewsWindow* row = new CTargettedNewsWindow(message);
+    row->m_debugFrame = true;
     row->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    AddRow(row);
+    row->SetOutsetSpacing(0, 0, 0, SScreenAdaptingConstant(5, 10)());
+    m_rows->AddToFront(row, m_column, m_nextRow++);
 }
 
 void CNewsFeedWindow::ShowGuildInvite(const STargettedMessage* message)
 {
     CGuildInviteNewsWindow* row = new CGuildInviteNewsWindow(message);
+    row->m_debugFrame = true;
     row->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    AddRow(row);
+    row->SetOutsetSpacing(0, 0, 0, SScreenAdaptingConstant(5, 10)());
+    m_rows->AddToFront(row, m_column, m_nextRow++);
 }
 
 void CNewsFeedWindow::ShowGuildInviteResponse(const SMessage* message, bool accepted)
 {
-    XString nickname = CGServeHelper::GetFriendNickname(message->m_senderId);
-    const char* caption = "IDS_INVITATION_DECLINED";
+    XString nickname;
+    CNGSRemoteUser* user = CNGS::GetInstance()->GetLocalUser()->m_remoteUserLists[0]->findRemoteUserByID(message->m_senderId);
+    if (user != NULL) {
+        nickname = user->GetNickName().GetWCharPtr();
+    }
+    XString text;
     if (accepted) {
-        caption = "IDS_INVITATION_ACCEPTED";
+        text = XString::Format(ResString("IDS_INVITATION_ACCEPTED").c_str(), nickname.c_str());
     } else {
+        text = XString::Format(ResString("IDS_INVITATION_DECLINED").c_str(), nickname.c_str());
+    }
+    TextWindow* label = new TextWindow(text, CFontMgr::GetInstance()->GetFont(15));
+    ICSystemFont* font = ICSystemFont::CreateInstance();
+    font->Initialize(SScreenAdaptingConstant(12, 25)(), NULL, 1);
+    label->SetFont(font);
+    label->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+    m_rows->AddToFront(label, m_column, m_nextRow++);
+    SeparateLineRed* line = new SeparateLineRed();
+    line->SetDesiredHeight(SScreenAdaptingConstant(5, 10)());
+    m_rows->AddToFront(line, m_column, m_nextRow++);
+    if (!accepted) {
         CBH_Player::GetInstance()->CancelFriendInvitation(message->m_senderId);
     }
-    XString format = ResString(caption);
-    AddText(XString::Format(format.c_str(), nickname.c_str()), ALIGN_HCENTER | ALIGN_VCENTER);
 }
 
 void CNewsFeedWindow::ShowChallengeInvite(const SMissionInviteMessage* message)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (app->m_challengeManager->IsChallengeActive(message->m_missionId)
-        && CGServeHelper::GetFriendNickname(message->m_senderId).Length() != 0) {
-        CChallengeInviteNewsWindow* row = new CChallengeInviteNewsWindow(message);
-        row->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-        AddRow(row);
+    if (static_cast<App*>(WindowApp::m_instance)->m_challengeManager->IsChallengeActive(message->m_missionId)) {
+        CNGSRemoteUser* user = CNGS::GetInstance()->GetLocalUser()->m_remoteUserLists[0]->findRemoteUserByID(message->m_senderId);
+        if (user != NULL) {
+            CChallengeInviteNewsWindow* row = new CChallengeInviteNewsWindow(message);
+            row->m_debugFrame = true;
+            row->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+            row->SetOutsetSpacing(0, 0, 0, SScreenAdaptingConstant(5, 10)());
+            m_rows->AddToFront(row, m_column, m_nextRow++);
+        }
     }
 }
 
 void CNewsFeedWindow::ShowChallengeInviteResponse(const SMissionInviteMessage* message, bool accepted)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CChallenge* challenge = app->m_challengeManager->GetChallengeById(message->m_missionId);
-    if (challenge == NULL || !challenge->m_active) {
-        return;
-    }
-    if (!message->m_read) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_challengeManager->IsChallengeActive(message->m_missionId)) {
+        CChallenge* challenge = static_cast<App*>(WindowApp::m_instance)->m_challengeManager->GetChallengeById(message->m_missionId);
         challenge->FriendInvited(message->m_senderId);
+
+        XString nickname;
+        CNGSRemoteUser* user = CNGS::GetInstance()->GetLocalUser()->m_remoteUserLists[0]->findRemoteUserByID(message->m_senderId);
+        if (user != NULL) {
+            nickname = user->GetNickName().GetWCharPtr();
+        }
+        XString text;
+        challenge = static_cast<App*>(WindowApp::m_instance)->m_challengeManager->GetChallengeById(message->m_missionId);
+        XString challengeName(L"");
+        if (challenge != NULL) {
+            challengeName = challenge->m_name;
+        }
+        if (accepted) {
+            text = XString::Format(ResString("IDS_CHALLENGE_INVITE_ACCEPTED").c_str(), nickname.c_str(), challengeName.c_str());
+        } else {
+            text = XString::Format(ResString("IDS_CHALLENGE_INVITE_DECLINED").c_str(), nickname.c_str(), challengeName.c_str());
+        }
+        TextWindow* label = new TextWindow(text, CFontMgr::GetInstance()->GetFont(15));
+        ICSystemFont* font = ICSystemFont::CreateInstance();
+        font->Initialize(SScreenAdaptingConstant(12, 25)(), NULL, 1);
+        label->SetFont(font);
+        label->SetDesiredWidth(SScreenAdaptingConstant(350, 800)());
+        m_rows->AddToFront(label, m_column, m_nextRow++);
+        SeparateLineRed* line = new SeparateLineRed();
+        line->SetDesiredHeight(SScreenAdaptingConstant(5, 10)());
+        m_rows->AddToFront(line, m_column, m_nextRow++);
     }
-    const char* resource = "IDS_CHALLENGE_INVITE_DECLINED";
-    if (accepted) {
-        resource = "IDS_CHALLENGE_INVITE_ACCEPTED";
-    }
-    XString format = ResString(resource);
-    XString sender = CGServeHelper::GetFriendNickname(message->m_senderId);
-    AddText(XString::Format(format.c_str(), sender.c_str(), challenge->m_name.c_str()), ALIGN_LEFT | ALIGN_VCENTER);
 }
 
 void CNewsFeedWindow::MissionInvite(const SMissionInviteMessage* message)
 {
-    AddRow(new CMissionInviteNewsWindow(message));
-    AddSeparator();
+    CMissionInviteNewsWindow* row = new CMissionInviteNewsWindow(message);
+    m_rows->AddToFront(row, m_column, m_nextRow++);
+    SeparateLineRed* line = new SeparateLineRed();
+    line->SetDesiredHeight(SScreenAdaptingConstant(5, 10)());
+    m_rows->AddToFront(line, m_column, m_nextRow++);
 }
 
 void CNewsFeedWindow::ShowEmptyNews()
 {
     TextWindow* label = new TextWindow(ResString("IDS_NEWSFEED_NO_NEWS"), CFontMgr::GetInstance()->GetFont(15));
-    label->SetDesiredWidth(s_emptyWidth());
-    label->SetHeightByContent(0, 0);
+    ICSystemFont* font = ICSystemFont::CreateInstance();
+    font->Initialize(SScreenAdaptingConstant(12, 25)(), NULL, 1);
+    label->SetFont(font);
+    label->SetDesiredWidth(SScreenAdaptingConstant(350, 800)());
     label->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    AddRow(label);
-    AddSeparator();
+    m_rows->AddToFront(label, m_column, m_nextRow++);
+    SeparateLineRed* line = new SeparateLineRed();
+    line->SetDesiredHeight(SScreenAdaptingConstant(5, 10)());
+    m_rows->AddToFront(line, m_column, m_nextRow++);
 }
 
 void CNewsFeedWindow::ClearNews()
 {
     m_rows->DeleteChilds();
-    m_nextRow = 0;
 }

@@ -74,10 +74,9 @@ CDH_BaseScreen* CDH_OptionsScreen::createOptionItemsScreen()
     body->AddToFront(AddButtonItem(ResString("IDS_MENU_MUSIC"), 3));
     body->AddToFront(AddButtonItem(ResString("IDS_MENU_FIRE_BUTTON"), 4));
 
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    m_music = AddSelectorItem(3, app->m_settings->IsMusicEnabled());
-    m_sound = AddSelectorItem(2, app->m_settings->IsSoundEnabled());
-    m_fireButton = AddSelectorItem(4, app->m_settings->IsFireButtonEnabled());
+    m_music = AddSelectorItem(3, static_cast<App*>(WindowApp::m_instance)->m_settings->IsMusicEnabled());
+    m_sound = AddSelectorItem(2, static_cast<App*>(WindowApp::m_instance)->m_settings->IsSoundEnabled());
+    m_fireButton = AddSelectorItem(4, static_cast<App*>(WindowApp::m_instance)->m_settings->IsFireButtonEnabled());
     body->AddToFront(m_music);
     body->AddToFront(m_sound);
     body->AddToFront(m_fireButton);
@@ -105,39 +104,47 @@ void CDH_OptionsScreen::OnCommand(Event& event)
 
 void CDH_OptionsScreen::OnCreateState(Window** window, int state)
 {
-    *window = NULL;
+    Window* created = NULL;
     if (state == ConfirmReset) {
         CDH_TextScreen* confirm = new CDH_TextScreen();
         confirm->setText("IDS_DLG_TEXT_RESET_DATA");
         confirm->setButtons("IDS_NO", "IDS_YES");
-        *window = confirm;
+        created = confirm;
     } else if (state == OptionItems) {
-        *window = createOptionItemsScreen();
+        created = createOptionItemsScreen();
     }
+    *window = created;
 }
 
 void CDH_OptionsScreen::OnStateInterrupt(int state, Window* window)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (state == ConfirmReset) {
-        app->m_soundManager->PlaySound("IDM_MENU_WINDOW_BUTTON", false, false);
+    if (state == OptionItems) {
         int result = window->GetInterrupt();
-        if (result == 1) {
-            app->m_helper->m_gamePlayManager.Reset();
-        } else if (result != 2) {
-            return;
+        if (result != 2) {
+            if (result != 1) {
+                return;
+            }
+            AppSettings* settings = static_cast<App*>(WindowApp::m_instance)->m_settings;
+            settings->SetSoundEnabled(m_sound->GetValue() != 0);
+            settings = static_cast<App*>(WindowApp::m_instance)->m_settings;
+            settings->SetMusicEnabled(m_music->GetValue() != 0);
+            settings = static_cast<App*>(WindowApp::m_instance)->m_settings;
+            settings->SetFireButtonEnabled(m_fireButton->GetValue() != 0);
+            static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlaySound("IDM_MENU_WINDOW_BUTTON", false, false);
+            SetInterrupt(1);
+        } else {
+            static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlaySound("IDM_MENU_WINDOW_BUTTON", false, false);
+            SetInterrupt(2);
+        }
+    } else if (state == ConfirmReset) {
+        static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlaySound("IDM_MENU_WINDOW_BUTTON", false, false);
+        int result = window->GetInterrupt();
+        if (result != 2) {
+            if (result != 1) {
+                return;
+            }
+            static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.Reset();
         }
         ChangeState(0, STATE_POP);
-    } else if (state == OptionItems) {
-        int result = window->GetInterrupt();
-        if (result == 1) {
-            app->m_settings->SetSoundEnabled(m_sound->GetValue() != 0);
-            app->m_settings->SetMusicEnabled(m_music->GetValue() != 0);
-            app->m_settings->SetFireButtonEnabled(m_fireButton->GetValue() != 0);
-        } else if (result != 2) {
-            return;
-        }
-        app->m_soundManager->PlaySound("IDM_MENU_WINDOW_BUTTON", false, false);
-        SetInterrupt(result);
     }
 }

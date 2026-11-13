@@ -1,6 +1,6 @@
 #include "CSkyBox.h"
 
-#include "App.h"
+#include "CSwerve.h"
 #include "DGHelper.h"
 #include "SwerveHelper.h"
 #include "AdBannerSizes.h"
@@ -29,7 +29,8 @@ CSkyBox::~CSkyBox()
 void CSkyBox::Init(World& world)
 {
     m_world = world;
-    m_skyWorld = World(App::LoadObject3D("BIN_SKYBOX"));
+    m_skyWorld = World(Object3D(
+        (IQueryInterface*)CSwerve::GetInstance()->LoadM3GResource("BIN_SKYBOX")));
     if (m_skyWorld == NULL) {
         return;
     }
@@ -48,18 +49,26 @@ void CSkyBox::Init(World& world)
         world.addChild(SwerveHelper::Node(sky.duplicate()));
         return;
     }
-    Appearance faces[6];
-    for (int index = 0; index < 6; ++index) {
-        faces[index] = materials.getAppearance(index);
-    }
-    if (faces[0] != NULL && faces[1] != NULL && faces[2] != NULL && faces[3] != NULL && faces[4] != NULL &&
-        faces[5] != NULL) {
-        for (int index = 0; index < 6; ++index) {
-            DisableZBuffer(faces[index]);
-        }
-        for (int index = 0; index < 6; ++index) {
-            sky.setAppearance(index, faces[index]);
-        }
+    Appearance face0 = materials.getAppearance(0);
+    Appearance face1 = materials.getAppearance(1);
+    Appearance face2 = materials.getAppearance(2);
+    Appearance face3 = materials.getAppearance(3);
+    Appearance face4 = materials.getAppearance(4);
+    Appearance face5 = materials.getAppearance(5);
+    if (face0 != NULL && face1 != NULL && face2 != NULL && face3 != NULL &&
+        face4 != NULL && face5 != NULL) {
+        DisableZBuffer(face0);
+        DisableZBuffer(face1);
+        DisableZBuffer(face2);
+        DisableZBuffer(face3);
+        DisableZBuffer(face4);
+        DisableZBuffer(face5);
+        sky.setAppearance(0, face0);
+        sky.setAppearance(1, face1);
+        sky.setAppearance(2, face2);
+        sky.setAppearance(3, face3);
+        sky.setAppearance(4, face4);
+        sky.setAppearance(5, face5);
         world.addChild(SwerveHelper::Node(sky.duplicate()));
         // The rendered sky is the copy now living in the game world.
         m_skyMesh = Mesh(world.find(DGHelper::getSwerveID("SkyBox")));
@@ -89,13 +98,17 @@ void CSkyBox::Update()
     }
     // Original: no camera check, and the sky first gets an identity transform.
     Camera camera = m_world.getActiveCamera();
-    SwerveHelper::Transform cameraTransform = SwerveHelper::NewTransform();
+    Transform cameraTransform(CSwerve::GetInstance()->m_swerve);
     camera.getTransformTo(m_world, cameraTransform);
-    SwerveHelper::Transform skyTransform = SwerveHelper::NewTransform();
+    Transform skyTransform(CSwerve::GetInstance()->m_swerve);
     m_skyMesh.setTransform(skyTransform);
     float cameraMatrix[16];
     cameraTransform.get(cameraMatrix);
-    const float rotation[4] = {-90.0f, 1.0f, 0.0f, 0.0f};
+    float rotation[4];
+    rotation[0] = -90.0f;
+    rotation[1] = 1.0f;
+    rotation[2] = 0.0f;
+    rotation[3] = 0.0f;
     skyTransform.postRotate(rotation);
     float matrix[16];
     skyTransform.get(matrix);
@@ -104,25 +117,22 @@ void CSkyBox::Update()
     matrix[11] = cameraMatrix[11] + 5.0f;
     skyTransform.set(matrix);
     m_skyMesh.setTransform(skyTransform);
+    cameraTransform.Clear();
+    skyTransform.Clear();
 }
 
 void CSkyBox::Render(const Graphics3D& graphics)
 {
-    if (m_skyMesh == NULL) {
-        if (m_skyWorld != NULL) {
-            App::RenderWorld(graphics, m_skyWorld);
-        }
-        return;
+    if (m_skyMesh != NULL) {
+        m_skyMesh.setRenderingEnable(true);
+        Group root(m_world.find(DGHelper::getSwerveID("RootNode")));
+        root.setRenderingEnable(false);
+        graphics.render(m_world);
+        m_skyMesh.setRenderingEnable(false);
+        root.setRenderingEnable(true);
+    } else {
+        graphics.render(m_skyWorld);
     }
-    SwerveHelper::Node root(m_world.find(DGHelper::getSwerveID("RootNode")));
-    if (root == NULL) {
-        return;
-    }
-    m_skyMesh.setRenderingEnable(true);
-    root.setRenderingEnable(false);
-    App::RenderWorld(graphics, m_world);
-    m_skyMesh.setRenderingEnable(false);
-    root.setRenderingEnable(true);
 }
 
 typedef char AssertSkyBoxSize[sizeof(CSkyBox) == 0xc ? 1 : -1];

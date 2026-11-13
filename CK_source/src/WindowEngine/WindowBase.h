@@ -437,13 +437,8 @@ public:
 
     /** Saves the scissor rectangle of the device and restores it when going out of scope. */
     struct SaveClipRect {
-        SaveClipRect(ICGraphics2d& graphics)
+        SaveClipRect(ICGraphics2d& graphics) : m_graphics(&graphics)
         {
-            m_graphics = &graphics;
-            m_clip.m_x = 0;
-            m_clip.m_y = 0;
-            m_clip.m_width = 0;
-            m_clip.m_height = 0;
             // CK copies the four fields one by one (ldrh/strh pairs).
             const CRectangle& clip = graphics.GetClip();
             m_clip.m_x = clip.m_x;

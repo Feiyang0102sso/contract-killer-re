@@ -33,16 +33,18 @@ void CPeaceTimeExecutor::Tick(int)
         ticks++;
         m_ticks = ticks;
     }
-    if ((missionAlert || !peaceTime) && m_mind != NULL) {
-        if ((missionAlert || (m_mind->GetUnit()->m_type != UnitCivilian && !peaceTime)) && !m_alerted) {
-            if (ticks < 2) {
+    if ((missionAlert | !peaceTime) && m_mind != NULL) {
+        bool unitIsHostile = m_mind->GetUnit()->m_type != UnitCivilian;
+        if ((missionAlert | (unitIsHostile & !peaceTime)) && !m_alerted) {
+            if (ticks >= 2) {
+                CancelChildren();
+                m_alerted = true;
+                AddAlertExecutor(m_mind);
+                m_alertTime = CStdUtil_Cocoa::GetUpTimeMS();
+            } else {
                 Finish(EXECUTOR_RESULT_STUN_OVER);
                 return;
             }
-            CancelChildren();
-            m_alerted = true;
-            AddAlertExecutor(m_mind);
-            m_alertTime = CStdUtil_Cocoa::GetUpTimeMS();
         }
         unsigned int now = CStdUtil_Cocoa::GetUpTimeMS();
         if (!m_alertSoundPlayed) {

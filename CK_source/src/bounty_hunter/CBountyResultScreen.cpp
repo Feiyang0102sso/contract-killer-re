@@ -6,6 +6,7 @@
 #include "CDH_SoundManager.h"
 #include "CFontMgr.h"
 #include "CFriendAvatarWindow.h"
+#include "CGameAnalytics.h"
 #include "CHuntingInfo.h"
 #include "CNGS.h"
 #include "CNGSLocalUser.h"
@@ -19,21 +20,28 @@ namespace {
 const int AcceptResult = 0x21204833;
 const int AcceptTargetResult = 0x6e7d5207;
 const int AcceptRevengeResult = 0x6e7d5208;
+SScreenAdaptingConstant resultSideInset(15, 30);
+SScreenAdaptingConstant resultBottomInset(15, 30);
 }
 
 CBountyResultScreen::CBountyResultScreen(bool fadeIn)
-    : m_image(NULL), m_stamp(NULL), m_row(0), m_accepted(false), m_fieldfc(0), m_field100(0), m_field104(0),
+    : m_image(NULL), m_stamp(NULL), m_row(0), m_accepted(false),
       m_field108(false), m_fadeIn(fadeIn), m_elapsed(0)
 {
-    const char* const resources[] = {
-        "SUR_FRAME_PAUSE_LEFT", "SUR_FRAME_PAUSE_RIGHT", "SUR_FRAME_PAUSE_TOP", "SUR_FRAME_PAUSE_DOWN",
-        "SUR_FRAME_PAUSE_LEFT_TOP", "SUR_FRAME_PAUSE_RIGHT_TOP", "SUR_FRAME_PAUSE_LEFT_DOWN",
-        "SUR_FRAME_PAUSE_RIGHT_DOWN", "SUR_FRAME_PAUSE_CENTER"
-    };
-    SetFrame(resources);
-    int margin = App::Scale() * 10;
-    SetInsetSpacing(0, margin, margin, margin);
-    if (m_fadeIn) {
+    m_leftFrame.Create("SUR_FRAME_PAUSE_LEFT");
+    m_rightFrame.Create("SUR_FRAME_PAUSE_RIGHT");
+    m_topFrame.Create("SUR_FRAME_PAUSE_TOP");
+    m_bottomFrame.Create("SUR_FRAME_PAUSE_DOWN");
+    m_bottomLeftFrame.Create("SUR_FRAME_PAUSE_LEFT_DOWN");
+    m_topLeftFrame.Create("SUR_FRAME_PAUSE_LEFT_TOP");
+    m_bottomRightFrame.Create("SUR_FRAME_PAUSE_RIGHT_DOWN");
+    m_topRightFrame.Create("SUR_FRAME_PAUSE_RIGHT_TOP");
+    m_centerFrame.Create("SUR_FRAME_PAUSE_CENTER");
+    int right = resultSideInset();
+    int bottom = resultBottomInset();
+    int left = resultSideInset();
+    SetInsetSpacing(0, right, bottom, left);
+    if (fadeIn) {
         SetOpacity(0.0f);
     }
     Create();
@@ -61,17 +69,20 @@ void CBountyResultScreen::Create()
     AddToFront(picture);
     picture->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
     App* app = static_cast<App*>(WindowApp::m_instance);
-    CBH_Player* player = CBH_Player::GetInstance();
     if (!app->m_huntingInfo->m_assignedData.m_hasFakeBoss) {
-        if (!app->m_huntingInfo->m_assignedData.m_hasTarget && player->m_missionBriefTargetFB.GetLength() < 1) {
-            if (player->m_missionBriefImage != NULL) {
+        if (!app->m_huntingInfo->m_assignedData.m_hasTarget && CBH_Player::GetInstance()->m_missionBriefTargetFB.GetLength() < 1) {
+            const char* brief = CBH_Player::GetInstance()->m_missionBriefImage;
+            CBH_Player* player = CBH_Player::GetInstance();
+            if (brief != NULL) {
                 // Original compares the pointer, not the text.
-                if (CBH_Player::GetInstance()->m_missionBriefImage == "IDB_DIALOG_NOTEBOOK") {
+                if (player->m_missionBriefImage == "IDB_DIALOG_NOTEBOOK") {
                     CFriendAvatarWindow* avatar = new CFriendAvatarWindow(-1);
                     friendTarget = true;
                     avatar->SetLayoutType(LAYOUT_SIMPLE);
                     avatar->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-                    avatar->SetOutsetSpacing(SScreenAdaptingConstant(-28, -40)(), 0, 0, SScreenAdaptingConstant(-10, -25)());
+                    int top = SScreenAdaptingConstant(-28, -40)();
+                    int left = SScreenAdaptingConstant(-10, -25)();
+                    avatar->SetOutsetSpacing(top, 0, 0, left);
                     avatar->m_debugFrame = true;
                     avatar->SetDefaultImage("IDB_TARGETTING_DEFAULT_AVATAR");
                     picture->AddToFront(avatar);
@@ -81,9 +92,6 @@ void CBountyResultScreen::Create()
                     picture->SetImageById(CBH_Player::GetInstance()->m_missionBriefImage);
                 }
                 column = 1;
-                picture->SetCellPos(0, 1, 1, m_row - 1);
-                picture->SetAlign(ALIGN_TOP);
-                picture->SetFlags(FLAG_VISIBLE | FLAG_ENABLED);
             }
         } else {
             int friendId = CBH_Player::GetInstance()->m_targetFriendId;
@@ -100,29 +108,34 @@ void CBountyResultScreen::Create()
                 friendTarget = true;
                 avatar->SetLayoutType(LAYOUT_SIMPLE);
                 avatar->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-                avatar->SetOutsetSpacing(SScreenAdaptingConstant(-28, -40)(), 0, 0, SScreenAdaptingConstant(-10, -25)());
+                int top = SScreenAdaptingConstant(-28, -40)();
+                int left = SScreenAdaptingConstant(-10, -25)();
+                avatar->SetOutsetSpacing(top, 0, 0, left);
                 avatar->m_debugFrame = true;
                 avatar->SetDefaultImage("IDB_TARGETTING_DEFAULT_AVATAR");
                 picture->AddToFront(avatar);
                 picture->SetImageById(CBH_Player::GetInstance()->m_missionBriefImage);
                 picture->SetOutsetSpacing(SScreenAdaptingConstant(-9, -18)(), 0, 0, 0);
                 column = 1;
-                picture->SetCellPos(0, 1, 1, m_row - 1);
-                picture->SetAlign(ALIGN_TOP);
-                picture->SetFlags(FLAG_VISIBLE | FLAG_ENABLED);
             }
         }
     }
-    CHuntingInfo* hunt = app->m_huntingInfo;
-    if (hunt->IsPlayerWin() == true) {
+    if (column == 1) {
+        picture->SetCellPos(0, 1, 1, m_row - 1);
+        picture->SetAlign(ALIGN_TOP);
+        picture->SetFlags(FLAG_VISIBLE | FLAG_ENABLED);
+    }
+    if (static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->IsPlayerWin() == true) {
         XString complete = XString::Format(ResString("IDS_BOUNTY_CONTRACT_COMPLETE").c_str(),
                                            CBH_Player::GetInstance()->m_gameStats.m_successBounties + 1);
         AddTextLine(this, title, complete);
-        AddStatisticLine(this, column, body, "IDS_BOUNTY_REWARDED_MONEY", hunt->m_assignedData.m_moneyReward, XString("$ "));
-        AddStatisticLine(this, column, body, "IDS_BOUNTY_REWARDED_XP", hunt->m_assignedData.m_experienceReward, XString(""));
+        int money = static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_moneyReward;
+        AddStatisticLine(this, column, body, "IDS_BOUNTY_REWARDED_MONEY", money, XString("$ "));
+        int experience = static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_experienceReward;
+        AddStatisticLine(this, column, body, "IDS_BOUNTY_REWARDED_XP", experience, XString(""));
     } else {
         const char* failure = NULL;
-        switch (hunt->m_result) {
+        switch (static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_result) {
         case 1:
             failure = "IDS_BOUNTY_DEFEAT_DEATH";
             break;
@@ -148,9 +161,12 @@ void CBountyResultScreen::Create()
             AddTextLine(this, body, failure);
         }
     }
-    AddStatisticLine(this, column, body, "IDS_BOUNTY_XP", hunt->m_experienceEarned, XString(""));
-    AddStatisticLine(this, column, body, "IDS_BOUNTY_KILLED", hunt->m_enemiesKilled, XString(""));
-    AddStatisticLine(this, column, body, "IDS_BOUNTY_TRANQUILLIZED", hunt->m_enemiesTranquillized, XString(""));
+    int earnedExperience = static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_experienceEarned;
+    AddStatisticLine(this, column, body, "IDS_BOUNTY_XP", earnedExperience, XString(""));
+    int kills = static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_enemiesKilled;
+    AddStatisticLine(this, column, body, "IDS_BOUNTY_KILLED", kills, XString(""));
+    int tranquillized = static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_enemiesTranquillized;
+    AddStatisticLine(this, column, body, "IDS_BOUNTY_TRANQUILLIZED", tranquillized, XString(""));
     AddButton(this, column);
     // Original: the stamp follows the picture column, win or lose.
     if (column == 1) {
@@ -163,14 +179,15 @@ void CBountyResultScreen::AddTextLine(Window* parent, CFont* font, XString text)
     if (parent != NULL && font != NULL) {
         TextWindow* line = new TextWindow(text.Upper(), font);
         line->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-        line->SetCellPos(0, m_row++, 3, 1);
+        line->SetCellPos(0, m_row, 3, 1);
         parent->AddToFront(line);
+        m_row++;
     }
 }
 
 void CBountyResultScreen::AddTextLine(Window* parent, CFont* font, const char* text)
 {
-    if (text != NULL) {
+    if (parent != NULL && font != NULL && text != NULL) {
         AddTextLine(parent, font, ResString(text));
     }
 }
@@ -182,14 +199,16 @@ void CBountyResultScreen::AddStatisticLine(Window* parent, int column, CFont* fo
         return;
     }
     XString label = ResString(title);
-    label.Append(XString(L":"));
-    TextWindow* name = new TextWindow(label, font);
-    TextWindow* value = new TextWindow(prefix + XString(number), font);
+    XString text = XString::Format(L"%s", label.c_str());
+    TextWindow* name = new TextWindow(text, font);
+    text = prefix + XString::Format(L"%d", number);
+    TextWindow* value = new TextWindow(text, font);
     name->SetAlign(ALIGN_LEFT);
     value->SetAlign(ALIGN_RIGHT);
     name->SetOutsetSpacing(0, App::Scale() * 10, 0, 0);
     parent->AddToFront(name, column, m_row);
-    parent->AddToFront(value, column + 1, m_row++);
+    parent->AddToFront(value, column + 1, m_row);
+    m_row++;
 }
 
 void CBountyResultScreen::AddButton(Window* parent, int column)
@@ -217,10 +236,9 @@ void CBountyResultScreen::AddButton(Window* parent, int column)
     button->SetSize(width, button->m_height);
 
     CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
-    bool loggedIn = false;
-    if (user->isValid() && user->isAuthenticated(SOCIAL_NETWORK_FACEBOOK)) {
-        loggedIn = true;
-    }
+    bool loggedIn = user->isValid() != 0 && user->isAuthenticated(SOCIAL_NETWORK_FACEBOOK) != 0;
+    app = static_cast<App*>(WindowApp::m_instance);
+    hunt = app->m_huntingInfo;
     bool noShare = false;
     if (!hunt->m_assignedData.m_revenge && !hunt->m_assignedData.m_hasTarget) {
         noShare = true;
@@ -236,10 +254,7 @@ void CBountyResultScreen::AddButton(Window* parent, int column)
     cell->AddToFront(buttonCell);
     cell->SetHeightByContent(0, 0);
     cell->SetWidthByContent(0, 0);
-    if (noShare || !online) {
-        parent->AddToFront(cell);
-        cell->SetCellPos(column, m_row, 2, 1);
-    } else {
+    if (!noShare && online) {
         // Target/revenge results also offer a Facebook share button (shown when logged in).
         parent->AddToFront(cell, column, m_row);
         button->SetAlign(ALIGN_LEFT | ALIGN_VCENTER);
@@ -248,7 +263,7 @@ void CBountyResultScreen::AddButton(Window* parent, int column)
         share->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
         share->ForceSetWidth(SScreenAdaptingConstant(75, 150)());
         int shareCommand;
-        if (!hunt->m_assignedData.m_revenge) {
+        if (!static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_revenge) {
             shareCommand = 0x6e7d5205;
         } else {
             shareCommand = 0x6e7d5206;
@@ -271,6 +286,9 @@ void CBountyResultScreen::AddButton(Window* parent, int column)
         if (loggedIn) {
             parent->AddToFront(shareCell, column + 1, m_row);
         }
+    } else {
+        parent->AddToFront(cell);
+        cell->SetCellPos(column, m_row, 2, 1);
     }
     m_row++;
 }
@@ -291,12 +309,19 @@ void CBountyResultScreen::OnCommand(Event& event)
         m_accepted = true;
         Close();
         event.Clear();
-        break;
+        if (CBH_Player::GetInstance()->m_tutorialState == 0) {
+            CGameAnalytics::logTutorialEvents(CGameAnalytics::TUTORIAL_EVENT_FIRST_MISSION_RESULT);
+            return;
+        }
+        if (CBH_Player::GetInstance()->m_tutorialState < 13) {
+            CGameAnalytics::logTutorialEvents(static_cast<CGameAnalytics::ETutorialEvent>(3));
+        }
+        return;
     case 0x21204844:
-    case 0x6e7d5207:
-    case 0x6e7d5208:
+    case AcceptTargetResult:
+    case AcceptRevengeResult:
         Close();
-        break;
+        return;
     }
 }
 
@@ -310,42 +335,63 @@ void CBountyResultScreen::Update()
 }
 
 CStampAnimWindow::CStampAnimWindow(bool friendTarget)
-    : Window(false), m_sprites(new SG_Instance()), m_stamp(NULL), m_soundPlayed(false)
+    : Window(false)
 {
-    char hvga[] = "STAMPS_HVGA";
-    char vga[] = "STAMPS_VGA";
-    char wvga[] = "STAMPS_WVGA";
-    char* resources = hvga;
-    if (App::IsWVGA()) {
-        resources = wvga;
-    } else if (App::IsHD()) {
-        resources = vga;
-    }
-    m_sprites->Init(resources);
-    m_sprites->QueueArchetypeCharacter(0, 0);
-    unsigned char finished = 0;
-    while (m_sprites->LoadQueued(1000, finished)) {
-    }
-    m_stamp = new SG_Presenter(0, 0);
-    m_stamp->SetSGInstance(m_sprites);
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    int animation = 0;
-    if (app->m_huntingInfo->m_assignedData.m_tranquillize) {
-        animation = 1;
-    } else if (friendTarget) {
-        CNGSLocalUser* player = CNGS::GetInstance()->GetLocalUser();
-        if (player != NULL && player->isValid() && player->isAuthenticated(2)) {
-            animation = 2;
+    SG_Instance* sprites = new SG_Instance();
+    m_sprites = sprites;
+    const char* resources = "STAMPS_WVGA";
+    if (!App::IsWVGA()) {
+        if (App::IsHD()) {
+            resources = "STAMPS_VGA";
+        } else {
+            resources = "STAMPS_HVGA";
         }
     }
-    m_stamp->SetAnimation(animation);
+    sprites->Init(const_cast<char*>(resources));
+    sprites = m_sprites;
+    unsigned char finished = 0;
+    if (!App::IsWVGA()) {
+        App::IsHD();
+    }
+    sprites->QueueArchetypeCharacter(0, 0);
+    while (sprites->LoadQueued(1000, finished)) {
+    }
+    m_stamp = new SG_Presenter(0, 0);
+    m_stamp->SetSGInstance(sprites);
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    if (app->m_huntingInfo->m_assignedData.m_tranquillize) {
+        m_stamp->SetAnimation(1);
+    } else {
+        int animation = 0;
+        if (friendTarget == true) {
+            CNGSLocalUser* player = CNGS::GetInstance()->GetLocalUser();
+            if (player->isValid()) {
+                if (player->isAuthenticated(SOCIAL_NETWORK_FACEBOOK)) {
+                    animation = 2;
+                }
+            }
+        }
+        m_stamp->SetAnimation(animation);
+    }
     m_stamp->SetLoop(false);
+    m_soundPlayed = false;
 }
 
 CStampAnimWindow::~CStampAnimWindow()
 {
-    delete m_stamp;
-    delete m_sprites;
+    SG_Instance* sprites = static_cast<App*>(WindowApp::m_instance)->m_sgInstance;
+    if (!App::IsWVGA()) {
+        App::IsHD();
+    }
+    sprites->DumpArchetypeCharacter(0, 0);
+    if (m_stamp != NULL) {
+        delete m_stamp;
+        m_stamp = NULL;
+    }
+    if (m_sprites != NULL) {
+        delete m_sprites;
+        m_sprites = NULL;
+    }
 }
 
 void CStampAnimWindow::Paint(ICGraphics2d&)

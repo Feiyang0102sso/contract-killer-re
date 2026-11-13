@@ -68,11 +68,12 @@
 - (void)hideView;
 @end
 
+// Protocol method lists as in the original metadata (TapjoyManager.o): TJCAdDelegate has four required
+// methods and no optional ones; TapjoyManager itself implements the misspelled didRecieveAd: (sent by
+// TJCAdView via respondsToSelector:). TJCVideoAdDelegate declares only videoAdBegan / videoAdClosed;
+// TJCVideoView still sends videoAdFinished / videoAdError: after respondsToSelector:.
 @protocol TJCAdDelegate <NSObject>
-@optional
-- (void)didRecieveAd:(UIView*)adView;
 - (void)didReceiveAd:(UIView*)adView;
-@required
 - (void)didFailWithMessage:(NSString*)message;
 - (NSString*)adContentSize;
 - (BOOL)shouldRefreshAd;
@@ -82,8 +83,6 @@
 @optional
 - (void)videoAdBegan;
 - (void)videoAdClosed;
-- (void)videoAdFinished;
-- (void)videoAdError:(NSString*)message;
 @end
 
 @interface TapjoyConnect : NSObject {

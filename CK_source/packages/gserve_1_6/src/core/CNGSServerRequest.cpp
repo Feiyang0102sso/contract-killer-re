@@ -80,6 +80,7 @@ void CNGSServerRequest::OnCommandCancelled()
                        CNGSUtil::WStrToCStr(CNGSJSONParser::encodeValue(m_message->m_root.get())).GetCharPtr());
     m_functor->m_status = CNGSServerRequestFunctor::STATUS_CANCELLED;
     m_functor->requestCancelledCallback(m_message);
+    // A callback can replace the registered functor.
     if (m_functor != NULL) {
         delete m_functor;
     }
@@ -95,6 +96,7 @@ void CNGSServerRequest::OnCommandTimeout()
                        CNGSUtil::WStrToCStr(CNGSJSONParser::encodeValue(m_message->m_root.get())).GetCharPtr());
     m_functor->m_status = CNGSServerRequestFunctor::STATUS_TIMEOUT;
     m_functor->requestTimeoutCallback(m_message);
+    // A callback can replace the registered functor.
     if (m_functor != NULL) {
         delete m_functor;
     }
@@ -148,9 +150,13 @@ void CNGSServerRequest::HandleUpdate(int elapsedMs)
     }
 
     if (ms_ServerRequestsTable.m_count > 0) {
-        ms_timer += elapsedMs;
-        if (ms_timer >= REQUEST_TIMEOUT_MS) {
+        // The original adds modulo 2^64 and tests the resulting bits as unsigned.
+        unsigned long long elapsed = (unsigned long long)ms_timer + elapsedMs;
+        ms_timer = (long long)elapsed;
+        if (elapsed >= REQUEST_TIMEOUT_MS) {
+            CNGSUtil::DebugLog("Timeout talking to the server, no response to oldest request");
             if (request != NULL) {
+                CNGSUtil::DebugLog("Request %d timed out", request->m_messageId);
                 RemoveMessageIDFromQueuedList(request->m_messageId);
                 request->OnCommandTimeout();
                 delete request;

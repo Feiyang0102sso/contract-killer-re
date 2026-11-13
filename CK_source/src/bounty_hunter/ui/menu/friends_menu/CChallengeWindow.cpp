@@ -25,28 +25,15 @@ const int CloseInvite = -0x6828c299;
 const int InviteCooldownMs = 1000;
 const unsigned int InviteDurationSeconds = 86400;
 const long long ChallengeInviteMessage = 1008;
-const SScreenAdaptingConstant s_rewardCheckTop(10, 20);
-const SScreenAdaptingConstant s_rewardCheckLeft(20, 40);
-const SScreenAdaptingConstant s_shareWidth(90, 180);
-
-ImageWindow* CreateImage(const char* name, ImageWindow::EFillType fill)
-{
-    ImageWindow* image = new ImageWindow();
-    image->SetFillType(fill);
-    if (name != NULL) {
-        image->SetImageById(name);
-    }
-    return image;
-}
 }
 
 CChallengeWindow::CChallengeWindow(const CChallenge* challenge)
-    : Window(false), m_rewards(NULL), m_progressFill(NULL), m_startHeight(100),
-      m_endHeight(0), m_heightPerMs(0), m_animationTime(0), m_elapsedMs(0),
-      m_animating(false), m_reservedC1(false), m_animationEnded(false),
-      m_challengeId(challenge->m_id), m_inviteCooldownMs(0), m_progressText(NULL)
+    : Window(false), m_startHeight(100), m_endHeight(0), m_heightPerMs(0),
+      m_animationTime(0), m_elapsedMs(0), m_animating(false), m_reservedC1(false),
+      m_animationEnded(false), m_inviteCooldownMs(0)
 {
     CreateUI(challenge);
+    m_challengeId = challenge->m_id;
 }
 
 void CChallengeWindow::CreateUI(const CChallenge* challenge)
@@ -55,56 +42,70 @@ void CChallengeWindow::CreateUI(const CChallenge* challenge)
     AddToFront(frame);
     frame->AddToFront(CreateBgWindow());
     Window* content = new Window(false);
-    content->SetInsetSpacing(0, 0, s_rewardCheckTop(), 0);
+    content->SetInsetSpacing(0, 0, SScreenAdaptingConstant(10, 20)(), 0);
     content->SetPercentHeight(100, 0, 0);
     frame->AddToFront(content);
 
     TextWindow* title = new TextWindow(challenge->m_name, CFontMgr::GetInstance()->GetFont(15));
+    title->SetLayoutType(LAYOUT_SIMPLE);
     title->SetAlign(ALIGN_HCENTER | ALIGN_TOP);
-    title->SetHeightByContent(0, 0);
     content->AddToFront(title, 0, 0);
+    title->SetHeightByContent(0, 0);
+    title->m_debugFrame = true;
+
     Window* row = new Window(false);
+    row->SetLayoutType(LAYOUT_SIMPLE);
     row->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     row->SetPercentHeight(100, 0, 0);
     row->SetPercentWidth(100, 0, 0);
     content->AddToFront(row, 0, 1);
 
     Window* description = CreateDescription(challenge);
+    description->SetLayoutType(LAYOUT_SIMPLE);
     description->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     description->SetPercentWidth(25, 0, 0);
     row->AddToFront(description, 0, 0);
 
     m_rewards = CreateRewardInfo(challenge);
+    m_rewards->m_debugFrame = true;
+    row->AddToFront(m_rewards, 1, 0);
     m_rewards->SetPercentHeight(100, 0, 0);
     m_rewards->SetPercentWidth(70, 0, 0);
     m_rewards->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
-    row->AddToFront(m_rewards, 1, 0);
 
     Window* actions = new Window(false);
-    actions->SetPercentWidth(25, 0, 0);
     StretchImageButton* share = new StretchImageButton(ResString("IDS_DIALOG_BUTTON_FB_SHARE"),
         "IDB_HUD_TRANSPARENT_BLACK_LEFT", "IDB_HUD_TRANSPARENT_BLACK_TILE", "IDB_HUD_TRANSPARENT_BLACK_RIGHT");
     share->SetAlign(ALIGN_RIGHT | ALIGN_VCENTER);
-    share->m_command = OpenInvite;
-    share->m_commandParameter1 = challenge->m_id;
-    share->ForceSetWidth(s_shareWidth());
-    share->SetOutsetSpacing(0, s_rewardCheckTop(), 0, 0);
+    share->SetCommandParameters(OpenInvite, challenge->m_id, 0, 0);
+    share->ForceSetWidth(SScreenAdaptingConstant(90, 180)());
+    share->SetOutsetSpacing(0, SScreenAdaptingConstant(10, 20)(), 0, 0);
     actions->AddToFront(share);
     row->AddToFront(actions, 2, 0);
+    actions->SetPercentWidth(25, 0, 0);
 }
 
 Window* CChallengeWindow::CreateBgWindow()
 {
     Window* frame = new Window(false);
-    frame->AddToFront(new ImageWindow(ImageWindow::FILL_NONE, ImageRes("SUR_FRAME_GREY_LEFT_TOP")), 0, 0);
-    frame->AddToFront(new ImageWindow(ImageWindow::FILL_HORIZONTAL, ImageRes("SUR_FRAME_GREY_TOP")), 1, 0);
-    frame->AddToFront(new ImageWindow(ImageWindow::FILL_NONE, ImageRes("SUR_FRAME_GREY_RIGHT_TOP")), 2, 0);
-    frame->AddToFront(new ImageWindow(ImageWindow::FILL_VERTICAL, ImageRes("SUR_FRAME_GREY_LEFT")), 0, 1);
-    frame->AddToFront(new ImageWindow(ImageWindow::FILL_BOTH, ImageRes("SUR_FRAME_GREY_CENTER")), 1, 1);
-    frame->AddToFront(new ImageWindow(ImageWindow::FILL_VERTICAL, ImageRes("SUR_FRAME_GREY_RIGHT")), 2, 1);
-    frame->AddToFront(new ImageWindow(ImageWindow::FILL_NONE, ImageRes("SUR_FRAME_GREY_LEFT_DOWN")), 0, 2);
-    frame->AddToFront(new ImageWindow(ImageWindow::FILL_HORIZONTAL, ImageRes("SUR_FRAME_GREY_DOWN")), 1, 2);
-    frame->AddToFront(new ImageWindow(ImageWindow::FILL_NONE, ImageRes("SUR_FRAME_GREY_RIGHT_DOWN")), 2, 2);
+    ImageWindow* topLeft = new ImageWindow(ImageWindow::FILL_NONE, ImageRes("SUR_FRAME_GREY_LEFT_TOP"));
+    frame->AddToFront(topLeft, 0, 0);
+    ImageWindow* top = new ImageWindow(ImageWindow::FILL_HORIZONTAL, ImageRes("SUR_FRAME_GREY_TOP"));
+    frame->AddToFront(top, 1, 0);
+    ImageWindow* topRight = new ImageWindow(ImageWindow::FILL_NONE, ImageRes("SUR_FRAME_GREY_RIGHT_TOP"));
+    frame->AddToFront(topRight, 2, 0);
+    ImageWindow* left = new ImageWindow(ImageWindow::FILL_VERTICAL, ImageRes("SUR_FRAME_GREY_LEFT"));
+    frame->AddToFront(left, 0, 1);
+    ImageWindow* center = new ImageWindow(ImageWindow::FILL_BOTH, ImageRes("SUR_FRAME_GREY_CENTER"));
+    frame->AddToFront(center, 1, 1);
+    ImageWindow* right = new ImageWindow(ImageWindow::FILL_VERTICAL, ImageRes("SUR_FRAME_GREY_RIGHT"));
+    frame->AddToFront(right, 2, 1);
+    ImageWindow* bottomLeft = new ImageWindow(ImageWindow::FILL_NONE, ImageRes("SUR_FRAME_GREY_LEFT_DOWN"));
+    frame->AddToFront(bottomLeft, 0, 2);
+    ImageWindow* bottom = new ImageWindow(ImageWindow::FILL_HORIZONTAL, ImageRes("SUR_FRAME_GREY_DOWN"));
+    frame->AddToFront(bottom, 1, 2);
+    ImageWindow* bottomRight = new ImageWindow(ImageWindow::FILL_NONE, ImageRes("SUR_FRAME_GREY_RIGHT_DOWN"));
+    frame->AddToFront(bottomRight, 2, 2);
     return frame;
 }
 
@@ -112,10 +113,11 @@ Window* CChallengeWindow::CreateDescription(const CChallenge* challenge)
 {
     Window* description = new Window(false);
     int progress = challenge->GetCurrProgress();
+    int goal = challenge->m_goal;
     if (challenge->GetSoloReward()->m_awarded) {
-        progress = challenge->m_goal;
+        progress = goal;
     }
-    Window* bar = CreateProgressWindow(progress, challenge->m_goal);
+    Window* bar = CreateProgressWindow(progress, goal);
     bar->SetPercentHeight(100, 0, 0);
     bar->SetPercentWidth(70, 0, 0);
     bar->SetLayoutType(LAYOUT_SIMPLE);
@@ -127,38 +129,44 @@ Window* CChallengeWindow::CreateDescription(const CChallenge* challenge)
 Window* CChallengeWindow::CreateProgressWindow(int progress, int goal)
 {
     Window* progressWindow = new Window(false);
+    int percent = progress * 100 / goal;
     Window* bar = new Window(false);
     progressWindow->AddToFront(bar);
-    bar->AddToFront(CreateImage("IDB_COOP_PROGRESS_BAR_LEFT", ImageWindow::FILL_NONE), 0, 0);
-    ImageWindow* center = CreateImage("IDB_COOP_PROGRESS_BAR_CENTER", ImageWindow::FILL_HORIZONTAL);
+
+    ImageWindow* left = new ImageWindow();
+    left->SetFillType(ImageWindow::FILL_NONE);
+    left->SetImageById("IDB_COOP_PROGRESS_BAR_LEFT");
+    left->m_debugFrame = true;
+    bar->AddToFront(left, 0, 0);
+
+    ImageWindow* center = new ImageWindow();
+    center->SetFillType(ImageWindow::FILL_HORIZONTAL);
+    center->SetImageById("IDB_COOP_PROGRESS_BAR_CENTER");
     bar->AddToFront(center, 1, 0);
     Window* fillArea = new Window(false);
     fillArea->SetPercentWidth(100, 0, 0);
     center->AddToFront(fillArea);
-    m_progressFill = CreateImage("IDB_COOP_PROGRESS_BAR_FILL", ImageWindow::FILL_HORIZONTAL);
-    m_progressFill->SetLayoutType(LAYOUT_SIMPLE);
-    m_progressFill->SetAlign(ALIGN_LEFT | ALIGN_VCENTER);
-    fillArea->AddToFront(m_progressFill);
-    bar->AddToFront(CreateImage("IDB_COOP_PROGRESS_BAR_RIGHT", ImageWindow::FILL_NONE), 2, 0);
 
-    m_progressText = new TextWindow(CFontMgr::GetInstance()->GetFont(15));
-    m_progressText->SetLayoutType(LAYOUT_SIMPLE);
-    m_progressText->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    m_progressText->SetWidthByContent(0, 0);
-    m_progressText->SetHeightByContent(0, 0);
-    bar->AddToFront(m_progressText);
-    SetProgress(progress, goal);
+    ImageWindow* fill = new ImageWindow();
+    fill->SetLayoutType(LAYOUT_SIMPLE);
+    fill->SetAlign(ALIGN_LEFT | ALIGN_VCENTER);
+    fill->SetFillType(ImageWindow::FILL_HORIZONTAL);
+    fill->SetImageById("IDB_COOP_PROGRESS_BAR_FILL");
+    fill->SetPercentWidth(percent, 0, 0);
+    fillArea->AddToFront(fill);
+
+    ImageWindow* right = new ImageWindow();
+    right->SetFillType(ImageWindow::FILL_NONE);
+    right->SetImageById("IDB_COOP_PROGRESS_BAR_RIGHT");
+    bar->AddToFront(right, 2, 0);
+
+    TextWindow* text = new TextWindow(XString::Format(L"%d/%d", progress, goal), CFontMgr::GetInstance()->GetFont(15));
+    text->SetWidthByContent(0, 0);
+    text->SetHeightByContent(0, 0);
+    text->SetLayoutType(LAYOUT_SIMPLE);
+    text->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+    bar->AddToFront(text);
     return progressWindow;
-}
-
-void CChallengeWindow::SetProgress(int progress, int goal)
-{
-    int percent = 0;
-    if (goal > 0) {
-        percent = progress * 100 / goal;
-    }
-    m_progressFill->SetPercentWidth(percent, 0, 0);
-    m_progressText->SetText(XString::Format(L"%d/%d", progress, goal));
 }
 
 Window* CChallengeWindow::CreateRewardInfo(const CChallenge* challenge)
@@ -167,27 +175,40 @@ Window* CChallengeWindow::CreateRewardInfo(const CChallenge* challenge)
     Window* arrows = new Window(false);
     arrows->SetPercentHeight(90, 0, 0);
     arrows->SetPercentWidth(100, 0, 0);
+    arrows->SetLayoutType(LAYOUT_SIMPLE);
     arrows->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    for (int index = 0; index < 3; ++index) {
-        Window* cell = new Window(false);
-        int width = 36;
-        if (index == 2) {
-            width = 37;
-        } else {
-            Window* arrow = CreateArrowWindow();
-            arrow->SetLayoutType(LAYOUT_SIMPLE);
-            arrow->SetAlign(ALIGN_RIGHT);
-            arrow->SetPercentHeight(75, 0, 0);
-            cell->AddToFront(arrow);
-        }
-        cell->SetPercentWidth(width, 0, 0);
-        arrows->AddToFront(cell, index, 0);
-    }
+
+    Window* firstArrow = CreateArrowWindow();
+    firstArrow->SetWidthByContent(0, 0);
+    firstArrow->SetPercentHeight(75, 0, 0);
+    firstArrow->m_debugFrame = true;
+    firstArrow->SetLayoutType(LAYOUT_SIMPLE);
+    firstArrow->SetAlign(ALIGN_RIGHT);
+    Window* firstCell = new Window(false);
+    firstCell->AddToFront(firstArrow);
+    firstCell->SetPercentWidth(36, 0, 0);
+    arrows->AddToFront(firstCell, 0, 0);
+    firstCell->m_debugFrame = true;
+
+    Window* secondArrow = CreateArrowWindow();
+    secondArrow->SetWidthByContent(0, 0);
+    secondArrow->SetPercentHeight(75, 0, 0);
+    secondArrow->SetLayoutType(LAYOUT_SIMPLE);
+    secondArrow->SetAlign(ALIGN_RIGHT);
+    Window* secondCell = new Window(false);
+    secondCell->AddToFront(secondArrow);
+    secondCell->SetPercentWidth(36, 0, 0);
+    arrows->AddToFront(secondCell, 1, 0);
+
+    Window* lastCell = new Window(false);
+    lastCell->SetPercentWidth(37, 0, 0);
+    arrows->AddToFront(lastCell, 2, 0);
     reward->AddToFront(arrows);
 
     Window* tiers = new Window(false);
     tiers->SetPercentHeight(100, 0, 0);
     tiers->SetPercentWidth(100, 0, 0);
+    tiers->SetLayoutType(LAYOUT_SIMPLE);
     tiers->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     tiers->AddToFront(CreateRewardInfoWindow(challenge->GetSoloReward(), 0), 0, 0);
     tiers->AddToFront(CreateRewardInfoWindow(challenge->GetX1Reward(), 1), 1, 0);
@@ -198,31 +219,44 @@ Window* CChallengeWindow::CreateRewardInfo(const CChallenge* challenge)
 
 Window* CChallengeWindow::CreateRewardInfoWindow(const SChallengeReward* reward, int tier)
 {
-    const char* const captions[] = { "IDS_PLAYER", "IDS_1_FRIEND", "IDS_2_FRIENDS" };
-    CFont* font = CFontMgr::GetInstance()->GetFont(15);
     Window* slot = new Window(false);
     Window* content = new Window(false);
     content->SetHeightByContent(0, 0);
+    content->SetLayoutType(LAYOUT_SIMPLE);
     content->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     slot->AddToFront(content);
     Window* amountCell = new Window(false);
     amountCell->SetWidthByContent(0, 0);
     amountCell->SetHeightByContent(0, 0);
     content->AddToFront(amountCell, 0, 0);
-    ImageWindow* image = CreateImage(reward->m_image, ImageWindow::FILL_NONE);
-    image->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    amountCell->AddToFront(image, 0, 0);
 
-    const char* status = NULL;
+    ImageWindow* image = new ImageWindow();
+    const char* imageId = reward->m_image;
+    image->SetLayoutType(LAYOUT_SIMPLE);
+    image->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+    image->SetImageById(imageId);
+    amountCell->AddToFront(image, 0, 0);
+    amountCell->m_debugFrame = true;
+
     if (reward->m_awarded) {
-        status = "IDB_COOP_CHECK_COOP";
-    } else if (reward->m_friendId > 0) {
-        status = "IDB_CHECKBOX_CHECK_GREY";
-    }
-    if (status != NULL) {
-        ImageWindow* check = CreateImage(status, ImageWindow::FILL_NONE);
+        ImageWindow* check = new ImageWindow();
+        check->SetFillType(ImageWindow::FILL_NONE);
+        check->SetImageById("IDB_COOP_CHECK_COOP");
+        check->SetLayoutType(LAYOUT_SIMPLE);
         check->SetAlign(ALIGN_LEFT | ALIGN_VCENTER);
-        check->SetOutsetSpacing(s_rewardCheckTop(), 0, 0, s_rewardCheckLeft());
+        int top = SScreenAdaptingConstant(10, 20)();
+        int left = SScreenAdaptingConstant(20, 40)();
+        check->SetOutsetSpacing(top, 0, 0, left);
+        amountCell->AddToFront(check);
+    } else if (reward->m_friendId > 0) {
+        ImageWindow* check = new ImageWindow();
+        check->SetFillType(ImageWindow::FILL_NONE);
+        check->SetImageById("IDB_CHECKBOX_CHECK_GREY");
+        check->SetLayoutType(LAYOUT_SIMPLE);
+        check->SetAlign(ALIGN_LEFT | ALIGN_VCENTER);
+        int top = SScreenAdaptingConstant(10, 20)();
+        int left = SScreenAdaptingConstant(20, 40)();
+        check->SetOutsetSpacing(top, 0, 0, left);
         amountCell->AddToFront(check);
     }
 
@@ -234,15 +268,30 @@ Window* CChallengeWindow::CreateRewardInfoWindow(const SChallengeReward* reward,
         }
         if (amount < 1) {
             amount = reward->m_itemAmount;
+            if (amount < 1) {
+                amount = -666;
+            }
         }
     }
-    if (amount > 0) {
-        TextWindow* label = new TextWindow(XString(amount), font);
-        label->SetAlign(ALIGN_LEFT | ALIGN_BOTTOM);
-        amountCell->AddToFront(label, 1, 0);
+    TextWindow* label = new TextWindow(XString(amount), CFontMgr::GetInstance()->GetFont(15));
+    label->SetLayoutType(LAYOUT_SIMPLE);
+    label->SetAlign(ALIGN_LEFT | ALIGN_BOTTOM);
+    amountCell->AddToFront(label, 1, 0);
+
+    XString caption("");
+    switch (tier) {
+    case 0:
+        caption = ResString("IDS_PLAYER");
+        break;
+    case 1:
+        caption = ResString("IDS_1_FRIEND");
+        break;
+    case 2:
+        caption = ResString("IDS_2_FRIENDS");
+        break;
     }
-    TextWindow* caption = new TextWindow(ResString(captions[tier]), font);
-    content->AddToFront(caption, 0, 1);
+    TextWindow* captionWindow = new TextWindow(caption, CFontMgr::GetInstance()->GetFont(15));
+    content->AddToFront(captionWindow, 0, 1);
     return slot;
 }
 
@@ -250,7 +299,10 @@ Window* CChallengeWindow::CreateArrowWindow()
 {
     Window* arrow = new Window(false);
     arrow->SetWidthByContent(0, 0);
-    arrow->AddToFront(CreateImage("IDB_COOP_ARROW_RIGHT", ImageWindow::FILL_NONE));
+    ImageWindow* image = new ImageWindow();
+    image->SetFillType(ImageWindow::FILL_NONE);
+    image->SetImageById("IDB_COOP_ARROW_RIGHT");
+    arrow->AddToFront(image);
     return arrow;
 }
 
@@ -270,14 +322,14 @@ void CChallengeWindow::StartHeightAnim(int start, int end, int duration)
 
 void CChallengeWindow::OnHeightAnimEnded()
 {
-    if (m_endHeight < m_startHeight) {
-        m_rewards->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
-    } else {
+    if (m_endHeight >= m_startHeight) {
         m_rewards->SetFlags(FLAG_VISIBLE | FLAG_ENABLED);
         EasyParams slide(m_rewards, (EasyLib::EMethod)0xe);
         slide.SetMoving(-m_rewards->m_width, m_rewards->m_y, m_rewards->m_x, m_rewards->m_y);
-        slide.SetFullTime(0.3f);
+        slide.SetFullTime(0.2f);
         m_rewards->StartEasy(slide, FLAG_SHOW_AFTER_EASY);
+    } else {
+        m_rewards->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
     }
 }
 
@@ -287,10 +339,9 @@ void CChallengeWindow::Update()
         m_animationEnded = false;
         OnHeightAnimEnded();
     }
-    int delta = WindowApp::m_instance->m_updateFrameTime;
     if (m_animating) {
-        m_elapsedMs += delta;
-        SetPercentHeight(m_startHeight + m_heightPerMs * m_elapsedMs, 0, 0);
+        m_elapsedMs += WindowApp::m_instance->m_updateFrameTime;
+        SetPercentHeight(m_heightPerMs * m_elapsedMs + m_startHeight, 0, 0);
         if (m_elapsedMs > m_animationTime) {
             m_animating = false;
             SetPercentHeight(m_endHeight, 0, 0);
@@ -300,7 +351,7 @@ void CChallengeWindow::Update()
     }
     m_reservedC1 = false;
     if (m_inviteCooldownMs > 0) {
-        m_inviteCooldownMs -= delta;
+        m_inviteCooldownMs -= WindowApp::m_instance->m_updateFrameTime;
         if (m_inviteCooldownMs < 0) {
             m_inviteCooldownMs = 0;
         }
@@ -333,75 +384,68 @@ void CChallengeWindow::OnCommand(Event& event)
 
 void CChallengeWindow::HandleShowInviteToChallenge(int challengeId)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CChallenge* challenge = app->m_challengeManager->GetChallengeById(challengeId);
-    if (challenge == NULL || !challenge->m_active) {
+    CChallenge* challenge = static_cast<App*>(WindowApp::m_instance)->m_challengeManager->GetChallengeById(challengeId);
+    if (challenge == NULL) {
         return;
     }
-    CNGSLocalUser* local = CNGS::GetInstance()->GetLocalUser();
-    CNGSRemoteUserList* friends = local->m_remoteUserLists[0];
+
+    CNGSRemoteUserList* friends = CNGS::GetInstance()->GetLocalUser()->m_remoteUserLists[0];
     CIncentivizedWindow* picker = NULL;
-    if (local->GetClientID() > 0) {
-        for (int index = 0; index < friends->m_users.Size(); ++index) {
-            CNGSRemoteUser* user = friends->m_users[index];
-            int friendId = user->GetClientID();
-            if (challenge->IsFriendInvited(friendId)) {
-                continue;
-            }
+    for (int index = 0; index < friends->m_users.Size(); ++index) {
+        int friendId = friends->m_users[index]->GetClientID();
+        if (!challenge->IsFriendInvited(friendId)) {
             if (picker == NULL) {
                 picker = new CIncentivizedWindow(XString("SHARE"));
+                picker->SetEventReciever(this);
             }
-            CStrWChar name = user->GetNickName();
-            picker->AddFriend(name.GetWCharPtr(), friendId);
+            picker->AddFriend(XString(friends->m_users[index]->GetNickName().GetWCharPtr()), friendId);
         }
     }
+
     if (picker != NULL) {
         picker->SetCommand(SendInvites);
-        picker->SetCommandParameter(challengeId);
-        picker->SetTitleText("IDS_CHALLENGE_INVITE_TITLE");
+        picker->SetTitleText(ResString("IDS_CHALLENGE_INVITE_TITLE"));
         picker->ShowSelectAllButton();
-        app->m_mainLayer->AddModal(picker);
+        static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(picker);
     } else {
         CTextDialog* warning = new CTextDialog();
-        warning->SetTitleText("IDS_CHALLENGE_INVITE_TITLE");
         warning->SetMessageText(ResString("IDS_CHALLENGE_NO_FRIENDS_TO_INVITE"));
+        warning->SetTitleText(ResString("IDS_CHALLENGE_INVITE_TITLE"));
         warning->SetButtons(CDialogWindow::BUTTON_OK);
-        app->m_mainLayer->AddModal(warning);
+        static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(warning);
     }
 }
 
 void CChallengeWindow::HandleShareChallengePressed(Vector<int>& friendIds, int challengeId)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CChallenge* challenge = app->m_challengeManager->GetChallengeById(challengeId);
+    CChallenge* challenge = static_cast<App*>(WindowApp::m_instance)->m_challengeManager->GetChallengeById(challengeId);
     CNGSLocalUser* local = CNGS::GetInstance()->GetLocalUser();
-    if (challenge == NULL || !challenge->m_active || local->GetClientID() <= 0) {
-        WindowApp::HandleTunnelCommand(CloseInvite, 0, 0, 0);
-        return;
-    }
-
-    XString id(challengeId);
-    CObjectMapString payload(CStrWChar(id.c_str()));
     CNGSRemoteUserList* friends = local->m_remoteUserLists[0];
-    XString format = ResString("IDS_CHALLENGE_INVITE_PUSH_TEXT");
-    CStrWChar nickname = local->GetNickName();
-    XString message = XString::Format(format.c_str(), nickname.GetWCharPtr(), challenge->m_name.c_str());
-    CNGSPushNotificationDetails details;
-    details.m_buttonText = ResString("IDS_CHALLENGE_PUSH_BUTTON").c_str();
-    details.m_alertText = message.c_str();
-
-    unsigned int count = 0;
-    for (int index = 0; index < friendIds.size(); ++index) {
-        int friendId = friendIds[index];
-        CNGSRemoteUser* user = friends->findRemoteUserByID(friendId);
-        if (user != NULL && !challenge->IsFriendInvited(friendId)) {
-            user->SendMessage(&payload, InviteDurationSeconds, ChallengeInviteMessage, true, &details);
-            challenge->FriendInvited(friendId);
-            ++count;
+    int index = 0;
+    while (index < friendIds.size()) {
+        CNGSRemoteUser* user = friends->findRemoteUserByID(friendIds[index]);
+        if (user == NULL) {
+            break;
         }
+        XString id = XString::Format(L"%i", challengeId);
+        CObjectMapString payload(CStrWChar(id.c_str()));
+        XString message = XString::Format(ResString("IDS_CHALLENGE_INVITE_PUSH_TEXT").c_str(),
+                                          local->GetNickName().GetWCharPtr(), challenge->m_name.c_str());
+        XString button = ResString("IDS_CHALLENGE_PUSH_BUTTON");
+        CNGSPushNotificationDetails* details = new CNGSPushNotificationDetails;
+        {
+            XString::AnsiString alertText(message.c_str());
+            XString::AnsiString buttonText(button.c_str());
+            details->m_buttonText.Concatenate(buttonText);
+            details->m_alertText.Concatenate(alertText);
+            user->SendMessage(&payload, InviteDurationSeconds, ChallengeInviteMessage, true, details);
+        }
+        ++index;
+        challenge->FriendInvited(user->GetClientID());
+        static_cast<App*>(WindowApp::m_instance)->m_challengeManager->Save();
     }
-    if (count > 0) {
-        CGameAnalytics::logChalengeShared(count);
+    if (index != 0) {
+        CGameAnalytics::logChalengeShared(index);
     }
     WindowApp::HandleTunnelCommand(CloseInvite, 0, 0, 0);
 }
@@ -416,7 +460,7 @@ void CChallengeTimerWindow::Update()
 {
     int now;
     if (m_useChallengeTime) {
-        now = CChallengeManager::GetTimeSec();
+        now = static_cast<App*>(WindowApp::m_instance)->m_challengeManager->GetTimeSec();
     } else {
         now = CStdUtil_Cocoa::GetTimeSeconds();
     }

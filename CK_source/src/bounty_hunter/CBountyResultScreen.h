@@ -26,7 +26,10 @@ private:
     Window* m_image;
     CStampAnimWindow* m_stamp;
     int m_row;
+public:
     bool m_accepted;
+
+private:
     int m_fieldfc;
     int m_field100;
     int m_field104;

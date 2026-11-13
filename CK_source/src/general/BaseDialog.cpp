@@ -120,43 +120,35 @@ void ImageWindow::SetImage(ICRenderSurface* surface)
     SetFillType(m_fillType);
 }
 
-// CKZ helper, not in the CK original (unused here; kept until the main line decides).
-void Filler::SetFrame(const char* const* resources)
-{
-    for (int part = 0; part < FrameCount; ++part) {
-        m_frame[part].Create(resources[part]);
-    }
-}
-
 void Filler::DisableTop()
 {
-    m_frame[TopLeft].Release();
-    m_frame[Top].Release();
-    m_frame[TopRight].Release();
+    m_topLeftFrame.Release();
+    m_topFrame.Release();
+    m_topRightFrame.Release();
 }
 
 void Filler::Paint(ICGraphics2d& graphics)
 {
-    DrawBorderFillRect(graphics, m_frame[Left].GetSurface(), m_frame[TopLeft].GetSurface(),
-                       m_frame[Top].GetSurface(), m_frame[TopRight].GetSurface(), m_frame[Right].GetSurface(),
-                       m_frame[BottomRight].GetSurface(), m_frame[Bottom].GetSurface(), m_frame[BottomLeft].GetSurface(),
-                       m_frame[Center].GetSurface(), 0, 0, m_width, m_height);
+    DrawBorderFillRect(graphics, m_leftFrame.GetSurface(), m_topLeftFrame.GetSurface(),
+                       m_topFrame.GetSurface(), m_topRightFrame.GetSurface(), m_rightFrame.GetSurface(),
+                       m_bottomRightFrame.GetSurface(), m_bottomFrame.GetSurface(), m_bottomLeftFrame.GetSurface(),
+                       m_centerFrame.GetSurface(), 0, 0, m_width, m_height);
 }
 
 InsetPanel::InsetPanel()
 {
-    m_frame[Left].Create("SUR_INSET_SIDE_LEFT");
-    m_frame[Right].Create("SUR_INSET_SIDE_RIGHT");
-    m_frame[Top].Create("SUR_INSET_SIDE_TOP");
-    m_frame[Bottom].Create("SUR_INSET_SIDE_BOTTOM");
-    m_frame[TopLeft].Create("SUR_INSET_CORNER_LEFT_TOP");
-    m_frame[TopRight].Create("SUR_INSET_CORNER_RIGHT_TOP");
-    m_frame[BottomLeft].Create("SUR_INSET_CORNER_LEFT_BOTTOM");
-    m_frame[BottomRight].Create("SUR_INSET_CORNER_RIGHT_BOTTOM");
-    m_frame[Center].Create("SUR_INSET_FILLER");
+    m_leftFrame.Create("SUR_INSET_SIDE_LEFT");
+    m_rightFrame.Create("SUR_INSET_SIDE_RIGHT");
+    m_topFrame.Create("SUR_INSET_SIDE_TOP");
+    m_bottomFrame.Create("SUR_INSET_SIDE_BOTTOM");
+    m_topLeftFrame.Create("SUR_INSET_CORNER_LEFT_TOP");
+    m_topRightFrame.Create("SUR_INSET_CORNER_RIGHT_TOP");
+    m_bottomLeftFrame.Create("SUR_INSET_CORNER_LEFT_BOTTOM");
+    m_bottomRightFrame.Create("SUR_INSET_CORNER_RIGHT_BOTTOM");
+    m_centerFrame.Create("SUR_INSET_FILLER");
     int width;
     int height;
-    GetImageSize(m_frame[TopLeft].GetSurface(), width, height);
+    GetImageSize(m_topLeftFrame.GetSurface(), width, height);
     SetInsetSpacing(width, height);
 }
 
@@ -380,7 +372,7 @@ void TextWindow::SetText(const XString& text)
 void TextWindow::SetRect(int x, int y, int width, int height, bool force)
 {
     int textWidth;
-    if (m_layout->m_width.m_unit != UNIT_CONTENT) {
+    if (m_layout == NULL || m_layout->m_width.m_unit != UNIT_CONTENT) {
         m_text.Split(m_lines, width, m_fonts[m_fontIndex]);
         textWidth = width;
     } else {
@@ -415,7 +407,7 @@ void TextWindow::SetRect(int x, int y, int width, int height, bool force)
         }
     }
     int textHeight;
-    if (m_layout->m_height.m_unit != UNIT_CONTENT || m_fonts[m_fontIndex] == NULL) {
+    if (m_layout == NULL || m_layout->m_height.m_unit != UNIT_CONTENT || m_fonts[m_fontIndex] == NULL) {
         textHeight = height;
     } else {
         int lineHeight = m_fonts[m_fontIndex]->GetFontHeight();

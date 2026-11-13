@@ -25,6 +25,8 @@ static CStrWChar kMessageIdListFile("CNG_IdList.dat");
 
 CNGSFromServerMessageQ::CNGSFromServerMessageQ()
 {
+    m_messages.Clear();
+    m_messageIdsToAck.Clear();
     m_messagesById.Init(10, 10, 1);
     m_queuedAckIds.Init(10, 10, 1);
     m_acksInFlight = 0;
@@ -51,7 +53,8 @@ unsigned char CNGSFromServerMessageQ::LoadMessagesToAckFromFileSystem()
 
     unsigned char data[0x1000];
     memset(data, 0, sizeof(data));
-    unsigned char loaded = CFileUtil_gServe::ReadApplicationDataFile(kMessageIdListFile.GetWCharPtr(), data, sizeof(data),
+    const wchar_t* fileName = kMessageIdListFile.GetWCharPtr();
+    unsigned char loaded = CFileUtil_gServe::ReadApplicationDataFile(fileName, data, sizeof(data),
                                                                      user->m_credentials.getSubDirectoryPath().GetWCharPtr());
     if (!loaded) {
         return 0;
@@ -65,26 +68,34 @@ unsigned char CNGSFromServerMessageQ::LoadMessagesToAckFromFileSystem()
         if (length > 0) {
             CStrWChar json(text);
             // the decoded tree is not freed (as in the original)
-            long long messageId;
             CObjectMapValue* value = CNGSJSONParser::decodeValue(json);
             if (value != NULL && value->getType() == CObjectMapValue::TYPE_ARRAY) {
                 CObjectMapArray* list = (CObjectMapArray*)value;
                 int count = list->m_values.Size();
-                for (int index = 0; index < count; index++) {
-                    CObjectMapValue* entry = list->m_values[index];
-                    if (entry != NULL && entry->getType() == CObjectMapValue::TYPE_OBJECT) {
-                        CObjectMapValue* idValue = ((CObjectMapObject*)entry)->getEntry(CStrWChar(NGS_ID_TOKEN));
-                        if (idValue != NULL && idValue->getType() == CObjectMapValue::TYPE_INT) {
-                            messageId = ((CObjectMapInt*)idValue)->m_value;
-                            m_messageIdsToAck.Add(messageId);
-                            unsigned int key = (unsigned int)messageId;
-                            m_queuedAckIds.Insert(key, (void*)key);
+                m_messageIdsToAck.Clear();
+                if (count > 0) {
+                    for (int index = 0; index < count; index++) {
+                        CObjectMapValue* entry = list->m_values[index];
+                        if (entry != NULL && entry->getType() == CObjectMapValue::TYPE_OBJECT) {
+                            CObjectMapValue* idValue = ((CObjectMapObject*)entry)->getEntry(CStrWChar(NGS_ID_TOKEN));
+                            if (idValue != NULL && idValue->getType() == CObjectMapValue::TYPE_INT) {
+                                long long messageId = ((CObjectMapInt*)idValue)->m_value;
+                                unsigned int key = (unsigned int)messageId;
+                                if (!m_queuedAckIds.Find(key, NULL)) {
+                                    m_messageIdsToAck.Add(messageId);
+                                    m_queuedAckIds.Insert(key, (void*)key);
+                                }
+                            }
                         }
                     }
                 }
+                CNGSUtil::DebugLog("CNGSFromServerMessageQ::LoadMessagesToAckFromFileSystem found %d messages waiting to be acknowledged ",
+                                  count);
                 if (count > 0) {
                     CNGS::GetInstance()->GetLocalUser()->m_notificationHandler->HandleOldUnackedMessages();
                 }
+            } else {
+                WriteMessageIdsToAckToFS();
             }
         }
     }
@@ -143,6 +154,7 @@ CObjectMapObject* CNGSFromServerMessageQ::CreateAwardMsgObject(long long itemTyp
 CNGSFromServerMessage* CNGSFromServerMessageQ::CreateMessageFromObjectEnvelopeObject(CObjectMapValue* envelopeValue)
 {
     if (envelopeValue == NULL || envelopeValue->getType() != CObjectMapValue::TYPE_OBJECT) {
+        CNGSUtil::DebugLog("Invalid envelope");
         return NULL;
     }
     CObjectMapObject* envelope = (CObjectMapObject*)envelopeValue;
@@ -150,104 +162,112 @@ CNGSFromServerMessage* CNGSFromServerMessageQ::CreateMessageFromObjectEnvelopeOb
 
     long long messageId;
     CObjectMapValue* idValue = envelope->getEntry(CStrWChar(NGS_ID_TOKEN));
-    if (idValue == NULL) {
+    if (idValue == NULL || idValue->getType() != CObjectMapValue::TYPE_INT) {
+        CNGSUtil::DebugLog("Invalid message id");
         messageId = 0;
-    } else if (idValue->getType() == CObjectMapValue::TYPE_INT) {
-        messageId = ((CObjectMapInt*)idValue)->m_value;
     } else {
-        messageId = 0;
+        messageId = ((CObjectMapInt*)idValue)->m_value;
     }
 
     long long senderId;
     CObjectMapValue* senderValue = envelope->getEntry(CStrWChar("senderid"));
-    if (senderValue == NULL) {
+    if (senderValue == NULL || senderValue->getType() != CObjectMapValue::TYPE_INT) {
+        CNGSUtil::DebugLog("Invalid sender");
         senderId = 0;
-    } else if (senderValue->getType() == CObjectMapValue::TYPE_INT) {
-        senderId = ((CObjectMapInt*)senderValue)->m_value;
     } else {
-        senderId = 0;
+        senderId = ((CObjectMapInt*)senderValue)->m_value;
     }
 
     CObjectMapValue* gamertagValue = envelope->getEntry(CStrWChar("senderGamertag"));
-    if (gamertagValue != NULL && gamertagValue->getType() == CObjectMapValue::TYPE_STRING) {
+    if (gamertagValue == NULL || gamertagValue->getType() != CObjectMapValue::TYPE_STRING) {
+        CNGSUtil::DebugLog("Invalid sender nickname");
+    } else {
         senderGamertag = CStrWChar(((CObjectMapString*)gamertagValue)->m_value);
     }
 
     long long type;
     CObjectMapValue* typeValue = envelope->getEntry(CStrWChar("type"));
-    if (typeValue == NULL) {
+    if (typeValue == NULL || typeValue->getType() != CObjectMapValue::TYPE_INT) {
+        CNGSUtil::DebugLog("Invalid type");
         type = 0;
-    } else if (typeValue->getType() == CObjectMapValue::TYPE_INT) {
-        type = ((CObjectMapInt*)typeValue)->m_value;
     } else {
-        type = 0;
+        type = ((CObjectMapInt*)typeValue)->m_value;
     }
 
     long long recipientId;
     CObjectMapValue* recipientValue = envelope->getEntry(CStrWChar("recipientid"));
-    if (recipientValue == NULL) {
+    if (recipientValue == NULL || recipientValue->getType() != CObjectMapValue::TYPE_INT) {
+        CNGSUtil::DebugLog("Invalid recipient");
         recipientId = 0;
-    } else if (recipientValue->getType() == CObjectMapValue::TYPE_INT) {
-        recipientId = ((CObjectMapInt*)recipientValue)->m_value;
     } else {
-        recipientId = 0;
+        recipientId = ((CObjectMapInt*)recipientValue)->m_value;
     }
 
-    CNGSFromServerMessage* message = NULL;
     CObjectMapValue* textValue = envelope->getEntry(CStrWChar("message"));
-    if (textValue != NULL && textValue->getType() == CObjectMapValue::TYPE_STRING) {
-        CStrWChar rawText(((CObjectMapString*)textValue)->m_value);
-        CStrWChar text;
+    if (textValue == NULL || textValue->getType() != CObjectMapValue::TYPE_STRING) {
+        CNGSUtil::DebugLog("Invalid message contents");
+        return NULL;
+    }
+    CStrWChar rawText(((CObjectMapString*)textValue)->m_value);
+    CStrWChar text;
 
-        // turn the escaped quotes \" back into "
-        int quote = rawText.Find(L"\\\"", 0);
-        if (quote < 0) {
-            text = rawText;
-        } else {
-            int start = 0;
-            if (quote == 0) {
-                start = 1;
-                quote = rawText.Find(L"\\\"", 1);
-            }
-            while (quote >= 0) {
-                text += rawText.GetSubString(start, quote - 1);
-                start = quote + 1;
-                quote = rawText.Find(L"\\\"", quote + 2);
-            }
-            text += rawText.GetSubString(start, rawText.GetLength() - 1);
+    // turn the escaped quotes \" back into "
+    int quote = rawText.Find(L"\\\"", 0);
+    if (quote < 0) {
+        text = rawText;
+    } else {
+        int start = 0;
+        if (quote == 0) {
+            start = 1;
+            quote = rawText.Find(L"\\\"", 1);
         }
+        while (quote >= 0) {
+            text += rawText.GetSubString(start, quote - 1);
+            start = quote + 1;
+            quote = rawText.Find(L"\\\"", quote + 2);
+        }
+        text += rawText.GetSubString(start, rawText.GetLength() - 1);
+    }
+    CNGSUtil::DebugLog("Message Received, Contents =");
+    CNGSUtil::DebugLog(CNGSUtil::WStrToCStr(text).GetCharPtr());
 
-        switch (type) {
-        case 40:
-        case 41:
-        case 100:
-        case 300:
-            message = CNGSMessageJSONBase::CreateFromString(text);
-            message->Init(messageId, type, senderId, recipientId, senderGamertag, text);
-            break;
-        case 11:
-        case 20:
+    CNGSFromServerMessage* message = NULL;
+    switch (type) {
+    case 40:
+    case 41:
+    case 100:
+    case 300:
+        CNGSUtil::DebugLog("JSON Message received!!!");
+        message = CNGSMessageJSONBase::CreateFromString(text);
+        if (message == NULL) {
+            return NULL;
+        }
+        message->Init(messageId, type, senderId, recipientId, senderGamertag, text);
+        break;
+    case 11:
+    case 20:
+        CNGSUtil::DebugLog("Text Message received!!!");
+        message = new CNGSFromServerMessage();
+        message->Init(messageId, type, senderId, recipientId, senderGamertag, text);
+        break;
+    case 30:
+        // open the URL right away; nothing is kept
+        CNGSUtil::DebugLog("Launch URL Message !!!");
+        CApplet::m_pCore->LaunchURL(text.GetWCharPtr(), 0);
+        AckMessageById(messageId);
+        break;
+    default:
+        if (type >= 1000) {
+            // game specific messages
+            CNGSUtil::DebugLog("Custom Message received!!!");
             message = new CNGSFromServerMessage();
             message->Init(messageId, type, senderId, recipientId, senderGamertag, text);
-            break;
-        case 30:
-            // open the URL right away; nothing is kept
-            CApplet::m_pCore->LaunchURL(text.GetWCharPtr(), 0);
+        } else {
+            // unknown type: acknowledge and drop it
+            CNGSUtil::DebugLog("Unrecognized/Unknown Message received!!!");
             AckMessageById(messageId);
-            message = NULL;
-            break;
-        default:
-            if (type >= 1000) {
-                // game specific messages
-                message = new CNGSFromServerMessage();
-                message->Init(messageId, type, senderId, recipientId, senderGamertag, text);
-            } else {
-                // unknown type: acknowledge and drop it
-                AckMessageById(messageId);
-                message = NULL;
-            }
-            break;
         }
+        break;
     }
     return message;
 }
@@ -265,7 +285,7 @@ void CNGSFromServerMessageQ::AckMessageById(long long messageId)
     }
 }
 
-bool CNGSFromServerMessageQ::MarkMessageForAck(long long messageId)
+unsigned char CNGSFromServerMessageQ::MarkMessageForAck(long long messageId)
 {
     CNGSUtil::DebugLog("MarkMessageForAck, message = %d", (int)messageId);
     CNGSFromServerMessage* message = NULL;
@@ -406,7 +426,8 @@ void CNGSFromServerMessageQ::HandleCheckForEnvelopesFromServerResponse(CObjectMa
                             CNGSUtil::DebugLog("Message %ld expired", message->m_messageId);
                             CNGSUtil::DebugLog("Marking message %ld for later Ack, message index = %d", message->m_messageId,
                                                index);
-                            m_messageIdsToAck.Add(message->m_messageId);
+                            long long messageId = message->m_messageId;
+                            m_messageIdsToAck.Add(messageId);
                             delete message;
                         } else {
                             m_messagesById.Insert((unsigned int)message->m_messageId, message);
@@ -537,7 +558,8 @@ int CNGSFromServerMessageQ::WriteMessageIdsToAckToFS()
             CStrWChar directory = CNGSUserCredentials::getFullDirectoryPathForSubdir(user->m_credentials.getSubDirectoryPath());
             if (ICFileMgr::GetInstance()->MkDir(directory.GetWCharPtr())) {
                 stream.WriteJMUtf(json.GetWCharPtr());
-                if (CFileUtil_gServe::WriteApplicationDataFile(kMessageIdListFile.GetWCharPtr(), data, sizeof(data),
+                const wchar_t* fileName = kMessageIdListFile.GetWCharPtr();
+                if (CFileUtil_gServe::WriteApplicationDataFile(fileName, data, sizeof(data),
                                                                user->m_credentials.getSubDirectoryPath().GetWCharPtr())) {
                     CNGSUtil::DebugLog("Stored message IDs for later ack");
                 } else {

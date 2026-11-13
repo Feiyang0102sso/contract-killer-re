@@ -1,10 +1,10 @@
-// ARM_math.h - small fixed-point helpers that map onto single ARM instructions.
+// ARM_math.h - fixed-point helpers.
 #ifndef ARM_MATH_H
 #define ARM_MATH_H
 
                                                                     
 
-/** 16.16 fixed-point multiply: (a * b) >> 16 with a 64-bit intermediate. */
+/** Multiply 16.16 values in double precision, then truncate toward zero on ARM. */
 int smult16(int a, int b);
 
        

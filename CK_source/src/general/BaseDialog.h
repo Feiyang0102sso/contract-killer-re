@@ -64,11 +64,17 @@ public:
     void DisableTop();
 
 protected:
-    enum FramePart { Left, Right, Top, Bottom, TopLeft, TopRight, BottomLeft, BottomRight, Center, FrameCount };
-    void SetFrame(const char* const* resources);
-    // CK constructs and destroys the nine images one by one (separate members); kept as an array
-    // because CBaseScreen.cpp (other owner) indexes m_frame. See notes/2026-11-11-ui.md.
-    ImageRes m_frame[FrameCount];
+    // CK constructs and destroys the nine images one by one (separate members).
+    // See notes/2026-11-11-ui.md for the previous array representation.
+    ImageRes m_leftFrame;
+    ImageRes m_rightFrame;
+    ImageRes m_topFrame;
+    ImageRes m_bottomFrame;
+    ImageRes m_topLeftFrame;
+    ImageRes m_topRightFrame;
+    ImageRes m_bottomLeftFrame;
+    ImageRes m_bottomRightFrame;
+    ImageRes m_centerFrame;
 };
 
 class InsetPanel : public Filler {

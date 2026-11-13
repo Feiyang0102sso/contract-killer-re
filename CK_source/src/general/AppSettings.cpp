@@ -173,8 +173,11 @@ int AppSettings::Read(ReadStream* stream)
         m_text3 = stream->ReadString();
         m_field30 = stream->ReadUInt8() != 0;
         m_field08 = stream->ReadUInt8();
-        // CK stores elapsed play time in whole seconds.
-        m_playTime.SetTimeSec(static_cast<float>(stream->ReadInt32()));
+        // The four stored bytes contain the floating-point elapsed time.
+        int storedTime = stream->ReadInt32();
+        float elapsed;
+        __builtin_memcpy(&elapsed, &storedTime, sizeof(elapsed));
+        m_playTime.SetTimeSec(elapsed);
         m_volume = stream->ReadInt16();
         m_soundEnabled = stream->ReadUInt8() != 0;
         m_musicEnabled = stream->ReadUInt8() != 0;
@@ -208,8 +211,11 @@ int AppSettings::Write(WriteStream* stream)
         stream->WriteString(m_text3);
         stream->WriteUInt8(m_field30);
         stream->WriteUInt8((unsigned char)m_field08);
-        // CK stores elapsed play time in whole seconds.
-        stream->WriteInt32(static_cast<int>(m_playTime.TimeSec()));
+        // Keep the floating-point elapsed time in the 32-bit stream field.
+        float elapsed = m_playTime.TimeSec();
+        int storedTime;
+        __builtin_memcpy(&storedTime, &elapsed, sizeof(storedTime));
+        stream->WriteInt32(storedTime);
         stream->WriteInt16((short)m_volume);
         stream->WriteUInt8(m_soundEnabled);
         stream->WriteUInt8(m_musicEnabled);

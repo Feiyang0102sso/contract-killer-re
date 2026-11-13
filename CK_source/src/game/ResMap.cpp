@@ -16,6 +16,7 @@
 
 const wchar_t* ResMap::RESMAP_FILENAME = L"res_map.dat";
 const char* ResMap::SEPARATOR = "=";
+const char* ResMap::RESMAP_NEWLINE_SEQ = "\n";
 
 ResMap::ResMap()
     : m_fileNames(8), m_resourceIds(8)
@@ -28,7 +29,6 @@ ResMap::~ResMap()
 
 void ResMap::init()
 {
-    m_fileNames.SetTableSize(1000);
     CStrWChar path;
     CFileUtil::GetApplicationPathForFile(path, RESMAP_FILENAME);
     CFileInputStream stream;
@@ -40,28 +40,20 @@ void ResMap::init()
     stream.Close();
     parseMapData(data, size);
     delete[] data;
+    m_fileNames.SetTableSize(1000);
 }
 
 void ResMap::parseMapData(const char* data, unsigned int size)
 {
+    unsigned int newlineSize = strlen(RESMAP_NEWLINE_SEQ);
     const char* line = data;
-    while ((unsigned int)(line - data) < size) {
-        int endLength;
-        const char* end = strstr(line, "\r\n");
-        if (end != NULL) {
-            endLength = 2;
-        } else {
-            end = strchr(line, '\n');
-            if (end == NULL) {
-                end = strchr(line, '\r');
-                if (end == NULL) {
-                    return;
-                }
-            }
-            endLength = 1;
+    while (static_cast<unsigned int>(line - data) < size) {
+        const char* end = strstr(line, RESMAP_NEWLINE_SEQ);
+        if (end == NULL) {
+            break;
         }
         parseMapStr(line, end - line);
-        line = end + endLength;
+        line = end + newlineSize;
     }
 }
 
@@ -113,41 +105,30 @@ const char* ResMap::getResourceID(const XString& fileName) const
     return id->m_string;
 }
 
-char* ResMap::getDataFromFile(const XString& path) const
-{
-    CFileInputStream stream;
-    char* data = NULL;
-    if (path.ByteSize() != 0 && stream.Open(path.m_data)) {
-        unsigned int size = stream.m_length;
-        data = new char[size + 1];
-        stream.Read((unsigned char*)data, size);
-        data[size] = 0;
-        stream.Close();
-    }
-    return data;
-}
-
 char* ResMap::loadText(const XString& name) const
 {
+    CFileInputStream stream;
     // Prefer a saved copy in the application data folder.
     CStrWChar path(name.m_data);
     CFileUtil::GetApplicationDataPathForFile(path, collapsePathToString(name).m_data);
-    char* text = getDataFromFile(XString(path.m_string));
-    if (text == NULL) {
+    char* text = NULL;
+    if (stream.Open(path.m_string)) {
+        unsigned int size = stream.m_length;
+        text = new char[size + 1];
+        stream.Read(reinterpret_cast<unsigned char*>(text), size);
+        text[size] = 0;
+        stream.Close();
+    } else {
         // Fall back to the bundled resource.
-        const char* resourceId = getResourceID(name);
-        if (resourceId == NULL) {
-            return NULL;
-        }
         CResourceManager* resources = CApplet::m_pApp->m_resourceManager;
         CResource* resource = NULL;
-        resources->CreateResource(resourceId, &resource);
+        resources->CreateResource(getResourceID(name), &resource);
         if (resource != NULL) {
-            unsigned int size = ((CStrChar*)resource->GetData())->m_length;
+            unsigned int size = static_cast<CStrChar*>(resource->GetData())->m_length;
             text = new char[size + 1];
-            memcpy(text, ((CStrChar*)resource->GetData())->m_string, size);
+            memcpy(text, static_cast<CStrChar*>(resource->GetData())->m_string, size);
             text[size] = 0;
-            resources->ReleaseResource(resourceId);
+            resources->ReleaseResource(getResourceID(name));
         }
     }
     return text;

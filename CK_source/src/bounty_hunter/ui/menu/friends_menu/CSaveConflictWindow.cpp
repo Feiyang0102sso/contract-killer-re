@@ -17,11 +17,7 @@ CSaveConflictWindow::CSaveConflictWindow(SConflictInfo& info)
     summary.Concatenate("Use Local?\nLocal:\n Server:\n");
     CNotificationHandler* handler = CNGS::GetInstance()->GetLocalUser()->m_notificationHandler;
     if (handler->m_localDataText.GetLength() >= 1 && handler->m_serverDataText.GetLength() >= 1) {
-        CStrWChar joined = "Use Local?\nLocal:\n" + handler->m_localDataText + "Server:\n" + handler->m_serverDataText;
-        if (joined.GetWCharPtr() != summary.GetWCharPtr()) {
-            summary.ReleaseMemory();
-            summary.Concatenate(joined.GetWCharPtr());
-        }
+        summary = "Use Local?\nLocal:\n" + handler->m_localDataText + "Server:\n" + handler->m_serverDataText;
     }
 
     SetTitleText("IDS_SAVE_CONFLICT_TITLE");
@@ -53,14 +49,14 @@ CSaveConflictWindow::CSaveConflictWindow(SConflictInfo& info)
     saves->SetLayoutType((ELayoutType)1);
     saves->SetAlign(0x14);
     saves->SetOutsetSpacing(0, 0, SScreenAdaptingConstant(75, 150)(), 0);
-    saves->AddToFront(CreateSaveInfoWindow(Window::ResString("IDS_SAVE_CONFLICT_LOCAL_TITLE"),
-                                           Window::ResString("IDS_SAVE_CONFLICT_LOCAL_BUTTON"), info.m_localLevel,
-                                           info.m_localSoftCurrency, info.m_localHardCurrency, 0x7b7b47f1),
-                      0, 0);
-    saves->AddToFront(CreateSaveInfoWindow(Window::ResString("IDS_SAVE_CONFLICT_SERVER_TITLE"),
-                                           Window::ResString("IDS_SAVE_CONFLICT_SERVER_BUTTON"), info.m_serverLevel,
-                                           info.m_serverSoftCurrency, info.m_serverHardCurrency, 0xb64f7bf5),
-                      1, 0);
+    Window* local = CreateSaveInfoWindow(Window::ResString("IDS_SAVE_CONFLICT_LOCAL_TITLE"),
+                                         Window::ResString("IDS_SAVE_CONFLICT_LOCAL_BUTTON"), info.m_localLevel,
+                                         info.m_localSoftCurrency, info.m_localHardCurrency, 0x7b7b47f1);
+    saves->AddToFront(local, 0, 0);
+    Window* server = CreateSaveInfoWindow(Window::ResString("IDS_SAVE_CONFLICT_SERVER_TITLE"),
+                                          Window::ResString("IDS_SAVE_CONFLICT_SERVER_BUTTON"), info.m_serverLevel,
+                                          info.m_serverSoftCurrency, info.m_serverHardCurrency, 0xb64f7bf5);
+    saves->AddToFront(server, 1, 0);
     AddToFront(saves);
 }
 

@@ -63,7 +63,7 @@ void CItem::ParseTexts(const TiXmlElement& element)
 
 void CItem::ParseStats(const TiXmlElement& element)
 {
-    m_hidden = CXmlHelper::GetAttributeValueOrUseDefault(element, "hidden", XString("0")).ToBool();
+    m_hidden = CXmlHelper::GetAttributeValueOrUseDefault(element, "hidden", XString(L"0")).ToBool();
     const char* value = CXmlHelper::GetCharAttributeValueOptional(element, "price_credits");
     if (value != NULL) {
         setPriceCredits(XString(value).ToInt());
@@ -121,7 +121,11 @@ void CItem::loadResources()
 
 void CItem::releaseResources()
 {
-    ReleaseBigShopImage();
+    if (m_bigImageId != NULL && m_bigImage != NULL) {
+        CBH_SurfaceManager* manager = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager;
+        manager->ReleaseSurface(m_bigImageId);
+        m_bigImage = NULL;
+    }
     if (m_shopImageId != NULL && m_shopImage != NULL) {
         CBH_SurfaceManager* manager = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager;
         manager->ReleaseSurface(m_shopImageId);
@@ -151,57 +155,68 @@ bool CItem::checkOverride()
 
 bool CItem::doOverride(COverrideManager& manager, const XString& id)
 {
-    CStrWChar path(id.c_str());
     unsigned long long value;
-    bool changed = false;
-
-    m_priceCredits = m_originalPriceCredits;
-    if (manager.FindIntAttribute(path, CStrWChar(L"price_credits"), &value)) {
+    bool hasCredits = manager.FindIntAttribute(CStrWChar(id.c_str()), CStrWChar(L"price_credits"), &value);
+    if (hasCredits) {
         m_priceCredits = value;
-        changed = true;
-    }
-    m_pricePoints = m_originalPricePoints;
-    if (manager.FindIntAttribute(path, CStrWChar(L"price_points"), &value)) {
-        m_pricePoints = value;
-        changed = true;
-    }
-    m_priceIAP = m_originalPriceIAP;
-    if (manager.FindIntAttribute(path, CStrWChar(L"price_iap"), &value)) {
-        m_priceIAP = value;
-        changed = true;
-    }
-    m_unlockLevel = m_originalUnlockLevel;
-    if (manager.FindIntAttribute(path, CStrWChar(L"unlock_level"), &value)) {
-        m_unlockLevel = value;
-        changed = true;
+    } else {
+        m_priceCredits = m_originalPriceCredits;
     }
 
-    bool hasNew = manager.FindIntAttribute(path, CStrWChar(L"new_marked"), &value);
+    bool hasPoints = manager.FindIntAttribute(CStrWChar(id.c_str()), CStrWChar(L"price_points"), &value);
+    if (hasPoints) {
+        m_pricePoints = value;
+    } else {
+        m_pricePoints = m_originalPricePoints;
+    }
+
+    bool hasIAP = manager.FindIntAttribute(CStrWChar(id.c_str()), CStrWChar(L"price_iap"), &value);
+    if (hasIAP) {
+        m_priceIAP = value;
+    } else {
+        m_priceIAP = m_originalPriceIAP;
+    }
+
+    bool hasUnlockLevel = manager.FindIntAttribute(CStrWChar(id.c_str()), CStrWChar(L"unlock_level"), &value);
+    if (hasUnlockLevel) {
+        m_unlockLevel = value;
+    } else {
+        m_unlockLevel = m_originalUnlockLevel;
+    }
+
+    bool hasNew = manager.FindIntAttribute(CStrWChar(id.c_str()), CStrWChar(L"new_marked"), &value);
     m_new = hasNew && value != 0;
-    bool hasSale = manager.FindIntAttribute(path, CStrWChar(L"sale_marked"), &value);
+    bool hasSale = manager.FindIntAttribute(CStrWChar(id.c_str()), CStrWChar(L"sale_marked"), &value);
     m_sale = hasSale && value != 0;
-    bool hasLimited = manager.FindIntAttribute(path, CStrWChar(L"limited_marked"), &value);
+    bool hasLimited = manager.FindIntAttribute(CStrWChar(id.c_str()), CStrWChar(L"limited_marked"), &value);
     m_limited = hasLimited && value != 0;
-    bool hasFeatured = manager.FindIntAttribute(path, CStrWChar(L"featured_marked"), &value);
+    bool hasFeatured = manager.FindIntAttribute(CStrWChar(id.c_str()), CStrWChar(L"featured_marked"), &value);
     m_featured = hasFeatured && value != 0;
 
     CStrWChar text;
-    m_name = m_originalName;
-    if (manager.FindStringAttribute(path, CStrWChar(L"name"), &text)) {
+    bool hasName = manager.FindStringAttribute(CStrWChar(id.c_str()), CStrWChar(L"name"), &text);
+    if (hasName) {
         m_name = text.GetWCharPtr();
-        changed = true;
+    } else {
+        m_name = m_originalName;
     }
-    m_description = m_originalDescription;
-    if (manager.FindStringAttribute(path, CStrWChar(L"desc"), &text)) {
+
+    bool hasDescription = manager.FindStringAttribute(CStrWChar(id.c_str()), CStrWChar(L"desc"), &text);
+    if (hasDescription) {
         m_description = text.GetWCharPtr();
-        changed = true;
+    } else {
+        m_description = m_originalDescription;
     }
-    m_extraText = m_originalExtraText;
-    if (manager.FindStringAttribute(path, CStrWChar(L"extra_text"), &text)) {
+
+    bool hasExtraText = manager.FindStringAttribute(CStrWChar(id.c_str()), CStrWChar(L"extra_text"), &text);
+    if (hasExtraText) {
         m_extraText = text.GetWCharPtr();
-        changed = true;
+    } else {
+        m_extraText = m_originalExtraText;
     }
-    return changed || hasNew || hasSale || hasLimited || hasFeatured;
+
+    return hasExtraText || hasDescription || hasName || hasFeatured || hasLimited ||
+           hasSale || hasNew || hasUnlockLevel || hasIAP || hasPoints || hasCredits;
 }
 
 XString CItem::GetStatsString() const
@@ -209,13 +224,11 @@ XString CItem::GetStatsString() const
     XString result("");
     if (getPriceCredits() > 0) {
         XString label = Window::ResString("IDS_SHOP_AMMO_STATS_PRICE_CREDITS");
-        result.Append(XString::Format(label.c_str(), getPriceCredits()));
-        result.Append(XString(L"\n"));
+        result.Append(XString::Format(label.c_str(), getPriceCredits()) + L"\n");
     }
     if (m_pricePoints > 0) {
         XString label = Window::ResString("IDS_SHOP_AMMO_STATS_PRICE_CASH");
-        result.Append(XString::Format(label.c_str(), m_pricePoints));
-        result.Append(XString(L"\n"));
+        result.Append(XString::Format(label.c_str(), m_pricePoints) + L"\n");
     }
     return result;
 }

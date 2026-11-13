@@ -20,7 +20,8 @@ CAchievementsWindow::CAchievementsWindow()
     : CBaseScreen(false, true, true, false, true, false)
 {
     SetTitleText(ResString("IDS_TITLE_ACHIEVEMENTS"));
-    SetInsetSpacing(m_titleHeight, 0, ScreenBottom(), 0);
+    int titleHeight = m_titleHeight;
+    SetInsetSpacing(titleHeight, 0, ScreenBottom(), 0);
     CFontMgr::GetInstance()->GetFont(10);
     ImageWindow* background = new ImageWindow();
     background->SetImageById("IDB_AWARDS_BG");
@@ -32,11 +33,10 @@ CAchievementsWindow::CAchievementsWindow()
     m_achievementList->SetPercentHeight(100, 0, 0);
     m_achievementList->SetWidthByContent(0, 0);
 
-    App* app = static_cast<App*>(WindowApp::m_instance);
     ScrollingContainer* scroll = new ScrollingContainer();
     scroll->SetCellPos(0, 0, 1, 1);
     scroll->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    scroll->SetDesiredWidth((int)((float)app->m_screenWidth * 0.95f));
+    scroll->SetDesiredWidth((int)((float)static_cast<App*>(WindowApp::m_instance)->m_screenWidth * 0.95f));
 
     Window* rows = new WindowTransparent(false);
     rows->SetLayoutType(LAYOUT_SIMPLE);
@@ -46,12 +46,14 @@ CAchievementsWindow::CAchievementsWindow()
     int insetTop = App::Scale() * 10;
     int insetLeft = App::Scale() * 5;
     rows->SetInsetSpacing(insetTop, 0, 0, insetLeft);
-    CAchievementManager* manager = app->InitAchievementManager();
     int visibleRow = 0;
-    for (int index = 0; index < manager->m_names.size(); ++index) {
-        CAchievement** achievement = manager->m_achievements.Get(manager->m_names[index]);
-        if (achievement != NULL && (!(*achievement)->m_hidden || (*achievement)->m_progress != 0)) {
-            AchievementInfoWindow* row = new AchievementInfoWindow(*achievement);
+    for (int index = 0;
+         index < static_cast<App*>(WindowApp::m_instance)->InitAchievementManager()->m_names.size(); ++index) {
+        const XString& name = static_cast<App*>(WindowApp::m_instance)->InitAchievementManager()->m_names[index];
+        CAchievement* achievement =
+            *static_cast<App*>(WindowApp::m_instance)->InitAchievementManager()->m_achievements.Get(name);
+        if (achievement->m_progress != 0 || !achievement->m_hidden) {
+            AchievementInfoWindow* row = new AchievementInfoWindow(achievement);
             row->SetOutsetSpacing(0, 0, RowSpacing(), 0);
             rows->AddToFront(row, 0, visibleRow);
             ++visibleRow;
@@ -80,11 +82,13 @@ AchievementInfoWindow::AchievementInfoWindow(const CAchievement* achievement)
 {
     int progress = achievement->m_progress;
     int steps = achievement->m_steps;
+    float totalSteps = static_cast<float>(steps);
+    float percent = static_cast<float>(progress * 100);
     bool completed = progress == steps;
     if (progress < steps) {
         float opacity = 0.25f;
         if (progress > 0) {
-            opacity = 0.5f + (float)progress / (float)steps * 0.5f;
+            opacity = static_cast<float>(progress) / (totalSteps * 100.0f) * 50.0f + 0.5f;
         }
         SetOpacity(opacity);
     }
@@ -96,7 +100,6 @@ AchievementInfoWindow::AchievementInfoWindow(const CAchievement* achievement)
     int left = App::Scale() * 10;
     content->SetInsetSpacing(top, right, bottom, left);
     XString title = achievement->m_screenName;
-    const XString* details = &achievement->m_description;
     int textColumn = 0;
     if (completed) {
         CImageButton* award = new CImageButton();
@@ -108,16 +111,18 @@ AchievementInfoWindow::AchievementInfoWindow(const CAchievement* achievement)
         award->SetWidthByContent(0, 0);
         content->AddToFront(award);
         textColumn = 1;
-        details = &achievement->m_completedDescription;
-    } else if (progress > 0 && steps > 0) {
-        int percent = (int)((float)progress * 100.0f / (float)steps);
-        title = XString(percent) + XString("% ") + title;
+    } else {
+        float progressPercent = percent / totalSteps;
+        if (progressPercent > 0.0f) {
+            title = XString(static_cast<int>(progressPercent)) + XString("% ") + title;
+        }
     }
 
     TextWindow* heading = new TextWindow(title.Upper(), CFontMgr::GetInstance()->GetFont(9));
     heading->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     content->AddToFront(heading, textColumn, 0);
-    TextWindow* text = new TextWindow(*details, CFontMgr::GetInstance()->GetFont(15));
+    TextWindow* text = new TextWindow(completed ? achievement->m_completedDescription : achievement->m_description,
+                                      CFontMgr::GetInstance()->GetFont(15));
     text->SetOutsetSpacing(SScreenAdaptingConstant(-2, 0)(), 0, 0, 0);
     text->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     text->SetCellPos(textColumn, 1, 1, 1);
@@ -139,7 +144,6 @@ AchievementReceivedWindow::AchievementReceivedWindow(int progress, int steps, co
     int right = SScreenAdaptingConstant(14, 28)();
     Window* content = new WindowTransparent(false);
     XString title = name;
-    const XString* details = &description;
     if (progress == steps) {
         CImageButton* award = new CImageButton();
         award->AddImage(XString::AnsiString(image.c_str()), 0, 0);
@@ -151,12 +155,8 @@ AchievementReceivedWindow::AchievementReceivedWindow(int progress, int steps, co
         award->SetWidthByContent(0, 0);
         AddToFront(award);
         left += SScreenAdaptingConstant(48, 96)();
-        details = &completedDescription;
     } else {
-        int percent = 0;
-        if (steps > 0) {
-            percent = (int)((float)progress * 100.0f / (float)steps);
-        }
+        int percent = static_cast<int>(static_cast<float>(progress * 100) / static_cast<float>(steps));
         title = XString(percent) + XString("%  ") + title;
     }
     content->SetInsetSpacing(top, right, bottom, left);
@@ -164,6 +164,10 @@ AchievementReceivedWindow::AchievementReceivedWindow(int progress, int steps, co
     TextWindow* heading = new TextWindow(title, CFontMgr::GetInstance()->GetFont(9));
     heading->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     content->AddToFront(heading, 0, 0);
+    const XString* details = &description;
+    if (progress == steps) {
+        details = &completedDescription;
+    }
     TextWindow* text = new TextWindow(*details, CFontMgr::GetInstance()->GetFont(15));
     text->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     text->SetCellPos(0, 1, 1, 1);

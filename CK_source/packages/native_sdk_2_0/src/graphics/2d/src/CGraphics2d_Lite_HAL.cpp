@@ -22,11 +22,8 @@ unsigned char CGraphics2d_Lite_HAL::Initialize()
         Destroy();
         return 0;
     }
-    ICGraphics::Abstraction abstraction = ICGraphics::Abstraction_Software;
-    if (m_hardwareReady) {
-        abstraction = ICGraphics::Abstraction_Hardware;
-    }
-    SetActiveAbstractionLayer(abstraction);
+    SetActiveAbstractionLayer(m_hardwareReady ? ICGraphics::Abstraction_Hardware
+                                              : ICGraphics::Abstraction_Software);
     m_initialized = 1;
     return 1;
 }

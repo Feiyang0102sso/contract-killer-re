@@ -16,7 +16,6 @@ public:
     virtual void OnCommand(Event& event);
 
     void StartHeightAnim(int start, int end, int duration);
-    void SetProgress(int progress, int goal);
 
 private:
     void CreateUI(const CChallenge* challenge);
@@ -24,14 +23,14 @@ private:
     Window* CreateDescription(const CChallenge* challenge);
     Window* CreateRewardInfo(const CChallenge* challenge);
     Window* CreateProgressWindow(int progress, int goal);
-    static Window* CreateRewardInfoWindow(const SChallengeReward* reward, int tier);
+    Window* CreateRewardInfoWindow(const SChallengeReward* reward, int tier);
     static Window* CreateArrowWindow();
     void OnHeightAnimEnded();
     void HandleShowInviteToChallenge(int challengeId);
     void HandleShareChallengePressed(Vector<int>& friendIds, int challengeId);
 
     Window* m_rewards;
-    ImageWindow* m_progressFill;
+    int m_fieldA8;                  // unused by the original card
     int m_startHeight;
     int m_endHeight;
     float m_heightPerMs;
@@ -42,8 +41,9 @@ private:
     bool m_animationEnded;
     int m_challengeId;
     int m_inviteCooldownMs;
-    TextWindow* m_progressText;
 };
+
+typedef char ChallengeWindowSizeCheck[sizeof(CChallengeWindow) == 0xcc ? 1 : -1];
 
 class CChallengeTimerWindow : public TextWindow {
 public:

@@ -16,7 +16,6 @@ public:
     CNewsFeedWindow();
     virtual ~CNewsFeedWindow();
 
-    int Populate();
     void ClearNews();
     void ShowEmptyNews();
     void ReceiveGift(const SGiftReceivedMessage* message);
@@ -31,9 +30,6 @@ public:
 
 private:
     void CreateUserInterface();
-    void AddRow(Window* row);
-    void AddText(const XString& text, int align);
-    void AddSeparator();
 
     Window* m_rows;
     int m_nextRow;

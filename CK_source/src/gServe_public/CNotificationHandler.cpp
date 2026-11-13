@@ -7,7 +7,7 @@
 #include "CBH_Player.h"
 #include "CBHUtil_Cocoa.h"
 #include "CFileData1.h"
-#include "CFileUtil.h"
+#include "ICFile.h"
 #include "CGameApp.h"
 #include "CGameAnalytics.h"
 #include "CGServeHandler.h"
@@ -25,6 +25,8 @@
 #include "CProfileManager.h"
 #include "CStdUtil_Cocoa.h"
 #include "ICFileMgr.h"
+
+extern const wchar_t SAVE_FILE_NAME[];
 
 namespace {
 App* CurrentApp()
@@ -66,7 +68,13 @@ unsigned char CNotificationHandler::HandleUserLogin(int result, int network, con
         networks = !CNGS::GetInstance()->GetLocalUser()->isAuthenticated(SOCIAL_INTERFACE_FACEBOOK) ? 2 : 3;
     }
     CGameAnalytics::logGservLogin(networks);
-    CNGS::GetInstance()->GetLocalUser()->m_messageQueue->ProcessPromptMessages();
+    void* found = NULL;
+    CApplet::m_pApp->m_singletons->Find(CNGS::ClassId, &found);
+    CNGS* gserve = static_cast<CNGS*>(found);
+    if (gserve == NULL) {
+        gserve = new CNGS();
+    }
+    gserve->GetLocalUser()->m_messageQueue->ProcessPromptMessages();
     return 1;
 }
 
@@ -144,38 +152,35 @@ unsigned char CNotificationHandler::HandleProfileDataConflict(const TCVector<int
 {
     m_localDataText = L"";
     m_serverDataText = L"";
-    App* app = CurrentApp();
-    bool conflict = false;
-    for (int index = 0; index < dataIds.Size(); index++) {
-        int collection = dataIds[index];
-        if (collection < 1000) {
+    if (dataIds.Size() < 1) {
+        if (CNGSLoginFlow::GetInstance()->IsRunning()) {
+            CNGSLoginFlow::GetInstance()->OnEvent(LoginFlowSuccess, "HandleProfileDataConflict");
+        }
+        return 1;
+    }
+    unsigned char conflict = 0;
+    int index = 0;
+    do {
+        if (dataIds[index] < 1000) {
             continue;
         }
-        CSaveRestoreInterface* local =
-            app->m_profileManager->getManagedObjectFromBuffer(PROFILE_DATA_SAVED_LOCAL, collection);
-        CSaveRestoreInterface* server =
-            app->m_profileManager->getManagedObjectFromBuffer(PROFILE_DATA_SYNCED, collection);
-        if (local == NULL || server == NULL) {
-            continue;
-        }
+        CSaveRestoreInterface* local = CurrentApp()->m_profileManager->getManagedObjectFromBuffer(
+            PROFILE_DATA_SAVED_LOCAL, dataIds[index]);
+        CSaveRestoreInterface* server = CurrentApp()->m_profileManager->getManagedObjectFromBuffer(
+            PROFILE_DATA_SYNCED, dataIds[index]);
+
         if (local->getDataSaveStatus() == PROFILE_DATA_INVALIDATED) {
-            bool empty = false;
+            int collection = dataIds[index];
             if (collection == 1000) {
-                empty = static_cast<CPublicData1*>(local)->m_level == 0;
-            } else if (collection == 1001) {
-                empty = static_cast<CPrivateData1*>(local)->getExperience() == 0;
-            }
-            if (empty) {
-                TCVector<int> collections;
-                app->m_profileManager->getAllRegisteredCollections(collections);
-                app->m_gserveHandler->SelectProfileServerData(collections);
-                app->m_field3a0 = false;
-                conflict = false;
-                break;
+                if (static_cast<CPublicData1*>(local)->m_level == 0) {
+                    goto selectServer;
+                }
+            } else if (collection == 1001 && static_cast<CPrivateData1*>(local)->getExperience() == 0) {
+                goto selectServer;
             }
         }
-        conflict = true;
-        if (collection == 1001) {
+        conflict = 1;
+        if (dataIds[index] == 1001) {
             CPrivateData1* localData = static_cast<CPrivateData1*>(local);
             CPrivateData1* serverData = static_cast<CPrivateData1*>(server);
             m_localDataText += localData->asString() + "\n";
@@ -187,12 +192,25 @@ unsigned char CNotificationHandler::HandleProfileDataConflict(const TCVector<int
             m_serverHardCurrency = serverData->getHardCurrency();
             m_serverExperience = serverData->getExperience();
         }
-    }
+    } while (++index < dataIds.Size());
     if (conflict) {
         CurrentApp()->m_gserveHandler->CloseCurrentSocialNetworkConnectDialog();
         CGameApp::gserveDataConflict = true;
         WindowApp::HandleTunnelCommand(0x07e17dc8, 0, 0, 0);
-    } else if (CNGSLoginFlow::GetInstance()->IsRunning()) {
+        return 1;
+    }
+    goto resumeLogin;
+
+selectServer:
+    {
+        TCVector<int> collections;
+        CurrentApp()->m_profileManager->getAllRegisteredCollections(collections);
+        CurrentApp()->m_gserveHandler->SelectProfileServerData(collections);
+        CurrentApp()->m_field3a0 = false;
+    }
+
+resumeLogin:
+    if (CNGSLoginFlow::GetInstance()->IsRunning()) {
         CNGSLoginFlow::GetInstance()->OnEvent(LoginFlowSuccess, "HandleProfileDataConflict");
     }
     return 1;
@@ -262,7 +280,6 @@ unsigned char CNotificationHandler::HandleOldUnackedMessages()
 unsigned char CNotificationHandler::HandleNewMessagesReceived()
 {
     CNGSFromServerMessageQ* queue = CNGS::GetInstance()->GetLocalUser()->m_messageQueue;
-    CNewsFeedManager* news = CurrentApp()->m_newsFeedManager;
     TCVector<long long> ids;
     queue->GetAllMessagesByUserAndType(ids, 0, 0, CNGSFromServerMessage::CNGS_MSG_SUBTYPE_ANY);
     for (int index = 0; index < ids.Size(); index++) {
@@ -271,58 +288,84 @@ unsigned char CNotificationHandler::HandleNewMessagesReceived()
             continue;
         }
         long long type = message->m_type;
-        if (type == 40 || type == 41 || type == 100) {
-            bool alreadyQueued = false;
-            for (int gift = 0; gift < m_giftMessageIds.Size(); gift++) {
-                if (m_giftMessageIds[gift] == message->m_messageId) {
-                    alreadyQueued = true;
+        switch (type) {
+        case 41:
+            m_giftMessageIds.Add(ids[index]);
+            if (message->m_subType == CNGSFromServerMessage::CNGS_MSG_SUBTYPE_AWARD ||
+                message->m_subType == CNGSFromServerMessage::CNGS_MSG_SUBTYPE_GIFT) {
+                CNewsFeedManager* news = CurrentApp()->m_newsFeedManager;
+                if (news != NULL) {
+                    CNGSMessageAward* award = static_cast<CNGSMessageAward*>(message);
+                    int rare = (int)award->m_currencyRare;
+                    int experience = (int)award->m_experience;
+                    int common = (int)award->m_currencyCommon;
+                    int item = (int)award->m_itemType;
+                    WindowApp::HandleTunnelCommand(0x6df3535f, 0, 0, 0);
+                    CStrWChar text = message->GetMessageText();
+                    news->AddServerAwardMessage(text, common, rare, experience, item - 1, (int)message->m_messageId);
+                }
+            }
+            break;
+        case 40:
+        case 100:
+            m_giftMessageIds.Add(ids[index]);
+            if (message->m_subType == CNGSFromServerMessage::CNGS_MSG_SUBTYPE_AWARD) {
+                CNewsFeedManager* news = CurrentApp()->m_newsFeedManager;
+                if (news != NULL) {
+                    CNGSMessageAward* award = static_cast<CNGSMessageAward*>(message);
+                    int rare = (int)award->m_currencyRare;
+                    int common = (int)award->m_currencyCommon;
+                    int item = (int)award->m_itemType;
+                    int experience = (int)award->m_experience;
+                    CStrWChar text = message->GetMessageText();
+                    news->AddServerAwardMessage(text, common, rare, experience, item - 1, (int)message->m_messageId);
+                }
+            } else if (message->m_subType == CNGSFromServerMessage::CNGS_MSG_SUBTYPE_GIFT) {
+                CNewsFeedManager* news = CurrentApp()->m_newsFeedManager;
+                if (news != NULL) {
+                    CNGSMessageGift* gift = static_cast<CNGSMessageGift*>(message);
+                    if (gift->m_itemType > 0) {
+                        news->AddGiftReceivedMessage((int)message->m_senderId, (int)gift->m_itemType - 1,
+                                                     (int)message->m_messageId);
+                    }
+                }
+            }
+            break;
+        case 300:
+            break;
+        case 1008: {
+            CNewsFeedManager* news = CurrentApp()->m_newsFeedManager;
+            if (news != NULL) {
+                CStrWChar text = message->GetMessageText();
+                int sender = (int)message->m_senderId;
+                XString challengeText(text.GetWCharPtr());
+                int challenge = challengeText.SubString(1, challengeText.Length() - 2).ToInt();
+                news->AddChallengeInviteMessage(sender, challenge, (int)message->m_messageId);
+            }
+            break;
+        }
+        case 1011: {
+            CNewsFeedManager* news = CurrentApp()->m_newsFeedManager;
+            if (news != NULL) {
+                CStrWChar text = message->GetMessageText();
+                int sender = (int)message->m_senderId;
+                XString challengeText(text.GetWCharPtr());
+                int challenge = challengeText.SubString(1, challengeText.Length() - 2).ToInt();
+                news->AddFriendCompletedChallengeMessage(sender, challenge, text, (int)message->m_messageId);
+            }
+            break;
+        }
+        default:
+            if (type >= 1000) {
+                CStrWChar text = message->GetMessageText();
+                if (!HandleGameSpecificMessage(type, text, message->m_senderId)) {
                     break;
                 }
             }
-            if (!alreadyQueued) {
-                m_giftMessageIds.Add(message->m_messageId);
+            if (queue->MarkMessageForAck(message->m_messageId)) {
+                delete message;
             }
-            if (news == NULL || alreadyQueued) {
-                continue;
-            }
-            if (message->m_subType == CNGSFromServerMessage::CNGS_MSG_SUBTYPE_AWARD ||
-                message->m_subType == CNGSFromServerMessage::CNGS_MSG_SUBTYPE_GIFT) {
-                CNGSMessageAward* award = static_cast<CNGSMessageAward*>(message);
-                int item = (int)award->m_itemType - 1;
-                if (type == 41 || message->m_subType == CNGSFromServerMessage::CNGS_MSG_SUBTYPE_AWARD) {
-                    if (type == 41) {
-                        WindowApp::HandleTunnelCommand(0x6df3535f, 0, 0, 0);
-                    }
-                    news->AddServerAwardMessage(message->GetMessageText(), (int)award->m_currencyCommon,
-                                               (int)award->m_currencyRare, (int)award->m_experience,
-                                               item, (int)message->m_messageId);
-                } else if (award->m_itemType > 0) {
-                    news->AddGiftReceivedMessage((int)message->m_senderId, item, (int)message->m_messageId);
-                }
-            }
-            continue;
-        }
-        if (type == 300) {
-            continue;
-        }
-        if (type == 1008 || type == 1011) {
-            if (news != NULL) {
-                CStrWChar text = message->GetMessageText();
-                int challenge = XString(text.GetWCharPtr()).SubString(1, text.GetLength() - 2).ToInt();
-                if (type == 1008) {
-                    news->AddChallengeInviteMessage((int)message->m_senderId, challenge, (int)message->m_messageId);
-                } else {
-                    news->AddFriendCompletedChallengeMessage((int)message->m_senderId, challenge, text,
-                                                             (int)message->m_messageId);
-                }
-            }
-            continue;
-        }
-        if (type >= 1000 && !HandleGameSpecificMessage(type, message->GetMessageText(), message->m_senderId)) {
-            continue;
-        }
-        if (queue->MarkMessageForAck(message->m_messageId)) {
-            delete message;
+            break;
         }
     }
     WindowApp::HandleTunnelCommand(0x6e7d5209, 0, 0, 0);
@@ -332,46 +375,74 @@ unsigned char CNotificationHandler::HandleNewMessagesReceived()
 unsigned char CNotificationHandler::HandleGameSpecificMessage(long long type, const CStrWChar& text,
                                                               long long senderId)
 {
-    App* app = CurrentApp();
-    CNewsFeedManager* news = app->m_newsFeedManager;
     switch (type) {
     case 1001:
-    case 1004:
+    case 1004: {
+        CNewsFeedManager* news = CurrentApp()->m_newsFeedManager;
         if (news != NULL) {
-            news->AddTargettedMessage((int)senderId, text, type == 1001);
+            if (type == 1001) {
+                news->AddTargettedMessage((int)senderId, text, true);
+            } else {
+                news->AddTargettedMessage((int)senderId, text, false);
+            }
         }
-        break;
-    case 1002: {
-        CNGSRemoteUserList* friends = CNGS::GetInstance()->GetLocalUser()->m_remoteUserLists[0];
-        if (news != NULL && friends->findRemoteUserByID((int)senderId) != NULL) {
-            CStrWChar id = text.GetSubString(1, text.GetLength() - 1);
-            news->AddMissionInviteMessage((int)senderId, XString(id.GetWCharPtr()).ToInt());
-        }
-        break;
+        return 0;
     }
-    case 1005:
+    case 1005: {
+        App* app = CurrentApp();
+        CNewsFeedManager* news = app->m_newsFeedManager;
         if (news != NULL && !app->m_publicData->isInGuildFriendList((int)senderId)) {
             news->AddGuildInviteMessage((int)senderId, text);
         }
-        break;
-    case 1006:
-        app->m_publicData->addGuildFriend((int)senderId);
+        return 0;
+    }
+    case 1006: {
+        CurrentApp()->m_publicData->addGuildFriend((int)senderId);
+        CNewsFeedManager* news = CurrentApp()->m_newsFeedManager;
         if (news != NULL) {
             news->AddGuildInviteResponseMessage((int)senderId, true);
         }
         return 1;
-    case 1007:
+    }
+    case 1007: {
+        CNewsFeedManager* news = CurrentApp()->m_newsFeedManager;
         if (news != NULL) {
             news->AddGuildInviteResponseMessage((int)senderId, false);
         }
         return 1;
-    case 1009:
-    case 1010:
+    }
+    case 1002: {
+        CNGSRemoteUserList* friends = CNGS::GetInstance()->GetLocalUser()->m_remoteUserLists[0];
+        for (int index = 0; index < friends->m_users.Size(); ++index) {
+            if (friends->m_users[index]->GetClientID() == senderId) {
+                CStrWChar mission = text.GetSubString(1, text.GetLength() - 2);
+                const wchar_t* wide = mission.GetWCharPtr();
+                char number[12];
+                wcstombs(number, wide, wcslen(wide) + 1);
+                int missionId = atoi(number);
+                CurrentApp()->m_newsFeedManager->AddMissionInviteMessage((int)senderId, missionId);
+            }
+        }
+        return 0;
+    }
+    case 1009: {
+        CNewsFeedManager* news = CurrentApp()->m_newsFeedManager;
         if (news != NULL) {
-            int challenge = XString(text.GetWCharPtr()).SubString(1, text.GetLength() - 2).ToInt();
-            news->AddChallengeResponseMessage((int)senderId, challenge, type == 1009);
+            XString challengeText(text.GetWCharPtr());
+            int challenge = challengeText.SubString(1, challengeText.Length() - 2).ToInt();
+            news->AddChallengeResponseMessage((int)senderId, challenge, true);
         }
         return 1;
+    }
+    case 1010: {
+        CNewsFeedManager* news = CurrentApp()->m_newsFeedManager;
+        if (news != NULL) {
+            XString challengeText(text.GetWCharPtr());
+            int challenge = challengeText.SubString(1, challengeText.Length() - 2).ToInt();
+            news->AddChallengeResponseMessage((int)senderId, challenge, false);
+        }
+        return 1;
+    }
     }
     return 0;
 }
@@ -379,21 +450,22 @@ unsigned char CNotificationHandler::HandleGameSpecificMessage(long long type, co
 void CNotificationHandler::RemoveGameSpecificMessage(int messageId)
 {
     // the original looks the message up only after acknowledging it and keeps the gift id list
-    CNGSFromServerMessageQ* queue = CNGS::GetInstance()->GetLocalUser()->m_messageQueue;
-    if (messageId >= 0 && queue->MarkMessageForAck(messageId)) {
-        delete queue->GetMessageById(messageId);
+    CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
+    if (messageId >= 0) {
+        CNGSFromServerMessageQ* queue = user->m_messageQueue;
+        if (queue->MarkMessageForAck(messageId)) {
+            delete queue->GetMessageById(messageId);
+        }
     }
 }
 
 void CNotificationHandler::OnEnterForeground()
 {
-    App* app = CurrentApp();
-    if (m_loginState != 1 && app->m_field398 == SOCIAL_INTERFACE_FACEBOOK) {
+    if (m_loginState != 1 && CurrentApp()->m_field398 == SOCIAL_INTERFACE_FACEBOOK) {
         m_loginState = 2;
-        app->m_field398 = -1;
-        CNGSLoginFlow* flow = CNGSLoginFlow::GetInstance();
-        if (flow->IsRunning()) {
-            flow->PrepareStep(-1);
+        CurrentApp()->m_field398 = -1;
+        if (CNGSLoginFlow::GetInstance()->IsRunning()) {
+            CNGSLoginFlow::GetInstance()->PrepareStep(-1);
         }
     }
     m_loginState = 0;
@@ -416,32 +488,44 @@ unsigned char CNotificationHandler::HandleProfileContentFileDownloaded(unsigned 
 
 unsigned char CNotificationHandler::HandleGameCenterAppLogin(unsigned char)
 {
-    App* app = CurrentApp();
-    CNGSLoginFlow* flow = CNGSLoginFlow::GetInstance();
-    CGServeHandler* handler = app->m_gserveHandler;
     const int network = SOCIAL_INTERFACE_GAME_CENTER;
     const unsigned int socialStep = 0x90e4b4fa;
-    if (CBHUtil_Cocoa::IsGameCenterAuthenticated()) {
-        if (flow->IsRunning() && handler->m_pendingSwitchNetwork == network) {
-            handler->m_pendingSwitchNetwork = 0;
-            app->StartLogin(App::LoginGameCenter, true);
-        } else if (!CNGS::GetInstance()->GetLocalUser()->isAuthenticated(network)) {
-            if (!flow->IsRunning()) {
-                app->StartLogin(App::LoginGameCenter, true);
+    if (CBHUtil_Cocoa::IsGameCenterAuthenticated() == true) {
+        if (!CNGSLoginFlow::GetInstance()->IsRunning()) {
+            if (CNGS::GetInstance()->GetLocalUser()->isAuthenticated(network)) {
                 return 1;
             }
-            CNGSLoginStep* active = flow->GetCurrentStep();
-            CNGSLoginStep* previous = flow->GetStep(flow->GetStepCount() - 2);
-            if (active != NULL && active->GetClassId() != socialStep &&
-                previous != NULL && previous->GetClassId() != socialStep) {
+            CurrentApp()->StartLogin(App::LoginGameCenter, true);
+        } else {
+            CGServeHandler* handler = CurrentApp()->m_gserveHandler;
+            if (handler->m_pendingSwitchNetwork == network) {
+                handler->m_pendingSwitchNetwork = 0;
+                CurrentApp()->StartLogin(App::LoginGameCenter, true);
+            } else {
+                if (CNGS::GetInstance()->GetLocalUser()->isAuthenticated(network)) {
+                    return 1;
+                }
+                CNGSLoginStep* active = CNGSLoginFlow::GetInstance()->GetCurrentStep();
+                if (active == NULL || active->GetClassId() == socialStep) {
+                    return 1;
+                }
+                CNGSLoginFlow* flow = CNGSLoginFlow::GetInstance();
+                CNGSLoginStep* previous = flow->GetStep(CNGSLoginFlow::GetInstance()->GetStepCount() - 2);
+                if (previous == NULL || previous->GetClassId() == socialStep) {
+                    return 1;
+                }
+                flow = CNGSLoginFlow::GetInstance();
                 flow->Queue(new GameCenterLoginStep());
+                flow = CNGSLoginFlow::GetInstance();
                 flow->Queue(new LoadFriendsListStep(network));
             }
         }
-    } else if (handler->m_pendingSwitchNetwork == network) {
-        handler->m_pendingSwitchNetwork = 0;
-        if (flow->IsRunning()) {
-            if (flow->m_activeNetwork == network) {
+    } else if (CurrentApp()->m_gserveHandler->m_pendingSwitchNetwork == network) {
+        CurrentApp()->m_gserveHandler->m_pendingSwitchNetwork = 0;
+        if (CNGSLoginFlow::GetInstance()->IsRunning()) {
+            int activeNetwork = CNGSLoginFlow::GetInstance()->m_activeNetwork;
+            CNGSLoginFlow* flow = CNGSLoginFlow::GetInstance();
+            if (activeNetwork == network) {
                 flow->NextStep();
             } else {
                 flow->ExcuteStep(-1);
@@ -452,31 +536,35 @@ unsigned char CNotificationHandler::HandleGameCenterAppLogin(unsigned char)
 }
 
 unsigned char CNotificationHandler::HandleProfileDataFormatIncorrect(const CStrWChar& name,
-    const CStrWChar&, unsigned char*& data, unsigned int& size)
+    const CStrWChar& subDirectory, unsigned char*& data, unsigned int& size)
 {
-    CFileData1 legacy;
+    // The original migration leaves the temporary envelope's payload allocated.
+    unsigned char legacyStorage[sizeof(CFileData1)] __attribute__((aligned(__alignof__(CFileData1))));
+    CFileData1& legacy = *new (legacyStorage) CFileData1();
     if (CStdUtil_Cocoa::WcsICmp(name.GetWCharPtr(), legacy.getFilename().GetWCharPtr()) != 0) {
         return 0;
     }
-    CStrWChar path;
-    CFileUtil::GetApplicationDataPathForFile(path, L"savebh.dat");
+
+    CStrWChar path(ICFileMgr::GetInstance()->GetApplicationDataPath());
+    path += ICFileMgr::GetInstance()->GetPathSeparator() + subDirectory;
+    path += ICFileMgr::GetInstance()->GetPathSeparator() + CStrWChar(SAVE_FILE_NAME);
+    ICFile* file = ICFileMgr::GetInstance()->Open(path.GetWCharPtr(), ICFileMgr::AccessRead);
+    if (file == NULL) {
+        return 0;
+    }
     unsigned int byteCount = ICFileMgr::GetInstance()->Size(path.GetWCharPtr());
-    if (byteCount == 0) {
-        return 0;
-    }
-    unsigned char* bytes = new unsigned char[byteCount];
-    unsigned char read = CFileUtil::ReadFile(path.GetWCharPtr(), bytes, byteCount);
-    if (read) {
-        legacy.setData(bytes, byteCount);
-        legacy.setDataSaveStatus(PROFILE_DATA_SAVED_LOCAL);
-    }
-    delete[] bytes;
-    if (!read) {
-        return 0;
-    }
+    unsigned char* bytes = static_cast<unsigned char*>(malloc(byteCount));
+    unsigned int read = file->Read(bytes, byteCount);
+    ICFileMgr::GetInstance()->Close(file);
+    legacy.setData(bytes, read);
+    legacy.setDataSaveStatus(PROFILE_DATA_SAVED_LOCAL);
     data = NULL;
     size = 0;
-    return CurrentApp()->m_profileManager->WriteAttributesToRawFileData(&legacy, data, size);
+    CurrentApp()->m_profileManager->WriteAttributesToRawFileData(&legacy, data, size);
+    if (bytes != NULL) {
+        free(bytes);
+    }
+    return 1;
 }
 
 // The ARMv7 binary returns these flags without side effects.

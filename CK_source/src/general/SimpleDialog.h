@@ -55,8 +55,8 @@ public:
                 m_pressedIcon.Create(iconName);
                 m_icon.Create(iconName);
             } else {
-                m_pressedIcon.Create(NULL);
-                m_icon.Create(NULL);
+                m_pressedIcon.Create("SUR_ITEM_STATUS_SEL_PURCHASED");
+                m_icon.Create("SUR_ITEM_STATUS_PURCHASED");
             }
             ResetLayout();
         }

@@ -37,14 +37,14 @@ protected:
     CBH_MenuButton* m_back;
 
 private:
-    class FrameRed : public Filler {
+    class FrameRed : public InsetPanel {
     public:
         FrameRed();
         virtual void Paint(ICGraphics2d& graphics);
         int m_inset;
     };
 
-    class GPSFrame : public Filler {
+    class GPSFrame : public InsetPanel {
     public:
         GPSFrame();
         virtual void Paint(ICGraphics2d& graphics);

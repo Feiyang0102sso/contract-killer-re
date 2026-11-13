@@ -1,22 +1,36 @@
 #include "CGoPillManager.h"
 
+#include "App.h"
 #include "CGoPill.h"
-#include "CXmlHelper.h"
+#include "ResMap.h"
+#include "tinyxml.h"
 
 CGoPillManager::CGoPillManager()
 {
-    TiXmlDocument config = CXmlHelper::Parse(L"res/common/configs/go_pills.xml");
-    for (const TiXmlElement* element = config.FirstChildElement("goPill"); element != NULL;
-         element = element->NextSiblingElement("goPill")) {
+    ResMap* resources = static_cast<App*>(WindowApp::m_instance)->InitResMap();
+    char* text = resources->loadText(XString(L"res/common/configs/go_pills.xml"));
+    TiXmlDocument config;
+    config.Parse(text, NULL, TIXML_ENCODING_UNKNOWN);
+    if (text != NULL) {
+        free(text);
+    }
+    const TiXmlElement* element = static_cast<const TiXmlDocument&>(config).FirstChild("goPill")->ToElement();
+    do {
         CGoPill* item = new CGoPill();
         item->init(*element);
         m_items.addElement(item);
-    }
+        element = element->NextSiblingElement("goPill");
+    } while (element != NULL);
 }
 
 CGoPillManager::~CGoPillManager()
 {
-    SAFE_DELETE_VECTOR(m_items);
+    for (int index = 0; index < m_items.size(); ++index) {
+        if (m_items.m_items[index] != NULL) {
+            delete m_items.m_items[index];
+            m_items.m_items[index] = NULL;
+        }
+    }
 }
 
 void CGoPillManager::loadResources()

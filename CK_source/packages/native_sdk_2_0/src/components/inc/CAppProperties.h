@@ -40,10 +40,8 @@ public:
 
 inline CAppProperties::~CAppProperties()
 {
-    while (m_overriddenKeys.Size() > 0) {
-        int value;
-        m_overriddenKeys.Remove(0, value);
-        delete (CStrChar*)value;
+    for (int index = 0; index < m_overriddenKeys.Size(); ++index) {
+        delete reinterpret_cast<CStrChar*>(m_overriddenKeys.m_data[index]);
     }
 }
 

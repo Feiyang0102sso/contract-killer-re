@@ -10,6 +10,7 @@
 #include "CFontMgr.h"
 #include "CStdUtil_Cocoa.h"
 #include "CTutorialManager.h"
+#include "CUtility.h"
 #include "DGHelper.h"
 #include "SScreenAdaptingConstant.h"
 
@@ -24,7 +25,7 @@ CDH_WeaponsManager* Weapons()
 
 CShopButtonWeapon::CShopButtonWeapon(const XString& name, int unlockLevel, int price, int weaponId, const char* image)
     : CShopItemButton(Weapons(), Weapons()->getItemById(weaponId)->getType(), name, unlockLevel, price, weaponId, image),
-      m_weaponId(weaponId), m_tutorialBlink(false)
+      m_weaponId(weaponId), m_state(static_cast<EWeaponState>(0)), m_tutorialBlink(false)
 {
     m_status = new TextWindow();
     m_status->SetFont(CFontMgr::GetInstance()->GetFont(13));
@@ -56,18 +57,18 @@ void CShopButtonWeapon::UpdateCaption(EWeaponState state)
         return;
     }
     XString caption;
-    int font = 13;
     if (state == Locked) {
-        XString format = ResString("IDS_ITEM_UNLOCK_LEVEL");
-        caption = XString::Format(format.c_str(), GetUnlockLevel());
-        font = 12;
+        caption = CUtility::GetString("IDS_ITEM_UNLOCK_LEVEL").GetWCharPtr();
+        const wchar_t* format = caption.c_str();
+        caption = XString::Format(format, GetUnlockLevel());
+        m_status->SetFont(CFontMgr::GetInstance()->GetFont(12));
     } else if (state == Equipped) {
-        caption = ResString("IDS_EQUIPED");
-        font = 14;
+        caption = CUtility::GetString("IDS_EQUIPED").GetWCharPtr();
+        m_status->SetFont(CFontMgr::GetInstance()->GetFont(14));
     } else if (state == Owned) {
-        caption = ResString("IDS_OWNED");
+        caption = CUtility::GetString("IDS_OWNED").GetWCharPtr();
+        m_status->SetFont(CFontMgr::GetInstance()->GetFont(13));
     }
-    m_status->SetFont(CFontMgr::GetInstance()->GetFont(font));
     m_status->SetText(caption);
 }
 
@@ -86,7 +87,8 @@ void CShopButtonWeapon::Update()
 void CShopButtonWeapon::Paint(ICGraphics2d& graphics)
 {
     if (m_tutorialBlink) {
-        int phase = static_cast<int>(CStdUtil_Cocoa::GetUpTimeMS() % 600) - 300;
+        unsigned int uptime = CStdUtil_Cocoa::GetUpTimeMS();
+        int phase = static_cast<int>(uptime % 600) - 300;
         float opacity = 0.4f + fabsf(static_cast<float>(phase)) / 420.0f;
         BeginBlend(graphics, opacity, 1.0f, 1.0f, 1.0f, true, false);
     }
@@ -105,8 +107,11 @@ bool CShopButtonWeapon::IsEquiped()
 {
     CItem* weapon = Weapons()->getItemById(m_weaponId);
     App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_BasicGameData* data = app->m_helper->GetGameData();
-    return data->GetWeapon01(true) == weapon || data->GetWeapon02(true) == weapon;
+    if (app->m_helper->GetGameData()->GetWeapon01(true) == weapon) {
+        return true;
+    }
+    app = static_cast<App*>(WindowApp::m_instance);
+    return app->m_helper->GetGameData()->GetWeapon02(true) == weapon;
 }
 
 bool CShopButtonWeapon::IsLocked()

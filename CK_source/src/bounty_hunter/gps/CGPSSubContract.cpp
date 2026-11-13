@@ -125,7 +125,7 @@ void CGPSSubContract::ShowInactiveInfo()
     dialog->SetMessageText(Window::ResString("IDS_DIALOG_SUB_CONTRACT_INACTIVE_MESSAGE"));
     CGPSHuntingItem* item = m_camera->GetGPSHuntingItem();
     float money = ceilf(item->m_moneyReward * m_rewardFactor);
-    float xp = ceilf(item->m_experienceReward * m_rewardFactor);
+    int xp = static_cast<int>(ceilf(item->m_experienceReward * m_rewardFactor));
 
     LabelWithIcon* moneyLabel = new LabelWithIcon("IDB_HUD_ICON_MONEY", XString("+") + XString(static_cast<int>(money)),
                                                   false, CFontMgr::GetInstance()->GetFont(15), 0);
@@ -136,7 +136,7 @@ void CGPSSubContract::ShowInactiveInfo()
     moneyLabel->SetOutsetSpacing(0, moneyRight, moneyBottom, 0);
     dialog->AddToFront(moneyLabel);
 
-    LabelWithIcon* xpLabel = new LabelWithIcon("IDB_HUD_ICON_EXP", XString("+") + XString(static_cast<int>(xp)),
+    LabelWithIcon* xpLabel = new LabelWithIcon("IDB_HUD_ICON_EXP", XString("+") + XString(xp),
                                                false, CFontMgr::GetInstance()->GetFont(15), 0);
     xpLabel->SetLayoutType(Window::LAYOUT_SIMPLE);
     xpLabel->SetAlign(0x14);
@@ -190,20 +190,23 @@ void CGPSSubContract::Collect()
 
 void CGPSSubContract::ShowReward(int money, int xp) const
 {
-    int centerX = m_screenX + GetWidth() / 2;
-    int centerY = m_screenY + GetWidth() / 2;
-    App* app = static_cast<App*>(WindowApp::m_instance);
+    int screenX = m_screenX;
+    int widthX = GetWidth();
+    int screenY = m_screenY;
+    int widthY = GetWidth();
+    int centerX = screenX + widthX / 2;
+    int centerY = screenY + widthY / 2;
 
-    AnimatedWindow* moneyLabel = MakeRewardWindow(XString::Format(L"+$%d", money));
+    AnimatedWindow* moneyLabel = MakeRewardWindow(XString("+$") + XString(money));
     int moneyY = centerY - moneyLabel->m_height / 2;
     moneyLabel->SetRect(centerX - moneyLabel->m_width / 2, moneyY,
                         moneyLabel->m_width, moneyLabel->m_height, false);
-    app->m_mainLayer->AddToFront(moneyLabel);
+    static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddToFront(moneyLabel);
 
-    AnimatedWindow* xpLabel = MakeRewardWindow(XString::Format(L"+%d XP", xp));
+    AnimatedWindow* xpLabel = MakeRewardWindow(XString("+") + XString(xp) + XString(" XP"));
     xpLabel->SetRect(centerX - xpLabel->m_width / 2, moneyY - xpLabel->m_height,
                      xpLabel->m_width, xpLabel->m_height, false);
-    app->m_mainLayer->AddToFront(xpLabel);
+    static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddToFront(xpLabel);
 }
 
 void CGPSSubContract::StartFly()

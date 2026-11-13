@@ -12,53 +12,52 @@
 typedef char CDH_WeaponsManager_ARMv7_Size[(sizeof(CDH_WeaponsManager) == 0x30) ? 1 : -1];
 
 CDH_WeaponsManager::CDH_WeaponsManager()
-    : m_maxWander(0.0f)
-    , m_maxWanderRounded(0)
-    , m_maxRange(0)
-    , m_maxDamage(0)
-    , m_maxRPM(0)
-    , m_maxClip(0)
+    : m_maxClip(0)
 {
+    m_maxWander = 0.0f;
+    m_maxWanderRounded = 0;
+    m_maxRange = 0;
+    m_maxDamage = 0;
+    m_maxRPM = 0;
+
     App* app = static_cast<App*>(WindowApp::m_instance);
     char* text = app->InitResMap()->loadText(XString(L"res/common/configs/weapons.xml"));
     TiXmlDocument document;
+    document.Parse(text, NULL, TIXML_ENCODING_UNKNOWN);
     if (text != NULL) {
-        document.Parse(text, NULL, TIXML_ENCODING_UNKNOWN);
         free(text);
     }
-
+    TiXmlNode* node = document.FirstChild("weapon");
     CDH_Weapon::InitUniversalAmmo();
-    for (TiXmlNode* node = document.FirstChild("weapon"); node != NULL; node = node->NextSibling("weapon")) {
+    for (; node != NULL; node = node->NextSibling("weapon")) {
         const int id = CXmlHelper::GetAttributeValue(node, "wid").ToInt();
         const XString path = CXmlHelper::GetAttributeValue(node, "config");
         CDH_Weapon* weapon = ParseWeapon(id, path);
-        if (weapon == NULL) {
-            continue;
-        }
         const float wander = weapon->wanderAmount();
-        if (m_maxWanderRounded < wander) {
-            m_maxWanderRounded = static_cast<int>(wander);
+        if (wander > m_maxWanderRounded) {
+            m_maxWanderRounded = static_cast<int>(weapon->wanderAmount());
         }
         const float range = weapon->effectiveRange();
-        if (m_maxRange < range) {
-            m_maxRange = static_cast<int>(range);
+        if (range > m_maxRange) {
+            m_maxRange = static_cast<int>(weapon->effectiveRange());
         }
         const int damage = weapon->damage();
-        if (m_maxDamage < damage) {
-            m_maxDamage = damage;
+        if (damage > m_maxDamage) {
+            m_maxDamage = weapon->damage();
         }
         const int rpm = weapon->getRPM();
-        if (m_maxRPM < rpm) {
-            m_maxRPM = rpm;
+        if (rpm > m_maxRPM) {
+            m_maxRPM = weapon->getRPM();
         }
-        if (m_maxClip < weapon->m_clipSize && weapon->m_clipSize != 1000000) {
-            m_maxClip = weapon->m_clipSize;
+        int clipSize = weapon->m_clipSize;
+        if (clipSize > m_maxClip && clipSize != 1000000) {
+            m_maxClip = clipSize;
         }
         m_weapons.addElement(weapon);
     }
     for (int index = 0; index < m_weapons.size(); ++index) {
         const float wander = m_weapons[index]->wanderAmountMax();
-        if (m_maxWander < wander) {
+        if (wander > m_maxWander) {
             m_maxWander = wander;
         }
     }
@@ -68,16 +67,12 @@ CDH_Weapon* CDH_WeaponsManager::ParseWeapon(int id, const XString& path)
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     char* text = app->InitResMap()->loadText(path);
-    if (text == NULL) {
-        return NULL;
-    }
     TiXmlDocument document;
     document.Parse(text, NULL, TIXML_ENCODING_UNKNOWN);
-    free(text);
-    const TiXmlElement* element = document.FirstChildElement("weapon");
-    if (element == NULL) {
-        return NULL;
+    if (text != NULL) {
+        free(text);
     }
+    TiXmlElement* element = document.FirstChild("weapon")->ToElement();
     CDH_Weapon* weapon = new CDH_Weapon(id);
     weapon->init(*element);
     return weapon;
@@ -86,17 +81,14 @@ CDH_Weapon* CDH_WeaponsManager::ParseWeapon(int id, const XString& path)
 CDH_WeaponsManager::~CDH_WeaponsManager()
 {
     ReleaseResourcesImpl();
-    CleanupAll();
-}
-
-void CDH_WeaponsManager::CleanupAll()
-{
     for (int index = 0; index < m_weapons.size(); ++index) {
+        m_weapons[index]->Save(true);
         CDH_Weapon* weapon = m_weapons[index];
-        weapon->Save(true);
-        delete weapon;
+        if (weapon != NULL) {
+            delete weapon;
+            m_weapons[index] = NULL;
+        }
     }
-    m_weapons.setSize(0);
 }
 
 void CDH_WeaponsManager::ReleaseResourcesImpl()
@@ -123,14 +115,8 @@ void CDH_WeaponsManager::resetData()
     for (int index = 0; index < m_weapons.size(); ++index) {
         m_weapons[index]->setAvailable(false);
     }
-    CDH_Weapon* first = GetWeaponById(0);
-    if (first != NULL) {
-        first->setAvailable(true);
-    }
-    CDH_Weapon* second = GetWeaponById(1);
-    if (second != NULL) {
-        second->setAvailable(true);
-    }
+    GetWeaponById(0)->setAvailable(true);
+    GetWeaponById(1)->setAvailable(true);
 }
 
 Vector<XString> CDH_WeaponsManager::GetUnlockedWeapons(int level) const
@@ -193,8 +179,9 @@ int CDH_WeaponsManager::GetUnlockedWeaponsIdOnLevel(int level, Vector<int>& ids)
     int count = 0;
     for (CItem* item = firstItem(); item != NULL; item = nextItem()) {
         if (item->m_unlockLevel == level) {
+            int id = item->m_id;
             ++count;
-            ids.addElement(item->m_id);
+            ids.addElement(id);
         }
     }
     return count;
@@ -210,9 +197,11 @@ bool CDH_WeaponsManager::HasWeaponForAmmo(int ammoId)
     if (ammo->m_universal) {
         return true;
     }
-    for (CItem* item = firstItem(); item != NULL; item = nextItem()) {
+    for (CItem* item = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->firstItem();
+         item != NULL;
+         item = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->nextItem()) {
         CDH_Weapon* weapon = static_cast<CDH_Weapon*>(item);
-        if (weapon->isAvailable() && weapon->CanUseAmmo(ammo)) {
+        if (weapon->isAvailable() == 1 && weapon->CanUseAmmo(ammo)) {
             return true;
         }
     }

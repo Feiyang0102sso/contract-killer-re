@@ -12,20 +12,6 @@
 
 typedef char GamePlayManager_ARMv7_Size[(sizeof(GamePlayManager) == 0xc0) ? 1 : -1];
 
-namespace {
-    void LogEquipped(const CDH_Weapon& weapon)
-    {
-        XString id = XString::Format(L"%02d_%s", weapon.m_id, weapon.m_name.c_str());
-        int price = weapon.m_pricePoints;
-        CGameAnalytics::ECurrencyType currency = CGameAnalytics::CURRENCY_SOFT;
-        if (price < 1) {
-            price = weapon.getPriceCredits();
-            currency = CGameAnalytics::CURRENCY_HARD;
-        }
-        CGameAnalytics::logItemEquipped(id, price, currency);
-    }
-}
-
 GamePlayManager::GamePlayManager()
     : m_gameType(GAME_TYPE_QUICK)
     , m_fieldbc(false)
@@ -108,8 +94,13 @@ void GamePlayManager::SetWeapon01(int id)
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     CDH_Weapon* weapon = app->InitWeaponManager()->GetWeaponById(id);
-    if (weapon != NULL) {
-        LogEquipped(*weapon);
+    XString name = XString::Format(L"%02d_%s", id, weapon->m_name.c_str());
+    int pricePoints = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(id)->m_pricePoints;
+    weapon = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(id);
+    if (pricePoints >= 1) {
+        CGameAnalytics::logItemEquipped(name, weapon->m_pricePoints, CGameAnalytics::CURRENCY_SOFT);
+    } else {
+        CGameAnalytics::logItemEquipped(name, weapon->getPriceCredits(), CGameAnalytics::CURRENCY_HARD);
     }
     CDH_BasicGameData* data = GetGameData();
     data->m_activeWeaponId = id;
@@ -120,8 +111,13 @@ void GamePlayManager::SetWeapon02(int id)
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     CDH_Weapon* weapon = app->InitWeaponManager()->GetWeaponById(id);
-    if (weapon != NULL) {
-        LogEquipped(*weapon);
+    XString name = XString::Format(L"%02d_%s", id, weapon->m_name.c_str());
+    int pricePoints = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(id)->m_pricePoints;
+    weapon = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(id);
+    if (pricePoints >= 1) {
+        CGameAnalytics::logItemEquipped(name, weapon->m_pricePoints, CGameAnalytics::CURRENCY_SOFT);
+    } else {
+        CGameAnalytics::logItemEquipped(name, weapon->getPriceCredits(), CGameAnalytics::CURRENCY_HARD);
     }
     GetGameData()->m_weaponIds[1] = id;
 }

@@ -36,7 +36,8 @@ void CGPSInstantInformant::ParseNode(TiXmlNode* node)
 
 void CGPSInstantInformant::ParseInfo(TiXmlNode* node)
 {
-    m_type = static_cast<Type>(CXmlHelper::GetAttributeValue(node, "type").ToInt());
+    int type = CXmlHelper::GetAttributeValue(node, "type").ToInt();
+    m_type = static_cast<Type>(type);
     m_icon = CXmlHelper::GetAttributeValue(node, "image");
     m_cameraImage = CXmlHelper::GetAttributeValue(node, "imageCamera");
     m_unlockLevel = CXmlHelper::GetAttributeValue(node, "unlock_lvl").ToInt();
@@ -59,20 +60,26 @@ void CGPSInstantInformant::ParseInfo(TiXmlNode* node)
 
 void CGPSInstantInformant::ParseBountuies(TiXmlNode* node)
 {
-    Vector<XString> types;
-    CXmlHelper::GetAttributeValue(node, "bounty_types").Split(types, L",");
-    for (int index = 0; index < types.size(); ++index) {
-        XString value = types[index].Trim(true, true);
-        if (value.Length() != 0) {
-            m_bountyTypes.addElement(value.ToInt());
+    if (node != NULL) {
+        XString source = CXmlHelper::GetAttributeValue(node, "bounty_types");
+        Vector<XString> types;
+        source.Split(types, L",");
+        for (int index = 0; index < types.size(); ++index) {
+            XString value = types[index].Trim(true, true);
+            if (value.GetData()->m_byteSize != 0) {
+                int type = value.ToInt();
+                m_bountyTypes.addElement(type);
+            }
         }
     }
 }
 
 void CGPSInstantInformant::ParseSquad(TiXmlNode* node)
 {
-    if (CXmlHelper::HasAttribute(node, "squads")) {
-        CXmlHelper::GetAttributeValue(node, "squads").Split(m_squads, L",");
+    if (node != NULL && CXmlHelper::HasAttribute(node, "squads") == true) {
+        XString source = CXmlHelper::GetAttributeValue(node, "squads");
+        Vector<XString> squads;
+        source.Split(m_squads, L",");
     }
 }
 
@@ -94,9 +101,10 @@ void CGPSInstantInformant::SetBlinking(bool enabled)
 void CGPSInstantInformant::Update(long)
 {
     UpdateState();
-    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial() == true) {
         App* app = static_cast<App*>(WindowApp::m_instance);
-        SetBlinking(app->m_tutorialManager->IsInstantInformantBlink(m_id));
+        bool blink = app->m_tutorialManager->IsInstantInformantBlink(m_id);
+        SetBlinking(blink == true);
     }
 }
 
@@ -122,39 +130,39 @@ void CGPSInstantInformant::UpdateState()
     }
     unsigned int now = CStdUtil_Cocoa::GetTimeSeconds();
     int levelDiff = CBH_Player::GetInstance()->GetLevel() - m_unlockLevel;
-    if (m_type == Moving) {
+    Type type = m_type;
+    if (type == Moving) {
+        State& state = m_state;
         bool visible = false;
         if (levelDiff >= 0) {
             m_listener->OnVehicleMissionsVisible();
-            bool finished = CBH_GPSMap::m_instance->IsMovingCameraMissionsFinished();
-            if (finished) {
-                visible = true;
-                if (m_state == Hidden && finished == true) {
-                    m_state = Available;
-                }
-            }
+            visible = CBH_GPSMap::m_instance->IsMovingCameraMissionsFinished();
         }
-        if (!visible) {
-            m_state = Hidden;
+        if (visible) {
+            if (state == Hidden && visible == true) {
+                state = Available;
+            }
+        } else {
+            state = Hidden;
         }
         m_visible = visible;
-        if (m_state == Hidden) {
+        if (state == Hidden) {
             return;
         }
         if (m_cameraId >= 0) {
-            m_state = Assigned;
+            state = Assigned;
             return;
         }
         if (levelDiff < 0) {
             return;
         }
         if (now - m_lastBountyCompleted >= m_cooldown) {
-            m_state = Available;
+            state = Available;
         }
         return;
     }
     m_visible = true;
-    if (m_type == Targeting) {
+    if (type == Targeting) {
         m_listener->OnTargetMissionsVisible();
     }
     if (m_cameraId >= 0) {
@@ -164,10 +172,8 @@ void CGPSInstantInformant::UpdateState()
         m_visible = false;
     } else if (!m_bought) {
         m_state = Locked;
-    } else if (now - m_lastBountyCompleted < m_cooldown) {
-        m_state = Searching;
     } else {
-        m_state = Available;
+        m_state = now - m_lastBountyCompleted < m_cooldown ? Searching : Available;
     }
 }
 
@@ -291,8 +297,9 @@ void CGPSInstantInformant::OnBountyCanceled()
 
 int CGPSInstantInformant::GetRandomBountyType() const
 {
-    if (m_bountyTypes.size() > 0) {
-        return m_bountyTypes[CRandGen::GetInstance()->GetRand(m_bountyTypes.size())];
+    int count = m_bountyTypes.size();
+    if (count > 0) {
+        return m_bountyTypes[CRandGen::GetInstance()->GetRand(count)];
     }
     return 0;
 }
@@ -314,25 +321,34 @@ bool CGPSInstantInformant::HasSpecialSquad() const
 
 XString CGPSInstantInformant::GetSquadName() const
 {
-    if (m_squads.size() > 0) {
-        int index = CRandGen::GetInstance()->GetRandRange(0, m_squads.size() - 1);
-        return m_squads[index];
+    int count = m_squads.size();
+    int index = CRandGen::GetInstance()->GetRandRange(0, count - 1);
+    if (index < 0 || index >= count) {
+        return XString("");
     }
-    return XString();
+    return m_squads[index];
 }
 
 bool CGPSInstantInformant::Buy()
 {
-    CBH_Player* player = CBH_Player::GetInstance();
-    if (m_bought || m_cashCost > player->m_cash || m_creditsCost > player->m_credits) {
+    if (m_bought) {
         return false;
     }
-    player->ReduceMoney(m_cashCost);
-    player->ReduceCredits(m_creditsCost);
+    CBH_Player* player = CBH_Player::GetInstance();
+    if (player->m_cash < m_cashCost || player->m_credits < m_creditsCost) {
+        return false;
+    }
+    CBH_Player::GetInstance()->ReduceMoney(m_cashCost);
+    CBH_Player::GetInstance()->ReduceCredits(m_creditsCost);
     XString source = XString::Format(L"%02d_informant", m_id);
     CGameAnalytics::logCurrencyChange(source, -m_cashCost, CGameAnalytics::CURRENCY_SOFT);
     CGameAnalytics::logCurrencyChange(source, -m_creditsCost, CGameAnalytics::CURRENCY_HARD);
-    return BuyFree();
+    m_bought = true;
+    UpdateState();
+    UpdateIcon();
+    CGameAnalytics::logInformantUnlocked(m_id);
+    CBH_Player::GetInstance()->m_gameStats.AddInformantsUnlocked(1);
+    return true;
 }
 
 bool CGPSInstantInformant::BuyFree()
@@ -349,11 +365,12 @@ bool CGPSInstantInformant::BuyFree()
 bool CGPSInstantInformant::BuyInfoFaster()
 {
     CBH_Player* player = CBH_Player::GetInstance();
-    if (player->m_cash < 0 || m_resetCost > player->m_credits) {
+    if (player->m_cash < 0 || player->m_credits < m_resetCost) {
         return false;
     }
-    player->ReduceCredits(m_resetCost);
-    CGameAnalytics::logCurrencyChange(XString("informant timer"), -m_resetCost, CGameAnalytics::CURRENCY_HARD);
+    CBH_Player::GetInstance()->ReduceCredits(m_resetCost);
+    XString source("informant timer");
+    CGameAnalytics::logCurrencyChange(source, -m_resetCost, CGameAnalytics::CURRENCY_HARD);
     m_lastBountyCompleted = 0;
     UpdateState();
     UpdateIcon();

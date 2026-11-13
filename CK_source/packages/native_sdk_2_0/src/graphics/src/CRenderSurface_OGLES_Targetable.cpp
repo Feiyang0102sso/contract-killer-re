@@ -2,7 +2,8 @@
 #include <OpenGLES/ES1/gl.h>
 #include <OpenGLES/ES1/glext.h>
 #include "CRenderSurface_OGLES_Targetable.h"
-#include "CGraphics_OGLES.h"
+#include "CGraphics_OGLES_Cocoa.h"
+#include "CGraphics_HAL.h"
 #include "CBlit.h"
 #include "CBlitUtil.h"
 #include "CMathFixed.h"
@@ -16,9 +17,9 @@ static const GLfixed Targetable_AlphaReference = 0x1998;
 static const short Targetable_TexCoordOne = 0x1000;
 
 /** Power of two texture size that holds `size` texels (at most 0x800). */
-static inline int CRenderSurface_OGLES_Targetable_TextureSize(short size, int previous)
+static inline int CRenderSurface_OGLES_Targetable_TextureSize(short size)
 {
-    int textureSize = previous;
+    int textureSize;
     if (size < 9) {
         if (size < 2) {
             textureSize = 1;
@@ -26,7 +27,7 @@ static inline int CRenderSurface_OGLES_Targetable_TextureSize(short size, int pr
             textureSize = 2;
         } else if (size < 5) {
             textureSize = 4;
-        } else if (size <= 8) {
+        } else {
             textureSize = 8;
         }
     } else {
@@ -78,60 +79,54 @@ void CRenderSurface_OGLES_Targetable::Lock(unsigned char** data, int& pitch, Loc
     if ((flags & Flag_LockMask) == 0) {
         CRenderSurfaceBuffer* buffer = source->m_buffers[Buffer_Color];
         if (this == ICGraphics::GetInstance()->GetTargetSurface() &&
-            buffer != NULL && (buffer->m_flags & CRenderSurfaceBuffer::Flag_OwnsData)) {
+            (buffer->m_flags & CRenderSurfaceBuffer::Flag_OwnsData)) {
             if (!m_keepBufferData) {
                 // the pixels were dropped after the upload: allocate them again
                 buffer->Initialize(buffer->m_format, buffer->m_imageWidth, buffer->m_imageHeight, 1, NULL, NULL,
                                    CRenderSurfaceBuffer::PitchCondition_Positive, buffer->m_pitch, NULL);
             }
 
-            unsigned int width = buffer->m_imageWidth;
-            unsigned int height = buffer->m_imageHeight;
-            void* pixels = malloc(width * height * 4);
-            void* destination = buffer->GetLevel(0);
-            if (pixels != NULL && destination != NULL) {
-                glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-                // OpenGL reads A8B8G8R8: convert into the buffer
-                CBlitUtil::BlitOpDesc blitOp;
-                blitOp.m_source = RSBFormat_A8B8G8R8;
-                blitOp.m_destination = buffer->m_format;
-                blitOp.m_colorKeyTest = CBlitUtil::ColorKeyTest_None;
-                blitOp.m_alphaTest = CBlitUtil::AlphaTest_None;
-                blitOp.m_blend = CBlitUtil::Blend_None;
-                blitOp.m_opId = CBlitUtil::BlitOpId_Buffer;
-                CBlitUtil::GetBlitOp(blitOp);
-                CBlit::BufferOpDesc copy;
-                copy.m_scaleX = 0x10000;
-                copy.m_scaleY = 0x10000;
-                copy.m_flipX = 0;
-                copy.m_flipY = 0;
-                copy.m_width = width;
-                copy.m_height = height;
-                copy.m_reserved08 = 0;
-                copy.m_sourcePitch = static_cast<short>(width * 4);
-                copy.m_source = pixels;
-                copy.m_destination = destination;
-                copy.m_destinationPitch = buffer->m_pitch;
-                ((void (*)(const CBlit::BufferOpDesc&))blitOp.m_function)(copy);
-                buffer->MakePitchNegative();
-                free(pixels);
+            void* pixels = malloc(buffer->m_imageWidth * buffer->m_imageHeight * 4u);
+            glReadPixels(0, 0, buffer->m_imageWidth, buffer->m_imageHeight, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+            // OpenGL reads A8B8G8R8: convert into the buffer
+            CBlitUtil::BlitOpDesc blitOp;
+            blitOp.m_source = RSBFormat_A8B8G8R8;
+            blitOp.m_destination = buffer->m_format;
+            blitOp.m_colorKeyTest = CBlitUtil::ColorKeyTest_None;
+            blitOp.m_alphaTest = CBlitUtil::AlphaTest_None;
+            blitOp.m_blend = CBlitUtil::Blend_None;
+            blitOp.m_opId = CBlitUtil::BlitOpId_Buffer;
+            CBlitUtil::GetBlitOp(blitOp);
+            CBlit::BufferOpDesc copy;
+            copy.m_scaleX = 0x10000;
+            copy.m_scaleY = 0x10000;
+            copy.m_flipX = 0;
+            copy.m_flipY = 0;
+            copy.m_width = buffer->m_imageWidth;
+            copy.m_height = buffer->m_imageHeight;
+            copy.m_reserved08 = 0;
+            copy.m_sourcePitch = static_cast<short>(buffer->m_imageWidth * 4);
+            copy.m_source = pixels;
+            copy.m_destination = buffer->GetLevel(0);
+            copy.m_destinationPitch = buffer->m_pitch;
+            ((void (*)(const CBlit::BufferOpDesc&))blitOp.m_function)(copy);
+            buffer->MakePitchNegative();
+            free(pixels);
 
-                // lock the source buffer through this surface
-                CRenderSurfaceBuffer* ownBuffer = m_buffers[Buffer_Color];
-                m_buffers[Buffer_Color] = buffer;
-                unsigned char* locked = NULL;
-                CRenderSurface_SW::Lock(&locked, pitch, lockType, area);
-                m_buffers[Buffer_Color] = ownBuffer;
-                if (locked != NULL) {
-                    if (data != NULL) {
-                        *data = locked + (buffer->m_height - height) * pitch;
-                    }
-                    m_lockCount++;
-                    m_flags |= Flag_LockMask;
-                    return;
+            // lock the source buffer through this surface
+            CRenderSurfaceBuffer* ownBuffer = m_buffers[Buffer_Color];
+            m_buffers[Buffer_Color] = buffer;
+            unsigned char* locked;
+            CRenderSurface_SW::Lock(&locked, pitch, lockType, area);
+            m_buffers[Buffer_Color] = ownBuffer;
+            if (locked != NULL) {
+                if (data != NULL) {
+                    *data = locked;
+                    *data = locked + (buffer->m_height - buffer->m_imageHeight) * pitch;
                 }
-            } else {
-                free(pixels);
+                m_lockCount++;
+                m_flags |= Flag_LockMask;
+                return;
             }
         }
         if (data != NULL) {
@@ -185,8 +180,8 @@ void CRenderSurface_OGLES_Targetable::UpdateTargetWithTexture()
     unsigned int height;
     GetWidthAndHeight(width, height);
     glDisable(GL_SCISSOR_TEST);
-    CGraphics_OGLES* graphics = CGraphics_OGLES::GetHardware();
-    graphics->SetWidthAndHeightMappedViewportAndOrthoProjection(*this);
+    CGraphics_HAL* graphics = static_cast<CGraphics_HAL*>(ICGraphics::GetInstance());
+    graphics->m_hardware->SetWidthAndHeightMappedViewportAndOrthoProjection(*this);
     glActiveTexture(GL_TEXTURE0);
     glTexEnvx(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     glMatrixMode(GL_TEXTURE);
@@ -199,12 +194,13 @@ void CRenderSurface_OGLES_Targetable::UpdateTargetWithTexture()
     glLoadIdentity();
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);
-    const ICGraphics::Description& description = graphics->m_description;
+    const ICGraphics::Description& description =
+        *ICGraphics::GetInstance()->GetDescription(ICGraphics::Abstraction_Hardware);
+    glDisable(GL_NORMALIZE);
     glDisable(GL_DITHER);
     glColorMask(1, 1, 1, 1);
     glDisable(GL_POLYGON_OFFSET_FILL);
     glDepthMask(0);
-    glDisable(GL_NORMALIZE);
     glDisable(GL_FOG);
     glDisable(GL_COLOR_MATERIAL);
     glDisable(GL_LIGHTING);
@@ -236,8 +232,8 @@ void CRenderSurface_OGLES_Targetable::UpdateTargetWithTexture()
     glEnableClientState(GL_VERTEX_ARRAY);
 
     // one quad per texture tile
-    unsigned int tileWidth = description.m_maxRenderTargetWidth;
-    unsigned int tileHeight = description.m_maxRenderTargetHeight;
+    short tileWidth = static_cast<short>(description.m_maxRenderTargetWidth);
+    short tileHeight = static_cast<short>(description.m_maxRenderTargetHeight);
     short texCoords[8];
     texCoords[0] = 0;
     texCoords[2] = 0;
@@ -248,27 +244,27 @@ void CRenderSurface_OGLES_Targetable::UpdateTargetWithTexture()
     glDisableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_VERTEX_ARRAY);
     short vertices[8];
-    short x = 0;
-    short y = 0;
+    int x = 0;
+    int y = 0;
     for (int index = 0; index < source->m_textureCount; index++) {
         GLuint texture = source->GetTextureName(index);
-        short tileRight = x + (short)tileWidth;
+        int tileRight = static_cast<short>(x) + tileWidth;
         short quadWidth;
         if (tileRight > (short)width) {
             // the last column: scale the coordinates to the part of the texture that is used
-            quadWidth = (short)width - x;
-            int textureWidth = CRenderSurface_OGLES_Targetable_TextureSize(quadWidth, 1);
+            quadWidth = static_cast<short>(width) - static_cast<short>(x);
+            int textureWidth = CRenderSurface_OGLES_Targetable_TextureSize(quadWidth);
             texCoords[4] = (short)((unsigned int)CMathFixed::Div(quadWidth << 16, textureWidth << 16) >> 4);
         } else {
             texCoords[4] = Targetable_TexCoordOne;
             quadWidth = tileWidth;
         }
         texCoords[6] = texCoords[4];
-        short tileTop = y + (short)tileHeight;
+        int tileTop = static_cast<short>(y) + tileHeight;
         short quadHeight;
         if (tileTop > (short)height) {
-            quadHeight = (short)height - y;
-            int textureHeight = CRenderSurface_OGLES_Targetable_TextureSize(quadHeight, 1);
+            quadHeight = static_cast<short>(height) - static_cast<short>(y);
+            int textureHeight = CRenderSurface_OGLES_Targetable_TextureSize(quadHeight);
             texCoords[1] = (short)((unsigned int)CMathFixed::Div(quadHeight << 16, textureHeight << 16) >> 4);
         } else {
             texCoords[1] = Targetable_TexCoordOne;
@@ -276,10 +272,10 @@ void CRenderSurface_OGLES_Targetable::UpdateTargetWithTexture()
         }
         texCoords[5] = texCoords[1];
         vertices[0] = x;
-        vertices[1] = (short)height - (quadHeight + y);
+        vertices[1] = static_cast<short>(height) - (quadHeight + static_cast<short>(y));
         vertices[2] = x;
-        vertices[3] = (short)height - y;
-        vertices[4] = quadWidth + x;
+        vertices[3] = static_cast<short>(height) - static_cast<short>(y);
+        vertices[4] = quadWidth + static_cast<short>(x);
         vertices[5] = vertices[1];
         vertices[6] = vertices[4];
         vertices[7] = vertices[3];

@@ -30,7 +30,7 @@ public:
     void Load(TiXmlElement* element);
     XString ParametrizeText(const XString& text) const;
     static XString ParametrizeTextWithParams(const XString& text, XString bossName, bool isMan);
-    void SetBossScreenName(const XString& name) { m_bossName.Assign(name.Clone()); }
+    void SetBossScreenName(const XString& name);
     bool SetTargetFriendId(int friendId);
     bool SetTargetFBUser(CStrWChar identity);
 

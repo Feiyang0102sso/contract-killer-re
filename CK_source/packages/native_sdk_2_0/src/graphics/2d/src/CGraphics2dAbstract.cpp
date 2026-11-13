@@ -187,17 +187,21 @@ void CGraphics2dAbstract::Matrix::precat_R(Matrix* other)
 
 void CGraphics2dAbstract::Matrix::multiply(int a, int b, int c, int d, int tx, int ty)
 {
+    Matrix result;
     Matrix other;
     other.m[0][0] = a;
     other.m[0][1] = b;
     other.m[1][0] = c;
     other.m[1][1] = d;
     // the translation goes through the current linear part
-    m[2][0] += smult16(tx, m[0][0]) + smult16(ty, m[0][1]);
-    m[2][1] += smult16(tx, m[1][0]) + smult16(ty, m[1][1]);
+    const int tx0 = smult16(tx, m[0][0]);
+    const int ty0 = smult16(ty, m[0][1]);
+    const int tx1 = smult16(tx, m[1][0]);
+    const int ty1 = smult16(ty, m[1][1]);
+    m[2][0] += tx0 + ty0;
+    m[2][1] += tx1 + ty1;
 
     // linear part: this = this * other (precat_R written out)
-    Matrix result;
     for (int column = 0; column < 2; column++) {
         for (int row = 0; row < 2; row++) {
             result.m[row][column] = smult16(other.m[0][column], m[row][0]) +
@@ -214,38 +218,43 @@ void CGraphics2dAbstract::Matrix::multiply(int a, int b, int c, int d, int tx, i
 void CGraphics2dAbstract::Draw(ICRenderText2d& text)
 {
     const CRenderText2d::TextModel& model = static_cast<CRenderText2d&>(text).m_model;
-    if (!(model.m_flags & CRenderText2d::Flag_BitmapFont)) {
-        if ((model.m_flags & CRenderText2d::Flag_SystemFont) && model.m_surfaceResource != NULL) {
-            ICRenderSurface* surface = static_cast<ICRenderSurface*>(model.m_surfaceResource->GetData());
-            if (surface != NULL) {
-                ICGraphics2d::GetInstance()->Draw(*surface, Flip_None, NULL);
-            }
+    if (model.m_flags & CRenderText2d::Flag_BitmapFont) {
+        if (model.m_text == NULL) {
+            return;
         }
-        return;
-    }
-    if (model.m_text == NULL) {
-        return;
-    }
 
-    const CGraphicFont& font = *static_cast<const CGraphicFont*>(model.m_font);
-    ICRenderSurface* atlas = font.m_image;
-    const wchar_t* characters = static_cast<const wchar_t*>(model.m_text);
-    ICGraphics2d* renderer = ICGraphics2d::GetInstance();
-    int x = 0;
-    for (unsigned int index = 0; index < model.m_length; ++index) {
-        const CGraphicFont::ControlChar* control = font.GetControlChar(characters[index]);
-        if (control != NULL) {
-            x += control->m_advance + font.m_metrics->m_charSpacing;
-            continue;
+        const CGraphicFont& font = *static_cast<const CGraphicFont*>(model.m_font);
+        ICRenderSurface* atlas = font.m_image;
+        const CGraphicFont::Metrics* metrics = font.m_metrics;
+        ICGraphics2d* renderer = ICGraphics2d::GetInstance();
+        if (model.m_length == 0) {
+            return;
         }
-        const CGraphicFont::Glyph* glyph = font.GetChar(characters[index]);
-        if (glyph != NULL) {
-            const CRectangle rectangle(glyph->m_x, glyph->m_y, glyph->m_width, glyph->m_height);
-            PushTransform();
-            Translate((x + glyph->m_offsetX) * 65536, glyph->m_offsetY * 65536);
-            renderer->Draw(*atlas, Flip_None, &rectangle);
-            PopTransform();
-            x += glyph->m_advance + font.m_metrics->m_charSpacing;
+
+        const wchar_t* characters = static_cast<const wchar_t*>(model.m_text);
+        int x = 0;
+        int index = 0;
+        do {
+            const CGraphicFont::ControlChar* control = font.GetControlChar(characters[index]);
+            if (control != NULL) {
+                x += control->m_advance + metrics->m_charSpacing;
+            } else {
+                const CGraphicFont::Glyph* glyph = font.GetChar(characters[index]);
+                if (glyph != NULL) {
+                    const CRectangle rectangle(glyph->m_x, glyph->m_y, glyph->m_width, glyph->m_height);
+                    PushTransform();
+                    Translate((x + glyph->m_offsetX) * 65536, glyph->m_offsetY * 65536);
+                    renderer->Draw(*atlas, Flip_None, &rectangle);
+                    PopTransform();
+                    x += glyph->m_advance + metrics->m_charSpacing;
+                }
+            }
+            ++index;
+        } while (index < model.m_length);
+    } else if ((model.m_flags & CRenderText2d::Flag_SystemFont) && model.m_surfaceResource != NULL) {
+        ICRenderSurface* surface = static_cast<ICRenderSurface*>(model.m_surfaceResource->GetData());
+        if (surface != NULL) {
+            ICGraphics2d::GetInstance()->Draw(*surface, Flip_None, NULL);
         }
     }
 }

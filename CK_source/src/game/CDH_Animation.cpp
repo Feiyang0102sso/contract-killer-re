@@ -1,6 +1,7 @@
 // CDH_Animation.cpp - find Swerve tracks and drive their controllers.
 #include "CDH_Animation.h"
 
+#include "DGHelper.h"
 #include "SwerveHelper.h"
 #include "WindowApp.h"
 
@@ -24,34 +25,37 @@ namespace {
 
 CDH_Animation::Track getFirstControlledTrack(CDH_Animation::Object3D object, CDH_Animation::Controller controller)
 {
-    if (object == NULL) {
-        return CDH_Animation::Track();
-    }
-    IQueryInterface* owner = object.m_interface;
-    int count = 0;
-    Method<ReadInt>(owner, 0x14)(owner, &count);
-    for (int index = count - 1; index >= 0; --index) {
-        IQueryInterface* handle = NULL;
+    int count;
+    Method<ReadInt>(object.m_interface, 0x14)(object.m_interface, &count);
+    while (count > 0) {
+        int index = count - 1;
+        IQueryInterface* owner = object.m_interface;
+        IQueryInterface* handle;
         Method<ReadIndexedObject>(owner, 0x18)(owner, index, &handle);
         CDH_Animation::Track track(handle);
-        if (track != NULL) {
-            IQueryInterface* control = NULL;
+        bool matches;
+        {
+            IQueryInterface* control;
             Method<ReadObject>(handle, 0x50)(handle, &control);
             const CDH_Animation::Object3D attached(control);
-            if (attached == controller) {
-                return track;
-            }
+            matches = attached == controller;
         }
+        if (matches) {
+            return track;
+        }
+        count = index;
     }
 
     const Group group(object);
     if (group != NULL) {
-        owner = group.m_interface;
+        IQueryInterface* owner = group.m_interface;
         Method<ReadInt>(owner, 0xb8)(owner, &count);
         for (int index = count - 1; index >= 0; --index) {
-            IQueryInterface* handle = NULL;
-            Method<ReadIndexedObject>(owner, 0xbc)(owner, index, &handle);
-            CDH_Animation::Track track = getFirstControlledTrack(CDH_Animation::Object3D(handle), controller);
+            IQueryInterface* childInterface;
+            Method<ReadIndexedObject>(owner, 0xbc)(owner, index, &childInterface);
+            CDH_Animation::Object3D child(childInterface);
+            CDH_Animation::Track track = getFirstControlledTrack(child, controller);
+            child.Clear();
             if (track != NULL) {
                 return track;
             }
@@ -74,27 +78,41 @@ CDH_Animation::~CDH_Animation()
 
 bool CDH_Animation::HaveController(Object3D object, const char* name)
 {
-    return Controller(SwerveHelper::Find(object, name)) != NULL;
+    Object3D found = object.find(DGHelper::getSwerveID(name));
+    IQueryInterface* controller = NULL;
+    if (found.m_interface == NULL) {
+        return false;
+    }
+    found.m_interface->QueryInterface(Controller::InterfaceId, reinterpret_cast<void**>(&controller));
+    found.Clear();
+    bool available = controller != NULL;
+    if (available) {
+        controller->Release();
+    }
+    return available;
 }
 
 int CDH_Animation::addController(const XString& name)
 {
-    Controller controller(SwerveHelper::Find(m_object, XString::AnsiString(name.c_str())));
-    if (controller == NULL) {
-        return -1;
+    IQueryInterface* controllerInterface = NULL;
+    {
+        XString::AnsiString asciiName(name.c_str());
+        Object3D found = m_object.find(DGHelper::getSwerveID(asciiName));
+        if (found.m_interface != NULL) {
+            found.m_interface->QueryInterface(Controller::InterfaceId, reinterpret_cast<void**>(&controllerInterface));
+        }
     }
-    IQueryInterface* handle = controller.m_interface;
-    Method<SetFloat>(handle, 0x50)(handle, 0.0f);
-    Track track = getFirstControlledTrack(m_object, controller);
-    if (track == NULL) {
-        return -1;
-    }
-    IQueryInterface* sequence = NULL;
-    Method<ReadObject>(track.m_interface, 0x58)(track.m_interface, &sequence);
-    int duration = 0;
-    if (sequence != NULL) {
+    Controller controller(controllerInterface);
+    Method<SetFloat>(controllerInterface, 0x50)(controllerInterface, 0.0f);
+    int duration;
+    {
+        Track track = getFirstControlledTrack(m_object, controller);
+        IQueryInterface* sequence;
+        Method<ReadObject>(track.m_interface, 0x58)(track.m_interface, &sequence);
         Method<ReadInt>(sequence, 0x50)(sequence, &duration);
-        sequence->Release();
+        if (sequence != NULL) {
+            sequence->Release();
+        }
     }
     const int index = m_controllers.size();
     m_controllers.addElement(controller);
@@ -124,21 +142,25 @@ void CDH_Animation::setCurrentController(int worldTime, int index, bool reverse)
 {
     stopAllAnimation();
     if (index >= 0 && index < m_controllers.size()) {
-        IQueryInterface* controller = m_controllers[index].m_interface;
+        Controller handle = m_controllers[index];
+        IQueryInterface* controller = handle.m_interface;
         Method<SetFloat>(controller, 0x50)(controller, 1.0f);
-        float speed = 1.0f;
-        Method<ReadFloat>(controller, 0x5c)(controller, &speed);
+        float reportedSpeed;
+        Method<ReadFloat>(controller, 0x5c)(controller, &reportedSpeed);
+        float speed = reportedSpeed;
         if (speed < 0.0f) {
             speed = -speed;
         }
-        float position = 0.0f;
-        if (reverse) {
-            position = static_cast<float>(m_durations[index]);
-            speed = -speed;
+        if (reverse == true) {
+            float position = static_cast<float>(m_durations[index]);
+            Method<SetTimedFloat>(controller, 0x6c)(controller, position, worldTime);
+            Method<SetTimedFloat>(controller, 0x70)(controller, -speed, worldTime);
+        } else {
+            Method<SetTimedFloat>(controller, 0x6c)(controller, 0.0f, worldTime);
+            Method<SetTimedFloat>(controller, 0x70)(controller, speed, worldTime);
         }
-        Method<SetTimedFloat>(controller, 0x6c)(controller, position, worldTime);
-        Method<SetTimedFloat>(controller, 0x70)(controller, speed, worldTime);
-    } else {
+    }
+    if (index <= -1) {
         worldTime = -1;
     }
     m_currentController = index;

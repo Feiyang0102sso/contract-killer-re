@@ -24,10 +24,14 @@ CSaveRestoreInterface::CSaveRestoreInterface(int collectionType, int version, Ba
 
 unsigned char CSaveRestoreInterface::compareAllData(const CSaveRestoreInterface& other)
 {
-    if (m_collectionType != other.m_collectionType || m_version != other.m_version) {
-        return 0;
+    unsigned char same = 0;
+    if (m_collectionType == other.m_collectionType) {
+        same = m_version == other.m_version;
+        if (same) {
+            same = compareData(&other);
+        }
     }
-    return compareData(&other);
+    return same;
 }
 
 unsigned char CSaveRestoreInterface::copyAllData(const CSaveRestoreInterface& other)
@@ -174,8 +178,10 @@ void CSaveRestoreInterface::debugPrintBase()
 
 CStrChar CSaveRestoreInterface::getBaseName()
 {
-    int baseCollection = CNGS::GetInstance()->GetProfileManager()->getBaseCollection();
-    return CStrChar(ProfileDataCollectionTypeStrings[m_collectionType - baseCollection]);
+    CProfileManager* manager = CNGS::GetInstance()->GetProfileManager();
+    int collectionType = m_collectionType;
+    int baseCollection = manager->getBaseCollection();
+    return CStrChar(ProfileDataCollectionTypeStrings[collectionType - baseCollection]);
 }
 
 unsigned char CSaveRestoreInterface::isValidJsonData(const unsigned char* data, unsigned int size)

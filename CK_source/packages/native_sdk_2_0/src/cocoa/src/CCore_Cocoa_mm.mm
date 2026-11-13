@@ -21,7 +21,7 @@
 
 // ---- constants ----
 static const unsigned int SystemEvent_DeviceOrientationChanged = 0x747ab255;   // queued by SetDeviceOrientation
-static const unsigned int SystemEvent_GraphicsSurfaceChanged = 0x97b4dec3;     // the window surface must be rebuilt
+static const unsigned int SystemEvent_DisplaySizeChanged = 0x32b482c3;         // recalculate the window bounds
 static const unsigned int SystemEvent_LayoutChanged = 0x24314258;              // screen layout follows the orientation
 
 NSString* UserIDAsNSString();
@@ -49,7 +49,8 @@ unsigned char CCore_Cocoa::LaunchURL(const wchar_t* url, unsigned char exitAppli
 
 CStrWChar CCore_Cocoa::GetDeviceIdentifier() const
 {
-    return CStrWChar([UserIDAsNSString() cStringUsingEncoding:NSASCIIStringEncoding]);
+    NSString* identifier = [[UIDevice currentDevice] uniqueIdentifier];
+    return CStrWChar([identifier cStringUsingEncoding:NSASCIIStringEncoding]);
 }
 
 /**
@@ -162,8 +163,19 @@ unsigned char CCore_Cocoa::SetDeviceOrientation(eDeviceOrientation orientation)
 
     m_deviceOrientationSet = 1;
     m_deviceOrientation = (eDeviceOrientation)index;
+
+    UIInterfaceOrientation interfaceOrientation = UIInterfaceOrientationPortrait;
+    if (orientation == DeviceOrientation_LandscapeRight) {
+        interfaceOrientation = UIInterfaceOrientationLandscapeLeft;
+    } else if (orientation == DeviceOrientation_PortraitUpsideDown) {
+        interfaceOrientation = UIInterfaceOrientationPortraitUpsideDown;
+    } else if (orientation == DeviceOrientation_LandscapeLeft) {
+        interfaceOrientation = UIInterfaceOrientationLandscapeRight;
+    }
+    [[UIApplication sharedApplication] setStatusBarOrientation:interfaceOrientation animated:NO];
+
     CApplet::m_pThis->QueueSystemEvent(SystemEvent_DeviceOrientationChanged, 0, 0);
-    CApplet::m_pThis->QueueSystemEvent(SystemEvent_GraphicsSurfaceChanged, 0, 0);
+    CApplet::m_pThis->QueueSystemEvent(SystemEvent_DisplaySizeChanged, 0, 0);
     CApplet::m_pThis->QueueSystemEvent(SystemEvent_LayoutChanged, 0, 0);
     return 1;
 }

@@ -13,24 +13,6 @@
 
 #include <stdlib.h>
 
-namespace {
-Window* CreateFactionCell(const XString& caption, CBH_ProgressBar* bar)
-{
-    Window* cell = new Window(false);
-    cell->SetLayoutType(Window::LAYOUT_TABLE);
-    cell->SetPercentHeight(40, 0, 0);
-    TextWindow* name = new TextWindow(caption, CFontMgr::GetInstance()->GetFont(9));
-    name->SetCellPos(0, 0, 1, 1);
-    name->SetPercentHeight(40, 0, 0);
-    cell->AddToFront(name);
-    bar->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT;
-    bar->SetPercentHeight(60, 0, 0);
-    bar->SetCellPos(0, 1, 1, 1);
-    cell->AddToFront(bar);
-    return cell;
-}
-}
-
 CFactionsWindow::CFactionsWindow()
     : CBaseScreen(false, false, true, false, true, false)
 {
@@ -39,60 +21,92 @@ CFactionsWindow::CFactionsWindow()
     SetTitleText(ResString("IDS_TITLE_FACTIONS"));
     m_content->SetLayoutType(LAYOUT_SIMPLE);
 
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CFactionTypeManager* factions = app->InitFactionTypeManager();
     Vector<XString*> names;
-    factions->GetFactionTypeNames(names);
+    static_cast<App*>(WindowApp::m_instance)->InitFactionTypeManager()->GetFactionTypeNames(names);
     Window* standings = new Window(false);
     standings->SetPercentHeight(70, 0, 0);
-    CBH_Player* player = CBH_Player::GetInstance();
-    int reputationLimit = player->GetReputationLimit();
-    int factionRows = 0;
-    if (names.size() >= 2) {
-        factionRows = names.size() / 2;
+    int ratingRow;
+    int factionCount = names.size();
+    int factionRows = factionCount / 2;
+    if (factionRows <= 1) {
+        factionRows = 1;
     }
+    int reputationLimit = CBH_Player::GetInstance()->GetReputationLimit();
     for (int column = 0; column < 2; ++column) {
-        for (int row = 0; row < factionRows; ++row) {
-            const XString& key = *names[2 * row + column];
-            const CFactionType* faction = factions->GetType(key);
-            int color = 2;
-            if (faction->m_legal) {
-                color = 3;
+        ratingRow = 0;
+        if (factionCount > 1) {
+            for (int row = 0; row < factionRows; ++row) {
+                if (row * column >= names.size()) {
+                    continue;
+                }
+                Window* cell = new Window(false);
+                cell->SetLayoutType(LAYOUT_TABLE);
+                cell->SetPercentHeight(40, 0, 0);
+                XString key = *names[2 * row + column];
+                CFactionTypeManager* factions = static_cast<App*>(WindowApp::m_instance)->InitFactionTypeManager();
+                const CFactionType* faction = factions->GetType(key);
+                CFont* font = CFontMgr::GetInstance()->GetFont(9);
+                TextWindow* name = new TextWindow(key.Upper().c_str(), font);
+                name->SetCellPos(0, 0, 1, 1);
+                name->SetPercentHeight(40, 0, 0);
+                cell->AddToFront(name);
+
+                bool legal = faction->m_legal;
+                CBH_ProgressBar* bar = new CBH_ProgressBar(legal ? 3 : 2, m_width / 2, -1);
+                bar->SetDescImage(faction->m_smallIcon);
+                bar->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT;
+                bar->SetPercentHeight(60, 0, 0);
+                bar->SetMaxValue(reputationLimit * 2);
+                bar->SetCurrValue(reputationLimit + CBH_Player::GetInstance()->GetReputation(key));
+                bar->SetCellPos(0, 1, 1, 1);
+                cell->AddToFront(bar);
+                cell->SetCellPos(column, row, 1, 1);
+                standings->AddToFront(cell);
             }
-            CBH_ProgressBar* bar = new CBH_ProgressBar(color, m_width / 2, -1);
-            bar->SetDescImage(faction->m_smallIcon);
-            bar->SetMaxValue(reputationLimit * 2);
-            bar->SetCurrValue(reputationLimit + player->GetReputation(key));
-            Window* cell = CreateFactionCell(key.Upper(), bar);
-            cell->SetCellPos(column, row, 1, 1);
-            standings->AddToFront(cell);
+            ratingRow = factionRows;
         }
     }
 
-    int ratingRow = factionRows + 2;
-    for (int row = factionRows; row < ratingRow; ++row) {
+    int mysteryEnd = ratingRow + 2;
+    for (int row = ratingRow; row < mysteryEnd; ++row) {
         for (int column = 0; column < 2; ++column) {
+            Window* cell = new Window(false);
+            cell->SetLayoutType(LAYOUT_TABLE);
+            cell->SetPercentHeight(40, 0, 0);
+            CFont* font = CFontMgr::GetInstance()->GetFont(9);
+            TextWindow* name = new TextWindow(L"???", font);
+            name->SetCellPos(0, 0, 1, 1);
+            name->SetPercentHeight(40, 0, 0);
+            cell->AddToFront(name);
+
             CBH_ProgressBar* bar = new CBH_ProgressBar(7, m_width / 2, -1);
             bar->SetDescImage("IDB_IMAGE_SUSPENSE_ICON");
-            Window* cell = CreateFactionCell(XString(L"???"), bar);
+            bar->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT;
+            bar->SetPercentHeight(60, 0, 0);
+            bar->SetCellPos(0, 1, 1, 1);
+            cell->AddToFront(bar);
             cell->SetCellPos(column, row, 1, 1);
             standings->AddToFront(cell);
         }
     }
+    ratingRow = mysteryEnd;
+    names.removeAllElements();
 
     WindowTransparent* meterRow = new WindowTransparent(false);
     meterRow->SetPercentHeight(30, 0, 0);
     meterRow->SetPercentWidth(100, 0, 0);
     meterRow->SetCellPos(0, ratingRow, 2, 1);
     CRatingBar* meter = new CRatingBar();
+    int meterLimit = CBH_Player::GetInstance()->GetReputationLimit();
+    meter->SetLimitValues(-meterLimit, meterLimit);
     int rating = CalculateOverallRating();
-    meter->SetLimitValues(-reputationLimit, reputationLimit);
     meter->SetValue(rating);
     meter->SetPercentWidth(70, 0, 0);
     meter->m_debugFrame = true;
     meterRow->AddToFront(meter);
 
-    TextWindow* title = new TextWindow(GetTitleForRating(rating), CFontMgr::GetInstance()->GetFont(10));
+    CFont* font = CFontMgr::GetInstance()->GetFont(10);
+    TextWindow* title = new TextWindow(GetTitleForRating(rating), font);
     title->SetCellPos(0, ratingRow + 1, 2, 1);
     title->SetOutsetSpacing(0, 50, 0, 0);
     title->SetPercentHeight(40, 0, 0);
@@ -127,25 +141,23 @@ void CFactionsWindow::LoadTitleStrings()
 
 int CFactionsWindow::CalculateOverallRating()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
     Vector<XString*> names;
-    app->InitFactionTypeManager()->GetFactionTypeNames(names);
+    static_cast<App*>(WindowApp::m_instance)->InitFactionTypeManager()->GetFactionTypeNames(names);
     int rating = 0;
     for (int index = 0; index < names.size(); ++index) {
         const XString& name = *names[index];
         int reputation = CBH_Player::GetInstance()->GetReputation(name);
-        const CFactionType* faction = app->InitFactionTypeManager()->GetType(name);
-        if (faction->m_legal) {
-            rating += reputation;
-        } else {
-            rating -= reputation;
-        }
+        CFactionTypeManager* factions = static_cast<App*>(WindowApp::m_instance)->InitFactionTypeManager();
+        const CFactionType* faction = factions->GetType(name);
+        rating += faction->m_legal ? reputation : -reputation;
     }
     return rating;
 }
 
 XString CFactionsWindow::GetTitleForRating(int rating)
 {
+    // Keep the original shared empty-string reference alive during the lookup.
+    XString empty;
     for (int index = 0; index < m_titles.size(); ++index) {
         const TRougueTitle* title = m_titles[index];
         if (title->m_min <= rating && rating < title->m_max) {

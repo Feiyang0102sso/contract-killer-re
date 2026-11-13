@@ -14,39 +14,38 @@ CCheckBox::CCheckBox(int commandParam)
     SetWidthByContent(0, 0);
     SetHeightByContent(0, 0);
 
-    App* app = static_cast<App*>(WindowApp::m_instance);
     ImageWindow* background = new ImageWindow();
     background->SetFillType(ImageWindow::FILL_NONE);
-    background->SetImage(app->m_surfaceManager->CreateSurface("IDB_CHECKBOX_BG_TRANSPARENT", true));
+    background->SetImage(static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->CreateSurface("IDB_CHECKBOX_BG_TRANSPARENT", true));
     AddToFront(background);
     background->m_debugFrame = true;
 
     m_check = new ImageWindow();
     m_check->SetFillType(ImageWindow::FILL_NONE);
-    m_check->SetImage(app->m_surfaceManager->CreateSurface("IDB_CHECKBOX_CHECK", true));
+    m_check->SetImage(static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->CreateSurface("IDB_CHECKBOX_CHECK", true));
     m_check->ClearFlags(0x2001);
     AddToFront(m_check);
 
     m_pressed = new ImageWindow();
     m_pressed->SetFillType(ImageWindow::FILL_NONE);
-    m_pressed->SetImage(app->m_surfaceManager->CreateSurface("IDB_CHECKBOX_CHECK_PRESSED", true));
+    m_pressed->SetImage(static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->CreateSurface("IDB_CHECKBOX_CHECK_PRESSED", true));
     m_pressed->ClearFlags(0x2001);
     AddToFront(m_pressed);
 }
 
 void CCheckBox::OnPointerEvent(Event& event)
 {
-    if (!m_enabled) {
-        return;
+    if (m_enabled) {
+        Event::EType type = event.m_type;
+        if (type == Event::POINTER_PRESSED) {
+            m_pressed->SetFlags(0x2001);
+        } else if (type == Event::POINTER_RELEASED) {
+            HandlePointerReleased();
+        } else if (type != Event::POINTER_DRAGGED) {
+            return;
+        }
+        event.Clear();
     }
-    if (event.m_type == Event::POINTER_PRESSED) {
-        m_pressed->SetFlags(0x2001);
-    } else if (event.m_type == Event::POINTER_RELEASED) {
-        HandlePointerReleased();
-    } else if (event.m_type != Event::POINTER_DRAGGED) {
-        return;
-    }
-    event.Clear();
 }
 
 void CCheckBox::HandlePointerReleased()
@@ -79,10 +78,9 @@ void CCheckBox::UpdateCheckStatus()
 
 CCheckBox::~CCheckBox()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_surfaceManager->ReleaseSurface("IDB_CHECKBOX_BG_TRANSPARENT");
-    app->m_surfaceManager->ReleaseSurface("IDB_CHECKBOX_CHECK");
-    app->m_surfaceManager->ReleaseSurface("IDB_CHECKBOX_CHECK_PRESSED");
+    static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface("IDB_CHECKBOX_BG_TRANSPARENT");
+    static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface("IDB_CHECKBOX_CHECK");
+    static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface("IDB_CHECKBOX_CHECK_PRESSED");
 }
 
 void CCheckBox::SetChecked(bool checked)

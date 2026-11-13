@@ -7,23 +7,34 @@
 #include "CUnit.h"
 #include "DGHelper.h"
 
+static inline __attribute__((always_inline)) CAuxRenderText* GetAttackDebugText()
+{
+    void* found = NULL;
+    CApplet::m_pApp->m_singletons->Find(CAuxRenderText::SingletonId, &found);
+    CAuxRenderText* text = static_cast<CAuxRenderText*>(found);
+    if (text == NULL) {
+        text = new CAuxRenderText();
+    }
+    return text;
+}
+
 void CAttackExecutor::DebugRender(CAuxRender*)
 {
     switch (m_state) {
     case Hide:
-        CAuxRenderText::GetInstance()->AddTextInfo(L"Unit hides");
+        GetAttackDebugText()->AddTextInfo(L"Unit hides");
         break;
     case ReloadWeapon:
-        CAuxRenderText::GetInstance()->AddTextInfo(L"Unit reloads");
+        GetAttackDebugText()->AddTextInfo(L"Unit reloads");
         break;
     case Idle:
-        CAuxRenderText::GetInstance()->AddTextInfo(L"Unit idles");
+        GetAttackDebugText()->AddTextInfo(L"Unit idles");
         break;
     case Unhide:
-        CAuxRenderText::GetInstance()->AddTextInfo(L"Unit unhides");
+        GetAttackDebugText()->AddTextInfo(L"Unit unhides");
         break;
     case Shoot:
-        CAuxRenderText::GetInstance()->AddTextInfo(L"Unit shots");
+        GetAttackDebugText()->AddTextInfo(L"Unit shots");
         break;
     }
 }

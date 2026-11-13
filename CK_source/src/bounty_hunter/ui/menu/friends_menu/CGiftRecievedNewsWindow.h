@@ -2,8 +2,11 @@
 #define CGIFTRECIEVEDNEWSWINDOW_H
 
 #include "WindowBase.h"
+#include "Vector_ss.h"
 
 struct SGiftReceivedMessage;
+class CItem;
+class StretchImageButton;
 
 class CGiftRecievedNewsWindow : public Window {
 public:
@@ -13,7 +16,15 @@ public:
 private:
     void CreateUserInterface(const XString& sender, const XString& item, bool fromFriend);
 
-    int m_senderId;
+    CItem* m_item;                           // 0xa4
+    int m_fieldA8;                           // 0xa8
+    int m_messageId;                         // 0xac
+    const SGiftReceivedMessage* m_message;   // 0xb0
+    int m_fieldB4;                           // 0xb4
+    StretchImageButton* m_sendButton;         // 0xb8
+    Vector<int> m_items;                     // 0xbc, unused by the original UI
 };
+
+typedef char GiftRecievedNewsWindowSizeCheck[sizeof(CGiftRecievedNewsWindow) == 0xcc ? 1 : -1];
 
 #endif

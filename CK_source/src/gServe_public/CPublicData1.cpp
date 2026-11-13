@@ -11,31 +11,51 @@
 
 typedef char PublicDataSizeCheck[sizeof(CPublicData1) == 0x48 ? 1 : -1];
 
+// This constructor calls the original weak instantiation out of line.
+template void Vector<int>::free_all_items();
+extern void FreeGuildFriendItems(Vector<int>*) __asm__("__ZN6VectorIiE14free_all_itemsEv");
+
 CPublicData1::CPublicData1()
     : CSaveRestoreInterface(1000, 1, BACKING_STORE_ATTRIBUTES)
 {
-    resetData();
+    m_level = 0;
+    m_successBounties = 0;
+    m_guildFriendList.ReleaseMemory();
+    m_guildFriendList.Concatenate(L"");
+    FreeGuildFriendItems(&m_guildFriends);
+    m_guildFriends.m_size = 0;
+    m_guildFriends.m_capacity = 0;
 }
 
 void CPublicData1::initGuildFriendsList()
 {
-    m_guildFriends.free_all_items();
-    const wchar_t* start = m_guildFriendList.GetWCharPtr();
-    while (start != NULL && *start != L'\0') {
-        const wchar_t* separator = wcschr(start, L';');
-        if (separator == NULL || separator == start) {
-            break;
+    if (m_guildFriends.m_items != NULL) {
+        free(m_guildFriends.m_items);
+        m_guildFriends.m_items = NULL;
+    }
+    m_guildFriends.m_size = 0;
+    m_guildFriends.m_capacity = 0;
+    CStrWChar remaining = m_guildFriendList.GetSubString(0, m_guildFriendList.GetLength() - 1);
+    while (remaining.GetWCharPtr() != NULL && remaining.GetLength() > 0) {
+        int separator = remaining.GetCharIndex(1, L';');
+        if (separator < 1) {
+            remaining = "";
+            continue;
         }
-        XString token(start, (separator - start) * sizeof(wchar_t));
-        int userId = token.ToInt();
+
+        CStrWChar token = remaining.GetSubString(0, separator - 1);
+        XString text(token.GetWCharPtr());
+        int userId = text.ToInt();
         if (userId > 0) {
             m_guildFriends.addElement(userId);
         }
-        start = separator + 1;
+        if (separator + 1 < remaining.GetLength() - 1) {
+            remaining = remaining.GetSubString(separator + 1, remaining.GetLength() - 1);
+        } else {
+            remaining = "";
+        }
     }
-    if (WindowApp::m_instance != NULL) {
-        WindowApp::HandleTunnelCommand(4, 0, 0, 0);
-    }
+    WindowApp::HandleTunnelCommand(4, 0, 0, 0);
 }
 
 unsigned char CPublicData1::compareData(const CSaveRestoreInterface* other)
@@ -59,7 +79,12 @@ void CPublicData1::resetData()
     m_level = 0;
     m_successBounties = 0;
     m_guildFriendList = L"";
-    m_guildFriends.free_all_items();
+    if (m_guildFriends.m_items != NULL) {
+        free(m_guildFriends.m_items);
+        m_guildFriends.m_items = NULL;
+    }
+    m_guildFriends.m_size = 0;
+    m_guildFriends.m_capacity = 0;
 }
 
 void CPublicData1::getData(TCVector<CNGSAttribute*>& attributes)
@@ -67,15 +92,18 @@ void CPublicData1::getData(TCVector<CNGSAttribute*>& attributes)
     CStrWChar levelName = getwTokenNameFor("LEVEL");
     CStrWChar bountiesName = getwTokenNameFor("CONTRACT");
     CStrWChar friendsName = getwTokenNameFor("GUILD_FRIENDS");
-    attributes.Add(new CNGSAttribute(levelName, m_level, m_collectionType));
-    attributes.Add(new CNGSAttribute(bountiesName, m_successBounties, m_collectionType));
+    CNGSAttribute* level = new CNGSAttribute(levelName, m_level, m_collectionType);
+    CNGSAttribute* bounties = new CNGSAttribute(bountiesName, m_successBounties, m_collectionType);
     PrepareGuildFriendListAsString();
-    attributes.Add(new CNGSAttribute(friendsName, m_guildFriendList, false, m_collectionType));
+    CNGSAttribute* friends = new CNGSAttribute(friendsName, m_guildFriendList, false, m_collectionType);
+    attributes.Add(level);
+    attributes.Add(bounties);
+    attributes.Add(friends);
 }
 
 void CPublicData1::PrepareGuildFriendListAsString()
 {
-    m_guildFriendList = L"";
+    m_guildFriendList = "";
     for (int index = 0; index < m_guildFriends.size(); index++) {
         XString userId = XString::Format(L"%d;", m_guildFriends[index]);
         m_guildFriendList.Concatenate(userId.c_str());
@@ -85,23 +113,25 @@ void CPublicData1::PrepareGuildFriendListAsString()
 void CPublicData1::setData(const CHash* attributes)
 {
     resetData();
-    CStrChar level = getTokenNameFor("LEVEL");
-    CStrChar bounties = getTokenNameFor("CONTRACT");
-    CStrChar friends = getTokenNameFor("GUILD_FRIENDS");
-    void* attribute = NULL;
-    if (attributes->Find(CStringToKey(level.GetCharPtr(), 0), &attribute)) {
-        m_level = static_cast<CNGSAttribute*>(attribute)->getVal_int16();
+    CNGSAttribute* level = NULL;
+    CNGSAttribute* bounties = NULL;
+    CNGSAttribute* friends = NULL;
+    CStrChar levelName = getTokenNameFor("LEVEL");
+    CStrChar bountiesName = getTokenNameFor("CONTRACT");
+    CStrChar friendsName = getTokenNameFor("GUILD_FRIENDS");
+    if (attributes->Find(CStringToKey(levelName.GetCharPtr(), 0), (void**)&level)) {
+        m_level = level->getVal_int16();
     } else {
         dataNotFound();
     }
-    if (attributes->Find(CStringToKey(bounties.GetCharPtr(), 0), &attribute)) {
-        m_successBounties = static_cast<CNGSAttribute*>(attribute)->getVal_int32();
+    if (attributes->Find(CStringToKey(bountiesName.GetCharPtr(), 0), (void**)&bounties)) {
+        m_successBounties = bounties->getVal_int32();
     } else {
         dataNotFound();
     }
-    if (attributes->Find(CStringToKey(friends.GetCharPtr(), 0), &attribute)) {
-        m_guildFriendList = static_cast<CNGSAttribute*>(attribute)->getVal_string();
-        if (m_guildFriendList.GetLength() > 0) {
+    if (attributes->Find(CStringToKey(friendsName.GetCharPtr(), 0), (void**)&friends)) {
+        m_guildFriendList = friends->getVal_string();
+        if (m_guildFriendList.GetWCharPtr() != NULL && m_guildFriendList.GetLength() > 0) {
             initGuildFriendsList();
         }
     }
@@ -121,12 +151,11 @@ CStrWChar CPublicData1::asString()
 
 bool CPublicData1::isInGuildFriendList(int userId)
 {
+    bool found = false;
     for (int index = 0; index < m_guildFriends.size(); index++) {
-        if (m_guildFriends[index] == userId) {
-            return true;
-        }
+        found |= m_guildFriends[index] == userId;
     }
-    return false;
+    return found;
 }
 
 void CPublicData1::addGuildFriend(int userId)
@@ -135,11 +164,6 @@ void CPublicData1::addGuildFriend(int userId)
         m_guildFriends.addElement(userId);
     }
     PrepareGuildFriendListAsString();
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (app != NULL) {
-        WindowApp::HandleTunnelCommand(4, 0, 0, 0);
-        if (app->m_saveManager != NULL) {
-            app->m_saveManager->SaveOnNextUpdate(0);
-        }
-    }
+    WindowApp::HandleTunnelCommand(4, 0, 0, 0);
+    static_cast<App*>(WindowApp::m_instance)->m_saveManager->SaveOnNextUpdate(0);
 }

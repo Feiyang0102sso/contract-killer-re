@@ -15,6 +15,7 @@
 #include "CMathFixed.h"
 #include "CRenderSurface_OGLES_Texture.h"
 #include "ICCore.h"
+#include "CGraphicsAbstract.inl"
 
 namespace {
     const int kFixedOne = 65536;
@@ -98,11 +99,14 @@ namespace {
         reinterpret_cast<int*>(object)[index] = value;
     }
 
-    /** ceil(log2(extent)) of a texture tile extent (up to 1024). */
+    /** Tile dimension shift, capped at 11. Nonpositive extents use shift 1. */
     inline int TextureShift(int extent)
     {
-        int shift = 0;
-        while ((1 << shift) < extent) {
+        if (extent == 1) {
+            return 0;
+        }
+        int shift = 1;
+        while ((1 << shift) < extent && shift < 11) {
             shift++;
         }
         return shift;
@@ -111,40 +115,40 @@ namespace {
 
 // level -> table slot, and minimum component entries per slot (CK 1.5.2 data)
 static const CVertexAttribute::Decl CGraphics2d_Lite_OGLES_DisplayProgram_Mode_BestApproximationToPaintersAlgorithm_VtxDecl_t[] = {
-    { 0, 0, kShortVertex, 3, 12, 1, 0 },
-    { 1, 8, kShortVertex, 2, 12, 1, 0 },
-    { 0, 0, 0, 0, 0, 0, 0 }
+    { 0, 0, kShortVertex, 3, 12, 1 },
+    { 1, 8, kShortVertex, 2, 12, 1 },
+    { 0, 0, 0, 0, 0, 0 }
 };
 static const CVertexAttribute::Decl CGraphics2d_Lite_OGLES_DisplayProgram_Mode_BestApproximationToPaintersAlgorithm_VtxDecl_cf[] = {
-    { 0, 0, kShortVertex, 3, 8, 1, 0 },
-    { 0, 0, 0, 0, 0, 0, 0 }
+    { 0, 0, kShortVertex, 3, 8, 1 },
+    { 0, 0, 0, 0, 0, 0 }
 };
 static const CVertexAttribute::Decl CGraphics2d_Lite_OGLES_DisplayProgram_Mode_FastAndCompact_VtxDecl_t[] = {
-    { 0, 0, kShortVertex, 2, 8, 1, 0 },
-    { 1, 4, kShortVertex, 2, 8, 1, 0 },
-    { 0, 0, 0, 0, 0, 0, 0 }
+    { 0, 0, kShortVertex, 2, 8, 1 },
+    { 1, 4, kShortVertex, 2, 8, 1 },
+    { 0, 0, 0, 0, 0, 0 }
 };
 static const CVertexAttribute::Decl CGraphics2d_Lite_OGLES_DisplayProgram_Mode_FastAndCompact_VtxDecl_cf[] = {
-    { 0, 0, kShortVertex, 2, 4, 1, 0 },
-    { 0, 0, 0, 0, 0, 0, 0 }
+    { 0, 0, kShortVertex, 2, 4, 1 },
+    { 0, 0, 0, 0, 0, 0 }
 };
 static const CVertexAttribute::Decl CGraphics2d_Lite_OGLES_DisplayProgram_Mode_PaintersAlgorithmAutoAdvanceLayers_VtxDecl_t[] = {
-    { 0, 0, kShortVertex, 2, 8, 1, 0 },
-    { 1, 4, kShortVertex, 2, 8, 1, 0 },
-    { 0, 0, 0, 0, 0, 0, 0 }
+    { 0, 0, kShortVertex, 2, 8, 1 },
+    { 1, 4, kShortVertex, 2, 8, 1 },
+    { 0, 0, 0, 0, 0, 0 }
 };
 static const CVertexAttribute::Decl CGraphics2d_Lite_OGLES_DisplayProgram_Mode_PaintersAlgorithmAutoAdvanceLayers_VtxDecl_cf[] = {
-    { 0, 0, kShortVertex, 2, 4, 1, 0 },
-    { 0, 0, 0, 0, 0, 0, 0 }
+    { 0, 0, kShortVertex, 2, 4, 1 },
+    { 0, 0, 0, 0, 0, 0 }
 };
 static const CVertexAttribute::Decl CGraphics2d_Lite_OGLES_DisplayProgram_Mode_PaintersAlgorithmAutoAdvanceLayersLikelyMostOptimal_VtxDecl_t[] = {
-    { 0, 0, kShortVertex, 3, 12, 1, 0 },
-    { 1, 8, kShortVertex, 2, 12, 1, 0 },
-    { 0, 0, 0, 0, 0, 0, 0 }
+    { 0, 0, kShortVertex, 3, 12, 1 },
+    { 1, 8, kShortVertex, 2, 12, 1 },
+    { 0, 0, 0, 0, 0, 0 }
 };
 static const CVertexAttribute::Decl CGraphics2d_Lite_OGLES_DisplayProgram_Mode_PaintersAlgorithmAutoAdvanceLayersLikelyMostOptimal_VtxDecl_cf[] = {
-    { 0, 0, kShortVertex, 3, 8, 1, 0 },
-    { 0, 0, 0, 0, 0, 0, 0 }
+    { 0, 0, kShortVertex, 3, 8, 1 },
+    { 0, 0, 0, 0, 0, 0 }
 };
 static const int CGraphics2d_Lite_OGLES_DisplayProgram_Mode_PaintersAlgorithmAutoAdvanceLayers[8] = {
     1, 0, 2, 3, 4, 5, 6, 7
@@ -172,14 +176,14 @@ static const int CGraphics2d_Lite_OGLES_DisplayProgram_Mode_PaintersAlgorithmAut
 };
 
 /** ICGraphics::GetInstance with the found pointer tested itself (cbnz, as in the original callers). */
-static inline ICGraphics* GraphicsInstance()
+static inline ICGraphics* GraphicsInstance(void*& found)
 {
     CApp* app = CApplet::m_pApp;
     ICGraphics* instance = NULL;
     if (app != NULL) {
         instance = app->m_graphics;
         if (instance == NULL) {
-            void* found = NULL;
+            found = NULL;
             app->m_singletons->Find(ICGraphics::ClassId, &found);
             if (found == NULL) {
                 instance = ICGraphics::CreateInstance();
@@ -192,11 +196,10 @@ static inline ICGraphics* GraphicsInstance()
     return instance;
 }
 
-/** The OpenGL ES device of the HAL graphics instance. */
-static inline CGraphics_OGLES_Cocoa* GraphicsInstanceHardware()
+static inline ICGraphics* GraphicsInstance()
 {
-    CGraphics_HAL* graphics = static_cast<CGraphics_HAL*>(GraphicsInstance());
-    return graphics->m_hardware;
+    void* found;
+    return GraphicsInstance(found);
 }
 
 /** Priority stack of `level` in `mode` (-1 outside the priority modes). */
@@ -337,57 +340,60 @@ void CGraphics2d_Lite_OGLES::DisplayProgram::ExecuteSpecial(Component* component
     // vertex buffer component (3: lines, 4: triangles)
     GLenum environment;
     if (device->m_state.m_blend.Top()) {
-        environment = GL_REPLACE;
-        if (device->m_state.m_blendArg.Top() < BlendArg_2) {
-            environment = GL_MODULATE;
-        }
+        environment = device->m_state.m_blendArg.Top() < BlendArg_2 ? GL_MODULATE : GL_REPLACE;
         if (device->m_depthEnabled && device->m_depthWriting) {
             glDepthMask(GL_FALSE);
             device->m_depthWriting = 0;
         }
     } else {
-        environment = GL_REPLACE;
         if (device->m_depthEnabled && !device->m_depthWriting) {
             glDepthMask(GL_TRUE);
             device->m_depthWriting = 1;
         }
+        environment = GL_REPLACE;
     }
     if (device->m_textureEnvironment != environment) {
         device->m_textureEnvironment = environment;
         glTexEnvx(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, environment);
     }
     // textures modulated by the alpha only
-    bool restoreColor = false;
+    unsigned char restoreColor = 0;
     if (environment != GL_REPLACE && (component->m_flag5 & 8) != 0) {
         const Color_ARGB_fixed& color = device->m_state.m_state2.Top().m_color;
         if (color.r != kFixedOne || color.g != kFixedOne || color.b != kFixedOne) {
-            restoreColor = true;
+            restoreColor = 1;
             glColor4x(kFixedOne, kFixedOne, kFixedOne, color.a);
         }
     }
 
     CVertexBuffer* buffer = reinterpret_cast<CVertexBuffer*>(component->m_data[0]);
     const CVertexAttribute::Decl* attributes = reinterpret_cast<const CVertexAttribute::Decl*>(buffer->m_attributes);
-    glVertexPointer((signed char)attributes[0].m_fieldC, GLVertexType(attributes[0].m_type), buffer->m_pool.m_reserve,
+    glVertexPointer(attributes[0].m_fieldC, GLVertexType(attributes[0].m_type), buffer->m_pool.m_reserve,
                     buffer->m_pool.m_data + attributes[0].m_field4);
     if ((component->m_flag5 & 2) != 0) {
         attributes = reinterpret_cast<const CVertexAttribute::Decl*>(buffer->m_attributes);
-        glTexCoordPointer((signed char)attributes[1].m_fieldC, GLVertexType(attributes[1].m_type),
+        glTexCoordPointer(attributes[1].m_fieldC, GLVertexType(attributes[1].m_type),
                           buffer->m_pool.m_reserve, buffer->m_pool.m_data + attributes[1].m_field4);
     }
-    GLenum primitive = GL_LINES;
-    if ((component->m_flag5 >> 4) != 3) {
+    GLenum primitive;
+    unsigned int drawKind = (component->m_flag5 & 0xf0) >> 4;
+    switch (drawKind) {
+    case 3:
+        primitive = GL_LINES;
+        break;
+    case 4:
+        primitive = GL_TRIANGLES;
+        break;
+    default:
         primitive = 0;
-        if ((component->m_flag5 >> 4) == 4) {
-            primitive = GL_TRIANGLES;
-        }
+        break;
     }
-    if (buffer->m_field4 != CVertexBuffer::Type_IndexVertex) {
-        glDrawArrays(primitive, 0, (buffer->m_pool.m_cursor - buffer->m_pool.m_data) / buffer->m_pool.m_reserve);
-    } else {
+    if (buffer->m_field4 == CVertexBuffer::Type_IndexVertex) {
         CIndexVertexBuffer* indexed = static_cast<CIndexVertexBuffer*>(buffer);
         int count = (indexed->m_indices.m_cursor - indexed->m_indices.m_data) / indexed->m_indices.m_reserve;
         glDrawElements(primitive, count, GLVertexType(indexed->m_indexType), indexed->m_indices.m_data);
+    } else {
+        glDrawArrays(primitive, 0, (buffer->m_pool.m_cursor - buffer->m_pool.m_data) / buffer->m_pool.m_reserve);
     }
     if (restoreColor) {
         const Color_ARGB_fixed& color = device->m_state.m_state2.Top().m_color;
@@ -582,7 +588,11 @@ void CGraphics2d_Lite_OGLES::RenderBegin(unsigned char writeAlpha)
     glShadeModel(GL_FLAT);
     glAlphaFuncx(GL_GREATER, 0);
     glDepthRangex(0, kFixedOne);
-    ICRenderSurface* target = GraphicsInstance()->GetTargetSurface();
+    // The three graphics lookups use separate output slots.
+    void* textureUnitGraphics;
+    void* viewportGraphics;
+    void* targetGraphics;
+    ICRenderSurface* target = GraphicsInstance(targetGraphics)->GetTargetSurface();
     if (target != NULL) {
         glDisable(GL_SCISSOR_TEST);
         unsigned int width;
@@ -591,7 +601,9 @@ void CGraphics2d_Lite_OGLES::RenderBegin(unsigned char writeAlpha)
         CRectangle bounds(0, 0, width, height);
         m_clip = bounds;
         m_activeClip = bounds;
-        GraphicsInstanceHardware()->SetWidthAndHeightMappedViewportAndOrthoProjection(*static_cast<CRenderSurface*>(target));
+        // The OpenGL ES device of the HAL graphics instance.
+        CGraphics_HAL* graphics = static_cast<CGraphics_HAL*>(GraphicsInstance(viewportGraphics));
+        graphics->m_hardware->SetWidthAndHeightMappedViewportAndOrthoProjection(*static_cast<CRenderSurface*>(target));
         m_field18 = 0;
     }
     glActiveTexture(GL_TEXTURE0);
@@ -652,7 +664,8 @@ void CGraphics2d_Lite_OGLES::RenderBegin(unsigned char writeAlpha)
             glEnable(GL_MULTISAMPLE);
         }
     }
-    const ICGraphics::Description* description = GraphicsInstance()->GetDescription(ICGraphics::Abstraction_Hardware);
+    const ICGraphics::Description* description =
+        GraphicsInstance(textureUnitGraphics)->GetDescription(ICGraphics::Abstraction_Hardware);
     for (unsigned int unit = 1; unit < description->m_maxTextureUnits; unit++) {
         glActiveTexture(GL_TEXTURE0 + unit);
         glDisable(GL_TEXTURE_2D);
@@ -1305,13 +1318,17 @@ void CGraphics2d_Lite_OGLES::LoadTransform(const CMatrix2d* matrix, const CVecto
         glLoadMatrixx(transform);
     }
     if (m_trackTransform) {
+        Matrix& top = m_transformStack.Top();
         int x = FixedWord(translation, 0);
         int y = FixedWord(translation, 1);
-        Matrix& top = m_transformStack.Top();
-        top.m[0][0] = transform[0];
-        top.m[0][1] = transform[4];
-        top.m[1][0] = transform[1];
-        top.m[1][1] = transform[5];
+        int a = transform[0];
+        int b = transform[4];
+        int c = transform[1];
+        int d = transform[5];
+        top.m[0][0] = a;
+        top.m[0][1] = b;
+        top.m[1][0] = c;
+        top.m[1][1] = d;
         top.m[2][0] = x;
         top.m[2][1] = y;
     }
@@ -1656,64 +1673,46 @@ void CGraphics2d_Lite_OGLES::Draw(ICRenderSurface& surface, Flip flip, const CRe
         return;
     }
     CRenderSurface_OGLES_Texture& texture = static_cast<CRenderSurface_OGLES_Texture&>(surface);
-    CRenderSurface_OGLES_Texture* owner = texture.GetSourceTexture();
-    CRenderSurfaceBuffer* buffer = owner->m_buffers[CRenderSurface::Buffer_Color];
-    if (buffer == NULL || owner->m_textureCount == 0) {
-        return;
-    }
+    CRenderSurfaceBuffer* buffer = texture.m_buffers[CRenderSurface::Buffer_Color];
+    const unsigned short imageWidth = buffer->m_imageWidth;
+    const short imageHeight = buffer->m_imageHeight;
     if (m_state.m_state4.Top()) {
         HandleConfigStateBasedOnSrcFormat(buffer->m_format);
     }
-    // a plain (mode 1) display list cannot hold vertices
-    if (m_recording != NULL && m_recording->m_currPos == IDisplayProgram::Mode_1) {
-        return;
+
+    const bool flipX = flip == Flip_Horizontal || flip == Flip_Both;
+    const bool flipY = flip == Flip_Vertical || flip == Flip_Both;
+    short sourceX = 0;
+    short sourceY = 0;
+    short sourceWidth = imageWidth;
+    short sourceHeight = imageHeight;
+    if (source != NULL) {
+        sourceX = source->m_x;
+        sourceY = source->m_y;
+        sourceWidth = source->m_width;
+        sourceHeight = source->m_height;
+        // The mirrored destination is based on the visible source rectangle for tiled images.
+        if (texture.m_textureCount > 1 && (flipX || flipY)) {
+            int clipX = sourceX;
+            int clipY = sourceY;
+            CBlitUtil::ClipSubRectangle(clipX, clipY, 0, 0, imageWidth, imageHeight,
+                                        sourceX, sourceY, sourceWidth, sourceHeight, 0, 0);
+        }
     }
-    bool recording = m_recording != NULL && m_recording->m_currPos > IDisplayProgram::Mode_1;
 
     const ICGraphics::Description* description = GraphicsInstance()->GetDescription(ICGraphics::Abstraction_Hardware);
-    const int tileWidth = description->m_maxRenderTargetWidth;
-    const int tileHeight = description->m_maxRenderTargetHeight;
-    if (tileWidth <= 0 || tileHeight <= 0) {
-        return;
-    }
-    const int imageWidth = buffer->m_imageWidth;
-    const int imageHeight = buffer->m_imageHeight;
-    int sourceX = 0;
-    int sourceY = 0;
-    int sourceWidth = imageWidth;
-    int sourceHeight = imageHeight;
-    const bool flipX = (flip & Flip_Horizontal) != 0;
-    const bool flipY = (flip & Flip_Vertical) != 0;
-    if (source != NULL) {
-        CRectangle clipped = *source;
-        sourceX = clipped.m_x;
-        sourceY = clipped.m_y;
-        if (clipped.m_width <= 0 || clipped.m_height <= 0 || sourceX >= imageWidth || sourceX + clipped.m_width <= 0 ||
-            sourceY >= imageHeight || sourceY + clipped.m_height <= 0) {
-            return;
-        }
-        // The mirrored destination is based on the visible source rectangle for tiled images.
-        if (owner->m_textureCount > 1 && (flipX || flipY) && imageWidth <= 0x7fff && imageHeight <= 0x7fff) {
-            int result = CBlitUtil::ClipSubRectangle(sourceX, sourceY, 0, 0, imageWidth, imageHeight,
-                                                     clipped.m_x, clipped.m_y, clipped.m_width, clipped.m_height,
-                                                     0, 0);
-            if (result & CBlitUtil::ClipResult_Empty) {
-                return;
-            }
-        }
-        sourceWidth = clipped.m_width;
-        sourceHeight = clipped.m_height;
-    }
-    const bool powerOfTwo = (texture.m_flags & ICRenderSurface::Flag_PowerOfTwo) != 0;
+    const unsigned int tileWidth = description->m_maxRenderTargetWidth;
+    const unsigned int tileHeight = description->m_maxRenderTargetHeight;
 
     int shorts;
     int stride;
-    bool depth = false;
-    if (recording) {
+    int positionComponents;
+    int textureComponents;
+    if (m_recording != NULL && m_recording->m_currPos != IDisplayProgram::Mode_0) {
         shorts = m_texturedShorts;
         stride = m_texturedStride;
-        depth = (signed char)m_texturedDecl[0].m_fieldC == 3;
-        m_priorityStacks.m_stacks[LevelIndex(m_recording->m_recordingMode, DisplayProgram::LevelId_Texture)].PushTop();
+        positionComponents = m_texturedDecl[0].m_fieldC;
+        textureComponents = m_texturedDecl[1].m_fieldC;
     } else {
         GLenum environment = GL_REPLACE;
         if (m_state.m_blend.Top() && m_state.m_blendArg.Top() < BlendArg_2) {
@@ -1726,87 +1725,124 @@ void CGraphics2d_Lite_OGLES::Draw(ICRenderSurface& surface, Flip flip, const CRe
         glColor4x(kFixedOne, kFixedOne, kFixedOne, m_state.m_state2.Top().m_color.a);
         shorts = 4;
         stride = m_quadBuffer.m_pool.m_reserve;
+        positionComponents = 2;
+        textureComponents = 2;
     }
 
-    // Surfaces are stored bottom-up like GL render targets: the decoder's default flipY puts image row i
-    // into buffer row (imageHeight - 1 - i), and InitializeTextureObjects cuts the tiles in buffer order.
-    // So a tile row covers buffer rows [bufferY, bufferY + height) and texture v = 0 is its lowest image row.
-    int index = 0;
-    for (int bufferY = 0; bufferY < imageHeight; bufferY += tileHeight) {
-        int height = tileHeight;
-        if (imageHeight - bufferY < height) {
-            height = imageHeight - bufferY;
+    // Draw(Primitive) and Draw(surface) use this path only with immediate rendering
+    // or a display program that can store vertices.
+    bool immediate = m_recording == NULL || m_recording->m_currPos == IDisplayProgram::Mode_0;
+    bool recording = m_recording != NULL && m_recording->m_currPos > IDisplayProgram::Mode_1;
+    short* positions = NULL;
+    short* coordinates = NULL;
+    short layerDepth = 0;
+    const int* lengths = NULL;
+    if (recording) {
+        IDisplayProgram::Mode mode = m_recording->m_recordingMode;
+        lengths = MinCmpLen(mode);
+        m_priorityStacks.m_stacks[LevelIndex(mode, DisplayProgram::LevelId_Texture)].PushTop();
+        TCStack<Component>& layers = m_priorityStacks.m_stacks[LevelIndex(mode, DisplayProgram::LevelId_Layer)];
+        layerDepth = (short)(layers.Top().m_data[0] << 12);
+    } else if (immediate) {
+        m_quadBuffer.m_pool.m_cursor = m_quadBuffer.m_pool.m_data;
+        if (m_quadBuffer.m_pool.m_capacity < stride * 4) {
+            m_quadBuffer.m_pool.ResizeInternal(stride * 4);
         }
-        const int tileBottom = imageHeight - bufferY;          // image row just below this tile
-        const int tileTop = tileBottom - height;               // first image row of this tile
-        int top = tileTop;
-        if (sourceY > top) {
-            top = sourceY;
-        }
-        int bottom = tileBottom;
-        if (sourceY + sourceHeight < bottom) {
-            bottom = sourceY + sourceHeight;
-        }
-        for (int x = 0; x < imageWidth; x += tileWidth, ++index) {
-            int width = tileWidth;
-            if (imageWidth - x < width) {
-                width = imageWidth - x;
-            }
-            int left = x;
-            if (sourceX > left) {
-                left = sourceX;
-            }
-            int right = x + width;
-            if (sourceX + sourceWidth < right) {
-                right = sourceX + sourceWidth;
-            }
-            if (left >= right || top >= bottom || index >= owner->m_textureCount) {
-                continue;
-            }
-            const GLuint name = owner->GetTextureName(index);
-            if (name == 0) {
-                continue;
-            }
-            // 4.12 texture coordinates, kept one unit inside the drawn texels
-            int textureWidth = width;
-            int textureHeight = height;
-            if (powerOfTwo) {
-                textureWidth = 1 << TextureShift(width);
-                textureHeight = 1 << TextureShift(height);
-            }
-            short u0 = (short)(((left - x) << 12) / textureWidth + 1);
-            short u1 = (short)(((right - x) << 12) / textureWidth - 1);
-            short v0 = (short)(((tileBottom - top) << 12) / textureHeight - 1);
-            short v1 = (short)(((tileBottom - bottom) << 12) / textureHeight + 1);
-            short x0 = (short)(left - sourceX);
-            short x1 = (short)(right - sourceX);
-            short y0 = (short)(top - sourceY);
-            short y1 = (short)(bottom - sourceY);
-            if (flipX) {
-                x0 = (short)(sourceWidth - x0);
-                x1 = (short)(sourceWidth - x1);
-            }
-            if (flipY) {
-                y0 = (short)(sourceHeight - y0);
-                y1 = (short)(sourceHeight - y1);
-            }
-            short x0y0 = x0;
-            short y0x0 = y0;
-            short x0y1 = x0;
-            short y1x0 = y1;
-            short x1y0 = x1;
-            short y0x1 = y0;
-            short x1y1 = x1;
-            short y1x1 = y1;
+        const CVertexAttribute::Decl* attributes = reinterpret_cast<const CVertexAttribute::Decl*>(m_quadBuffer.m_attributes);
+        positions = reinterpret_cast<short*>(m_quadBuffer.m_pool.m_cursor + attributes[0].m_field4);
+        coordinates = reinterpret_cast<short*>(m_quadBuffer.m_pool.m_cursor + attributes[1].m_field4);
+    }
 
-            short* positions;
-            short* coordinates;
+    // Uploads follow buffer row order. Use buffer-space offsets for UVs and image-space offsets
+    // for the destination. Only visible tiles advance the destination across a row.
+    short tileX = 0;
+    short tileY = 0;
+    short sourceBottom = imageHeight - sourceY - sourceHeight;
+    short x = 0;
+    short y = sourceHeight;
+    if (flipX) {
+        x = sourceWidth;
+    }
+    if (flipY) {
+        y = 0;
+    }
+    bool firstInRow = true;
+    short lastDrawnHeight = 0;
+    for (int index = 0; index < texture.m_textureCount; index++) {
+        const GLuint name = texture.GetTextureName(index);
+        short width = tileWidth;
+        if ((short)imageWidth < tileX + width) {
+            width = (short)imageWidth - tileX;
+        }
+        short height = tileHeight;
+        if (imageHeight < tileY + height) {
+            height = imageHeight - tileY;
+        }
+
+        short left = tileX;
+        short bottom = tileY;
+        short drawWidth = width;
+        short drawHeight = height;
+        bool visible = true;
+        if (source != NULL) {
+            left = sourceX;
+            bottom = sourceBottom;
+            drawWidth = sourceWidth;
+            drawHeight = sourceHeight;
+            if (left < tileX) {
+                drawWidth -= (short)(tileX - left);
+                left = tileX;
+                visible = drawWidth > 0;
+            }
+            if (visible && tileX + width < left + drawWidth) {
+                drawWidth = tileX + width - left;
+                visible = drawWidth > 0;
+            }
+            if (visible && bottom < tileY) {
+                drawHeight -= (short)(tileY - bottom);
+                bottom = tileY;
+                visible = drawHeight > 0;
+            }
+            if (visible && tileY + height < bottom + drawHeight) {
+                drawHeight = tileY + height - bottom;
+                visible = drawHeight > 0;
+            }
+        }
+
+        if (visible) {
+            if (firstInRow && !flipY) {
+                y -= drawHeight;
+            }
+            if (flipX) {
+                x -= drawWidth;
+            }
+            const unsigned int uScale = 0x1000000 >> TextureShift(width);
+            const unsigned int vScale = 0x1000000 >> TextureShift(height);
+            short u0 = (short)(uScale * (left - tileX) >> 12) + 1;
+            short u1 = (short)(uScale * (left + drawWidth - tileX) >> 12) - 1;
+            short v0 = (short)(vScale * (bottom - tileY) >> 12) + 1;
+            short v1 = (short)(vScale * (bottom + drawHeight - tileY) >> 12) - 1;
+            if (flipX) {
+                short oldU0 = u0;
+                u0 = u1;
+                u1 = oldU0;
+            }
+            if (flipY == (m_origin != Origin_TopLeft)) {
+                short oldV0 = v0;
+                v0 = v1;
+                v1 = oldV0;
+            }
+            short x0y0 = x;
+            short y0x0 = y;
+            short x0y1 = x;
+            short y1x0 = y + drawHeight;
+            short x1y0 = x + drawWidth;
+            short y0x1 = y;
+            short x1y1 = x + drawWidth;
+            short y1x1 = y + drawHeight;
+
             CIndexVertexBuffer* recorded = NULL;
             if (recording) {
-                CK_TRANSFORM_RECORDED(x0y0, y0x0);
-                CK_TRANSFORM_RECORDED(x0y1, y1x0);
-                CK_TRANSFORM_RECORDED(x1y0, y0x1);
-                CK_TRANSFORM_RECORDED(x1y1, y1x1);
                 IDisplayProgram::Mode mode = m_recording->m_recordingMode;
                 TCStack<Component>& textures = m_priorityStacks.m_stacks[LevelIndex(mode, DisplayProgram::LevelId_Texture)];
                 Component& component = textures.m_data[textures.m_top - 1];
@@ -1819,97 +1855,118 @@ void CGraphics2d_Lite_OGLES::Draw(ICRenderSurface& surface, Flip flip, const CRe
                 }
                 int* saved = m_recording->m_poolPos;
                 m_recording->m_poolPos = m_savedPoolPos;
-                recorded = static_cast<CIndexVertexBuffer*>(m_priorityStacks.AquireVtxBuffer(
-                    *m_recording, MinCmpLen(mode), 0x4a, stride * 4, kQuadBufferKey, m_texturedDecl, 0xc,
+                recorded = static_cast<CIndexVertexBuffer*>(m_priorityStacks.AquireVtxBufferInternal<false>(
+                    *m_recording, lengths, 0x4a, stride * 4, kQuadBufferKey, m_texturedDecl, 0xc,
                     kUnsignedShortVertex));
                 m_savedPoolPos = m_recording->m_poolPos;
                 m_recording->m_poolPos = saved;
-                if (recorded == NULL) {
-                    continue;
+                if (recorded != NULL) {
+                    const CVertexAttribute::Decl* attributes =
+                        reinterpret_cast<const CVertexAttribute::Decl*>(recorded->m_attributes);
+                    positions = reinterpret_cast<short*>(recorded->m_pool.m_cursor + attributes[0].m_field4);
+                    coordinates = reinterpret_cast<short*>(recorded->m_pool.m_cursor + attributes[1].m_field4);
+                    CK_TRANSFORM_RECORDED(x0y0, y0x0);
+                    CK_TRANSFORM_RECORDED(x0y1, y1x0);
+                    CK_TRANSFORM_RECORDED(x1y0, y0x1);
+                    CK_TRANSFORM_RECORDED(x1y1, y1x1);
                 }
-                const CVertexAttribute::Decl* attributes = reinterpret_cast<const CVertexAttribute::Decl*>(recorded->m_attributes);
-                positions = reinterpret_cast<short*>(recorded->m_pool.m_cursor + attributes[0].m_field4);
-                coordinates = reinterpret_cast<short*>(recorded->m_pool.m_cursor + attributes[1].m_field4);
-            } else {
-                m_quadBuffer.m_pool.m_cursor = m_quadBuffer.m_pool.m_data;
-                if (m_quadBuffer.m_pool.m_capacity < stride * 4) {
-                    m_quadBuffer.m_pool.ResizeInternal(stride * 4);
-                }
-                const CVertexAttribute::Decl* attributes = reinterpret_cast<const CVertexAttribute::Decl*>(m_quadBuffer.m_attributes);
-                positions = reinterpret_cast<short*>(m_quadBuffer.m_pool.m_cursor + attributes[0].m_field4);
-                coordinates = reinterpret_cast<short*>(m_quadBuffer.m_pool.m_cursor + attributes[1].m_field4);
             }
 
-            // triangle strip (x0, y0) (x0, y1) (x1, y0) (x1, y1)
-            positions[0] = x0y0;
-            positions[1] = y0x0;
-            positions[shorts] = x0y1;
-            positions[shorts + 1] = y1x0;
-            positions[shorts * 2] = x1y0;
-            positions[shorts * 2 + 1] = y0x1;
-            positions[shorts * 3] = x1y1;
-            positions[shorts * 3 + 1] = y1x1;
-            if (depth) {
-                TCStack<Component>& layers =
-                    m_priorityStacks.m_stacks[LevelIndex(m_recording->m_recordingMode, DisplayProgram::LevelId_Layer)];
-                short z = (short)((m_primitiveIndex | (layers.Top().m_data[0] << 12)) + 0x8001);
-                positions[2] = z;
-                positions[shorts + 2] = z;
-                positions[shorts * 2 + 2] = z;
-                positions[shorts * 3 + 2] = z;
-            }
-            coordinates[0] = u0;
-            coordinates[1] = v0;
-            coordinates[shorts] = u0;
-            coordinates[shorts + 1] = v1;
-            coordinates[shorts * 2] = u1;
-            coordinates[shorts * 2 + 1] = v0;
-            coordinates[shorts * 3] = u1;
-            coordinates[shorts * 3 + 1] = v1;
+            if (immediate || recorded != NULL) {
+                // Triangle strip (x0, y0) (x0, y1) (x1, y0) (x1, y1).
+                positions[0] = x0y0;
+                positions[1] = y0x0;
+                positions[shorts] = x0y1;
+                positions[shorts + 1] = y1x0;
+                positions[shorts * 2] = x1y0;
+                positions[shorts * 2 + 1] = y0x1;
+                positions[shorts * 3] = x1y1;
+                positions[shorts * 3 + 1] = y1x1;
+                if (positionComponents == 3) {
+                    short z = (short)((m_primitiveIndex | layerDepth) + 0x8001);
+                    positions[2] = z;
+                    positions[shorts + 2] = z;
+                    positions[shorts * 2 + 2] = z;
+                    positions[shorts * 3 + 2] = z;
+                }
 
-            if (recording) {
-                GLushort* indices = reinterpret_cast<GLushort*>(recorded->m_indices.m_cursor);
-                GLushort first = (GLushort)((recorded->m_pool.m_cursor - recorded->m_pool.m_data) / recorded->m_pool.m_reserve);
-                indices[0] = first;
-                indices[1] = first + 1;
-                indices[2] = first + 2;
-                indices[3] = first + 1;
-                indices[4] = first + 2;
-                indices[5] = first + 3;
-                recorded->m_indices.m_cursor += recorded->m_indices.m_reserve * 6;
-                recorded->m_pool.m_cursor += recorded->m_pool.m_reserve * 4;
-            } else {
-                m_boundTexture = name;
-                glBindTexture(GL_TEXTURE_2D, name);
-                glEnable(GL_TEXTURE_2D);
-                glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-                m_textureEnabled = 1;
-                glVertexPointer(2, GL_SHORT, stride, positions);
-                glTexCoordPointer(2, GL_SHORT, stride, coordinates);
-                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                // 4.12 texture coordinates, kept one unit inside the drawn texels.
+                coordinates[0] = u0;
+                coordinates[1] = v0;
+                coordinates[shorts] = u0;
+                coordinates[shorts + 1] = v1;
+                coordinates[shorts * 2] = u1;
+                coordinates[shorts * 2 + 1] = v0;
+                coordinates[shorts * 3] = u1;
+                coordinates[shorts * 3 + 1] = v1;
+
+                if (recording) {
+                    GLushort* indices = reinterpret_cast<GLushort*>(recorded->m_indices.m_cursor);
+                    GLushort first = (GLushort)((recorded->m_pool.m_cursor - recorded->m_pool.m_data) / recorded->m_pool.m_reserve);
+                    indices[0] = first;
+                    indices[1] = first + 1;
+                    indices[2] = first + 2;
+                    indices[3] = first + 1;
+                    indices[4] = first + 2;
+                    indices[5] = first + 3;
+                    recorded->m_indices.m_cursor += recorded->m_indices.m_reserve * 6;
+                    recorded->m_pool.m_cursor += recorded->m_pool.m_reserve * 4;
+                } else {
+                    m_boundTexture = name;
+                    glBindTexture(GL_TEXTURE_2D, name);
+                    if (m_recording == NULL || m_recording->m_currPos == IDisplayProgram::Mode_0) {
+                        glEnable(GL_TEXTURE_2D);
+                        if (m_recording == NULL || m_recording->m_currPos == IDisplayProgram::Mode_0) {
+                            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+                        }
+                    }
+                    m_textureEnabled = 1;
+                    glVertexPointer(positionComponents, GL_SHORT, stride, positions);
+                    glTexCoordPointer(textureComponents, GL_SHORT, stride, coordinates);
+                    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                }
+                m_primitiveIndex++;
             }
-            m_primitiveIndex++;
+
+            if (!flipX) {
+                x += drawWidth;
+            }
+            lastDrawnHeight = drawHeight;
+            firstInRow = false;
+        }
+
+        if (imageWidth <= tileX + tileWidth) {
+            tileX = 0;
+            tileY += tileHeight;
+            if (flipY) {
+                y += lastDrawnHeight;
+            }
+            x = 0;
+            if (flipX) {
+                x = sourceWidth;
+            }
+            firstInRow = true;
+        } else {
+            tileX += tileWidth;
         }
     }
     if (recording) {
         m_priorityStacks.m_stacks[LevelIndex(m_recording->m_recordingMode, DisplayProgram::LevelId_Texture)].m_top--;
-        return;
+    } else if (immediate) {
+        const Color_ARGB_fixed& color = m_state.m_state2.Top().m_color;
+        glColor4x(color.r, color.g, color.b, color.a);
     }
-    const Color_ARGB_fixed& color = m_state.m_state2.Top().m_color;
-    glColor4x(color.r, color.g, color.b, color.a);
 }
 
 void CGraphics2d_Lite_OGLES::Draw(Primitive primitive, int first, int count)
 {
     if (m_state.m_state4.Top()) {
         // translucent colors blend like an A8R8G8B8 source, opaque ones like an opaque format
-        RSBFormat format;
-        if (m_state.m_state2.Top().m_color.a < 0xfae2) {
-            format = (RSBFormat)0xc4404;
+        if (m_state.m_state2.Top().m_color.a >= 0xfae2) {
+            HandleConfigStateBasedOnSrcFormat(RSBFormat_X8R8G8B8);
         } else {
-            format = (RSBFormat)0xb0304;
+            HandleConfigStateBasedOnSrcFormat(RSBFormat_A8R8G8B8);
         }
-        HandleConfigStateBasedOnSrcFormat(format);
     }
     if (m_state.m_alphaTest.Top() && m_state.m_state2.Top().m_color.a == 0) {
         return;
@@ -1923,20 +1980,20 @@ void CGraphics2d_Lite_OGLES::Draw(Primitive primitive, int first, int count)
             glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         }
     }
-    bool restoreAlphaTest = false;
+    unsigned char restoreAlphaTest = 0;
     m_textureEnabled = 0;
     if (m_state.m_alphaTest.Top()) {
-        restoreAlphaTest = true;
+        restoreAlphaTest = 1;
         if (CK_GL_IMMEDIATE()) {
             glDisable(GL_ALPHA_TEST);
         }
     }
-    if (primitive == Primitive_Rectangles) {
-        DrawHardwareRectangles(first, count);
+    if (primitive == Primitive_Lines) {
+        DrawHardwareLines(first, count);
     } else if (primitive == Primitive_Polygon) {
         DrawHardwarePolygon(first, count);
-    } else if (primitive == Primitive_Lines) {
-        DrawHardwareLines(first, count);
+    } else if (primitive == Primitive_Rectangles) {
+        DrawHardwareRectangles(first, count);
     }
     if (restoreAlphaTest) {
         if (CK_GL_IMMEDIATE()) {
@@ -2150,7 +2207,7 @@ done:
 }
 
 /** One rectangle (x0, y0)-(x1, y1) as the strip (x0, y0) (x0, y1) (x1, y0) (x1, y1), drawn or recorded. */
-#define CK_RECTANGLE(x0, y0, x1, y1, index)                                                         \
+#define CK_RECTANGLE(x0, y0, x1, y1, index, glType, glStride)                                   \
     {                                                                                               \
         int offset = reinterpret_cast<VertexAttribute*>(buffer->m_attributes)[0].m_offset;          \
         short* position = reinterpret_cast<short*>(buffer->m_pool.m_cursor + offset);               \
@@ -2238,7 +2295,7 @@ done:
             buffer->m_pool.m_cursor += buffer->m_pool.m_reserve * 4;                                \
         }                                                                                           \
         if (CK_GL_IMMEDIATE()) {                                                                    \
-            glVertexPointer(m_coordCount, GL_SHORT, m_coordCount * 2, buffer->m_pool.m_data +      \
+            glVertexPointer(m_coordCount, glType, glStride, buffer->m_pool.m_data +       \
                             reinterpret_cast<VertexAttribute*>(buffer->m_attributes)[0].m_offset);  \
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);                                                  \
         }                                                                                           \
@@ -2247,16 +2304,34 @@ done:
 
 void CGraphics2d_Lite_OGLES::DrawHardwareRectangles(int first, int count)
 {
+    int vertexBytes = m_coordStride * count;
     CVertexBuffer* buffer;
     bool depth = false;
-    if (!CK_GL_IMMEDIATE()) {
+    if (CK_GL_IMMEDIATE()) {
+        // immediate: the corners go through m_vertexBuffer
+        buffer = &m_vertexBuffer;
+        CVertexAttribute::Decl* attributes = reinterpret_cast<CVertexAttribute::Decl*>(m_vertexBuffer.m_attributes);
+        attributes[0].m_field0 = 0;
+        attributes[0].m_field4 = 0;
+        attributes[0].m_type = m_coordType;
+        attributes[0].m_fieldC = m_coordCount;
+        attributes[0].m_stride = 0;
+        attributes[0].m_fieldE = 1;
+        m_vertexBuffer.m_pool.m_reserve = m_coordStride;
+        m_vertexBuffer.m_pool.m_cursor = m_vertexBuffer.m_pool.m_data;
+        if (m_vertexBuffer.m_pool.m_capacity < vertexBytes) {
+            m_vertexBuffer.m_pool.ResizeInternal(vertexBytes);
+        }
+    } else {
         // recording: an untextured texture component and an indexed vertex buffer
-        IDisplayProgram::Mode mode = m_recording->m_recordingMode;
-        m_priorityStacks.m_stacks[LevelIndex(mode, DisplayProgram::LevelId_Texture)].PushTop();
-        TCStack<Component>& textures = m_priorityStacks.m_stacks[LevelIndex(mode, DisplayProgram::LevelId_Texture)];
-        Component& component = textures.m_data[textures.m_top - 1];
+        int indexBytes = (count >> 1) * 12;
+        const int* lengths = MinCmpLen(m_recording->m_recordingMode);
+        m_priorityStacks.m_stacks[LevelIndex(m_recording->m_recordingMode, DisplayProgram::LevelId_Texture)].PushTop();
+        Component& component =
+            m_priorityStacks.m_stacks[LevelIndex(m_recording->m_recordingMode, DisplayProgram::LevelId_Texture)].Top();
+        int entries = DisplayProgram::GetComponentMinNumOfEntries(m_recording->m_recordingMode, DisplayProgram::LevelId_Texture);
         component.m_flag4 = 1;
-        component.m_flag6 = DisplayProgram::GetComponentMinNumOfEntries(mode, DisplayProgram::LevelId_Texture) * 4 + 8;
+        component.m_flag6 = entries * 4 + 8;
         component.m_flag5 = 0x20;
         component.m_data[0] = 0;
         CVertexAttribute::Decl decl[2];
@@ -2276,30 +2351,10 @@ void CGraphics2d_Lite_OGLES::DrawHardwareRectangles(int first, int count)
         }
         int* saved = m_recording->m_poolPos;
         m_recording->m_poolPos = m_savedPoolPos;
-        buffer = m_priorityStacks.AquireVtxBuffer(*m_recording, MinCmpLen(mode), 0x40, m_coordStride * count,
-                                                  kPrimitiveBufferKey, decl, (count >> 1) * 12, kUnsignedShortVertex);
+        buffer = m_priorityStacks.AquireVtxBuffer(*m_recording, lengths, 0x40, vertexBytes,
+                                                  kPrimitiveBufferKey, decl, indexBytes, kUnsignedShortVertex);
         m_savedPoolPos = m_recording->m_poolPos;
         m_recording->m_poolPos = saved;
-        if (buffer == NULL) {
-            m_priorityStacks.m_stacks[LevelIndex(mode, DisplayProgram::LevelId_Texture)].m_top--;
-            return;
-        }
-    } else {
-        // immediate: the corners go through m_vertexBuffer
-        buffer = &m_vertexBuffer;
-        CVertexAttribute::Decl* attributes = reinterpret_cast<CVertexAttribute::Decl*>(m_vertexBuffer.m_attributes);
-        attributes[0].m_field0 = 0;
-        attributes[0].m_field4 = 0;
-        attributes[0].m_type = m_coordType;
-        attributes[0].m_fieldC = m_coordCount;
-        attributes[0].m_stride = 0;
-        attributes[0].m_fieldE = 1;
-        attributes[0].m_fieldF = 0;
-        m_vertexBuffer.m_pool.m_reserve = m_coordStride;
-        m_vertexBuffer.m_pool.m_cursor = m_vertexBuffer.m_pool.m_data;
-        if (m_vertexBuffer.m_pool.m_capacity < m_coordStride * count) {
-            m_vertexBuffer.m_pool.ResizeInternal(m_coordStride * count);
-        }
     }
 
     const VertexAttribute& attribute = reinterpret_cast<VertexAttribute*>(buffer->m_attributes)[0];
@@ -2317,7 +2372,7 @@ void CGraphics2d_Lite_OGLES::DrawHardwareRectangles(int first, int count)
             short y0 = corner0[1];
             short x1 = corner1[0];
             short y1 = corner1[1];
-            CK_RECTANGLE(x0, y0, x1, y1, index);
+            CK_RECTANGLE(x0, y0, x1, y1, index, GL_SHORT, m_coordCount * 2);
         }
     } else if (m_coordType == kByteVertex) {
         for (int index = first; index < first + count; index += 2) {
@@ -2328,7 +2383,7 @@ void CGraphics2d_Lite_OGLES::DrawHardwareRectangles(int first, int count)
             short y0 = corner0[1];
             short x1 = corner1[0];
             short y1 = corner1[1];
-            CK_RECTANGLE(x0, y0, x1, y1, index);
+            CK_RECTANGLE(x0, y0, x1, y1, index, GL_BYTE, m_coordCount);
         }
     }
     if (m_recording != NULL && m_recording->m_currPos > IDisplayProgram::Mode_1) {
@@ -2339,11 +2394,18 @@ void CGraphics2d_Lite_OGLES::DrawHardwareRectangles(int first, int count)
 void CGraphics2d_Lite_OGLES::HandleConfigStateBasedOnSrcFormat(RSBFormat format)
 {
     bool alphaBlend = false;
+    unsigned char alphaTest;
     if ((format & 0x4000) != 0) {
-        switch ((unsigned int)format) {
-        case 0x803d5400:
-        case 0x80475400:
-        case 0x80495400:
+        switch ((int)format) {
+        case 0x45402:
+        case 0x55402:
+            // alpha tested, not blended
+            if (!m_state.m_alphaTest.Top()) {
+                Enable(State_AlphaTest);
+            }
+            goto disableBlend;
+        case (int)0x80475400:
+        case (int)0x80495400:
         case 0x65402:
         case 0x75402:
         case 0xc4404:
@@ -2352,19 +2414,16 @@ void CGraphics2d_Lite_OGLES::HandleConfigStateBasedOnSrcFormat(RSBFormat format)
         case 0xf4404:
             alphaBlend = true;
             break;
-        case 0x45402:
-        case 0x55402:
-            // alpha tested, not blended
-            if (!m_state.m_alphaTest.Top()) {
-                Enable(State_AlphaTest);
-            }
-            goto disableBlend;
+        case (int)0x803d5400:
+            alphaBlend = true;
+            break;
         default:
             break;
         }
     }
+    alphaTest = m_state.m_alphaTest.Top();
     if (alphaBlend) {
-        if (!m_state.m_alphaTest.Top()) {
+        if (!alphaTest) {
             Enable(State_AlphaTest);
         }
         if (!m_state.m_blend.Top()) {
@@ -2375,7 +2434,7 @@ void CGraphics2d_Lite_OGLES::HandleConfigStateBasedOnSrcFormat(RSBFormat format)
         }
         return;
     }
-    if (m_state.m_alphaTest.Top()) {
+    if (alphaTest) {
         Disable(State_AlphaTest);
     }
 disableBlend:

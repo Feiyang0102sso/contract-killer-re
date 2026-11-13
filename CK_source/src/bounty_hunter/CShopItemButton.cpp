@@ -9,6 +9,7 @@
 #include "CBH_Player.h"
 #include "CBH_SurfaceManager.h"
 #include "CChallengeWindow.h"
+#include "CColor.h"
 #include "CCurrencyManager.h"
 #include "CCurrency.h"
 #include "CDailyDealManager.h"
@@ -200,13 +201,19 @@ CShopItemButton::CShopItemButton(CItemManager* manager, int type, const XString&
             AddToFront(marker);
         }
         if (item->m_sale || item->m_field56) {
-            m_saleMarker = new CImageButton();
-            m_saleMarker->AddImage("IDB_SHOP_ICON_SALE", 0, 0);
+            CImageButton* marker = new CImageButton();
+            m_saleMarker = marker;
+            marker->AddImage("IDB_SHOP_ICON_SALE", 0, 0);
             m_saleMarker->SetLayoutType(LAYOUT_NONE);
+            Window* saleMarker = m_saleMarker;
             if (IsWeaponCard(type)) {
-                m_saleMarker->SetCorner(WeaponOfferPositions[1].x(), WeaponOfferPositions[1].y() + CardImageOffset());
+                int x = WeaponOfferPositions[1].x();
+                int y = WeaponOfferPositions[1].y() + CardImageOffset();
+                saleMarker->SetCorner(x, y);
             } else {
-                m_saleMarker->SetCorner(OfferPositions[1].x(), OfferPositions[1].y());
+                int x = OfferPositions[1].x();
+                int y = OfferPositions[1].y();
+                saleMarker->SetCorner(x, y);
             }
             AddToFront(m_saleMarker);
         }
@@ -256,7 +263,9 @@ CShopItemButton::CShopItemButton(CItemManager* manager, int type, const XString&
                 LabelWithIcon* label = new LabelWithIcon(
                     XString::AnsiString(XString(static_cast<CAmmo*>(item)->m_bulletIcon).c_str()), count);
                 label->SetAlign(ALIGN_RIGHT | ALIGN_TOP);
-                label->SetOutsetSpacing(AmountTop() + ImageHeight(m_itemImage) / 2, AmountRight(), 0, 0);
+                int imageHeight = ImageHeight(m_itemImage);
+                int top = AmountTop();
+                label->SetOutsetSpacing(top + imageHeight / 2, AmountRight(), 0, 0);
                 AddToFront(label);
             } else {
                 int count = 0;
@@ -266,7 +275,9 @@ CShopItemButton::CShopItemButton(CItemManager* manager, int type, const XString&
                 }
                 LabelWithIcon* label = new LabelWithIcon("IDB_HUD_HANDGUN_BULLET_ICON", count);
                 label->SetAlign(ALIGN_RIGHT | ALIGN_TOP);
-                label->SetOutsetSpacing(AmountTop() + ImageHeight(m_itemImage) / 2, AmountRight(), 0, 0);
+                int imageHeight = ImageHeight(m_itemImage);
+                int top = AmountTop();
+                label->SetOutsetSpacing(top + imageHeight / 2, AmountRight(), 0, 0);
                 AddToFront(label);
             }
             break;
@@ -315,7 +326,9 @@ CShopItemButton::CShopItemButton(CItemManager* manager, int type, const XString&
                 }
                 LabelWithIcon* label = new LabelWithIcon(icon, amount);
                 label->SetAlign(ALIGN_RIGHT | ALIGN_TOP);
-                label->SetOutsetSpacing(AmountTop() + ImageHeight(m_itemImage) / 2, AmountRight(), 0, 0);
+                int imageHeight = ImageHeight(m_itemImage);
+                int top = AmountTop();
+                label->SetOutsetSpacing(top + imageHeight / 2, AmountRight(), 0, 0);
                 AddToFront(label);
             }
         } else {
@@ -330,7 +343,9 @@ CShopItemButton::CShopItemButton(CItemManager* manager, int type, const XString&
             "IDB_HUD_ICON_ENERGY",
             static_cast<App*>(WindowApp::m_instance)->m_energyManager->getEnergyItem(m_itemId)->m_energy);
         label->SetAlign(ALIGN_RIGHT | ALIGN_TOP);
-        label->SetOutsetSpacing(AmountTop() + ImageHeight(m_itemImage) / 2, AmountRight(), 0, 0);
+        int imageHeight = ImageHeight(m_itemImage);
+        int top = AmountTop();
+        label->SetOutsetSpacing(top + imageHeight / 2, AmountRight(), 0, 0);
         AddToFront(label);
         SetSize(m_width, m_height + m_titleFont->GetFontHeight() + m_priceFont->GetFontHeight() +
                              SScreenAdaptingConstant(37, 60, 60)());
@@ -341,7 +356,9 @@ CShopItemButton::CShopItemButton(CItemManager* manager, int type, const XString&
             "IDB_HUD_ICON_MONEY",
             static_cast<App*>(WindowApp::m_instance)->m_currencyManager->getCurrencyById(m_itemId)->m_cashGain);
         label->SetAlign(ALIGN_RIGHT | ALIGN_TOP);
-        label->SetOutsetSpacing(AmountTop() + ImageHeight(m_itemImage) / 2, AmountRight(), 0, 0);
+        int imageHeight = ImageHeight(m_itemImage);
+        int top = AmountTop();
+        label->SetOutsetSpacing(top + imageHeight / 2, AmountRight(), 0, 0);
         AddToFront(label);
         SetSize(m_width, m_height + m_titleFont->GetFontHeight() + m_priceFont->GetFontHeight() +
                              SScreenAdaptingConstant(37, 60, 60)());
@@ -357,8 +374,9 @@ CShopItemButton::CShopItemButton(CItemManager* manager, int type, const XString&
     m_title->SetAlign(ALIGN_HCENTER);
     AddToFront(m_title);
     if (static_cast<App*>(WindowApp::m_instance)->InitDailyDealManager()->GetCurrentDealItem() == item) {
-        m_dealTimer = new Window(false);
-        m_dealTimer->SetPercentHeight(100, 0, 0);
+        Window* timerArea = new Window(false);
+        m_dealTimer = timerArea;
+        timerArea->SetPercentHeight(100, 0, 0);
         m_dealTimer->SetPercentWidth(100, 0, 0);
         AddToFront(m_dealTimer);
         Window* spacer = new Window(false);
@@ -438,53 +456,70 @@ void CShopItemButton::Paint(ICGraphics2d& graphics)
     if (IsWeaponCard(m_type)) {
         y = CardImageOffset();
     }
-    ICRenderSurface* background = m_background.GetSurface();
-    if (background != NULL) {
-        DrawImage(graphics, background, 0, y, 0, 0);
+    if (m_background.GetSurface() != NULL) {
+        DrawImage(graphics, m_background.GetSurface(), 0, y, 0, 0);
     }
-    bool blend = m_disabled || m_blink;
+
+    int scale = App::Scale();
+    bool blend = false;
+    float opacity;
+    if (m_disabled) {
+        opacity = 0.5f;
+        blend = true;
+    } else if (m_blink) {
+        unsigned int uptime = CStdUtil_Cocoa::GetUpTimeMS();
+        int phase = static_cast<int>(uptime % 600) - 300;
+        opacity = fabsf(static_cast<float>(phase)) / 360.0f + 0.2f;
+        blend = true;
+    }
     if (blend) {
-        float opacity = 0.5f;
-        if (!m_disabled) {
-            int phase = static_cast<int>(static_cast<unsigned int>(CStdUtil_Cocoa::GetUpTimeMS()) % 600) - 300;
-            opacity = 0.2f + fabsf(static_cast<float>(phase)) / 360.0f;
-        }
-        int margin = App::Scale() * 7;
-        FillRect(graphics, margin, margin + y, ImageWidth(m_itemImage) - 2 * margin,
-                 ImageHeight(m_itemImage) - 2 * margin, 0xff000000);
+        int margin = scale * 7;
+        int itemWidth = ImageWidth(m_itemImage);
+        int itemHeight = ImageHeight(m_itemImage);
+        FillRect(graphics, margin, margin + y, itemWidth - 2 * margin, itemHeight - 2 * margin,
+                 Color_A8R8G8B8_t::Black.value);
         BeginBlend(graphics, opacity, 1.0f, 1.0f, 1.0f, true, false);
     }
+
     DrawImage(graphics, m_itemImage, 0, y, 0, 0);
     if ((m_pressed && !m_disabled) || m_alwaysActive) {
         DrawImage(graphics, m_activeImage, 0, y, 0, 0);
     }
-    if (m_type != IapCurrency && !IsItemPurchased()) {
-        int priceY = ImageHeight(m_itemImage) + m_title->m_height;
+
+    int imageHeight = ImageHeight(m_itemImage);
+    if (m_type == IapCurrency) {
+        if (blend) {
+            EndBlend(graphics);
+        }
+        return;
+    }
+
+    int titleHeight = m_title->m_height;
+    if (!IsItemPurchased()) {
+        int priceY = imageHeight + titleHeight;
         ICRenderSurface* currency = m_currencyIcon.GetSurface();
         int center = m_width / 2;
-        DrawImage(graphics, currency, center - ImageWidth(currency), priceY, 0, 0);
-        DrawFontText(graphics, m_priceFont, m_priceText.c_str(), center, priceY, 0);
+        int currencyWidth = ImageWidth(m_currencyIcon.GetSurface());
+        DrawImage(graphics, currency, center - currencyWidth, priceY, 0, 0);
+        DrawFontText(graphics, m_priceFont, m_priceText.c_str(), m_width / 2, priceY, 0);
     }
     if (blend) {
         EndBlend(graphics);
     }
-    if (m_type != IapCurrency) {
-        Window::Paint(graphics);
-    }
+    Window::Paint(graphics);
 }
 
 void CShopItemButton::Update()
 {
     if (m_disabled && m_type == IapCurrency) {
         // The original blinks the title only (unsigned up time).
-        m_title->SetOpacity(
-            0.2f +
-            fabsf(static_cast<float>(static_cast<int>(static_cast<unsigned int>(CStdUtil_Cocoa::GetUpTimeMS()) % 1100) -
-                                     550)) /
-                660.0f);
+        TextWindow* title = m_title;
+        unsigned int uptime = CStdUtil_Cocoa::GetUpTimeMS();
+        int phase = static_cast<int>(uptime % 1100) - 550;
+        title->SetOpacity(fabsf(static_cast<float>(phase)) / 660.0f + 0.2f);
     }
     if (m_type == Ammo) {
-        m_blink = static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsAmmoBlink(m_itemId);
+        m_blink = static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsAmmoBlink(m_itemId) == 1;
     }
     if (m_dealTimer != NULL) {
         if (static_cast<App*>(WindowApp::m_instance)->InitDailyDealManager()->GetCurrentDealItem() == m_item) {

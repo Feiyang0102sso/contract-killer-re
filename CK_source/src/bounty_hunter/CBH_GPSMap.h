@@ -108,7 +108,6 @@ public:
     void Load();
     void Save();
     CGPSHauntCamera* GetCameraById(int id);
-    CGPSInstantInformant* FindInstantInformant(CGPSInstantInformant::Type type, bool weaponGated) const;
     bool IsMovingCameraMissionsFinished() const;
     void StartTutorialMission();
     void StartHunt(CGPSHauntCamera* camera, const CLocation* location, bool useScript);
@@ -124,6 +123,8 @@ public:
     void ShowLowMoneyDialog();
     void ShowMissionPriorDialogs(int missionId);
     void ShowBeforeHuntDialog();
+    static CBeforeHuntDialog* CreateBeforeHuntDialog(bool allowLater);
+    static CBeforeTargettingDialog* CreateBeforeTargettingDialog(bool allowLater);
     void FillBeforeHuntInfo(const CGPSHuntingItem* item);
     void FillBeforeTargetHuntInfo(const CGPSBounty* bounty);
     void FillBeforeHuntInfo(const CGPSHuntingItem* item, const char* image, ICRenderSurface* surface);
@@ -135,7 +136,6 @@ public:
     void FlushDialogsQueue();
     void ShowCoopWindow();
     void OnGPSSocialNetworkSelected();
-    void OpenPendingFriendsWindow();
     void CollectSubContractsNotifications(Vector<SLocalPush>& pushes);
 
     static bool m_isFirstLoading;
@@ -145,9 +145,7 @@ private:
     static bool IsItemIntersects(const CGPSItem& item, int left, int top, int right, int bottom);
     static bool IsRegionFree(int left, int top, int right, int bottom, const Vector<const CGPSItem*>& items);
     void FilterRegionItems(int left, int top, int right, int bottom, Vector<const CGPSItem*>& items) const;
-    void ShowMissionDialog();
-    CBeforeHuntDialog* CreateBeforeHuntDialog(bool allowLater);
-    void PrepareHuntBrief(const CGPSHauntCamera& camera, const CGPSHuntingItem& item);
+
     void SetWeaponInBothHands(CDH_Weapon* weapon);
     void SetWeaponWithIDInBothHands(int id);
     void SetWeaponWithCategoryInBothHands(const XString& category);
@@ -157,7 +155,6 @@ private:
     void ShowBountyPriorDialogs(const CGPSBounty* bounty, const XString& hauntName, CFont* font);
     void ShowBountyPriorDialogs(const XString& message, const XString& title, CFont* font);
     void ShowMessage(XString title, XString message, const char* image, CFont* font);
-    CBeforeTargettingDialog* CreateBeforeTargettingDialog(bool allowLater);
     bool MakePlayerAmmoCheck();
     bool MakePlayerWeaponCheck(int missionId);
     bool MakeLowAmmoCheck(const CDH_Weapon* weapon);
@@ -169,12 +166,11 @@ private:
     bool MakePlayerWeaponGatedIDCheck(int id);
     CDH_Weapon* GetMostExpensiveWeaponInCategory(int category) const;
     int GetMostExpensiveWeaponId(const Vector<int>& ids);
-    bool CheckMissionEquipment(CGPSHauntCamera* camera, CGPSHuntingItem* item, bool skipAmmoCheck);
+
     void ShowBuyInformantDialog(CGPSInstantInformant* informant);
     void ShowInformantIsSearchingDialog(CGPSInstantInformant* informant);
-    void ResolveInformantPurchase(CGPSInstantInformant* informant);
     CGPSHauntCamera* GetCameraForBlueInformant();
-    CGPSHauntCamera* GetRandomCamera(bool unlocked, bool movingOnly);
+    CGPSHauntCamera* GetRandomCamera(bool unlocked, bool allowMoving);
     CGPSHauntCamera* GetRandomCamera();
     CGPSHauntCamera* GetMovingRandomCamera() const;
     void CreateBar();
@@ -199,9 +195,7 @@ private:
     void ShowFiveDaysBonusTeaser();
     void ShowFiveDaysIncentivisedBonusMessage();
     void ShowFiveDaysInventiveBonusRecomendedItem();
-    void RequestTargetPicker();
     void ShowSelectFriendDialog();
-    bool QueueChallengeNewsDialog(CChallenge* challenge, int sender, int count, bool completed);
 
 public:
     // CK layout, offsets from CBH_GPSMap::CBH_GPSMap() (0xe77f0) and member accesses.
@@ -232,13 +226,13 @@ public:
     int m_pendingCommand;                               // 0x178 ShowLowMoneyDialog
     unsigned int m_lastDailyDealDisplay;                // 0x17c GetTimeSeconds
     bool m_field180;                                    // 0x180
-    int m_field184;                                     // 0x184
+    unsigned int m_mapIdleElapsed;                      // 0x184
     int m_bonusTeaserElapsed;                           // 0x188 HandleBonuses
     bool m_field18c;                                    // 0x18c
     bool m_skipAmmoCheck;                                // 0x18d
     CGPSHauntCamera* m_selectedCamera;                  // 0x190 FillBeforeHuntInfo
-    int m_field194;                                     // 0x194
-    int m_field198;                                     // 0x198
+    CGPSInstantInformant* m_selectedInformant;          // 0x194 purchase and search dialogs
+    CGPSInstantInformant* m_targetingInformant;         // 0x198 friend picker
     int m_field19c;                                     // 0x19c
     CBH_GPSScan* m_gpsScan;                             // 0x1a0
     bool m_field1a4;                                    // 0x1a4
@@ -270,31 +264,17 @@ public:
     CGPSShop* m_shop;                                   // 0x294
     CGPSNetwork* m_network;                             // 0x298
     CGPSItem* m_pressedItem;                            // 0x29c OnPointerEvent
-    int m_field2a0;                                     // 0x2a0
-    int m_field2a4;                                     // 0x2a4
+    const CFriendGatedMission* m_friendGatedMission;     // 0x2a0
+    CBH_PersonType* m_friendGatedBoss;                   // 0x2a4
     XString m_friendGatedBossName;                      // 0x2a8
     bool m_needSave;                                    // 0x2ac NeedSave
     int m_field2b0;                                     // 0x2b0
     bool m_openFriendsWindow;                           // 0x2b4 ShowCoopWindow
-    bool m_field2b5;                                    // 0x2b5 cleared by Init
+    bool m_openTargetPickerAfterLogin;                  // 0x2b5 cleared by Init
     Vector<CItemManager*> m_prefetchedManagers;         // 0x2b8
     int m_prefetchIndex;                                // 0x2c8
     int m_socialNetworkMode;                            // 0x2cc (ctor: 1, ShowCoopWindow: 2)
 
-    // Members whose CK offsets are not mapped yet (kept after the known layout).
-    CGPSInstantInformant* m_selectedInformant;
-    int m_priorDialogIndex;
-    bool m_advanceMissionDialog;
-    bool m_showingHuntConfirmation;
-    bool m_acceptInformant;
-    bool m_showTutorialFinish;
-    unsigned int m_nextGiftSaveAttempt;
-    CGPSZombiesPromo* m_zombiesPromo;
-    unsigned int m_nextChallengeSaveAttempt;
-    int m_mapIdleElapsed;
-    bool m_openTargetPickerAfterLogin;
-    const CFriendGatedMission* m_friendGatedMission;
-    CBH_PersonType* m_friendGatedBoss;
 
 public:
     static bool safehouseIsPainting; // added by ui

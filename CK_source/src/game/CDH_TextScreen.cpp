@@ -46,15 +46,18 @@ void CDH_TextScreen::Init()
     body->SetHeightByContent(0, 0);
 
     CFont* font = CFontMgr::GetInstance()->GetFont(m_font);
-    TextWindow* text = new TextWindow(m_text, font);
+    TextWindow* text = new TextWindow();
+    text->SetText(m_text, font);
     text->SetAlign(m_textAlign);
-    if (font != NULL && m_maxWidth < font->MeasureTextWidth(m_text.c_str(), -1, -1, NULL)) {
+    int textWidth = font->MeasureTextWidth(m_text.c_str(), -1, -1, NULL);
+    if (textWidth > m_maxWidth) {
         text->SetPercentWidth(100, 0, 0);
+        text->SetHeightByContent(0, 0);
         SetDesiredWidth(m_maxWidth);
     } else {
         text->SetWidthByContent(0, 0);
+        text->SetHeightByContent(0, 0);
     }
-    text->SetHeightByContent(0, 0);
     body->AddToFront(text, 0, 0);
     if (m_experience != 0) {
         body->AddToFront(new CDH_XPWidget(m_experience), 0, 1);
@@ -64,7 +67,16 @@ void CDH_TextScreen::Init()
 
 void CDH_TextScreen::OnCommand(Event& event)
 {
-    CDH_BaseScreen::OnCommand(event);
+    int command = event.m_id;
+    if (command == (int)0x97204784 || command == 0x21204844) {
+        SetInterrupt(2);
+        event.Clear();
+        return;
+    }
+    if (command == 0x07b18a47) {
+        SetInterrupt(1);
+        event.Clear();
+    }
 }
 
 typedef char AssertTextScreenSize[sizeof(CDH_TextScreen) == 0x1a0 ? 1 : -1];

@@ -81,8 +81,8 @@ void CBloodWindow::SetTitle(const XString& title)
     m_title = title.Upper();
     m_titleWidth = m_titleFont->MeasureTextWidth(m_title.c_str(), -1, -1, NULL) + App::Scale() * 20;
     // the title plate is never narrower than the screen adapted minimum
-    float width = (float)m_titleWidth;
     float minWidth = (float)s_minTitleWidth();
+    float width = (float)m_titleWidth;
     if (minWidth > width) {
         width = minWidth;
     }

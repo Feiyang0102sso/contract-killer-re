@@ -11,23 +11,28 @@ CVisualObjectManager::~CVisualObjectManager()
 
 SwerveHelper::Group CVisualObjectManager::Create(const char* const& resource, const char* root)
 {
-    XString name(resource);
-    CVisualObject* object;
-    CVisualObject* const* existing = m_objects.Get(name);
-    if (existing != NULL) {
-        object = *existing;
-    } else {
+    CVisualObject* object = NULL;
+    CVisualObject* const* existing = m_objects.Get(XString(resource));
+    if (existing == NULL) {
         object = new CVisualObject();
-        m_objects.Set(name, object);
+        m_objects.Set(XString(resource), object);
+    } else {
+        object = *m_objects.Get(XString(resource));
+    }
+    if (object == NULL) {
+        return SwerveHelper::Group();
     }
     return object->GetModelCopy(resource, root);
 }
 
 void CVisualObjectManager::Release(const char* const& resource)
 {
-    CVisualObject* const* object = m_objects.Get(XString(resource));
-    if (object != NULL) {
-        (*object)->ReleaseModelCopy();
+    CVisualObject* const* existing = m_objects.Get(XString(resource));
+    if (existing != NULL) {
+        CVisualObject* object = *m_objects.Get(XString(resource));
+        if (object != NULL) {
+            object->ReleaseModelCopy();
+        }
     }
 }
 

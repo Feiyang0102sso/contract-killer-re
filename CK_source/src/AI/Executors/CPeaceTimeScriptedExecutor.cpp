@@ -22,8 +22,9 @@ void CPeaceTimeScriptedExecutor::MoveToNewPoint()
         return;
     }
     CUnit* unit = m_mind->GetUnit();
-    if (unit != NULL) {
-        AddMovementExecutor(m_mind, unit->m_body.m_cellId, script->GetWayPointID(m_waypoint), false);
+    if (unit != NULL && unit->GetBody() != NULL) {
+        int destination = script->GetWayPointID(m_waypoint);
+        AddMovementExecutor(m_mind, unit->m_body.m_cellId, destination, false);
     }
 }
 

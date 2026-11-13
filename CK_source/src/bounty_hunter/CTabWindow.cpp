@@ -145,8 +145,10 @@ void CTabWindow::AddTab(XString name, Window* window, const char* image, bool lo
     if (m_tabs.size() == 0) {
         tab->m_bounds.m_x = infoWidth + (m_width - infoWidth) / 2 - tabWidth / 2;
     } else {
+        int windowWidth = m_width;
         TTab* first = m_tabs[0];
-        first->m_bounds.m_x = infoWidth + (m_width - infoWidth) / 2 - (GetTabWidth() + tabWidth - 1) / 2;
+        int tabsWidth = GetTabWidth();
+        first->m_bounds.m_x = infoWidth + (windowWidth - infoWidth) / 2 - (tabsWidth + tabWidth - 1) / 2;
         tab->m_bounds.m_x = 0;
     }
     tab->m_bounds.m_y = y;
@@ -163,7 +165,7 @@ void CTabWindow::AddTab(XString name, Window* window, const char* image, bool lo
     int windowHeight = m_height;
     int windowY = m_y;
     int captionHeight = GetCaptionHeight();
-    window->SetSize(windowWidth, windowHeight - captionHeight - windowY);
+    window->SetSize(windowWidth, (windowHeight - captionHeight) - windowY);
     int windowX = m_x;
     windowY = m_y;
     captionHeight = GetCaptionHeight();
@@ -289,8 +291,13 @@ void CTabWindow::PaintActiveTab(ICGraphics2d& graphics, TTab* tab)
         int tabY = tab->m_bounds.m_y;
         int highHeight = ImageHeight(m_middleOnHigh.GetSurface());
         int normalHeight = ImageHeight(m_middleOff.GetSurface());
-        DrawLineImageHoriz(graphics, m_leftOnHigh.GetSurface(), m_middleOnHigh.GetSurface(), m_rightOnHigh.GetSurface(),
-                           tab->m_bounds.m_x, tabY - highHeight + normalHeight, tab->m_bounds.m_width);
+        ICRenderSurface* left = m_leftOnHigh.GetSurface();
+        ICRenderSurface* middle = m_middleOnHigh.GetSurface();
+        ICRenderSurface* right = m_rightOnHigh.GetSurface();
+        int x = tab->m_bounds.m_x;
+        int y = tabY - highHeight + normalHeight;
+        int width = tab->m_bounds.m_width;
+        DrawLineImageHoriz(graphics, left, middle, right, x, y, width);
         DrawFontText(graphics, m_font, tab->m_name.c_str(), tab->m_bounds.m_x + tab->m_bounds.m_width / 2,
                      tab->m_bounds.m_y + SScreenAdaptingConstant(5, 10)(), ALIGN_HCENTER | ALIGN_VCENTER);
     }

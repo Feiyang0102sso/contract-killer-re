@@ -247,7 +247,7 @@ public:
 
     Vectors& ToVectors(Vectors& vectors) const;
     vec3 Forward() const;
-    void ToQuaternion(Quaternion& quaternion) const;
+    Quaternion& ToQuaternion(Quaternion& quaternion) const;
 
     float m_pitch;  // 0x00
     float m_yaw;    // 0x04
@@ -266,7 +266,7 @@ public:
     Angles& ToAngles(Angles& angles) const;
     Angles& ToAngles_ByKashtur(Angles& angles) const;
     /** Inline (defined after Mat4x4): through a rotation matrix. */
-    void ToQuaternion(Quaternion& quaternion) const;
+    Quaternion& ToQuaternion(Quaternion& quaternion) const;
 
     vec3 m_forward; // 0x00
     vec3 m_right;   // 0x0c
@@ -358,10 +358,10 @@ public:
     vec4 m_rows[4];     // 0x00
 };
 
-inline void Vectors::ToQuaternion(Quaternion& quaternion) const
+inline Quaternion& Vectors::ToQuaternion(Quaternion& quaternion) const
 {
     Mat4x4 matrix(*this, vec3(0.0f, 0.0f, 0.0f));
-    matrix.ToQuaternion(quaternion);
+    return matrix.ToQuaternion(quaternion);
 }
 
 #endif

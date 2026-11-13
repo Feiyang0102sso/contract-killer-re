@@ -7,14 +7,15 @@
 #include "SwerveHelper.h"
 
 CEnemyWeaponType::CEnemyWeaponType(TiXmlNode* node)
-    : m_baseDamage(0), m_effectiveRange(0), m_animType(PERSON_ANIM_TYPE_DEFAULT),
-      m_modelResource(NULL), m_shootSound(NULL), m_modelCopies(0)
+    : m_baseDamage(0), m_animType(PERSON_ANIM_TYPE_DEFAULT), m_modelCopies(0)
 {
+    m_model.Clear();
     Parse(node);
 }
 
 CEnemyWeaponType::~CEnemyWeaponType()
 {
+    m_model.Clear();
 }
 
 void CEnemyWeaponType::Parse(TiXmlNode* node)
@@ -31,7 +32,8 @@ void CEnemyWeaponType::ParseInfo(TiXmlNode* node)
         return;
     }
     m_baseDamage = CXmlHelper::GetAttributeValue(node, "base_damage").ToInt();
-    m_animType = static_cast<EPersonAnimType>(CXmlHelper::GetAttributeValue(node, "characterAnimationType").ToInt());
+    int animationType = CXmlHelper::GetAttributeValue(node, "characterAnimationType").ToInt();
+    m_animType = static_cast<EPersonAnimType>(animationType);
     m_dummyName = CXmlHelper::GetAttributeValue(node, "dummy");
     m_effectiveRange = CXmlHelper::GetAttributeValue(node, "effectiveRange").ToInt();
 }

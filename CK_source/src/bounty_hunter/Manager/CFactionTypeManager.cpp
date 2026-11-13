@@ -1,18 +1,21 @@
 #include "CFactionTypeManager.h"
 
+#include "App.h"
 #include "CFactionType.h"
 #include "CRandGen.h"
-#include "CXmlHelper.h"
+#include "ResMap.h"
+#include "tinyxml.h"
 
 CFactionTypeManager::CFactionTypeManager() : m_factions(8)
 {
-    TiXmlDocument document = CXmlHelper::Parse(L"res/common/configs/factions.xml");
+    char* config = static_cast<App*>(WindowApp::m_instance)->InitResMap()->loadText(XString(L"res/common/configs/factions.xml"));
+    TiXmlDocument document;
+    document.Parse(config);
+    if (config != NULL) {
+        delete[] config;
+    }
     for (TiXmlNode* node = document.FirstChild("faction"); node != NULL; node = node->NextSibling("faction")) {
         CFactionType* faction = new CFactionType(node);
-        CFactionType** previous = m_factions.Get(faction->m_name);
-        if (previous != NULL) {
-            delete *previous;
-        }
         m_factions.Set(faction->m_name, faction);
     }
 }
@@ -49,7 +52,7 @@ CFactionType* CFactionTypeManager::GetFactionAtIndex(int index) const
 void CFactionTypeManager::GetFactionTypeNames(Vector<XString*>& names)
 {
     names.setSize(m_factions.m_count);
-    for (int index = 0; index < names.size(); ++index) {
+    for (int index = 0; index < m_factions.m_count; ++index) {
         m_factions.GetAt(index, &names[index]);
     }
 }

@@ -3,7 +3,7 @@
 
 #include "WindowBase.h"
 
-/** Owns pending dialogs and opens each in the application's modal layer. */
+/** Queues pending dialogs and opens each in the application's modal layer. */
 class CWindowQueue : public Window {
 public:
     CWindowQueue();

@@ -1,8 +1,9 @@
 // CPlayerGameStats.cpp - read, save and update the CK bounty statistics.
-#include "CPlayerGameStats.h"
-
+#undef memset
 #include <stddef.h>
 #include <string.h>
+
+#include "CPlayerGameStats.h"
 #include "App.h"
 #include "CAmmo.h"
 #include "CDH_Weapon.h"
@@ -15,15 +16,25 @@ typedef char CPlayerGameStats_ARMv7_Size[(sizeof(CPlayerGameStats) == 0x114) ? 1
 
 CPlayerGameStats::CPlayerGameStats()
 {
-    memset(&m_successBounties, 0, offsetof(CPlayerGameStats, m_completedMissionsAtLocations));
+    memset(&m_successBounties, 0, offsetof(CPlayerGameStats, m_weaponsEarned));
     m_weaponsEarned = 1;
+    m_inMIssionWeaponChanges = 0;
+    m_killsInCurrentHunt = 0;
+    m_pistolHitsOnTarget = 0;
+
+    // The first range ends with the bool and leaves its trailing padding untouched.
+    const size_t firstCountBytes = offsetof(CPlayerGameStats, m_allAmmoTypesOpen) +
+                                   sizeof(m_allAmmoTypesOpen) - offsetof(CPlayerGameStats, m_enemyKilled);
+    const size_t secondCountBytes = offsetof(CPlayerGameStats, m_completedMissionsAtLocations) -
+                                    offsetof(CPlayerGameStats, m_totalKillsCountByExplosion);
+    memset(&m_enemyKilled, 0, firstCountBytes);
+    memset(&m_totalKillsCountByExplosion, 0, secondCountBytes);
+    m_completedMissionsAtLocations = Vector<XString>();
+
     m_coopsCompleted = 0;
     m_minigunKills = 0;
     m_purchasedCyberScopes = 0;
     m_resurrects = 0;
-    m_inMIssionWeaponChanges = 0;
-    m_killsInCurrentHunt = 0;
-    m_pistolHitsOnTarget = 0;
     m_killTimes.ensureCapacity(20);
 }
 

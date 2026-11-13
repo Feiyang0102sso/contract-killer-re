@@ -46,7 +46,7 @@ void CChallengeManager::ParseConfig()
          element = element->NextSiblingElement("challenge")) {
         CChallenge* challenge = new CChallenge(element);
         m_challenges.addElement(challenge);
-        if (m_lastDay < challenge->m_day) {
+        if (challenge->m_day > m_lastDay) {
             m_lastDay = challenge->m_day;
         }
     }
@@ -98,7 +98,11 @@ void CChallengeManager::CheckChallengesFinishByTime()
         return;
     }
     if (m_activeCount != 0) {
-        if (m_activeCount < 1 || now <= static_cast<unsigned int>(m_finishTime)) {
+        if (m_activeCount < 1) {
+            return;
+        }
+        unsigned int finishTime = m_finishTime;
+        if (now <= finishTime) {
             return;
         }
         for (int index = 0; index < m_challenges.size(); ++index) {
@@ -107,15 +111,15 @@ void CChallengeManager::CheckChallengesFinishByTime()
             }
         }
     }
-    m_finishTime = now + SecondsPerDay - now % SecondsPerDay;
+    unsigned int elapsed = now % SecondsPerDay;
+    m_finishTime = now + SecondsPerDay - elapsed;
     StartNewChallenges(now);
 }
 
 void CChallengeManager::Save()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CSaveManager* save = app->m_saveManager;
-    TiXmlElement* section = CXmlHelper::ObtainElement(save->GetRootElement(), XString("challenges"));
+    TiXmlElement* root = static_cast<App*>(WindowApp::m_instance)->m_saveManager->GetRootElement();
+    TiXmlElement* section = CXmlHelper::ObtainElement(root, XString("challenges"));
     section->Clear();
     section->SetAttribute("active_challenges_count", m_activeCount);
     section->SetAttribute("challenges_finish_time", m_finishTime);
@@ -124,19 +128,20 @@ void CChallengeManager::Save()
             m_challenges[index]->Save(section);
         }
     }
-    save->SaveOnNextUpdate(false);
+    static_cast<App*>(WindowApp::m_instance)->m_saveManager->SaveOnNextUpdate(false);
 }
 
 int CChallengeManager::GetTimeSec()
 {
-    if (!App::IsNetTimeAvailable()) {
-        return 0;
+    CStdUtil_Cocoa::GetTimeSeconds();
+    CNGSSession* session = CNGS::GetInstance()->GetLocalUser()->GetSession();
+    if (App::IsNetTimeAvailable() == 1) {
+        if (CNGS::GetInstance()->GetLocalUser()->isAuthenticated(2) ||
+            CNGS::GetInstance()->GetLocalUser()->isAuthenticated(1)) {
+            return session->getNetworkCurrentTimeSeconds() - ChallengeTimeOffset;
+        }
     }
-    CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
-    if (!user->isAuthenticated(2) && !user->isAuthenticated(1)) {
-        return 0;
-    }
-    return user->GetSession()->getNetworkCurrentTimeSeconds() - ChallengeTimeOffset;
+    return 0;
 }
 
 int CChallengeManager::DayForTime(int time) const

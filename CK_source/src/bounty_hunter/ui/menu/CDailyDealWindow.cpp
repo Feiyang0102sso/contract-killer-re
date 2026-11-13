@@ -15,6 +15,11 @@ const int BuyDeal = 0x0027775d;
 const int CloseDeal = 0x004004a3;
 const int OpenBank = 0x02e7d3e7;
 const int OpenTapjoy = 0x02e7d44c;
+
+App* GetApp()
+{
+    return static_cast<App*>(WindowApp::m_instance);
+}
 }
 
 CDailyDealWindow::CDailyDealWindow()
@@ -24,50 +29,42 @@ CDailyDealWindow::CDailyDealWindow()
 
 void CDailyDealWindow::CreateUI()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDailyDealManager* manager = app->InitDailyDealManager();
-    CItem* item = manager->GetCurrentDealItem();
-    if (item == NULL || manager->GetCurrentDailyDeal() == NULL) {
-        SetTitleText("IDS_DAILY_DEAL");
-        SetButtons(BUTTON_OK);
-        return;
-    }
+    CItem* item = GetApp()->InitDailyDealManager()->GetCurrentDealItem();
 
     ImageWindow* background = new ImageWindow();
     background->m_debugFrame = true;
     background->SetImageById("IDB_SHOP_BACKGROUND");
     background->SetFillType(ImageWindow::FILL_NONE);
+    background->SetLayoutType(LAYOUT_SIMPLE);
     background->SetAlign(ALIGN_HCENTER | ALIGN_TOP);
     AddToFront(background);
 
     CImageButton* closeButton = new CImageButton();
-    const SScreenAdaptingConstant closeTop(12, 24);
-    const SScreenAdaptingConstant closeRight(35, 70);
-    closeButton->SetOutsetSpacing(closeTop(), closeRight(), 0, 0);
+    int closeTop = SScreenAdaptingConstant(12, 24)();
+    int closeRight = SScreenAdaptingConstant(35, 70)();
+    closeButton->SetOutsetSpacing(closeTop, closeRight, 0, 0);
     closeButton->AddImage("IDB_CLOSE_ICON", 0, 0);
+    closeButton->SetLayoutType(LAYOUT_SIMPLE);
     closeButton->SetAlign(ALIGN_RIGHT | ALIGN_TOP);
-    closeButton->m_command = CloseDeal;
+    closeButton->SetCommandParameters(CloseDeal, 0, 0, 0);
     AddToFront(closeButton);
 
     Window* content = new Window(false);
     content->m_debugFrame = true;
-    const SScreenAdaptingConstant contentTop(25, 50);
-    content->SetOutsetSpacing(contentTop(), 0, 0, 0);
+    content->SetOutsetSpacing(SScreenAdaptingConstant(25, 50)(), 0, 0, 0);
     content->SetAlign(ALIGN_HCENTER | ALIGN_TOP);
     content->SetPercentHeight(80, 0, 0);
     content->SetPercentWidth(100, 0, 0);
     AddToFront(content);
 
-    CFontMgr* fonts = CFontMgr::GetInstance();
-    const SScreenAdaptingConstant headingHeight(3, 2);
-    TextWindow* heading = new TextWindow(ResString("IDS_DAILY_DEAL"), fonts->GetFont(10));
+    TextWindow* heading = new TextWindow(ResString("IDS_DAILY_DEAL"), CFontMgr::GetInstance()->GetFont(10));
     heading->SetAlign(ALIGN_HCENTER | ALIGN_TOP);
     content->AddToFront(heading, 0, 0);
-    heading->SetPercentHeight(headingHeight(), 0, 0);
-    TextWindow* itemName = new TextWindow(item->GetName(), fonts->GetFont(9));
+    heading->SetPercentHeight(SScreenAdaptingConstant(3, 2)(), 0, 0);
+    TextWindow* itemName = new TextWindow(item->GetName(), CFontMgr::GetInstance()->GetFont(9));
     itemName->SetAlign(ALIGN_HCENTER | ALIGN_TOP);
     content->AddToFront(itemName, 0, 1);
-    itemName->SetPercentHeight(headingHeight(), 0, 0);
+    itemName->SetPercentHeight(SScreenAdaptingConstant(3, 2)(), 0, 0);
     Window* spacing = new Window(false);
     spacing->m_debugFrame = true;
     spacing->SetPercentHeight(7, 0, 0);
@@ -112,14 +109,13 @@ void CDailyDealWindow::CreateUI()
     footer->SetPercentHeight(20, 0, 0);
     footer->SetPercentWidth(100, 0, 0);
     footer->SetAlign(ALIGN_HCENTER | ALIGN_BOTTOM);
-    const SScreenAdaptingConstant footerBottom(40, 80);
-    footer->SetOutsetSpacing(0, 0, footerBottom(), 0);
+    footer->SetOutsetSpacing(0, 0, SScreenAdaptingConstant(40, 80)(), 0);
     AddToFront(footer);
     CImageButton* buyButton = new CImageButton();
     buyButton->m_debugFrame = true;
     buyButton->AddImage("IDB_BUY_NOW_BUTTON", 0, 0);
     buyButton->SetText(XString("BUY NOW!"), ALIGN_HCENTER | ALIGN_VCENTER, NULL, 0, 0);
-    buyButton->m_command = BuyDeal;
+    buyButton->SetCommandParameters(BuyDeal, 0, 0, 0);
     footer->AddToFront(buyButton);
     buyButton->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     m_debugFrame = true;
@@ -127,16 +123,8 @@ void CDailyDealWindow::CreateUI()
 
 Window* CDailyDealWindow::CreateItemPriceWindow()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDailyDealManager* manager = app->InitDailyDealManager();
-    CItem* item = manager->GetCurrentDealItem();
-    SDailyDeal* deal = manager->GetCurrentDailyDeal();
+    CItem* item = GetApp()->InitDailyDealManager()->GetCurrentDealItem();
     Window* price = new Window(false);
-    if (item == NULL || deal == NULL) {
-        return price;
-    }
-    CFontMgr* fonts = CFontMgr::GetInstance();
-    CFont* captionFont = fonts->GetFont(9);
     Window* priceRows = new Window(false);
     priceRows->SetPercentHeight(100, 0, 0);
     priceRows->SetPercentWidth(65, 0, 0);
@@ -144,10 +132,11 @@ Window* CDailyDealWindow::CreateItemPriceWindow()
 
     Window* oldPriceRow = new Window(false);
     priceRows->AddToFront(oldPriceRow, 0, 0);
-    TextWindow* oldPriceLabel = new TextWindow(ResString("IDS_OLD_PRICE"), captionFont);
+    TextWindow* oldPriceLabel = new TextWindow(ResString("IDS_OLD_PRICE"), CFontMgr::GetInstance()->GetFont(9));
     oldPriceLabel->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     oldPriceRow->AddToFront(oldPriceLabel, 0, 0);
-    Window* oldPrice = CreatePriceCountWindow(item->m_priceCredits, captionFont);
+    int oldCredits = item->m_priceCredits;
+    Window* oldPrice = CreatePriceCountWindow(oldCredits, CFontMgr::GetInstance()->GetFont(9));
     oldPrice->SetPercentWidth(35, 0, 0);
     oldPrice->SetAlign(ALIGN_LEFT | ALIGN_VCENTER);
     ImageWindow* strike = new ImageWindow();
@@ -159,10 +148,12 @@ Window* CDailyDealWindow::CreateItemPriceWindow()
 
     Window* newPriceRow = new Window(false);
     priceRows->AddToFront(newPriceRow, 0, 1);
-    TextWindow* newPriceLabel = new TextWindow(ResString("IDS_NEW_PRICE"), captionFont);
+    TextWindow* newPriceLabel = new TextWindow(ResString("IDS_NEW_PRICE"), CFontMgr::GetInstance()->GetFont(9));
     newPriceLabel->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     newPriceRow->AddToFront(newPriceLabel, 0, 0);
-    Window* newPrice = CreatePriceCountWindow(deal->m_priceCredits, fonts->GetFont(10));
+    SDailyDeal* deal = GetApp()->InitDailyDealManager()->GetCurrentDailyDeal();
+    int newCredits = deal->m_priceCredits;
+    Window* newPrice = CreatePriceCountWindow(newCredits, CFontMgr::GetInstance()->GetFont(10));
     newPrice->SetPercentWidth(35, 0, 0);
     newPrice->SetAlign(ALIGN_LEFT | ALIGN_VCENTER);
     newPriceRow->AddToFront(newPrice, 1, 0);
@@ -176,7 +167,7 @@ Window* CDailyDealWindow::CreateItemPriceWindow()
     discountBackground->SetFillType(ImageWindow::FILL_NONE);
     discountBackground->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     discount->AddToFront(discountBackground);
-    TextWindow* discountText = new TextWindow(deal->m_text, captionFont);
+    TextWindow* discountText = new TextWindow(deal->m_text, CFontMgr::GetInstance()->GetFont(9));
     discountText->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     discount->AddToFront(discountText);
     return price;
@@ -185,14 +176,12 @@ Window* CDailyDealWindow::CreateItemPriceWindow()
 Window* CDailyDealWindow::CreateTimerWindow()
 {
     Window* row = new Window(false);
-    CFont* font = CFontMgr::GetInstance()->GetFont(15);
-    TextWindow* label = new TextWindow(ResString("IDS_OFFER_ENDS"), font);
+    TextWindow* label = new TextWindow(ResString("IDS_OFFER_ENDS"), CFontMgr::GetInstance()->GetFont(15));
     label->SetAlign(ALIGN_RIGHT | ALIGN_VCENTER);
     row->AddToFront(label, 0, 0);
     Window* timerCell = new Window(false);
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    unsigned int end = app->InitDailyDealManager()->GetNextDealStartTime();
-    CChallengeTimerWindow* timer = new CChallengeTimerWindow(end, font);
+    CChallengeTimerWindow* timer = new CChallengeTimerWindow(
+        GetApp()->InitDailyDealManager()->GetNextDealStartTime(), CFontMgr::GetInstance()->GetFont(15));
     timer->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     timer->m_useChallengeTime = false;
     timerCell->AddToFront(timer);
@@ -202,35 +191,45 @@ Window* CDailyDealWindow::CreateTimerWindow()
 
 void CDailyDealWindow::OnCommand(Event& event)
 {
-    if (event.m_id == BuyDeal) {
-        HandleBuyButtonPressed();
-    } else if (event.m_id == OpenBank) {
-        CRegularShop::Show(CShopWindow::TAB_BANK);
-        Close();
-    } else if (event.m_id == CloseDeal) {
-        Close();
-    } else if (event.m_id == OpenTapjoy) {
+    int command = event.m_id;
+    if (command < CloseDeal) {
+        if (command == BuyDeal) {
+            HandleBuyButtonPressed();
+        }
+        return;
+    }
+
+    if (command == OpenTapjoy) {
         if (TapjoyInterface::canDisplayInterface()) {
             TapjoyInterface::openTapjoyInterface();
-            Close();
         } else {
             CDialogWindow* warning = new CDialogWindow(true);
-            warning->SetTitleText("IDS_DIALOG_TITLE_WARNING");
+            warning->SetTitleText(ResString("IDS_DIALOG_TITLE_WARNING"));
             warning->SetMessageText(ResString("IDS_DIALOG_CAN_NOT_OPEN_TAPJOY"));
             warning->SetButtons(BUTTON_OK);
             AddModal(warning);
         }
+    } else if (command == OpenBank) {
+        CRegularShop* shop = CRegularShop::GetInstance(true);
+        shop->SetTab(CShopWindow::TAB_BANK);
+        Window* parent = shop->m_parent;
+        if (parent != NULL) {
+            parent->Remove(shop);
+        }
+        GetApp()->m_mainLayer->AddToFront(shop);
     } else {
-        CDialogWindow::OnCommand(event);
+        if (command == CloseDeal) {
+            Close();
+        }
         return;
     }
     event.Clear();
+    Close();
 }
 
 void CDailyDealWindow::HandleBuyButtonPressed()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CItem* current = app->InitDailyDealManager()->GetCurrentDealItem();
+    CItem* current = GetApp()->InitDailyDealManager()->GetCurrentDealItem();
     if (current == NULL) {
         return;
     }
@@ -238,12 +237,12 @@ void CDailyDealWindow::HandleBuyButtonPressed()
     CRegularShop* shop = CRegularShop::GetInstance(true);
     CShopWindow::ETab tab = CShopWindow::TAB_BANK;
     switch (current->getType()) {
-    case 0:
-        tab = CShopWindow::TAB_WEAPONS;
-        break;
     case 2:
     case 9:
         tab = CShopWindow::TAB_AMMO;
+        break;
+    case 0:
+        tab = CShopWindow::TAB_WEAPONS;
         break;
     case 1:
     case 3:
@@ -257,10 +256,10 @@ void CDailyDealWindow::HandleBuyButtonPressed()
         break;
     }
     shop->SetTab(tab);
-    app->m_mainLayer->AddModal(shop);
+    GetApp()->m_mainLayer->AddModal(shop);
     CShopItemInfoWindow* details = new CShopItemInfoWindow(manager, 0, current->m_id, current->GetStatsString(),
                                                           false, CShopItemInfoWindow::SOURCE_SHOP);
-    app->m_mainLayer->AddModal(details);
+    GetApp()->m_mainLayer->AddModal(details);
     Close();
 }
 

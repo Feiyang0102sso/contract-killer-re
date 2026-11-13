@@ -18,7 +18,7 @@ private:
 
     int m_friendId;
     CBHFriend* m_friend;
-    bool m_populated;
+    unsigned char m_populated;  // 0xac: any nonzero value skips refresh
     TextWindow* m_level;
     TextWindow* m_contracts;
 };

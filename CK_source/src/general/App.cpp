@@ -1176,6 +1176,22 @@ void App::OnEnterForeground()
     }
 }
 
+// The base constructors (CNGSLoginFlow.h) set id, name, network and timeout.
+CheckOverrideDataStep::CheckOverrideDataStep()
+{
+    m_classId = 0xd538bed3;
+}
+
+LoadPrivateGameDataStep::LoadPrivateGameDataStep()
+{
+}
+
+CNGSLoginStep_CheckVersion::CNGSLoginStep_CheckVersion()
+{
+    m_name = "CheckVersion";
+    m_classId = 0x81a8233f;
+}
+
 void App::StartLogin(EGServeLoginType type, bool showProgress)
 {
     m_bIsLoginOK = true;
@@ -1217,16 +1233,11 @@ void App::StartLogin(EGServeLoginType type, bool showProgress)
         flow->Queue(new InitIncentiveOffersStep());
         flow->Queue(new CheckOverrideDataStep());
         break;
+    case LoginLoadProfile:
+        flow->Queue(new LoadGameDataStep());
+        break;
     case LoginFacebook:
         flow->Queue(new FacebookLoginStep(false));
-        flow->Queue(new LoadFriendsListStep(SOCIAL_INTERFACE_FACEBOOK));
-        flow->Queue(new LoadPrivateGameDataStep());
-        flow->Queue(new LoadGameDataStep());
-        flow->Queue(new InitIncentiveOffersStep());
-        flow->Queue(new CheckOverrideDataStep());
-        break;
-    case LoginForceFacebook:
-        flow->Queue(new FacebookLoginStep(true));
         flow->Queue(new LoadFriendsListStep(SOCIAL_INTERFACE_FACEBOOK));
         flow->Queue(new LoadPrivateGameDataStep());
         flow->Queue(new LoadGameDataStep());
@@ -1241,12 +1252,17 @@ void App::StartLogin(EGServeLoginType type, bool showProgress)
         flow->Queue(new InitIncentiveOffersStep());
         flow->Queue(new CheckOverrideDataStep());
         break;
-    case LoginLoadProfile:
-        flow->Queue(new LoadGameDataStep());
-        break;
     case LoginSwitchAccount:
         flow->Queue(new CNGSLoginStep_SocialNetwork(CNGSLoginFlow::GetInstance()->m_activeNetwork));
         flow->Queue(new GameReloadStep());
+        break;
+    case LoginForceFacebook:
+        flow->Queue(new FacebookLoginStep(true));
+        flow->Queue(new LoadFriendsListStep(SOCIAL_INTERFACE_FACEBOOK));
+        flow->Queue(new LoadPrivateGameDataStep());
+        flow->Queue(new LoadGameDataStep());
+        flow->Queue(new InitIncentiveOffersStep());
+        flow->Queue(new CheckOverrideDataStep());
         break;
     }
     flow->Start();

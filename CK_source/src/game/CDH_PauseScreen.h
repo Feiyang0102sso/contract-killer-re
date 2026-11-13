@@ -8,7 +8,6 @@ class CSettingsWindow;
 /** Pause dialog and exit confirmation. */
 class CDH_PauseScreen : public CDH_SoftkeysScreen {
 public:
-    enum { ConfirmMissionExit = 3 };
     CDH_PauseScreen(bool soundOff, bool allowQuit);
     virtual ~CDH_PauseScreen();
     virtual int ShouldBeModal() { return 1; }

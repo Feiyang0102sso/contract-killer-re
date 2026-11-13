@@ -69,18 +69,18 @@ void CMission::ParseFakeBoss(TiXmlNode* node)
 
 void CMission::ParseDialogs(TiXmlNode* node, XString elementName, Vector<Dialog>* dialogs)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    XString::AnsiString name(elementName.c_str());
-    for (TiXmlNode* child = node->FirstChild(name); child != NULL; child = child->NextSibling(name)) {
+    for (TiXmlNode* child = node->FirstChild(XString::AnsiString(elementName.c_str()));
+         child != NULL; child = child->NextSibling(XString::AnsiString(elementName.c_str()))) {
         Dialog dialog;
         dialog.m_id = CXmlHelper::GetAttributeValue(child, "id").ToInt();
         XString image = CXmlHelper::GetAttributeValue(child, "image");
-        dialog.m_image = app->InitResMap()->getResourceID(image);
+        dialog.m_image = static_cast<App*>(WindowApp::m_instance)->InitResMap()->getResourceID(image);
         dialog.m_title = CXmlHelper::GetResString(child, "title");
         dialog.m_text = CXmlHelper::GetResString(child, "text");
-        dialog.m_condition = -1;
-        if (CXmlHelper::HasAttribute(child, "condition")) {
+        if (child->ToElement()->Attribute("condition") != NULL) {
             dialog.m_condition = CXmlHelper::GetAttributeValue(child, "condition").ToInt();
+        } else {
+            dialog.m_condition = -1;
         }
         dialogs->addElement(dialog);
     }
@@ -91,11 +91,12 @@ void CMission::ParsePermittedWeapon(TiXmlNode* node)
     if (node == NULL || !CXmlHelper::HasAttribute(node, "permittedWeapon")) {
         return;
     }
+    XString list = CXmlHelper::GetAttributeValue(node, "permittedWeapon");
     Vector<XString> ids;
-    CXmlHelper::GetAttributeValue(node, "permittedWeapon").Split(ids, L",");
+    list.Split(ids, L",");
     for (int index = 0; index < ids.size(); ++index) {
         XString value = ids[index].Trim(true, true);
-        if (value.Length() != 0) {
+        if (value.ByteSize() != 0) {
             m_permittedWeapons.addElement(value.ToInt());
         }
     }

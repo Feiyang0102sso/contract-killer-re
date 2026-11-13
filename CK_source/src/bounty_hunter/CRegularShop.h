@@ -42,11 +42,12 @@ public:
     void UpdateTabLock();
     void SwitchWeaponFilter(int filter);  // public: CBH_GPSMap::ShowShopWithWeapon calls it
     friend class CBH_GPSMap;  // added by gps: CBH_GPSMap::ShowShop calls TryOpenTapJoy
+    friend class CShopItemInfoWindow;
 
 private:
     void UpdateCurrenciesPage();
     void CreateWeaponsPage(CScrollWindow* scroll, CAutoArrangedWindow* container, unsigned int filter);
-    static CAdColonyButton* CreateCustomButton(Window* parent, bool notification, const char* image,
+    CAdColonyButton* CreateCustomButton(Window* parent, bool notification, const char* image,
                                                const char* activeImage, const XString& caption, unsigned int command);
     CAutoArrangedWindow* CreatePage(CScrollWindow* scroll, CItemManager* manager, CAutoArrangedWindow* container,
                                     int maxItems);

@@ -19,9 +19,8 @@ CIntroduceItemWindow::CIntroduceItemWindow(CItem* item, XString message, bool sh
     : CTextDialog(), m_item(NULL), m_closeCommand(0), m_introMessage(message),
       m_showShop(showShop), m_pauseTime(pauseTime)
 {
-    if (m_introMessage.Length() == 0) {
-        XString format = ResString("IDS_ITEM_INTRODUCE_TEXT");
-        m_introMessage = XString::Format(format.c_str(), item->GetName().c_str());
+    if (m_introMessage == XString("")) {
+        m_introMessage = XString::Format(ResString("IDS_ITEM_INTRODUCE_TEXT").c_str(), item->GetName().c_str());
     }
     CreateUI(item);
     m_item = item;
@@ -69,8 +68,13 @@ void CIntroduceItemWindow::CreateUI(CItem* item)
     SetButtons(button);
     SetButtonsCommands(IntroduceItemContinue, -1, -1);
     CBH_MenuButton* confirm = m_buttons[0];
-    confirm->SetCorner(m_width / 2 - confirm->m_width / 2,
-                       m_height - BUTTON_OFFSET_DOWN() - confirm->m_height + m_buttonOffsetY);
+    int dialogWidth = m_width;
+    int dialogHeight = m_height;
+    int buttonWidth = confirm->m_width;
+    int buttonHeight = confirm->m_height;
+    int offset = BUTTON_OFFSET_DOWN();
+    confirm->SetCorner(dialogWidth / 2 - buttonWidth / 2,
+                       dialogHeight - offset - buttonHeight + m_buttonOffsetY);
     if (m_pauseTime) {
         static_cast<App*>(WindowApp::m_instance)->m_timeScale = 0.0f;
     }
@@ -89,16 +93,16 @@ void CIntroduceItemWindow::HandleButtonPressed()
 {
     if (m_pauseTime) {
         static_cast<App*>(WindowApp::m_instance)->m_timeScale = 1.0f;
-        m_pauseTime = false;
     }
     if (m_showShop) {
         CRegularShop* shop = CRegularShop::GetInstance(true);
         if (shop->m_parent == NULL) {
-            App* app = static_cast<App*>(WindowApp::m_instance);
-            app->m_mainLayer->AddModal(shop);
+            static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(shop);
             shop->SetTab(CShopWindow::TAB_WEAPONS);
-            CShopItemInfoWindow* details = new CShopItemInfoWindow(app->InitWeaponManager(), m_item->getType(),
-                m_item->m_id, m_item->GetStatsString(), false, CShopItemInfoWindow::SOURCE_SHOP);
+            CItem* item = m_item;
+            CShopItemInfoWindow* details = new CShopItemInfoWindow(
+                static_cast<App*>(WindowApp::m_instance)->InitWeaponManager(), item->getType(),
+                item->m_id, item->GetStatsString(), false, CShopItemInfoWindow::SOURCE_SHOP);
             shop->AddModal(details);
             Close();
         }

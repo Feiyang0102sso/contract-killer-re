@@ -19,7 +19,6 @@ CGyroscope_Cocoa* CGyroscope_Cocoa::Create()
 }
 
 CGyroscope_Cocoa::CGyroscope_Cocoa()
-    : m_attitude(0.0f, 0.0f, 0.0f)
 {
     m_frequency = 0;
     m_lastSampleTime = 0;
@@ -59,9 +58,12 @@ unsigned char CGyroscope_Cocoa::CanSample()
         return 0;
     }
 
-    m_attitude = CVector3d(RadiansToFixed([[motion attitude] pitch]),
-                           RadiansToFixed([[motion attitude] roll]),
-                           RadiansToFixed([[motion attitude] yaw]));
+    double pitch = [[motion attitude] pitch];
+    double roll = [[motion attitude] roll];
+    double yaw = [[motion attitude] yaw];
+    m_attitude.pitch = RadiansToFixed(pitch);
+    m_attitude.roll = RadiansToFixed(roll);
+    m_attitude.yaw = RadiansToFixed(yaw);
     return 1;
 }
 

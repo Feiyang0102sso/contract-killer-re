@@ -58,48 +58,50 @@ void CGPSMapScreen::CachedData::DeSerialize(JDataInputStream& stream)
 
 typedef char AssertCachedDataSize[sizeof(CGPSMapScreen::CachedData) == 0x28 ? 1 : -1];
 
-CGPSMapScreen::CGPSMapScreen(CachedData* data)
-    : Window(false), m_cachedData(data), m_mapState(-1), m_map(NULL), m_mapAttached(false), m_skipTutorialAutoStart(false),
-      m_auxiliaryWindow(NULL), m_resourcesCreated(false)
+CGPSMapScreen::CGPSMapScreen(CachedData*)
+    : Window(false),
+      m_actualGpsTime(static_cast<App*>(WindowApp::m_instance)->m_helper->m_config.GetIntegerValueByToken(
+          "ACTUAL_GPS_TIME_MS", true))
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    m_actualGpsTime = app->m_helper->m_config.GetIntegerValueByToken("ACTUAL_GPS_TIME_MS", true);
+    m_field104 = 0;
+    m_field108 = 0;
+    m_field10c = false;
+    m_field124 = 0;
+    m_resourcesCreated = false;
     CreateResources();
     m_offerPollSeconds = 5.0f;
 }
 
 CGPSMapScreen::~CGPSMapScreen()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_soundManager->StopAllMusic();
+    static_cast<App*>(WindowApp::m_instance)->m_soundManager->StopAllMusic();
     CBH_Player::GetInstance()->Save();
-    app->m_soundManager->StopAllSoundsAndRelease();
+    static_cast<App*>(WindowApp::m_instance)->m_soundManager->StopAllSoundsAndRelease();
     ReleaseResources();
-    if (!m_mapAttached) {
-        delete m_map;
-    }
-    if (app->m_helper->m_gpsScreen == this) {
-        app->m_helper->initGPSScreen(NULL);
-    }
 }
 
 void CGPSMapScreen::Init()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_helper->initGPSScreen(this);
-    m_map = new CBH_GPSMap();
-    AddNewState(6);
+    CBH_GPSMap* map = new CBH_GPSMap();
+    m_mapState = -1;
+    m_map = map;
+    if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsAutoStartMission()) {
+        AddNewState(6);
+        return;
+    }
+    m_map->ClearFlags(FLAG_VISIBLE);
+    AddToFront(m_map);
 }
 
 void CGPSMapScreen::OnPointerEvent(Event& event)
 {
     switch (event.m_type) {
-    case Event::POINTER_PRESSED:
-        m_pointer.TouchDown(event.m_param1, event.m_param2);
-        event.Clear();
-        break;
     case Event::POINTER_DRAGGED:
         m_pointer.TouchMove(event.m_param1, event.m_param2);
+        event.Clear();
+        break;
+    case Event::POINTER_PRESSED:
+        m_pointer.TouchDown(event.m_param1, event.m_param2);
         event.Clear();
         break;
     case Event::POINTER_RELEASED:
@@ -129,28 +131,21 @@ int CGPSMapScreen::GetState()
     return m_mapState;
 }
 
-void CGPSMapScreen::SkipTutorialAutoStart()
-{
-    m_skipTutorialAutoStart = true;
-}
-
 void CGPSMapScreen::Build()
 {
 }
 
 void CGPSMapScreen::Update()
 {
-    Window::Update();
     if (m_currentState == 6) {
         return;
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (!app->m_soundManager->IsPlaying("IDM_MENU_MUSIC")) {
-        app->m_soundManager->PlayMusic("IDM_MENU_MUSIC", true, false);
+    if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsAutoStartMission() &&
+        !static_cast<App*>(WindowApp::m_instance)->m_soundManager->IsPlaying("IDM_MENU_MUSIC")) {
+        static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlayMusic("IDM_MENU_MUSIC", true, false);
     }
 
-    int elapsed = app->m_updateFrameTime;
-    m_pointer.TouchUpdate(elapsed);
+    m_pointer.TouchUpdate(WindowApp::m_instance->m_updateFrameTime);
     PointerEventController::Position position = {0, 0};
     PointerEventController::Event event(position, 0, 0, PointerEventController::EVENT_NONE);
     while (m_pointer.GetEvent(event)) {
@@ -159,8 +154,9 @@ void CGPSMapScreen::Update()
         }
     }
     CBH_Player::GetInstance()->Update();
-    if (m_firstChild == m_map && elapsed > 0) {
-        m_cachedData->m_huntDayElapsed += elapsed;
+    m_offerPollSeconds -= WindowApp::m_instance->m_frameTimeSeconds;
+    if (m_offerPollSeconds <= 0.0f) {
+        m_offerPollSeconds = 5.0f;
     }
 }
 
@@ -175,55 +171,64 @@ void CGPSMapScreen::onReceiveTapjoyPoints(int points)
 
 void CGPSMapScreen::OnCreateState(Window** window, int state)
 {
-    *window = NULL;
+    Window* created = NULL;
     switch (state) {
     case 1: {
         CDH_TextScreen* screen = new CDH_TextScreen();
         screen->setText("Informant found");
         screen->setButtons("IDS_NO", "IDS_YES");
-        *window = screen;
+        created = screen;
         break;
     }
-    case 3:
+    case 3: {
+        CDH_TextScreen* screen = new CDH_TextScreen();
+        screen->setText("You got cash!");
+        screen->setButtons(NULL, "IDS_YES");
+        created = screen;
+        break;
+    }
     case 4: {
         CDH_TextScreen* screen = new CDH_TextScreen();
-        if (state == 3) {
-            screen->setText("You got cash!");
-        } else {
-            screen->setText("You got ammo!");
-        }
+        screen->setText("You got ammo!");
         screen->setButtons(NULL, "IDS_YES");
-        *window = screen;
+        created = screen;
         break;
+    }
+    case 5: {
+        CDH_TextScreen* screen = new CDH_TextScreen();
+        screen->setText("Informant has provide you Bounty info");
+        screen->setButtons(NULL, "IDS_YES");
+        // The original falls through and returns the loading screen.
     }
     case 6:
-        *window = new CLoadingGPSMap(m_map);
+        created = new CLoadingGPSMap(m_map);
         break;
     }
+    *window = created;
 }
 
 void CGPSMapScreen::OnStateInterrupt(int state, Window*)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (state == 6) {
-        PopState();
-        // CK: the map builds itself in CBH_GPSMap::Init (run by AddToFront).
-        if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsAutoStartMission() && !app->m_soundManager->IsPlaying("IDM_MENU_MUSIC")) {
-            app->m_soundManager->PlayMusic("IDM_MENU_MUSIC", true, false);
-        }
-        AddToFront(m_map);
-        m_mapAttached = true;
-        return;
-    }
-    if (state == 4) {
-        CAmmo* ammo = app->InitAmmoManager()->GetAmmoByType(XString("pistol"));
-        if (ammo != NULL) {
+    if (state != 3) {
+        if (state != 6) {
+            if (state != 4) {
+                return;
+            }
+            CAmmoManager* manager = static_cast<App*>(WindowApp::m_instance)->InitAmmoManager();
+            CAmmo* ammo = manager->GetAmmoByType(XString("pistol"));
             CBH_Player::GetInstance()->IncAmmo(ammo, 2);
+        } else {
+            PopState();
+            // CK: the map builds itself in CBH_GPSMap::Init (run by AddToFront).
+            if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsAutoStartMission() &&
+                !static_cast<App*>(WindowApp::m_instance)->m_soundManager->IsPlaying("IDM_MENU_MUSIC")) {
+                static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlayMusic("IDM_MENU_MUSIC", true, false);
+            }
+            AddToFront(m_map);
+            return;
         }
-        PopState();
-    } else if (state == 3) {
-        PopState();
     }
+    PopState();
 }
 
 void CGPSMapScreen::OnCommand(Event& event)
@@ -235,7 +240,7 @@ void CGPSMapScreen::OnCommand(Event& event)
     case 0x2120ecaf:
         AddModal(new CHelpScreen());
         WindowApp::HandleTunnelCommand(0x718a0676, 0, 0, 0);
-        break;
+        return;
     case 0x451967d0:
         break;
     case 0x703ba476:

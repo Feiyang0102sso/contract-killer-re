@@ -48,25 +48,26 @@ void CWarTimeExecutor::OnChildFinished(EExecutosResult result)
     }
     // Original 0xd1d84: the camera id is taken after a new attack point is requested; running away
     // does not mark the unit here.
-    CUnit* unit = m_mind->GetUnit();
+    CUnitMind* mind = m_mind;
+    CUnit* unit = mind->GetUnit();
     if (unit == NULL || unit->GetBody() == NULL) {
         return;
     }
     if (result == EXECUTOR_RESULT_FAILED && m_safe) {
         m_safe = false;
-        AddMovementExecutorToAttackPoint(m_mind, unit->m_body.m_cellId, false);
-    } else {
-        if (unit->m_type != UnitBoss || !m_retryBoss) {
-            AddRunAwayExecutor(m_mind);
-            return;
-        }
+        AddMovementExecutorToAttackPoint(mind, unit->m_body.m_cellId, false);
+        m_camera = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->GetCurrCamId();
+    } else if (unit->m_type == UnitBoss && m_retryBoss) {
         if (CSwerveGame::m_pInstance != NULL) {
             CSwerveGame::m_pInstance->UnregisterAllDeadBodies();
+            mind = m_mind;
         }
         m_retryBoss = false;
-        AddMovementExecutorToAttackPoint(m_mind, unit->m_body.m_cellId, m_safe);
+        AddMovementExecutorToAttackPoint(mind, unit->m_body.m_cellId, m_safe);
+        m_camera = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->GetCurrCamId();
+    } else {
+        AddRunAwayExecutor(mind);
     }
-    m_camera = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->GetCurrCamId();
 }
 
 void CWarTimeExecutor::StartAttack()
@@ -77,11 +78,16 @@ void CWarTimeExecutor::StartAttack()
         AddSafeAttackExecutor(m_mind, camera);
         return;
     }
-    CUnitBody* body = m_mind->GetUnit()->GetBody();
-    if (body != NULL) {
-        body->SetAttitude(PERSON_SHOT_STAND);
-        AddUnsafeAttackExecutor(m_mind, camera);
+    CUnit* unit = m_mind->GetUnit();
+    if (unit == NULL) {
+        return;
     }
+    CUnitBody* body = unit->GetBody();
+    if (body == NULL) {
+        return;
+    }
+    body->SetAttitude(PERSON_SHOT_STAND);
+    AddUnsafeAttackExecutor(m_mind, camera);
 }
 
 void CWarTimeExecutor::DefinePointCharacteristics(int camera)

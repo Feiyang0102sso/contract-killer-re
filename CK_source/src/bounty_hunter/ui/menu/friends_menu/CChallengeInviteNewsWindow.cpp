@@ -10,16 +10,15 @@
 #include "CNGSRemoteUser.h"
 #include "CNGSRemoteUserList.h"
 #include "CNewsFeedManager.h"
+#include "ICSystemFont.h"
 #include "SScreenAdaptingConstant.h"
 #include "ServiceWindows.h"
 
-namespace {
-const SScreenAdaptingConstant s_lineHeight(5, 10);
-}
-
 CChallengeInviteNewsWindow::CChallengeInviteNewsWindow(const SMissionInviteMessage* message)
-    : Window(false), m_senderId(message->m_senderId), m_sender(NULL), m_message(message)
+    : Window(false), m_sender(NULL)
 {
+    m_senderId = message->m_senderId;
+    m_message = message;
     CNGSLocalUser* local = CNGS::GetInstance()->GetLocalUser();
     m_sender = local->m_remoteUserLists[0]->findRemoteUserByID(m_senderId);
     CreateUserInterface();
@@ -33,22 +32,24 @@ void CChallengeInviteNewsWindow::CreateUserInterface()
         CStrWChar name = m_sender->GetNickName();
         sender = name.GetWCharPtr();
     }
-    XString challengeName;
     App* app = static_cast<App*>(WindowApp::m_instance);
     CChallenge* challenge = app->m_challengeManager->GetChallengeById(m_message->m_missionId);
+    XString challengeName(L"");
     if (challenge != NULL) {
         challengeName = challenge->m_name;
     }
-    XString format = ResString("IDS_CHALLENGE_INVITE_NEWS_FEED");
-    XString text = XString::Format(format.c_str(), sender.c_str(), challengeName.c_str());
+    XString text = XString::Format(ResString("IDS_CHALLENGE_INVITE_NEWS_FEED").c_str(),
+                                  sender.c_str(), challengeName.c_str());
     TextWindow* label = new TextWindow(text, CFontMgr::GetInstance()->GetFont(15));
     label->SetAlign(ALIGN_LEFT | ALIGN_VCENTER);
-    label->SetHeightByContent(0, 0);
     label->SetPercentWidth(100, 0, 0);
+    ICSystemFont* font = ICSystemFont::CreateInstance();
+    font->Initialize(SScreenAdaptingConstant(12, 25)(), NULL, 1);
+    label->SetFont(font);
     AddToFront(label, 0, 0);
     SeparateLineRed* line = new SeparateLineRed();
-    line->SetOutsetSpacing(s_lineHeight(), 0, 0, 0);
-    line->SetDesiredHeight(s_lineHeight());
+    line->SetOutsetSpacing(SScreenAdaptingConstant(5, 10)(), 0, 0, 0);
+    line->SetDesiredHeight(SScreenAdaptingConstant(5, 10)());
     line->SetCellPos(0, 1, 2, 1);
     AddToFront(line);
 }

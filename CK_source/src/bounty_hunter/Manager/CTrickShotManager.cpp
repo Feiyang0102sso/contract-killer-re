@@ -31,7 +31,8 @@ void CTrickShotManager::SetKillCount(int count)
     } else {
         return;
     }
-    ++CBH_Player::GetInstance()->m_challengeStats->m_multiKills;
+    CChallengeStats* stats = CBH_Player::GetInstance()->m_challengeStats;
+    stats->m_multiKills = static_cast<unsigned int>(stats->m_multiKills) + 1;
 }
 
 void CTrickShotManager::RegisterEvent(EEvent event)
@@ -57,7 +58,8 @@ void CTrickShotManager::SetKillByExplosionCount(int count)
     } else {
         return;
     }
-    ++CBH_Player::GetInstance()->m_challengeStats->m_multiKills;
+    CChallengeStats* stats = CBH_Player::GetInstance()->m_challengeStats;
+    stats->m_multiKills = static_cast<unsigned int>(stats->m_multiKills) + 1;
 }
 
 void CTrickShotManager::ShowMessage(const XString& name, int multiplier)

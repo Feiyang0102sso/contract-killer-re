@@ -38,9 +38,6 @@ static const wchar_t RATE_ME_LINK[] =
 static const float ALPHA_INVISIBLE = 0.01f;
 static const float ALPHA_OPAQUE = 0.99f;
 
-/** Swerve interface id of World (the aux render scene). */
-static const int SWERVE_WORLD = 0x1f;
-
 int DGHelper::m_alpha_blend_stack_pos;
 
 void DGHelper::PushAlphaBlend(float alpha)
@@ -70,6 +67,7 @@ void DGHelper::PopAlphaBlend()
     }
 }
 
+// App::Init in the original allocates 0x138 bytes for this helper.
 DGHelper::DGHelper()
     : m_transform(CSwerve::GetInstance()->m_swerve),
       m_rayIntersection(CSwerve::GetInstance()->m_swerve),
@@ -88,11 +86,6 @@ DGHelper::DGHelper()
     m_gpsScreen = NULL;
     m_gamePlayManager.init();
     initGame();
-    if (m_auxRender == NULL) {
-        Object3D root(
-            (IQueryInterface*)CSwerve::GetInstance()->LoadM3GResource("BIN_AUX_RENDER"));
-        m_auxRender = World(root);
-    }
 }
 
 void DGHelper::initGame()
@@ -141,7 +134,7 @@ int DGHelper::getSwerveID(const char* name)
 
 vec3 DGHelper::GetPointOnNear(float x, float y, Camera camera)
 {
-    Transform projection = SwerveHelper::NewTransform();
+    Transform projection(CSwerve::GetInstance()->m_swerve);
     camera.getProjection(projection);
     projection.invert();
     vec3 point((x - 0.5f) * 2, (y - 0.5f) * 2, -1.0f);
@@ -299,8 +292,8 @@ void DGHelper::DrawImageScaled(ICRenderSurface* surface, float scaleX, float sca
 
 bool DGHelper::LoadImageSurface(ICRenderSurface** surface, const char* name, bool markLoading)
 {
-    CResource* resource = NULL;
     ICResourceManager* resources = CApplet::m_pApp->m_resourceManager;
+    CResource* resource = NULL;
     if (markLoading) {
         m_loadingResource = true;
         resources->CreateResource(name, &resource);
@@ -311,12 +304,12 @@ bool DGHelper::LoadImageSurface(ICRenderSurface** surface, const char* name, boo
     if (resource == NULL) {
         return false;
     }
-    *surface = static_cast<ICRenderSurface*>(resource->GetData());
-    if (*surface == NULL) {
-        resources->ReleaseResource(name);
-        return false;
+    ICRenderSurface* image = static_cast<ICRenderSurface*>(resource->GetData());
+    *surface = image;
+    if (resource != NULL) {
+        return image != NULL;
     }
-    return true;
+    return false;
 }
 
 void DGHelper::DrawImage(ICRenderSurface* surface, int x, int y, float alpha, int pivotX, int pivotY,

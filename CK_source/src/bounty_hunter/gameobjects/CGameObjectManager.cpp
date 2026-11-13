@@ -52,17 +52,17 @@ void CGameObjectManager::ParseConfig(const XString& resource, IGameObjectCreator
     char* xml = app->InitResMap()->loadText(XString(resource.c_str()));
     TiXmlDocument document;
     document.Parse(xml);
-    delete[] xml;
+    if (xml != NULL) {
+        delete[] xml;
+    }
 
     const TiXmlNode* root = document.FirstChild("objects");
-    if (root != NULL) {
-        const TiXmlNode* node = root->FirstChild("object");
-        while (node != NULL) {
-            XString name = CXmlHelper::GetAttributeValue(node, "name");
-            m_objects.Add(name, node->Clone());
-            m_creators.Add(name, creator->Clone());
-            node = node->NextSibling("object");
-        }
+    const TiXmlNode* node = root->FirstChild("object");
+    while (node != NULL) {
+        XString name = CXmlHelper::GetAttributeValue(node, "name");
+        m_objects.Add(name, node->Clone());
+        m_creators.Add(name, creator->Clone());
+        node = node->NextSibling("object");
     }
     delete static_cast<CExplosiveObjectCreator*>(creator);
 }

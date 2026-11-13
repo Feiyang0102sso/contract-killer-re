@@ -1,5 +1,7 @@
 // CNGSContentManager.cpp - content file upload / download of the gServe user (b025x).
 #include "CNGSContentManager.h"
+#include "CArrayOutputStream.h"
+#include "CNetMessageServer.h"
 #include "CNGS.h"
 #include "CNGSFactory.h"
 #include "CNGSHeader.h"
@@ -19,7 +21,16 @@
 #include "CStrChar.h"
 #include "CUtf.h"
 #include "NPMalloc.h"
+#include "NPMem.h"
+#undef memcpy
 #include <string.h>
+
+extern "C" void* memcpy(void* destination, const void* source, size_t size);
+
+static const char CONTENT_TYPE_JSON[] = "application/json";
+static const char cszPut[] = "PUT ";
+static const char NGS_CONTENT_TOKEN[] = "content";
+static const char NGS_TARGET_ID[] = "targetId";
 
 
 /** Upload reply callback: calls a CNGSContentManager member with the reply. */
@@ -101,15 +112,16 @@ void CNGSContentManager::HandleUpdate(int elapsedMs)
             int length = m_transport->GetResponseLen();
             bool hasData = length > 0;
             bool noError = m_transport->GetError() == 0;
+            int success = hasData && noError;
             int statusCode = m_transport->GetResponseCode();
-            bool success = hasData && noError;
             if (success) {
                 data = new unsigned char[length + 1];
-                memcpy(data, m_transport->GetResponsePtr(), length);
-                data[length] = 0;
+                np_memcpy(data, m_transport->GetResponsePtr(), length);
+                if (m_pendingRequest != NULL) {
+                    delete m_pendingRequest;
+                    m_pendingRequest = NULL;
+                }
             }
-            delete m_pendingRequest;
-            m_pendingRequest = NULL;
             m_transport->ClearResponse();
             m_transport->Cancel();
             if (m_downloadBuffer != NULL) {
@@ -120,7 +132,7 @@ void CNGSContentManager::HandleUpdate(int elapsedMs)
                 delete m_transport;
             }
             m_transport = NULL;
-            CNGSHandleContentDownloadResponse(success, data, length, statusCode);
+            CNGSHandleContentDownloadResponse(success == 1, data, length, statusCode);
             if (data != NULL) {
                 delete[] data;
             }
@@ -132,121 +144,115 @@ void CNGSContentManager::CNGSHandleContentDownloadResponse(bool success, const u
 {
     CNGSUtil::DebugLog("CNGSHandleContentDownloadResponse");
     CNGSLocalUser* localUser = CNGS::GetInstance()->GetLocalUser();
-    if (!success && statusCode == 204) {
-        success = true;
-    }
-    if (!success && statusCode == 404) {
-        success = true;
+    if (!success && (statusCode == 204 || statusCode == 404)) {
         size = 0;
+        success = true;
     }
-    const int targetUserId = m_targetUserId;
-    const bool profileContent = m_isProfileContent != 0;
-    const bool friendContent = m_isFriendContent != 0;
-    CSaveRestoreInterface* profileData = m_profileData;
-    // A completion callback can start a new request.
-    m_profileData = NULL;
-    m_isProfileContent = 0;
-    m_isFriendContent = 0;
+
+    int targetUserId = m_targetUserId;
     if (targetUserId == localUser->GetClientID()) {
         // Our own file: a profile collection or a plain content file.
+        unsigned char profileContent = m_isProfileContent;
+        CNGS* gserve = CNGS::GetInstance();
         if (profileContent) {
-            CNGS::GetInstance()->GetProfileManager()->HandleContentFileDownloadedSelf(success, data, size, profileData);
+            gserve->GetProfileManager()->HandleContentFileDownloadedSelf(success, data, size, m_profileData);
         } else {
-            CNGS::GetInstance()->GetLocalUser()->m_notificationHandler->HandleContentFileDownloadedSelf(success, data, size);
+            gserve->GetLocalUser()->m_notificationHandler->HandleContentFileDownloadedSelf(success, data, size);
         }
-    } else if (friendContent) {
+    } else if (m_isFriendContent) {
         CNGSRemoteUserList* friends = localUser->m_remoteUserLists[0];
         if (friends->isValid()) {
-            CNGSRemoteUser* remoteUser = friends->findRemoteUserByID(targetUserId);
+            CNGSRemoteUser* remoteUser = friends->findRemoteUserByID(m_targetUserId);
             if (remoteUser != NULL) {
-                remoteUser->HandleContentFileDownloadedFriend(success, targetUserId, data, size);
+                remoteUser->HandleContentFileDownloadedFriend(success, m_targetUserId, data, size);
             } else {
                 // Not a listed friend: look the user up through the factory.
                 CNGSUserCredentials credentials;
-                credentials.m_userId = targetUserId;
+                credentials.m_userId = m_targetUserId;
                 remoteUser = CNGS::GetInstance()->GetFactory()->getRemoteUserByCredentials(credentials);
                 if (remoteUser != NULL) {
-                    remoteUser->HandleContentFileDownloadedFriend(success, targetUserId, data, size);
+                    remoteUser->HandleContentFileDownloadedFriend(success, m_targetUserId, data, size);
                 }
             }
         } else {
             CNGSUserCredentials credentials;
-            credentials.m_userId = targetUserId;
+            credentials.m_userId = m_targetUserId;
             CNGSRemoteUser* remoteUser = CNGS::GetInstance()->GetFactory()->getRemoteUserByCredentials(credentials);
             if (remoteUser != NULL) {
-                remoteUser->HandleContentFileDownloadedFriend(success, targetUserId, data, size);
+                remoteUser->HandleContentFileDownloadedFriend(success, m_targetUserId, data, size);
             }
         }
     } else {
-        CNGS::GetInstance()->GetLocalUser()->m_notificationHandler->HandleContentFileDownloadedFriend(success, targetUserId,
-                                                                                                    data, size);
+        CNGS::GetInstance()->GetLocalUser()->m_notificationHandler->HandleContentFileDownloadedFriend(
+            success, m_targetUserId, data, size);
     }
+
+    // The original clears these fields after delivering the completion callback.
+    m_profileData = NULL;
+    m_isProfileContent = 0;
+    m_isFriendContent = 0;
 }
 
 unsigned char CNGSContentManager::GetContent(CObjectMap* message, CNGSContentRequestFunctor* functor)
 {
-    if (!isReady() || m_writeRequestsOutstanding != 0 || m_pendingRequest != NULL || m_transport != NULL) {
+    if (!isReady() || m_writeRequestsOutstanding != 0 || m_pendingRequest != NULL) {
         return 0;
     }
 
     m_field24 = 0;
-    np_free(m_field20);
-    m_field20 = NULL;
+    if (m_field20 != NULL) {
+        np_free(m_field20);
+        m_field20 = NULL;
+    }
 
-    CStrChar url(CNGS::GetInstance()->GetServerURL());
-    url += "resources/content/get";
+    char* url = static_cast<char*>(np_malloc(
+        strlen(CNGS::GetInstance()->GetServerURL()) + sizeof("resources/content/get")));
+    strcpy(url, CNGS::GetInstance()->GetServerURL());
+    memcpy(url + strlen(url), "resources/content/get", sizeof("resources/content/get"));
+    CNetMessageServer server((CStrChar(url)));
+    server.m_value10 = 0;
+    server.m_value14 = 0;
+    server.m_method = CNetMessageServer::METHOD_PUT;
+
     TCVector<CObjectMap> messages;
     messages.Add(*message);
     CStrWChar json = CNGSJSONParser::encodeMessages(messages);
-    unsigned int bufferSize = CUtf::GetUtfLen(json.GetWCharPtr(), json.GetLength()) + 1;
-    m_downloadBuffer = new unsigned char[bufferSize];
-    unsigned int length = CUtf::WcsToUtf8(json.GetWCharPtr(), json.GetLength(), m_downloadBuffer, bufferSize);
-
     SwpDeviceInfo info;
     info.m_timeoutMillis = 60000;
     info.m_connectTimeoutMillis = 60000;
+    m_downloadBuffer = new unsigned char[json.GetLength() + 1];
     m_transport = new CHttpTransport_gServe();
-    if (m_transport->Send(info, url.GetCharPtr(), m_downloadBuffer, length, 0, NULL,
-                          "application/json", "PUT ", NULL) != 0) {
-        delete m_transport;
-        m_transport = NULL;
-        delete[] m_downloadBuffer;
-        m_downloadBuffer = NULL;
-        return 0;
+    CUtf::WcsToUtf8(json.GetWCharPtr(), json.GetLength(), m_downloadBuffer, json.GetLength() + 1);
+
+    int length = json.GetLength();
+    unsigned char* utf = static_cast<unsigned char*>(np_malloc(length + 1));
+    CUtf::WcsToUtf8(json.GetWCharPtr(), length, utf, length + 1);
+    CArrayOutputStream output;
+    output.Open(m_downloadBuffer, length);
+    output.m_isBigEndian = 1;
+    output.Write(utf, length);
+    unsigned char started = 0;
+    if (output.m_error == 0) {
+        CHttpTransport_gServe* transport = m_transport;
+        int result;
+        {
+            CStrChar requestUrl(server.m_url);
+            result = transport->Send(info, requestUrl.GetCharPtr(), m_downloadBuffer, length,
+                                     0, NULL, CONTENT_TYPE_JSON, cszPut, NULL);
+        }
+        if (result == 0) {
+            m_pendingRequest = functor;
+            started = 1;
+        }
     }
-    m_pendingRequest = functor;
-    return 1;
-}
-
-unsigned char CNGSContentManager::GetContentSelf(const char* fileName)
-{
-    return GetContentFriend(CNGS::GetInstance()->GetLocalUser()->GetClientID(), fileName);
-}
-
-unsigned char CNGSContentManager::GetContentFriend(int userId, const char* fileName)
-{
-    CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
-    CNGSHeader header;
-    CStrWChar serverFileName = generateFilename(userId, fileName);
-
-    CObjectMap message;
-    message.beginObject();
-    message.beginObject(CStrWChar("user"));
-    message.addEntry(CStrWChar("id"), CObjectMapInt(user->GetClientID()));
-    message.endObject();
-    message.beginObject(CStrWChar("content"));
-    message.addEntry(CStrWChar("gameid"), CObjectMapInt(header.m_gameId));
-    message.addEntry(CStrWChar("filename"), CObjectMapString(serverFileName));
-    message.addEntry(CStrWChar("targetId"), CObjectMapInt(userId));
-    message.endObject();
-    InsertHeaderIntoMessage(&message, "get content");
-    message.endObject();
-    if (!GetContent(&message, NULL)) {
-        return 0;
+    output.Close();
+    if (utf != NULL) {
+        np_free(utf);
     }
-    m_targetUserId = userId;
-    m_fileName = fileName;
-    return 1;
+    if (url != NULL) {
+        np_free(url);
+    }
+    return started;
 }
 
 CObjectMapObject* CNGSContentManager::createContentUploadMessageObject(const char* fileName, const unsigned char* data, int size,
@@ -261,18 +267,6 @@ CObjectMapObject* CNGSContentManager::createContentUploadMessageObject(const cha
     content->addEntry(CStrWChar(NGS_FILENAME_TOKEN), new CObjectMapString(serverFileName));
     content->addEntry(CStrWChar(NGS_DATA_TOKEN), new CObjectMapString(CStrWChar(encoded)));
     return content;
-}
-
-CStrWChar CNGSContentManager::generateFilename(int userId, const char* fileName)
-{
-    char userIdText[16] = { 0 };
-    ICStdUtil::SPrintF(userIdText, "%i", userId);
-    CStrWChar name;
-    name += L"GLUID";
-    name += userIdText;
-    name += L"_";
-    name += CStrWChar(fileName);
-    return name;
 }
 
 unsigned int CNGSContentManager::UploadContent(const char* fileName, const unsigned char* data, int size)
@@ -301,16 +295,63 @@ unsigned int CNGSContentManager::UploadContent(const char* fileName, const unsig
 
 void CNGSContentManager::CNGSHandleContentUploadResponse(CObjectMap* response, CNGSContentRequestFunctor* functor)
 {
+    CNGSUtil::DebugLog("CNGSHandleContentUploadResponse");
     int error = CNGSServerObject::WasErrorInResponse(response, functor, "CNGSHandleContentUploadResponse");
-    if (m_isProfileContent) {
-        CNGS::GetInstance()->GetProfileManager()->HandleContentFileUploaded(error == 0, m_profileData);
+    unsigned char profileContent = m_isProfileContent;
+    CNGS* gserve = CNGS::GetInstance();
+    if (profileContent) {
+        gserve->GetProfileManager()->HandleContentFileUploaded(error == 0, m_profileData);
     } else {
-        CNGS::GetInstance()->GetLocalUser()->m_notificationHandler->HandleContentFileUploaded(error == 0);
+        gserve->GetLocalUser()->m_notificationHandler->HandleContentFileUploaded(error == 0);
     }
     m_profileData = NULL;
     m_isProfileContent = 0;
     m_isFriendContent = 0;
     CompleteWriteRequestOutstanding();
+}
+
+unsigned char CNGSContentManager::GetContentSelf(const char* fileName)
+{
+    return GetContentFriend(CNGS::GetInstance()->GetLocalUser()->GetClientID(), fileName);
+}
+
+unsigned char CNGSContentManager::GetContentFriend(int userId, const char* fileName)
+{
+    CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
+    m_targetUserId = userId;
+    m_fileName = fileName;
+    CNGSHeader header;
+    CStrWChar serverFileName = generateFilename(userId, fileName);
+
+    CObjectMap* message = new CObjectMap();
+    message->beginObject();
+    message->beginObject(CStrWChar(NGS_USER_TOKEN));
+    message->addEntry(CStrWChar(NGS_ID_TOKEN), CObjectMapInt(user->GetClientID()));
+    message->endObject();
+    message->beginObject(CStrWChar(NGS_CONTENT_TOKEN));
+    message->addEntry(CStrWChar(NGS_GAME_ID_TOKEN), CObjectMapInt(header.m_gameId));
+    message->addEntry(CStrWChar(NGS_FILENAME_TOKEN), CObjectMapString(serverFileName));
+    message->addEntry(CStrWChar(NGS_TARGET_ID), CObjectMapInt(userId));
+    message->endObject();
+    InsertHeaderIntoMessage(message, "get content");
+    message->endObject();
+    unsigned char started = GetContent(message, NULL);
+    if (message != NULL) {
+        delete message;
+    }
+    return started;
+}
+
+CStrWChar CNGSContentManager::generateFilename(int userId, const char* fileName)
+{
+    char userIdText[16] = { 0 };
+    ICStdUtil::SPrintF(userIdText, "%i", userId);
+    CStrWChar name;
+    name += L"GLUID";
+    name += userIdText;
+    name += L"_";
+    name += CStrWChar(fileName);
+    return name;
 }
 
 void CNGSContentManager::UploadProfileContent(const char* fileName, const unsigned char* data, int size,
@@ -319,16 +360,6 @@ void CNGSContentManager::UploadProfileContent(const char* fileName, const unsign
     m_isProfileContent = 1;
     m_profileData = profileData;
     UploadContent(fileName, data, size);
-}
-
-void CNGSContentManager::Lock()
-{
-    m_locked = 1;
-}
-
-void CNGSContentManager::Unlock()
-{
-    m_locked = 0;
 }
 
 unsigned char CNGSContentManager::GetProfileContentSelf(const char* fileName, CSaveRestoreInterface* profileData)
@@ -344,13 +375,32 @@ void CNGSContentManager::GetRemoteUserContentFriend(int userId, const char* file
     GetContentFriend(userId, fileName);
 }
 
+void CNGSContentManager::Lock()
+{
+    m_locked = 1;
+}
+
+void CNGSContentManager::Unlock()
+{
+    m_locked = 0;
+}
+
 void CNGSContentManager::Reset()
 {
     if (getContentManagerStatus() == CONTENT_MANAGER_DOWNLOADING && m_transport != NULL) {
         m_transport->Cancel();
-        delete m_transport;
-        delete[] m_downloadBuffer;
-        np_free(m_field20);
+        if (m_transport != NULL) {
+            delete m_transport;
+            m_transport = NULL;
+        }
+        if (m_downloadBuffer != NULL) {
+            delete[] m_downloadBuffer;
+            m_downloadBuffer = NULL;
+        }
+        if (m_field20 != NULL) {
+            np_free(m_field20);
+            m_field20 = NULL;
+        }
     }
     CNGSServerObject::Reset();
     Clear();

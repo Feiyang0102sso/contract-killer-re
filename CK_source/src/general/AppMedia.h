@@ -49,6 +49,10 @@ private:
             m_eventId = 0;
             m_loop = false;
         }
+        SoundChannel(AppMedia* owner, const MediaRes& media, float startTime)
+            : m_owner(owner), m_media(media), m_startTime(startTime), m_eventId(0), m_loop(false)
+        {
+        }
         void Stop();
         void Update();
 

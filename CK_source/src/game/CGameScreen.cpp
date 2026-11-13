@@ -61,6 +61,7 @@ void CGameScreen::OnCommand(Event& event)
         App* app = static_cast<App*>(WindowApp::m_instance);
         CSwerveGame* game = app->m_helper->m_swerveGame;
         if ((game != NULL && game->m_currentState != 4) || app->m_timeScale == 0.0f) {
+            event.Clear();
             return;
         }
         SetInterrupt(3);
@@ -71,22 +72,12 @@ void CGameScreen::OnCommand(Event& event)
 
 void CGameScreen::OnCreateState(Window** window, int state)
 {
-    *window = NULL;
+    Window* created = NULL;
     switch (state) {
-    case GPSMap: {
-        delete m_mapCache;
-        m_mapCache = new CGPSMapScreen::CachedData();
-        CGPSMapScreen* map = new CGPSMapScreen(m_mapCache);
-        if (m_previousState == 2) {
-            map->SkipTutorialAutoStart();
-        }
-        *window = map;
-        break;
-    }
     case HuntDayOver: {
         CDH_TextScreen* screen = new CDH_TextScreen("IDS_TEXT_GAME_OVER_HUNT_DAY_TITLE", "IDS_TEXT_GAME_OVER_HUNT_DAY");
         screen->setButtons(NULL, "IDS_DONE");
-        *window = screen;
+        created = screen;
         break;
     }
     case HuntDayCompleted: {
@@ -94,85 +85,100 @@ void CGameScreen::OnCreateState(Window** window, int state)
         screen->setCaptionText(XString(L"Free hunt completed"), false);
         screen->setText(XString(L"You successfuly complete free hunt!"));
         screen->setButtons(NULL, "IDS_DONE");
-        *window = screen;
-        break;
-    }
-    case EnterMission:
-    case LeaveMission:
-        *window = new CIntermediateState();
-        break;
-    case Mission: {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        app->m_saveManager->PauseSaving();
-        *window = new CSwerveGame(m_missionSurface, -1);
-        m_missionSurface = NULL;
+        created = screen;
         break;
     }
     case LevelUp:
-        *window = new CDH_LevelUpScreen();
+        created = new CDH_LevelUpScreen();
+        break;
+    case GPSMap:
+        if (m_mapCache != NULL) {
+            delete m_mapCache;
+            m_mapCache = NULL;
+        }
+        m_mapCache = new CGPSMapScreen::CachedData();
+        created = new CGPSMapScreen(m_mapCache);
         break;
     case Informant: {
         CDH_TextScreen* screen = new CDH_TextScreen();
         screen->setText("Informant found");
         screen->setButtons("IDS_NO", "IDS_YES");
-        *window = screen;
+        created = screen;
         break;
     }
+    case EnterMission:
+    case LeaveMission:
+        created = new CIntermediateState();
+        break;
+    case Mission:
+        static_cast<App*>(WindowApp::m_instance)->m_saveManager->PauseSaving();
+        created = new CSwerveGame(m_missionSurface, -1);
+        m_missionSurface = NULL;
+        break;
     }
+    *window = created;
 }
 
 void CGameScreen::OnStateInterrupt(int state, Window* window)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    GamePlayManager& gameplay = app->m_helper->m_gamePlayManager;
+    int nextState;
     switch (state) {
-    case GPSMap: {
-        int result = window->GetInterrupt();
-        if (result == 2) {
-            if (m_mapCache->m_huntDayElapsed < CGPSMapScreen::CDH_GPS_SCREEN_HUNT_DAY_DURATION_MS) {
-                gameplay.BreakGame();
-                SetInterrupt(2);
-            } else if (app->m_helper->GetGameType() == 1) {
-                gameplay.FinishGame(true);
-                ChangeState(HuntDayOver, STATE_PUSH);
-            }
-        } else if (result == 1) {
-            if (static_cast<CGPSMapScreen*>(window)->GetState() != 0) {
-                ChangeState(EnterMission, STATE_REPLACE);
-            } else {
-                ChangeState(Informant, STATE_PUSH);
-            }
-        }
-        break;
-    }
     case HuntDayOver:
     case HuntDayCompleted:
     case LevelUp:
-        if (gameplay.GetLevelUp()) {
-            gameplay.ResetLevelUp();
-            ChangeState(LevelUp, STATE_PUSH);
-        } else {
+        if (!static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.GetLevelUp()) {
             SetInterrupt(1);
+            return;
         }
-        break;
-    case EnterMission:
-        ChangeState(Mission, STATE_REPLACE);
-        break;
-    case LeaveMission:
-        ChangeState(GPSMap, STATE_REPLACE);
-        break;
-    case Mission:
-        app->m_saveManager->ResumeSaving();
-        m_previousState = window->GetInterrupt();
-        app->m_huntingInfo->AfterSceneActivity();
-        ChangeState(LeaveMission, STATE_REPLACE);
-        break;
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.ResetLevelUp();
+        ChangeState(LevelUp, STATE_PUSH);
+        return;
+    case GPSMap: {
+        int result = window->GetInterrupt();
+        if (result != 2) {
+            if (result != 1) {
+                return;
+            }
+            if (static_cast<CGPSMapScreen*>(window)->GetState() == 0) {
+                ChangeState(Informant, STATE_PUSH);
+                return;
+            }
+            ChangeState(EnterMission, STATE_REPLACE);
+            return;
+        }
+        DGHelper* helper = static_cast<App*>(WindowApp::m_instance)->m_helper;
+        if (m_mapCache->m_huntDayElapsed >= CGPSMapScreen::CDH_GPS_SCREEN_HUNT_DAY_DURATION_MS) {
+            if (helper->GetGameType() != 1) {
+                return;
+            }
+            static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.FinishGame(true);
+            ChangeState(HuntDayOver, STATE_PUSH);
+        } else {
+            helper->m_gamePlayManager.BreakGame();
+            SetInterrupt(2);
+        }
+        return;
+    }
     case Informant:
         if (window->GetInterrupt() == 2) {
             ChangeState(0, STATE_POP);
         }
+        return;
+    case EnterMission:
+        ChangeState(Mission, STATE_REPLACE);
+        return;
+    case LeaveMission:
+        ChangeState(GPSMap, STATE_REPLACE);
+        return;
+    case Mission:
+        static_cast<App*>(WindowApp::m_instance)->m_saveManager->ResumeSaving();
+        static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->AfterSceneActivity();
+        nextState = LeaveMission;
         break;
+    default:
+        return;
     }
+    ChangeState(nextState, STATE_REPLACE);
 }
 
 typedef char AssertGameScreenSize[sizeof(CGameScreen) == 0xb0 ? 1 : -1];

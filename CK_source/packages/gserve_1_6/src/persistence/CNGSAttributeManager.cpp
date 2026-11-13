@@ -53,11 +53,12 @@ unsigned int CAttributeManager::getDataFromServer(const TCVector<int>& collectio
     }
 
     int count = types.Size();
+    const unsigned int* collectionIds = types.m_data;
     CObjectMapObject* message = new CObjectMapObject();
     CObjectMapArray* list = new CObjectMapArray();
     for (int index = 0; index < count; index++) {
         CObjectMapObject* entry = new CObjectMapObject();
-        entry->addEntry(CStrWChar(NGS_COLLECTION_TOKEN), new CObjectMapInt(types[index]));
+        entry->addEntry(CStrWChar(NGS_COLLECTION_TOKEN), new CObjectMapInt(collectionIds[index]));
         list->addEntry(entry);
     }
 
@@ -105,49 +106,56 @@ unsigned char CAttributeManager::extractAttributeValuesAsArray(const CObjectMapO
         for (int index = 0; index < list->m_values.Size(); index++) {
             CObjectMapObject* entry = (CObjectMapObject*)list->m_values[index];
             if (entry != NULL && entry->getType() == CObjectMapValue::TYPE_OBJECT) {
-                CStrWChar name(((CObjectMapString*)entry->getEntry(CStrWChar(L"name")))->m_value);
-                int type = (int)((CObjectMapInt*)entry->getEntry(CStrWChar(L"type")))->m_value;
-                int collectionType = (int)((CObjectMapInt*)entry->getEntry(CStrWChar(L"collectiontype")))->m_value;
+                CObjectMapString* nameValue = (CObjectMapString*)entry->getEntry(CStrWChar(L"name"));
+                CStrWChar name(nameValue->m_value.GetWCharPtr());
+                CObjectMapInt* typeValue = (CObjectMapInt*)entry->getEntry(CStrWChar(L"type"));
+                int type = (int)typeValue->m_value;
+                CObjectMapInt* collectionTypeValue = (CObjectMapInt*)entry->getEntry(CStrWChar(L"collectiontype"));
+                int collectionType = (int)collectionTypeValue->m_value;
                 CNGSAttribute* attribute = NULL;
                 if (type == DATA_TYPE_STRING || type == DATA_TYPE_BASE64) {
                     CObjectMapString* value = (CObjectMapString*)entry->getEntry(CStrWChar(L"stringValue"));
-                    CStrWChar text(value->m_value);
+                    CStrWChar text(value->m_value.GetWCharPtr());
                     attribute = new CNGSAttribute(name, text, type == DATA_TYPE_BASE64, collectionType);
                 } else {
                     CObjectMapInt* value = (CObjectMapInt*)entry->getEntry(CStrWChar(L"intValue"));
-                    switch (type) {
-                    case DATA_TYPE_UINT8:
-                        attribute = new CNGSAttribute(name, (unsigned char)value->m_value, collectionType);
-                        break;
-                    case DATA_TYPE_UINT16:
-                        attribute = new CNGSAttribute(name, (unsigned short)value->m_value, collectionType);
-                        break;
-                    case DATA_TYPE_UINT32:
-                        attribute = new CNGSAttribute(name, (unsigned int)value->m_value, collectionType);
-                        break;
-                    case DATA_TYPE_UINT64:
-                        attribute = new CNGSAttribute(name, (unsigned long long)value->m_value, collectionType);
-                        break;
-                    case DATA_TYPE_INT8:
-                        attribute = new CNGSAttribute(name, (signed char)value->m_value, collectionType);
-                        break;
-                    case DATA_TYPE_INT16:
-                        attribute = new CNGSAttribute(name, (short)value->m_value, collectionType);
-                        break;
-                    case DATA_TYPE_INT32:
-                        attribute = new CNGSAttribute(name, (int)value->m_value, collectionType);
-                        break;
-                    case DATA_TYPE_INT64:
-                        attribute = new CNGSAttribute(name, (long long)value->m_value, collectionType);
-                        break;
-                    default:
+                    if (type >= DATA_TYPE_UINT8 && type <= DATA_TYPE_INT64) {
+                        // Read the complete numeric value before allocating its attribute.
+                        long long number = value->m_value;
+                        switch (type) {
+                        case DATA_TYPE_UINT8:
+                            attribute = new CNGSAttribute(name, (unsigned char)number, collectionType);
+                            break;
+                        case DATA_TYPE_UINT16:
+                            attribute = new CNGSAttribute(name, (unsigned short)number, collectionType);
+                            break;
+                        case DATA_TYPE_UINT32:
+                            attribute = new CNGSAttribute(name, (unsigned int)number, collectionType);
+                            break;
+                        case DATA_TYPE_UINT64:
+                            attribute = new CNGSAttribute(name, (unsigned long long)number, collectionType);
+                            break;
+                        case DATA_TYPE_INT8:
+                            attribute = new CNGSAttribute(name, (signed char)number, collectionType);
+                            break;
+                        case DATA_TYPE_INT16:
+                            attribute = new CNGSAttribute(name, (short)number, collectionType);
+                            break;
+                        case DATA_TYPE_INT32:
+                            attribute = new CNGSAttribute(name, (int)number, collectionType);
+                            break;
+                        case DATA_TYPE_INT64:
+                            attribute = new CNGSAttribute(name, number, collectionType);
+                            break;
+                        }
+                    } else {
                         success = 0;
-                        break;
                     }
                 }
                 if (attribute != NULL) {
                     // Nameless attributes are dropped (and leaked, as in the original).
-                    if (attribute->getName().GetLength() > 0) {
+                    int nameLength = attribute->getName().GetLength();
+                    if (nameLength > 0) {
                         attributes.Add(attribute);
                     }
                     attribute->debugPrint();

@@ -16,6 +16,11 @@ const int PreviewSecond = 0x7551d736;
 const int CancelEquip = (int)0x81051b34;
 const int ConfirmEquip = (int)0xbaba08c5;
 const int CloseShop = (int)0x97204784;
+
+App* GetApp()
+{
+    return static_cast<App*>(WindowApp::m_instance);
+}
 }
 
 CEquipWeaponWindow::CEquipWeaponWindow(int weaponId)
@@ -32,39 +37,61 @@ CEquipWeaponWindow::CEquipWeaponWindow(int weaponId)
     m_content->AddToFront(slots);
     Window* prompt = CreateTextWindow("IDS_SELECT_SLOT");
     prompt->SetPercentHeight(15, 0, 0);
-    slots->AddToFront(prompt, 0, 0);
+    prompt->SetLayoutType(LAYOUT_TABLE);
+    prompt->SetCellPos(0, 0, 1, 1);
+    slots->AddToFront(prompt);
+
     Window* firstLabel = CreateTextWindow("IDS_MENU_WEAPON_SLOT1");
     firstLabel->SetPercentHeight(15, 0, 0);
-    slots->AddToFront(firstLabel, 0, 1);
-    slots->AddToFront(CreateSlotButton(0, PreviewFirst), 0, 2);
+    firstLabel->SetLayoutType(LAYOUT_TABLE);
+    firstLabel->SetCellPos(0, 1, 1, 1);
+    slots->AddToFront(firstLabel);
+
+    Window* firstSlot = CreateSlotButton(0, PreviewFirst);
+    firstSlot->SetLayoutType(LAYOUT_TABLE);
+    firstSlot->SetCellPos(0, 2, 1, 1);
+    slots->AddToFront(firstSlot);
+
     Window* secondLabel = CreateTextWindow("IDS_MENU_WEAPON_SLOT2");
     secondLabel->SetPercentHeight(15, 0, 0);
-    slots->AddToFront(secondLabel, 0, 3);
-    slots->AddToFront(CreateSlotButton(1, PreviewSecond), 0, 4);
+    secondLabel->SetLayoutType(LAYOUT_TABLE);
+    secondLabel->SetCellPos(0, 3, 1, 1);
+    slots->AddToFront(secondLabel);
 
-    CFont* font = CFontMgr::GetInstance()->GetFont(15);
-    int scale = App::Scale();
+    Window* secondSlot = CreateSlotButton(1, PreviewSecond);
+    secondSlot->SetLayoutType(LAYOUT_TABLE);
+    secondSlot->SetCellPos(0, 4, 1, 1);
+    slots->AddToFront(secondSlot);
+
     CImageButton* back = new CImageButton();
     back->AddImage("IDB_SHOP_BACK_BUTTON", 0, 0);
-    back->SetText(ResString("IDS_MENU_BACK"), ALIGN_HCENTER | ALIGN_TOP, font, scale * 5, 0);
+    back->SetText(ResString("IDS_MENU_BACK"), ALIGN_HCENTER | ALIGN_TOP,
+                  CFontMgr::GetInstance()->GetFont(15), App::Scale() * 5, 0);
     back->SetLayoutType(LAYOUT_SIMPLE);
     back->SetAlign(ALIGN_LEFT | ALIGN_BOTTOM);
-    back->m_command = CancelEquip;
-    back->SetOutsetSpacing(0, scale * 10, scale * 2, scale * 10);
+    back->SetCommandParameters(CancelEquip, 0, 0, 0);
+    int backRight = App::Scale() * 10;
+    int backBottom = App::Scale() * 2;
+    int backLeft = App::Scale() * 10;
+    back->SetOutsetSpacing(0, backRight, backBottom, backLeft);
     m_content->AddToFront(back);
+
     CImageButton* confirm = new CImageButton();
     confirm->AddImage("IDB_SHOP_BACK_BUTTON", 0, 0);
-    confirm->SetText(ResString("IDS_SK_OK"), ALIGN_HCENTER | ALIGN_TOP, font, scale * 5, 0);
+    confirm->SetText(ResString("IDS_SK_OK"), ALIGN_HCENTER | ALIGN_TOP,
+                     CFontMgr::GetInstance()->GetFont(15), App::Scale() * 5, 0);
     confirm->SetLayoutType(LAYOUT_SIMPLE);
     confirm->SetAlign(ALIGN_RIGHT | ALIGN_BOTTOM);
-    confirm->m_command = ConfirmEquip;
-    confirm->SetOutsetSpacing(0, scale * 10, scale * 2, scale * 10);
+    confirm->SetCommandParameters(ConfirmEquip, 0, 0, 0);
+    int confirmRight = App::Scale() * 10;
+    int confirmBottom = App::Scale() * 2;
+    int confirmLeft = App::Scale() * 10;
+    confirm->SetOutsetSpacing(0, confirmRight, confirmBottom, confirmLeft);
     m_content->AddToFront(confirm);
 
-    App* app = static_cast<App*>(WindowApp::m_instance);
     // Original: the equipped weapons are not checked for NULL.
-    m_originalFirst = app->m_helper->GetGameData()->GetWeapon01(true)->m_id;
-    m_originalSecond = app->m_helper->GetGameData()->GetWeapon02(true)->m_id;
+    m_originalFirst = GetApp()->m_helper->GetGameData()->GetWeapon01(true)->m_id;
+    m_originalSecond = GetApp()->m_helper->GetGameData()->GetWeapon02(true)->m_id;
 }
 
 Window* CEquipWeaponWindow::CreateTextWindow(const char* resource)
@@ -98,27 +125,40 @@ void CEquipWeaponWindow::Paint(ICGraphics2d& graphics)
 
 void CEquipWeaponWindow::OnCommand(Event& event)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    GamePlayManager& game = app->m_helper->m_gamePlayManager;
     switch (event.m_id) {
-    case PreviewFirst:
-        game.SetWeapon01(m_weaponId);
-        game.SetWeapon02(m_originalSecond);
-        break;
-    case PreviewSecond:
-        game.SetWeapon01(m_originalFirst);
-        game.SetWeapon02(m_weaponId);
-        break;
-    case CancelEquip:
-        game.SetWeapon01(m_originalFirst);
-        game.SetWeapon02(m_originalSecond);
+    case CancelEquip: {
+        int second = m_originalSecond;
+        GetApp()->m_helper->m_gamePlayManager.SetWeapon01(m_originalFirst);
+        GetApp()->m_helper->m_gamePlayManager.SetWeapon02(second);
         Close();
-        break;
+        return;
+    }
     case ConfirmEquip:
     case CloseShop:
         Close();
-        break;
+        return;
     }
+
+    int first;
+    int second;
+    WindowApp** instance = &WindowApp::m_instance;
+    App* app;
+    switch (event.m_id) {
+    case PreviewSecond:
+        first = m_originalFirst;
+        second = m_weaponId;
+        app = static_cast<App*>(*instance);
+        break;
+    case PreviewFirst:
+        app = static_cast<App*>(*instance);
+        first = m_weaponId;
+        second = m_originalSecond;
+        break;
+    default:
+        return;
+    }
+    app->m_helper->m_gamePlayManager.SetWeapon01(first);
+    static_cast<App*>(*instance)->m_helper->m_gamePlayManager.SetWeapon02(second);
 }
 
 void CEquipWeaponWindow::OnClosed()

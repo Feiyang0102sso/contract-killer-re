@@ -34,10 +34,22 @@ const SScreenAdaptingConstant BonusY(0, 4);
 }
 
 __attribute__((noinline)) CBH_GPSHud::CBH_GPSHud(bool animateXP)
-    : Window(false), m_energy(NULL), m_xp(NULL), m_credits(NULL), m_money(NULL), m_levelBadge(NULL),
-      m_startX(0), m_startY(0), m_fieldbc(0), m_animateXP(animateXP), m_updateLevel(false), m_fieldc4(0),
-      m_level(CBH_Player::GetInstance()->GetLevel()), m_experience(0)
+    : Window(false)
 {
+    m_energy = NULL;
+    m_xp = NULL;
+    m_credits = NULL;
+    m_money = NULL;
+    m_levelBadge = NULL;
+    m_fieldbc = 0;
+    m_startX = 0;
+    m_startY = 0;
+    m_animateXP = animateXP;
+    m_updateLevel = false;
+    m_fieldc4 = 0;
+    m_level = CBH_Player::GetInstance()->GetLevel();
+    m_startY = 0;
+    m_startX = 0;
 }
 
 CBH_GPSHud::~CBH_GPSHud()
@@ -57,23 +69,32 @@ void CBH_GPSHud::Init()
     float x = static_cast<float>(LeftMargin());
     if (!m_animateXP) {
         int left = static_cast<int>(x);
-        m_money = new CBH_ProgressBar(0, CashWidth(), -1);
-        m_money->SetCorner(left, TopMargin());
+        CBH_ProgressBar* money = new CBH_ProgressBar(0, CashWidth(), -1);
+        m_money = money;
+        money->SetCorner(left, TopMargin());
         m_money->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT | CBH_ProgressBar::HIDE_FILL;
         m_money->SetTextAlign(TEXT_ALIGN_RIGHT);
-        m_money->SetCurrValue(CBH_Player::GetInstance()->m_cash);
+        money = m_money;
+        money->SetCurrValue(CBH_Player::GetInstance()->m_cash);
         m_money->SetDescImage("IDB_HUD_ICON_MONEY");
         m_money->SetCommandParameters(CashCommand, 0, 0, 0);
         AddToFront(m_money);
         COverrideManager* overrides = static_cast<App*>(WindowApp::m_instance)->m_overrideManager;
-        int cashMultiplier = CBH_Player::GetInstance()->GetOverride(*overrides, XString(L"missions_mult"),
-                                                                    XString(L"soft"));
+        int cashMultiplier;
+        {
+            CBH_Player* player = CBH_Player::GetInstance();
+            XString category(L"missions_mult");
+            XString key(L"soft");
+            cashMultiplier = player->GetOverride(*overrides, category, key);
+        }
         if (cashMultiplier > 0) {
-            XString text = XString::Format(L"x%d%%", cashMultiplier);
+            XString text = XString::Format(L"x%d%", cashMultiplier);
             TextWindow* bonus = new TextWindow(text, CFontMgr::GetInstance()->GetFont(17));
             bonus->SetAlign(ALIGN_LEFT | ALIGN_TOP);
-            bonus->SetOutsetSpacing(m_money->m_height / 3 + m_money->m_height + BonusY(),
-                                    static_cast<int>(x + CashBonusX()));
+            int height = m_money->m_height;
+            int bonusY = BonusY();
+            int bonusX = static_cast<int>(x + CashBonusX());
+            bonus->SetOutsetSpacing(height / 3 + height + bonusY, bonusX);
             AddToFront(bonus, 0, 0);
         }
         CImageButton* cashButton = new CImageButton();
@@ -82,15 +103,22 @@ void CBH_GPSHud::Init()
         cashButton->SetLayoutType(LAYOUT_NONE);
         cashButton->SetHeightByContent(0, 0);
         cashButton->SetCommandParameters(CashCommand, 0, 0, 0);
-        cashButton->SetCorner(static_cast<int>(x + CashButtonX()), TopMargin() + AddButtonY());
+        int cashButtonOffset = CashButtonX();
+        int cashButtonY = TopMargin();
+        cashButtonY += AddButtonY();
+        cashButton->SetCorner(static_cast<int>(x + cashButtonOffset), cashButtonY);
         AddToFront(cashButton);
 
-        x += m_money->m_width + BarGap();
-        m_credits = new CBH_ProgressBar(0, CreditsWidth(), -1);
-        m_credits->SetCorner(static_cast<int>(x), TopMargin());
+        int moneyWidth = m_money->m_width;
+        int moneySpan = moneyWidth + BarGap();
+        CBH_ProgressBar* credits = new CBH_ProgressBar(0, CreditsWidth(), -1);
+        m_credits = credits;
+        x += moneySpan;
+        credits->SetCorner(static_cast<int>(x), TopMargin());
         m_credits->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT | CBH_ProgressBar::HIDE_FILL;
         m_credits->SetTextAlign(TEXT_ALIGN_RIGHT);
-        m_credits->SetCurrValue(CBH_Player::GetInstance()->m_credits);
+        credits = m_credits;
+        credits->SetCurrValue(CBH_Player::GetInstance()->m_credits);
         m_credits->SetDescImage("IDB_HUD_ICON_CREDITS");
         m_credits->SetCommandParameters(CreditsCommand, 0, 0, 0);
         AddToFront(m_credits);
@@ -100,30 +128,40 @@ void CBH_GPSHud::Init()
         creditsButton->SetLayoutType(LAYOUT_NONE);
         creditsButton->SetHeightByContent(0, 0);
         creditsButton->SetCommandParameters(CreditsCommand, 0, 0, 0);
-        creditsButton->SetCorner(static_cast<int>(x + CreditsButtonX()), TopMargin() + AddButtonY());
+        int creditsButtonX = static_cast<int>(x + CreditsButtonX());
+        int creditsButtonY = TopMargin();
+        creditsButtonY += AddButtonY();
+        creditsButton->SetCorner(creditsButtonX, creditsButtonY);
         AddToFront(creditsButton);
 
-        x += m_credits->m_width + BarGap();
+        int creditsWidth = m_credits->m_width;
+        x += creditsWidth + BarGap();
         if (CBH_Player::GetInstance()->IsEnegyEnabled()) {
             int energyLeft = static_cast<int>(x);
-            m_energy = new CEnergyProgressBar(0, EnergyWidth());
-            m_energy->SetCorner(energyLeft, TopMargin());
+            CEnergyProgressBar* energy = new CEnergyProgressBar(0, EnergyWidth());
+            m_energy = energy;
+            energy->SetCorner(energyLeft, TopMargin());
             m_energy->SetDescImage("IDB_HUD_ICON_ENERGY");
-            m_energy->SetMaxValue(CBH_Player::GetInstance()->GetMaxEnergy());
+            energy = m_energy;
+            energy->SetMaxValue(CBH_Player::GetInstance()->GetMaxEnergy());
             m_energy->SetCommandParameters(EnergyCommand, 0, 0, 0);
             AddToFront(m_energy);
-            x += m_energy->m_width + BarGap();
+            int energyWidth = m_energy->m_width;
+            x += energyWidth + BarGap();
         }
     }
 
     int xpLeft = static_cast<int>(x);
-    m_xp = new CAnimatedProgressBar(3, XPWidth(), 4);
-    m_xp->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT | CBH_ProgressBar::DISPLAY_MAX | CBH_ProgressBar::MANUAL_PERCENT;
+    CAnimatedProgressBar* xp = new CAnimatedProgressBar(3, XPWidth(), 4);
+    m_xp = xp;
+    xp->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT | CBH_ProgressBar::DISPLAY_MAX | CBH_ProgressBar::MANUAL_PERCENT;
     m_xp->SetCurrValue(0);
     m_xp->SetMaxValue(100);
     m_xp->SetCorner(xpLeft, TopMargin());
     if (m_animateXP) {
-        m_xp->SetCorner(xpLeft, TopMargin() - SScreenAdaptingConstant(3, 6)());
+        CAnimatedProgressBar* bar = m_xp;
+        int top = TopMargin();
+        bar->SetCorner(xpLeft, top - SScreenAdaptingConstant(3, 6)());
     }
     m_xp->SetDescImage("IDB_HUD_ICON_EXP");
     UpdateXPBar(-1);
@@ -131,27 +169,41 @@ void CBH_GPSHud::Init()
 
     if (!m_animateXP) {
         COverrideManager* overrides = static_cast<App*>(WindowApp::m_instance)->m_overrideManager;
-        int xpMultiplier = CBH_Player::GetInstance()->GetOverride(*overrides, XString(L"missions_mult"), XString(L"xp"));
+        int xpMultiplier;
+        {
+            CBH_Player* player = CBH_Player::GetInstance();
+            XString category(L"missions_mult");
+            XString key(L"xp");
+            xpMultiplier = player->GetOverride(*overrides, category, key);
+        }
         if (xpMultiplier > 0) {
-            XString text = XString::Format(L"x%d%%", xpMultiplier);
+            XString text = XString::Format(L"x%d%", xpMultiplier);
             TextWindow* bonus = new TextWindow(text, CFontMgr::GetInstance()->GetFont(17));
-            bonus->SetOutsetSpacing(m_xp->m_height + m_money->m_height / 3 + BonusY(),
-                                    static_cast<int>(x + m_xp->m_width / 2
-                                                     - CFontMgr::GetInstance()->GetFont(22)->MeasureTextWidth(
-                                                           text.c_str(), -1, -1, NULL) / 2));
+            int xpHeight = m_xp->m_height;
+            int moneyHeight = m_money->m_height;
+            int bonusY = BonusY();
+            int xpWidth = m_xp->m_width;
+            CFont* font = CFontMgr::GetInstance()->GetFont(22);
+            int textWidth = font->MeasureTextWidth(text.c_str(), -1, -1, NULL);
+            int bonusX = static_cast<int>(x + xpWidth / 2 - textWidth / 2);
+            bonus->SetOutsetSpacing(bonusY + moneyHeight / 3 + xpHeight, bonusX);
             bonus->SetAlign(ALIGN_LEFT | ALIGN_TOP);
             AddToFront(bonus);
         }
     }
 
-    float badgeRight = x + m_xp->m_width;
+    int xpWidth = m_xp->m_width;
     m_levelBadge = new CImageButton();
     m_levelBadge->AddImage("IDB_MAP_HUD_LEVEL_BG", 0, 0);
     int badgeY = m_xp->m_y + m_xp->m_height / 2 - m_levelBadge->m_height / 2;
     m_levelBadge->SetLayoutType(LAYOUT_NONE);
-    m_levelBadge->SetCorner(static_cast<int>(badgeRight - m_levelBadge->m_width / 2), badgeY);
-    m_levelBadge->SetText(XString(CBH_Player::GetInstance()->GetLevel()), ALIGN_HCENTER | ALIGN_VCENTER,
-                          CFontMgr::GetInstance()->GetFont(9), App::Scale() * -3, 0);
+    int badgeX = static_cast<int>(x + xpWidth - m_levelBadge->m_width / 2);
+    m_levelBadge->SetCorner(badgeX, badgeY);
+    {
+        CImageButton* badge = m_levelBadge;
+        badge->SetText(XString(CBH_Player::GetInstance()->GetLevel()), ALIGN_HCENTER | ALIGN_VCENTER,
+                       CFontMgr::GetInstance()->GetFont(9), App::Scale() * -3, 0);
+    }
     AddToFront(m_levelBadge);
 }
 
@@ -160,22 +212,22 @@ void CBH_GPSHud::UpdateXPBar(int delta)
     if (m_xp == NULL) {
         return;
     }
-    CBH_Player* player = CBH_Player::GetInstance();
-    int xp = player->m_experience;
-    int next = player->GetXpForNextLvl();
-    int current = player->GetXpForCurrentLvl();
-    if (next <= 0 || next <= current) {
+    int xp = CBH_Player::GetInstance()->m_experience;
+    int next = CBH_Player::GetInstance()->GetXpForNextLvl();
+    int current = CBH_Player::GetInstance()->GetXpForCurrentLvl();
+    if (next > 0 && next > current) {
+        m_xp->SetCurrValue(xp);
+        m_xp->SetMaxValue(next);
+        CAnimatedProgressBar* bar = m_xp;
+        if (xp - delta < current) {
+            bar->SetSpecialPercents(100);
+        } else {
+            bar->SetSpecialPercents((xp - current) * 100 / (next - current));
+        }
+    } else {
         m_xp->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT;
         m_xp->SetCurrValue(xp);
         m_xp->SetSpecialPercents(100);
-    } else {
-        m_xp->SetCurrValue(xp);
-        m_xp->SetMaxValue(next);
-        int percent = 100;
-        if (xp - delta >= current) {
-            percent = (xp - current) * 100 / (next - current);
-        }
-        m_xp->SetSpecialPercents(percent);
     }
     if (m_animateXP) {
         m_updateLevel = true;
@@ -191,65 +243,74 @@ void CBH_GPSHud::SetLevelOnBar(int level)
 
 void CBH_GPSHud::Update()
 {
-    CBH_Player* player = CBH_Player::GetInstance();
     if (m_money != NULL) {
-        m_money->SetCurrValue(player->m_cash);
+        CBH_ProgressBar* money = m_money;
+        money->SetCurrValue(CBH_Player::GetInstance()->m_cash);
     }
     if (m_credits != NULL) {
-        m_credits->SetCurrValue(player->m_credits);
+        CBH_ProgressBar* credits = m_credits;
+        credits->SetCurrValue(CBH_Player::GetInstance()->m_credits);
     }
     if (m_energy != NULL) {
-        m_energy->SetValues(player->m_energy, player->GetMaxEnergy(), player->m_energyRemainingSeconds);
+        CEnergyProgressBar* energy = m_energy;
+        int current = CBH_Player::GetInstance()->m_energy;
+        int maximum = CBH_Player::GetInstance()->GetMaxEnergy();
+        int seconds = CBH_Player::GetInstance()->m_energyRemainingSeconds;
+        energy->SetValues(current, maximum, seconds);
     }
-    if (m_levelBadge != NULL && m_level != player->GetLevel()) {
-        m_level = player->GetLevel();
-        SetLevelOnBar(m_level);
+    if (m_levelBadge != NULL && m_level != CBH_Player::GetInstance()->GetLevel()) {
+        m_level = CBH_Player::GetInstance()->GetLevel();
+        CImageButton* badge = m_levelBadge;
+        badge->UpdateText(XString(m_level));
     }
     if (!m_animateXP) {
         UpdateXPBar(-1);
-    } else if (m_xp != NULL) {
-        if (m_xp->m_deltaPercent == 0.0f && m_updateLevel) {
-            m_updateLevel = false;
-            SetLevelOnBar(player->GetLevel());
-            if (m_xp->m_percent >= 100.0f && !player->IsPlayerLevelMax() &&
-                player->m_experience < player->GetXpForNextLvl()) {
+        return;
+    }
+
+    if (m_xp->m_deltaPercent == 0.0f && m_updateLevel) {
+        m_updateLevel = false;
+        SetLevelOnBar(CBH_Player::GetInstance()->GetLevel());
+        if (static_cast<int>(m_xp->m_percent) >= 100 && !CBH_Player::GetInstance()->IsPlayerLevelMax()) {
+            int xp = CBH_Player::GetInstance()->m_experience;
+            if (xp < CBH_Player::GetInstance()->GetXpForNextLvl()) {
                 m_xp->SetSpecialPercents(0);
                 UpdateXPBar(-1);
             }
         }
-        if (m_experience != player->m_experience) {
-            UpdateXPBar(player->m_experience - m_experience);
-            m_experience = player->m_experience;
-        }
+    }
+    if (m_experience != CBH_Player::GetInstance()->m_experience) {
+        UpdateXPBar(CBH_Player::GetInstance()->m_experience - m_experience);
+        m_experience = CBH_Player::GetInstance()->m_experience;
     }
 }
 
 void CBH_GPSHud::OnCommand(Event& event)
 {
     // The original does not clear the event.
+    CRegularShop* shop;
     switch (event.m_id) {
-    case EnergyCommand: {
+    case EnergyCommand:
         WindowApp::HandleTunnelCommand(0x718a0676, 0, 0, 0);
-        CRegularShop* shop = CRegularShop::GetInstance(true);
+        shop = CRegularShop::GetInstance(true);
         shop->SetTab(2);
-        static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(shop);
         break;
-    }
     case CashCommand:
-    case CreditsCommand: {
+    case CreditsCommand:
         WindowApp::HandleTunnelCommand(0x718a0676, 0, 0, 0);
-        CRegularShop* shop = CRegularShop::GetInstance(true);
+        shop = CRegularShop::GetInstance(true);
         shop->SetTab(0);
-        static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(shop);
         break;
-    }
     case WatchAd:
         AddModal(new CAdColonyWindow(false));
-        break;
+        return;
     case MoreGames:
         CPHInterface::startPublisherContentRequest("more_games", false, true);
-        break;
+        return;
+    default:
+        return;
     }
+    static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(shop);
 }
 
 void CBH_GPSHud::OnGetFocus()

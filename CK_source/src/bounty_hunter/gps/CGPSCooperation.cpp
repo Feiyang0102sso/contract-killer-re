@@ -14,13 +14,15 @@ CGPSCooperation::CGPSCooperation()
     m_visible = false;
     SetImage("IDB_COOPERATION");
     SetPressImage("IDB_GPS_ROUND_ICON_ANIM");
-    CStrWChar title = CUtility::GetString("IDS_MENU_COOPERATION");
-    m_title = title.GetWCharPtr();
+    {
+        CStrWChar title = CUtility::GetString("IDS_MENU_COOPERATION");
+        m_title = title.GetWCharPtr();
+    }
     m_font = CFontMgr::GetInstance()->GetFont(15);
     if (m_font != NULL) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
+        DGHelper* helper = static_cast<App*>(WindowApp::m_instance)->m_helper;
         XString::AnsiString titleText(m_title.c_str());
-        m_titleWidth = app->m_helper->GetTextWidth(titleText, m_font);
+        m_titleWidth = helper->GetTextWidth(titleText, m_font);
     }
 }
 
@@ -34,19 +36,19 @@ void CGPSCooperation::Update(long elapsed)
     CBH_Player::GetInstance();
     if (CBH_Player::GetInstance()->m_tutorialState >= 13) {
         m_visible = true;
-        if (m_listener != NULL) {
-            m_listener->OnCoopVisible();
-        }
+        m_listener->OnCoopVisible();
     }
     m_elapsed += elapsed * 2;
     if (m_elapsed > 2000) {
         m_elapsed = 0;
         App* app = static_cast<App*>(WindowApp::m_instance);
-        int unread = 0;
+        CCountNotificationWindow& badge = m_unread;
         if (app->m_newsFeedManager != NULL) {
-            unread = app->m_newsFeedManager->GetUnreadNonEmptyMessageCount(NEWS_CHALLENGE_COMPLETED);
+            int unread = app->m_newsFeedManager->GetUnreadNonEmptyMessageCount(NEWS_CHALLENGE_COMPLETED);
+            badge.SetCount(unread);
+        } else {
+            badge.SetCount(0);
         }
-        m_unread.SetCount(unread);
     }
 }
 

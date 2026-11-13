@@ -73,13 +73,25 @@ CChallenge::CChallenge(TiXmlElement* element)
 
 CChallenge::~CChallenge()
 {
-    if (m_script != NULL) {
-        lua_close(m_script);
+    if (m_rewards != NULL) {
+        if (m_rewards[0] != NULL) {
+            delete m_rewards[0];
+            m_rewards[0] = NULL;
+        }
+        if (m_rewards[1] != NULL) {
+            delete m_rewards[1];
+            m_rewards[1] = NULL;
+        }
+        if (m_rewards[2] != NULL) {
+            delete m_rewards[2];
+            m_rewards[2] = NULL;
+        }
+        if (m_rewards != NULL) {
+            delete[] m_rewards;
+            m_rewards = NULL;
+        }
     }
-    for (int index = 0; index < RewardCount; ++index) {
-        delete m_rewards[index];
-    }
-    delete[] m_rewards;
+    lua_close(m_script);
 }
 
 void CChallenge::ParseRoot(TiXmlElement* element)
@@ -200,43 +212,26 @@ void CChallenge::RegisterNativeClasses(lua_State* script)
 void CChallenge::ParseScript(TiXmlElement* element, lua_State* script)
 {
     const TiXmlElement* source = element->FirstChildElement("script");
-    if (source == NULL) {
-        return;
-    }
-    XString body = CXmlHelper::GetAttributeValue(*source, "script");
-    XString::AnsiString scriptText(body.c_str());
-    if (luaL_loadstring(script, scriptText) == 0 && lua_pcall(script, 0, 0, 0) == 0) {
-        return;
-    }
-    lua_pop(script, 1);
-}
-
-bool CChallenge::CallScript(const char* name) const
-{
-    if (m_script == NULL) {
-        return false;
-    }
-    lua_getglobal(m_script, name);
-    if (!lua_isfunction(m_script, -1)) {
-        lua_pop(m_script, 1);
-        return false;
-    }
-    luabridge::TypeTable::tdstack<CChallengeStats>::push(m_script, *CBH_Player::GetInstance()->m_challengeStats, 0);
-    if (lua_pcall(m_script, 1, 1, 0) != 0) {
-        lua_pop(m_script, 1);
-        return false;
-    }
-    return true;
+    XString body = CXmlHelper::GetAttributeValue(source, "script");
+    luaL_loadstring(script, XString::AnsiString(body.c_str()));
+    lua_pcall(script, 0, LUA_MULTRET, 0);
 }
 
 int CChallenge::GetCurrProgress() const
 {
-    if (!CallScript("GetCurrProgress")) {
-        return 0;
+    lua_State* script = m_script;
+    lua_getglobal(script, "GetCurrProgress");
+    if (lua_isfunction(script, -1)) {
+        luabridge::TypeTable::tdstack<CChallengeStats>::push(script, *CBH_Player::GetInstance()->m_challengeStats, 0);
+        int progress = 0;
+        if (lua_pcall(script, 1, 1, 0) == 0) {
+            progress = lua_tointeger(script, -1);
+            lua_pop(script, 1);
+        }
+        return progress;
     }
-    int progress = lua_tointeger(m_script, -1);
-    lua_pop(m_script, 1);
-    return progress;
+    lua_pop(script, 1);
+    return 0;
 }
 
 void CChallenge::CheckCompletion()
@@ -255,12 +250,15 @@ void CChallenge::CheckCompletion()
 
 void CChallenge::CallExternalCheckFunc()
 {
-    if (CallScript("CheckFunc")) {
-        bool complete = lua_toboolean(m_script, -1) != 0;
-        lua_pop(m_script, 1);
-        if (complete) {
+    lua_State* script = m_script;
+    lua_getglobal(script, "CheckFunc");
+    if (lua_isfunction(script, -1)) {
+        luabridge::TypeTable::tdstack<CChallengeStats>::push(script, *CBH_Player::GetInstance()->m_challengeStats, 0);
+        if (lua_pcall(script, 1, 1, 0) == 0 && lua_toboolean(script, -1) > 0) {
             OnComplete();
         }
+    } else {
+        lua_pop(script, 1);
     }
 }
 
@@ -294,15 +292,16 @@ void CChallenge::UpdateRewards() const
 void CChallenge::OnComplete()
 {
     UpdateRewards();
-    m_rewards[0]->m_awarded = true;
-    m_completedAt = CStdUtil_Cocoa::GetTimeSeconds();
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    GiveReward(m_rewards[0]);
-    SendCompletionMessageToFriends();
-    CheckDelayedReward(m_rewards[1]->m_friendId);
-    CheckDelayedReward(m_rewards[2]->m_friendId);
-    CGameAnalytics::logChalengeCompleted(CGameAnalytics::CHALLENGE_COMPLETE_SOLO);
-    app->m_challengeManager->Save();
+    if (!m_rewards[0]->m_awarded) {
+        m_rewards[0]->m_awarded = true;
+        GiveReward(m_rewards[0]);
+        m_completedAt = CStdUtil_Cocoa::GetTimeSeconds();
+        SendCompletionMessageToFriends();
+        CheckDelayedReward(m_rewards[1]->m_friendId);
+        CheckDelayedReward(m_rewards[2]->m_friendId);
+        CGameAnalytics::logChalengeCompleted(CGameAnalytics::CHALLENGE_COMPLETE_SOLO);
+        static_cast<App*>(WindowApp::m_instance)->m_challengeManager->Save();
+    }
 }
 
 void CChallenge::SendCompletionMessageToFriends()
@@ -319,19 +318,23 @@ void CChallenge::SendCompletionMessage(int friendId)
     }
     CNGSLocalUser* local = CNGS::GetInstance()->GetLocalUser();
     CNGSRemoteUserList* friends = local->m_remoteUserLists[0];
-    CNGSRemoteUser* receiver = friends->findRemoteUserByID(friendId);
-    if (receiver == NULL) {
-        return;
+    for (int index = 0; index < friends->m_users.Size(); ++index) {
+        CNGSRemoteUser* receiver = friends->m_users[index];
+        if (receiver->GetClientID() == friendId) {
+            XString id = XString::Format(L"%i", m_id);
+            CObjectMapString payload(CStrWChar(id.c_str()));
+            XString message = XString::Format(Window::ResString("IDS_CHALLENGE_COMPLETE_PUSH_TEXT").c_str(),
+                                               local->GetNickName().GetWCharPtr(), m_name.c_str());
+            XString button = Window::ResString("IDS_CHALLENGE_PUSH_BUTTON");
+            // The original keeps the heap-allocated push details after sending.
+            CNGSPushNotificationDetails* details = new CNGSPushNotificationDetails;
+            XString::AnsiString alertText(message.c_str());
+            XString::AnsiString buttonText(button.c_str());
+            details->m_buttonText.Concatenate(buttonText);
+            details->m_alertText.Concatenate(alertText);
+            receiver->SendMessage(&payload, ChallengeMessageDurationSeconds, ChallengeCompletedMessage, true, details);
+        }
     }
-    XString id(m_id);
-    CObjectMapString payload(CStrWChar(id.c_str()));
-    XString format = Window::ResString("IDS_CHALLENGE_COMPLETE_PUSH_TEXT");
-    CStrWChar nickname = local->GetNickName();
-    XString message = XString::Format(format.c_str(), nickname.GetWCharPtr(), m_name.c_str());
-    CNGSPushNotificationDetails details;
-    details.m_buttonText = Window::ResString("IDS_CHALLENGE_PUSH_BUTTON").c_str();
-    details.m_alertText = message.c_str();
-    receiver->SendMessage(&payload, ChallengeMessageDurationSeconds, ChallengeCompletedMessage, true, &details);
 }
 
 void CChallenge::FriendInvited(int friendId)
@@ -385,28 +388,33 @@ void CChallenge::CheckDelayedReward(int friendId)
 
 bool CChallenge::FriendCompleteChallenge(int friendId)
 {
-    if (friendId <= 0) {
-        return false;
-    }
+    bool gaveReward = false;
     SChallengeReward* reward = GetRewardForFriend(friendId);
-    if (reward == NULL || reward->m_awarded) {
-        return false;
-    }
-    if (reward->m_friendId == -1) {
-        reward->m_friendId = friendId;
-        reward->m_friendName = CGServeHelper::GetFriendNickname(friendId);
-        CGameAnalytics::EChallengeCompleteState state = CGameAnalytics::CHALLENGE_COMPLETE_TWO_FRIENDS;
-        if (reward == m_rewards[1]) {
-            CBH_Player* player = CBH_Player::GetInstance();
-            ++player->m_gameStats.m_coopsCompleted;
-            player->Save();
-            state = CGameAnalytics::CHALLENGE_COMPLETE_ONE_FRIEND;
+    if (reward != NULL) {
+        XString nickname = CGServeHelper::GetFriendNickname(friendId);
+        int firstFriend = m_rewards[1]->m_friendId;
+        if (firstFriend == -1 && firstFriend != friendId) {
+            m_rewards[1]->m_friendId = friendId;
+            m_rewards[1]->m_friendName = nickname;
+            ++CBH_Player::GetInstance()->m_gameStats.m_coopsCompleted;
+            CGameAnalytics::logChalengeCompleted(CGameAnalytics::CHALLENGE_COMPLETE_ONE_FRIEND);
+        } else {
+            int secondFriend = m_rewards[2]->m_friendId;
+            if (secondFriend == friendId && secondFriend == -1 && firstFriend != friendId) {
+                m_rewards[2]->m_friendId = friendId;
+                m_rewards[2]->m_friendName = nickname;
+                CGameAnalytics::logChalengeCompleted(CGameAnalytics::CHALLENGE_COMPLETE_TWO_FRIENDS);
+            }
         }
-        CGameAnalytics::logChalengeCompleted(state);
+        UpdateRewards();
+        gaveReward = m_rewards[0]->m_awarded;
+        if (gaveReward) {
+            GiveReward(reward);
+            reward->m_awarded = true;
+        }
     }
-    CheckDelayedReward(friendId);
     static_cast<App*>(WindowApp::m_instance)->m_challengeManager->Save();
-    return reward->m_awarded;
+    return gaveReward;
 }
 
 void CChallenge::GiveReward(const SChallengeReward* reward) const

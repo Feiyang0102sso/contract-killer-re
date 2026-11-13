@@ -68,23 +68,27 @@ void CScrollWindow::Update()
     }
     int elapsed = WindowApp::m_instance->m_updateFrameTime;
     m_touchElapsed += elapsed;
-    int step = 30 * App::Scale();
+    int scale = App::Scale();
     m_touch.TouchUpdate(elapsed);
+    int step = scale * 30;
     PointerEventController::Position position = { 0, 0 };
     PointerEventController::Event event(position, 0, 0, PointerEventController::EVENT_NONE);
-    while (m_touch.GetEvent(event)) {
+    while (m_touch.GetEvent(event) == true) {
         if (event.m_type == PointerEventController::EVENT_UP) {
             return;
         }
         if (event.m_type == PointerEventController::EVENT_MOVE) {
             m_lastDeltaX = event.m_deltaX;
-            MoveContents(m_lastDeltaX, 0);
+            MoveContents(event.m_deltaX, 0);
         }
     }
 
-    Window* page = m_pages[m_pageIndex];
-    int offset = page->m_x;
     if (m_scrollState == MovingToPrevious) {
+        Window* page = NULL;
+        if (m_pages.size() != 0 && m_pageIndex < m_pages.size()) {
+            page = m_pages[m_pageIndex];
+        }
+        int offset = page->m_x;
         if (offset + step >= 0) {
             MoveContents(-offset, 0);
             SetState(Idle);
@@ -92,6 +96,11 @@ void CScrollWindow::Update()
             MoveContents(step, 0);
         }
     } else if (m_scrollState == MovingToNext) {
+        Window* page = NULL;
+        if (m_pages.size() != 0 && m_pageIndex < m_pages.size()) {
+            page = m_pages[m_pageIndex];
+        }
+        int offset = page->m_x;
         if (offset - step <= 0) {
             MoveContents(-offset, 0);
             SetState(Idle);
@@ -99,20 +108,23 @@ void CScrollWindow::Update()
             MoveContents(-step, 0);
         }
     } else if (m_released) {
-        if (offset < 0) {
-            int correction = -offset;
-            if (step < correction) {
-                correction = step;
-            }
-            MoveContents(correction, 0);
+        Window* page = NULL;
+        if (m_pages.size() != 0 && m_pageIndex < m_pages.size()) {
+            page = m_pages[m_pageIndex];
         }
-        offset = page->m_x;
-        if (offset > 0) {
-            int correction = offset;
+        if (page->m_x < 0) {
+            float correction = fabsf(page->m_x);
             if (step < correction) {
                 correction = step;
             }
-            MoveContents(-correction, 0);
+            MoveContents(static_cast<int>(correction), 0);
+        }
+        if (page->m_x > 0) {
+            float correction = fabsf(page->m_x);
+            if (step < correction) {
+                correction = step;
+            }
+            MoveContents(static_cast<int>(-correction), 0);
         }
     }
     UpdatePager();
@@ -128,13 +140,11 @@ void CScrollWindow::MoveContents(int x, int)
 
 void CScrollWindow::SetState(int state)
 {
-    if (m_showArrows) {
-        if (state == MovingToNext || state == MovingToPrevious) {
-            HideArrows();
-        }
-        if (state == Idle && (m_scrollState == MovingToNext || m_scrollState == MovingToPrevious)) {
-            ShowArrows();
-        }
+    if ((state == MovingToPrevious && m_showArrows) || (state == MovingToNext && m_showArrows)) {
+        HideArrows();
+    }
+    if (state == Idle && m_showArrows && (m_scrollState == MovingToNext || m_scrollState == MovingToPrevious)) {
+        ShowArrows();
     }
     m_scrollState = state;
 }
@@ -143,11 +153,9 @@ void CScrollWindow::UpdatePager()
 {
     m_pager->CloseChilds();
     for (int index = 0; index < m_pages.size(); ++index) {
-        const char* asset = "SUR_BOUNTY_SCROLL_WINDOW_SCROLL_OFF";
-        if (index == m_pageIndex) {
-            asset = "SUR_BOUNTY_SCROLL_WINDOW_SCROLL_ON";
-        }
-        ImageWindow* indicator = new ImageWindow(ImageWindow::FILL_NONE, ImageRes(asset));
+        ImageWindow* indicator = new ImageWindow(ImageWindow::FILL_NONE,
+            ImageRes(index == m_pageIndex ? "SUR_BOUNTY_SCROLL_WINDOW_SCROLL_ON"
+                                           : "SUR_BOUNTY_SCROLL_WINDOW_SCROLL_OFF"));
         indicator->SetCellPos(index, 0, 1, 1);
         if (index < m_pages.size() - 1) {
             indicator->SetOutsetSpacing(0, 5, 0, 0);
@@ -166,9 +174,9 @@ void CScrollWindow::OnKeyPressed(Event&)
 
 void CScrollWindow::OnPointerEvent(Event& event)
 {
-    int x = event.m_param1;
-    int y = event.m_param2;
     if (event.m_type == Event::POINTER_PRESSED) {
+        int x = event.m_param1;
+        int y = event.m_param2;
         m_touch.TouchDown(x, y);
         m_touchX = x;
         m_touchY = y;
@@ -176,25 +184,28 @@ void CScrollWindow::OnPointerEvent(Event& event)
         m_touchElapsed = 0;
         return;
     }
-    if (m_released) {
-        return;
-    }
     if (event.m_type == Event::POINTER_RELEASED) {
-        m_touch.TouchUp();
-        m_released = true;
-        m_dragDistance = static_cast<int>(fabsf(x - m_touchX) + fabsf(y - m_touchY));
-        if (m_dragDistance <= 20 * App::Scale()) {
+        if (m_released) {
             return;
         }
-    } else if (event.m_type == Event::POINTER_DRAGGED) {
-        m_touch.TouchMove(x, y);
+        m_touch.TouchUp();
+        m_released = true;
+        int distance = static_cast<int>(fabsf(event.m_param1 - m_touchX) + fabsf(event.m_param2 - m_touchY));
+        m_dragDistance = distance;
+        if (distance <= 20 * App::Scale()) {
+            return;
+        }
+    } else {
+        if (event.m_type != Event::POINTER_DRAGGED || m_released) {
+            return;
+        }
+        int x = event.m_param1;
+        m_touch.TouchMove(x, event.m_param2);
         if (GlobalToLocalX(x) > 4) {
             return;
         }
-        m_dragDistance = static_cast<int>(fabsf(x - m_touchX) + fabsf(y - m_touchY));
+        m_dragDistance = static_cast<int>(fabsf(event.m_param1 - m_touchX) + fabsf(event.m_param2 - m_touchY));
         m_released = true;
-    } else {
-        return;
     }
     PointerReleased();
 }
@@ -205,15 +216,12 @@ void CScrollWindow::PointerReleased()
         return;
     }
     float distance = static_cast<float>(m_dragDistance);
-    float velocity = fabsf(distance / static_cast<float>(m_touchElapsed));
-    if (velocity >= 0.0f) {
-        if (velocity > 2.0f) {
-            velocity = 2.0f;
-        }
-    } else {
-        velocity = 0.0f;
+    m_releaseVelocity = fabsf(distance / static_cast<float>(m_touchElapsed));
+    if (m_releaseVelocity < 0.0f) {
+        m_releaseVelocity = 0.0f;
+    } else if (2.0f < m_releaseVelocity) {
+        m_releaseVelocity = 2.0f;
     }
-    m_releaseVelocity = velocity;
     int halfScreen = WindowApp::m_instance->m_screenWidth / 2;
     if (fabsf(distance) < halfScreen && m_releaseVelocity < SwipeVelocity) {
         return;
@@ -233,11 +241,12 @@ void CScrollWindow::OnUnhandledEvent(Event& event)
 }
 
 CScrollWindow::CScrollWindow(bool showArrows)
-    : Window(false), m_previousPageOffset(0), m_scrollState(Idle), m_pageIndex(0),
-      m_lastDeltaX(0), m_dragDistance(0), m_touchElapsed(0), m_contents(NULL),
-      m_touchX(0), m_touchY(0), m_pager(NULL), m_pagerPage(-1), m_listener(NULL),
-      m_released(true), m_showArrows(showArrows), m_leftArrow(NULL), m_rightArrow(NULL)
+    : Window(false), m_scrollState(Idle), m_pageIndex(0), m_lastDeltaX(0),
+      m_touchElapsed(0), m_pager(NULL), m_pagerPage(-1), m_listener(NULL), m_released(true),
+      m_showArrows(showArrows), m_leftArrow(NULL), m_rightArrow(NULL)
 {
+    // The first update can run before any touch, and a drag can end before a move is consumed.
+    // Keep the initial idle state and zero touch counters explicit.
     m_reserved104[0] = 0;
     m_reserved104[1] = 0;
     Init(false);
@@ -263,25 +272,19 @@ void CScrollWindow::Init(bool)
     CImageButton* left = new CImageButton();
     m_leftArrow = left;
     left->AddImage("IDB_MENU_ARROW_LEFT", 0, 0);
-    left->SetAlign(ALIGN_LEFT | ALIGN_VCENTER);
-    left->m_command = PreviousCommand;
-    left->m_commandParameter1 = 0;
-    left->m_commandParameter2 = 0;
-    left->m_commandParameter3 = 0;
-    left->ClearFlags(ArrowFlags);
-    AddToFront(left);
+    m_leftArrow->SetAlign(ALIGN_LEFT | ALIGN_VCENTER);
+    static_cast<CImageButton*>(m_leftArrow)->SetCommandParameters(PreviousCommand, 0, 0, 0);
+    m_leftArrow->ClearFlags(ArrowFlags);
+    AddToFront(m_leftArrow);
 
     CImageButton* right = new CImageButton();
     m_rightArrow = right;
     right->AddImage("IDB_MENU_ARROW_RIGHT", 0, 0);
-    right->SetLayoutType(LAYOUT_SIMPLE);
-    right->SetAlign(ALIGN_RIGHT | ALIGN_VCENTER);
-    right->m_command = NextCommand;
-    right->m_commandParameter1 = 0;
-    right->m_commandParameter2 = 0;
-    right->m_commandParameter3 = 0;
-    right->ClearFlags(ArrowFlags);
-    AddToFront(right);
+    m_rightArrow->SetLayoutType(LAYOUT_SIMPLE);
+    m_rightArrow->SetAlign(ALIGN_RIGHT | ALIGN_VCENTER);
+    static_cast<CImageButton*>(m_rightArrow)->SetCommandParameters(NextCommand, 0, 0, 0);
+    m_rightArrow->ClearFlags(ArrowFlags);
+    AddToFront(m_rightArrow);
 }
 
 void CScrollWindow::ScrollLeftRight()
@@ -321,13 +324,14 @@ void CScrollWindow::SendEventToListener(unsigned int command)
 void CScrollWindow::FlushPages()
 {
     for (int index = 0; index < m_pages.size(); ++index) {
-        Window* page = m_pages[index];
-        page->Close();
-        page->HandleUpdate(true);
-        page->HandleUpdate(true);
+        m_pages[index]->Close();
+        m_pages[index]->HandleUpdate(true);
+        m_pages[index]->HandleUpdate(true);
     }
-    m_pages.removeAllElements();
+    m_pages.free_all_items();
     m_pagerPage = -1;
+    m_pages.m_size = 0;
+    m_pages.m_capacity = 0;
     m_pageIndex = 0;
     HideArrows();
 }

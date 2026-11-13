@@ -60,7 +60,6 @@ const int InviteFacebook = (int)0xa8848c82;
 const int InviteSms = (int)0x8848ddb6;
 const int InviteMail = (int)0x848c14b4;
 const int RefreshNewsFeed = 0x6e7d5209;
-const int TabChanged = 0x5ce88d33;
 const int StartGameCenterLogin = 0x5be239f5;
 const int StartFacebookLogin = (int)0xc7b99831;
 const int SelectCoopTab = (int)0xa2457dae;
@@ -71,10 +70,9 @@ const int LoginFailedFirst = (int)0xf8a2664c;
 const int LoginFailedSecond = (int)0xf8a2664d;
 const unsigned int GiftDurationSeconds = 7 * 24 * 60 * 60;
 
-CNGSRemoteUserList* GetFriendList()
+App* GetApp()
 {
-    CNGSLocalUser* local = CNGS::GetInstance()->GetLocalUser();
-    return local->m_remoteUserLists[0];
+    return static_cast<App*>(WindowApp::m_instance);
 }
 
 }
@@ -569,8 +567,10 @@ void CFriendsWindow::ShowSelectGiftRecipient()
                 picker->SetCommand(SendGift);
                 dialog = picker;
             }
-            CStrWChar nickName = user->GetNickName();
-            static_cast<CIncentivizedWindow*>(dialog)->AddFriend(XString(nickName.GetWCharPtr()), rowCount);
+            {
+                CStrWChar nickName = user->GetNickName();
+                static_cast<CIncentivizedWindow*>(dialog)->AddFriend(XString(nickName.GetWCharPtr()), rowCount);
+            }
             if (m_selectingGiftRecipient && m_giftRecipientId == user->GetClientID()) {
                 static_cast<CIncentivizedWindow*>(dialog)->SelectCheckBox(rowCount);
             }
@@ -588,37 +588,50 @@ void CFriendsWindow::ShowSelectGiftRecipient()
 
 void CFriendsWindow::ShowFacebookInviteFriendsWindow()
 {
-    CNGSSocialInterface* facebook = CNGS_Platform::GetInstance()->getSocialInterface(SOCIAL_INTERFACE_FACEBOOK);
-    COfferManager* offers = COfferManager::GetInstance();
     m_facebookInviteIds.Clear();
-    CIncentivizedWindow* picker = NULL;
-    if (facebook != NULL && offers->isInitialized() && offers->setOfferId(FacebookInviteOffer)
-        && offers->m_offers[offers->m_selectedOfferIndex]->m_featureType == CDataOffer::FEATURE_TYPE_INVITE) {
+    CNGSSocialInterface* facebook = CNGS_Platform::GetInstance()->getSocialInterface(SOCIAL_INTERFACE_FACEBOOK);
+    CNGSRemoteUserList* friends = CNGS::GetInstance()->GetLocalUser()->m_remoteUserLists[0];
+    COfferManager::GetInstance()->setOfferId(FacebookInviteOffer);
+    CIncentivizedWindow* picker = new CIncentivizedWindow(ResString("IDS_INVITE_BUTTON_NAME"));
+    picker->SetSingleSelection();
+    picker->SetTitleText(ResString("IDS_FRIENDS_INVITE"));
+    picker->SetCommand(SendFacebookInvitations);
+
+    int added = 0;
+    if (COfferManager::GetInstance()->isInitialized()) {
         for (int index = 0; index < facebook->getFriendsCount(); ++index) {
-            CStrWChar id = facebook->getFriendIDFromSortedListAtIndex(index);
             CStrWChar name = facebook->getFriendNameFromSortedListAtIndex(index);
-            if (id.GetLength() == 0 || name.GetLength() == 0 || offers->isAlreadyPlayingGame(SOCIAL_INTERFACE_FACEBOOK, &id)
-                || offers->wasPreviouslyInvited(SOCIAL_INTERFACE_FACEBOOK, &id)) {
-                continue;
+            CStrWChar id = facebook->getFriendIDFromSortedListAtIndex(index);
+            int friendIndex = 0;
+            for (; friendIndex < friends->m_users.Size(); ++friendIndex) {
+                CNGSRemoteUser* friendUser = friends->m_users[friendIndex];
+                if (friendUser->IsFromSocialNetwork(SOCIAL_INTERFACE_FACEBOOK)) {
+                    CStrWChar friendId = friendUser->GetIDForSocialNetwork(SOCIAL_NETWORK_FACEBOOK);
+                    if (id == friendId) {
+                        break;
+                    }
+                }
             }
-            if (picker == NULL) {
-                picker = new CIncentivizedWindow(ResString("IDS_INVITE_BUTTON_NAME"));
-                picker->SetTitleText("IDS_FRIENDS_INVITE");
-                picker->SetCommand(SendFacebookInvitations);
+            CStrWChar inviteId = facebook->getFriendIDFromSortedListAtIndex(index);
+            int previouslyInvited = COfferManager::GetInstance()->wasPreviouslyInvited(SOCIAL_INTERFACE_FACEBOOK, &inviteId);
+            if (friendIndex >= friends->m_users.Size() && previouslyInvited == 0) {
+                ++added;
+                picker->AddFriend(XString(name.GetWCharPtr()), m_facebookInviteIds.Size());
+                m_facebookInviteIds.Add(id);
             }
-            picker->AddFriend(name.GetWCharPtr(), m_facebookInviteIds.Size());
-            m_facebookInviteIds.Add(id);
         }
     }
-    if (picker != NULL) {
-        AddModal(picker);
-        return;
+
+    CDialogWindow* dialog = picker;
+    if (added == 0) {
+        CTextDialog* warning = new CTextDialog();
+        warning->SetMessageText(ResString("IDS_FRIENDS_NO_FRIENDS_TO_INVITE_TEXT"));
+        warning->SetTitleText(ResString("IDS_FRIENDS_NO_FRIENDS_TO_INVITE_TITLE"));
+        warning->SetButtons(CDialogWindow::BUTTON_OK);
+        GetApp()->m_mainLayer->AddModal(warning);
+    } else {
+        GetApp()->m_mainLayer->AddModal(dialog);
     }
-    CTextDialog* dialog = new CTextDialog();
-    dialog->SetTitleText("IDS_FRIENDS_NO_FRIENDS_TO_INVITE_TITLE");
-    dialog->SetMessageText(ResString("IDS_FRIENDS_NO_FRIENDS_TO_INVITE_TEXT"));
-    dialog->SetButtons(CDialogWindow::BUTTON_OK);
-    AddModal(dialog);
 }
 
 void CFriendsWindow::HandleFacebookInvitation(CIncentivizedWindow* picker)
@@ -626,125 +639,110 @@ void CFriendsWindow::HandleFacebookInvitation(CIncentivizedWindow* picker)
     if (picker == NULL) {
         return;
     }
-    Vector<int> selected = picker->GetSelectedIds();
-    if (selected.size() == 0) {
-        return;
-    }
-    picker->Close();
+
+    CStrWChar description(ResString("IDS_FB_DESCRIPTION").c_str());
+    CStrWChar link(L"http://gcs.glu.com/gcs/iphone/iphone.jsp?t=bounty&src=facebook&p=iphone");
+    CStrWChar message(ResString("IDS_FB_SHARE_INVITE").c_str());
+    CStrWChar picture(L"http://gcs.glu.com/gcs/images/ContractKiller_114icon.jpg");
+    CStrWChar caption(ResString("IDS_FB_CAPTION").c_str());
+    CStrWChar name(ResString("IDS_FB_LINK_DESC").c_str());
+    CStrWChar privacy(L"");
+
     COfferManager* offers = COfferManager::GetInstance();
-    if (!offers->setOfferId(FacebookInviteOffer)
-        || offers->m_offers[offers->m_selectedOfferIndex]->m_featureType != CDataOffer::FEATURE_TYPE_INVITE) {
-        WindowApp::HandleTunnelCommand(FacebookInviteFailed, 0, 0, 0);
-        return;
-    }
-    int queued = 0;
-    for (int index = 0; index < selected.size(); ++index) {
-        int idIndex = selected[index];
-        if (idIndex >= 0 && idIndex < m_facebookInviteIds.Size()) {
-            const CStrWChar& id = m_facebookInviteIds[idIndex];
-            if (offers->queueInvite(SOCIAL_INTERFACE_FACEBOOK, &id, false) == 0) {
-                ++queued;
+    offers->setOfferId(FacebookInviteOffer);
+    if (offers->m_offers.Size() > 0) {
+        int incentiveOffer = -1;
+        for (int index = 0; index < offers->m_offers.Size(); ++index) {
+            offers->setOfferIndex(index);
+            if (offers->offerHasFriendInviteIncentive()) {
+                incentiveOffer = index;
             }
         }
-    }
-    m_facebookInviteIds.Clear();
-    if (queued > 0) {
-        CStrWChar message(ResString("IDS_FB_SHARE_INVITE").c_str());
-        CStrWChar link(L"http://gcs.glu.com/gcs/iphone/iphone.jsp?t=bounty&src=facebook&p=iphone");
-        CStrWChar description(ResString("IDS_FB_DESCRIPTION").c_str());
-        CStrWChar picture(L"http://gcs.glu.com/gcs/images/ContractKiller_114icon.jpg");
-        CStrWChar name(ResString("IDS_FB_LINK_DESC").c_str());
-        CStrWChar caption(ResString("IDS_FB_CAPTION").c_str());
-        CStrWChar privacy(L"");
-        CGameAnalytics::logFriendInvited(queued, GetNonPlayingFriendsCount());
-        CWaitWindow* wait = new CWaitWindow();
-        wait->SetBackgroundColor(0x64000000);
-        m_waitWindow = wait;
-        m_sentInviteCount = queued;
-        AddModal(wait);
-        if (offers->sendQueuedInvitations(&message, &link, &name, &caption, &description, &picture, &privacy) == 0) {
-            return;
+        if (incentiveOffer != -1) {
+            offers->setOfferIndex(incentiveOffer);
         }
     }
-    WindowApp::HandleTunnelCommand(FacebookInviteFailed, 0, 0, 0);
-}
 
-void CFriendsWindow::CloseInviteWait()
-{
-    if (m_sentInviteCount == 0) {
-        return;
+    Vector<int> selected = picker->GetSelectedIds();
+    unsigned char queued = 0;
+    for (int index = 0; index < selected.size(); ++index) {
+        CStrWChar id;
+        id.Concatenate(m_facebookInviteIds[selected[index]].GetWCharPtr());
+        if (offers->queueInvite(SOCIAL_INTERFACE_FACEBOOK, &id, false) == 0) {
+            XString invitedName;
+            CNGSSocialInterface* facebook = CNGS_Platform::GetInstance()->getSocialInterface(SOCIAL_INTERFACE_FACEBOOK);
+            {
+                CStrWChar friendName = facebook->getFriendNameFromSortedListWithId(id);
+                const wchar_t* text = friendName.GetWCharPtr();
+                queued = 1;
+                invitedName.Assign(text, wcslen(text) * sizeof(wchar_t));
+            }
+            CGameAnalytics::logFriendInvited(invitedName);
+        }
     }
-    Window* wait = m_waitWindow;
-    m_sentInviteCount = 0;
-    if (IsChildExisting(wait)) {
-        wait->CloseSafely();
+
+    GetNonPlayingFriendsCount();
+    CGameAnalytics::logFriendInvited(selected.size(), 0);
+    picker->Close();
+    if (queued) {
+        if (selected.size() > 0) {
+            COfferManager::GetInstance()->sendQueuedInvitations(
+                &message, &link, &name, &caption, &description, &picture, &privacy);
+        }
+        m_waitWindow = new CWaitWindow();
+        static_cast<CWaitWindow*>(m_waitWindow)->SetBackgroundColor(0x64000000);
+        GetApp()->m_mainLayer->AddModal(m_waitWindow);
+        m_sentInviteCount = selected.size();
+    } else {
+        WindowApp::HandleTunnelCommand(FacebookInviteFailed, 0, 0, 0);
     }
 }
 
 void CFriendsWindow::HandleGiftSending(CIncentivizedWindow* picker)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    SGift* gift = app->m_socialGiftManager->GetGift(m_giftIndex);
-    if (gift == NULL || gift->m_hidden || !App::IsNetTimeAvailable()) {
-        picker->Close();
-        return;
-    }
-    CItem* item = gift->GetItem();
-    if (item == NULL) {
-        picker->Close();
-        return;
-    }
-    Vector<int> selected = picker->GetSelectedIds();
-    if (selected.size() == 0) {
+    if (picker == NULL) {
         return;
     }
 
-    CBH_Player* player = CBH_Player::GetInstance();
+    Vector<int> selected = picker->GetSelectedIds();
     CNGSLocalUser* local = CNGS::GetInstance()->GetLocalUser();
-    CNGSRemoteUserList* friends = local->m_remoteUserLists[0];
-    CStrWChar sender = local->GetNickName();
-    XString message = XString::Format(L"%ls sent you a gift! It's %ls", sender.GetWCharPtr(), item->GetName().c_str());
-    int today = App::GetCurrentDay();
-    int sent = 0;
-    for (int index = 0; index < selected.size(); ++index) {
-        // Picker rows map to friend list indices through m_giftRecipients (original layout 0x110).
-        int row = selected[index];
-        if (row < 0 || row >= m_giftRecipients.size()) {
-            continue;
-        }
-        CNGSRemoteUser* receiver = friends->m_users[m_giftRecipients[row]];
-        int friendId = receiver->GetClientID();
-        if (player->GetFriendGiftLastDay(friendId) < today) {
-            receiver->SendGift(CStrWChar(message.c_str()), m_giftIndex + 1, 1, GiftDurationSeconds, false, false, NULL);
-            player->SetFriendGiftLastDay(friendId, today);
-            CGameAnalytics::logGiftSentIngame(friendId, item->GetName());
-            ++sent;
+    if (selected.size() > 0) {
+        CNGSRemoteUserList* friends = local->m_remoteUserLists[0];
+        local = CNGS::GetInstance()->GetLocalUser();
+        for (int index = 0; index < selected.size(); ++index) {
+            SGift* gift = GetApp()->m_socialGiftManager->GetGift(m_giftIndex);
+            if (gift == NULL) {
+                continue;
+            }
+            CItem* item = gift->GetItem();
+            CStrWChar itemName(item->GetName().c_str());
+            CStrWChar giftText(" sent you a gift! It's ");
+            CStrWChar message = local->GetNickName() + giftText + itemName;
+            // Picker rows map to friend list indices through m_giftRecipients (original layout 0x110).
+            int row = selected[index];
+            if (row >= 0 && row < m_giftRecipients.size()) {
+                int recipientIndex = m_giftRecipients[row];
+                friends->m_users[recipientIndex]->SendGift(message, m_giftIndex + 1, 1, GiftDurationSeconds, false, false, NULL);
+                CNGSRemoteUser* recipient = friends->m_users[recipientIndex];
+                int friendId = recipient->GetClientID();
+                int today = App::GetCurrentDay();
+                CBH_Player::GetInstance()->SetFriendGiftLastDay(friendId, today);
+                CGameAnalytics::logGiftSentIngame(recipient->GetClientID(), item->GetName());
+            }
         }
     }
-    picker->Close();
+
     CTextDialog* dialog = new CTextDialog();
-    if (sent > 0) {
-        dialog->SetTitleText("IDS_GIFT_WAS_SENT_CAPTION");
-        dialog->SetMessageText(ResString("IDS_GIFT_WAS_SENT_TEXT"));
-    } else {
-        dialog->SetTitleText("IDS_NONE_FRIENDS_TO_SEND_GIFT_CAPTION");
-        dialog->SetMessageText(ResString("IDS_NONE_FRIENDS_TO_SEND_GIFT_TEXT"));
-    }
+    dialog->SetMessageText(ResString("IDS_GIFT_WAS_SENT_TEXT"));
+    dialog->SetTitleText(ResString("IDS_GIFT_WAS_SENT_CAPTION"));
     dialog->SetButtons(CDialogWindow::BUTTON_OK);
-    app->m_mainLayer->AddModal(dialog);
+    GetApp()->m_mainLayer->AddModal(dialog);
+    picker->Close();
 }
 
 void CFriendsWindow::OnCommand(Event& event)
 {
     switch (event.m_id) {
-    case TabChanged:
-        if (event.m_param1 == NewsTab && m_tabs->m_currentTab == NewsTab && IsVisible()) {
-            App* app = static_cast<App*>(WindowApp::m_instance);
-            if (app->m_newsFeedManager != NULL) {
-                app->m_newsFeedManager->MarkAllMessagesAsRead();
-            }
-        }
-        break;
     case RefreshNewsFeed:
         m_newsFeed->ClearNews();
         FillNewsFeedTab(true);
@@ -757,13 +755,8 @@ void CFriendsWindow::OnCommand(Event& event)
         ShowSelectGiftRecipient();
         break;
     case FacebookInviteSent:
-        if (m_sentInviteCount != 0) {
-            int sent = m_sentInviteCount;
-            CloseInviteWait();
-            ShowFacebookIncentiveWindow(sent);
-            event.Clear();
-        }
-        break;
+        ShowFacebookIncentiveWindow(m_sentInviteCount);
+        goto closeInviteWait;
     case CloseFriends:
         Close();
         break;
@@ -785,20 +778,24 @@ void CFriendsWindow::OnCommand(Event& event)
     case SendGift:
         HandleGiftSending(reinterpret_cast<CIncentivizedWindow*>(event.m_param1));
         break;
-    case LoginFailedFirst:
-        m_loginButton12c->SetText(ResString("IDS_LOG_IN"), 0x24, NULL, 0, 0);
-        m_loginButton12c->SetFont(m_loginFont);
+    case LoginFailedFirst: {
+        CImageButton* button = m_loginButton12c;
+        button->SetText(ResString("IDS_LOG_IN"), 0x24, NULL, 0, 0);
+        button = m_loginButton12c;
+        button->SetFont(m_loginFont);
         break;
-    case LoginFailedSecond:
-        m_loginButton130->SetText(ResString("IDS_LOG_IN"), 0x24, NULL, 0, 0);
-        m_loginButton130->SetFont(m_loginFont);
+    }
+    case LoginFailedSecond: {
+        CImageButton* button = m_loginButton130;
+        button->SetText(ResString("IDS_LOG_IN"), 0x24, NULL, 0, 0);
+        button = m_loginButton130;
+        button->SetFont(m_loginFont);
         break;
+    }
     case SendFacebookInvitations:
-        if (m_sentInviteCount == 0) {
-            m_incentiveShown = false;
-            m_inviteFailShown = false;
-            HandleFacebookInvitation(reinterpret_cast<CIncentivizedWindow*>(event.m_param1));
-        }
+        m_incentiveShown = false;
+        m_inviteFailShown = false;
+        HandleFacebookInvitation(reinterpret_cast<CIncentivizedWindow*>(event.m_param1));
         break;
     case ShowGiftCatalog:
         m_selectingGiftRecipient = true;
@@ -806,15 +803,17 @@ void CFriendsWindow::OnCommand(Event& event)
         m_tabs->SetCurrTab(GiftsTab, false);
         break;
     case FacebookInviteFailed:
-        CloseInviteWait();
         if (!m_inviteFailShown) {
             CTextDialog* dialog = new CTextDialog();
             dialog->SetButtons(CDialogWindow::BUTTON_OK);
             dialog->SetTitleText(ResString("IDS_FRIEND_INVITE_POST_FAIL_TITLE"));
             dialog->SetMessageText(ResString("IDS_FRIEND_INVITE_POST_FAIL_MESSAGE"));
-            static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(dialog);
+            GetApp()->m_mainLayer->AddModal(dialog);
             m_inviteFailShown = true;
         }
+    closeInviteWait:
+        // The original checks the address against the desktop's windows before closing it.
+        m_waitWindow->CloseSafely();
         event.Clear();
         break;
     default:

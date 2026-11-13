@@ -28,7 +28,7 @@ public:
     void PrecacheSound(const char* name);
     void PrecacheKeyset(const char* keySet);
     bool IsPlaying(const char* name);
-    bool IsPaused(const char* name);
+    unsigned char IsPaused(const char* name);
     void Stop(const char* name);
     void Pause(const char* name);
     void Resume(const char* name);

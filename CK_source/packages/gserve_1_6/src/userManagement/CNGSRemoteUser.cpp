@@ -1,5 +1,6 @@
 // CNGSRemoteUser.cpp - another player: lookup by nickname, social network flags and the
 // delivery of its downloaded profile content file.
+#include <wchar.h>
 #include "CNGSRemoteUser.h"
 #include "CNGS.h"
 #include "CNGSLocalUser.h"
@@ -11,6 +12,7 @@
 #include "CProfileDataDescriptor.h"
 #include "CSaveRestoreInterface.h"
 #include "CNotificationHandler.h"
+#include "CNGSAttribute.h"
 #include "CNGSAttributeManager.h"
 #include "CNGSTokens.h"
 #include "CNGSUtil.h"
@@ -141,51 +143,55 @@ void CNGSRemoteUser::HandleDeepPopulateResponse(CObjectMap* response, CNGSRemote
 {
     CAttributeManager* attributes = CAttributeManager::GetInstance();
     unsigned char success = 0;
-    bool pendingFile = false;
     if (WasErrorInResponse(response, functor, "CNGSRemoteUser::HandleDeepPopulateResponse")) {
         m_deepPopulateStatus = 3;
     } else {
-        CHash values;
-        values.Init(20, 20, 1);
-        if (attributes->extractAttributeValuesAsHashMap(response, functor, values) < 1) {
-            m_deepPopulateStatus = 5;
-        } else {
-            success = 1;
-            for (int index = 0; index < m_profileDataLimit; index++) {
-                CSaveRestoreInterface* collection = m_profileData[index];
-                if (collection->getBackingStoreType() != BACKING_STORE_CONTENT_FILE) {
-                    collection->setAllData(&values);
-                }
-            }
-            if (m_includeFiles) {
+        bool foundFile = false;
+        {
+            CHash values;
+            values.Init(20, 20, 1);
+            if (attributes->extractAttributeValuesAsHashMap(response, functor, values) < 1) {
+                m_deepPopulateStatus = 5;
+            } else {
                 for (int index = 0; index < m_profileDataLimit; index++) {
-                    if (m_profileData[index]->getBackingStoreType() == BACKING_STORE_CONTENT_FILE) {
-                        success = downloadFileBackedDataFriend(index);
-                        pendingFile = success != 0;
-                        if (!success) {
-                            m_deepPopulateStatus = 4;
+                    if (m_profileData[index]->getBackingStoreType() != BACKING_STORE_CONTENT_FILE) {
+                        m_profileData[index]->setAllData(&values);
+                    }
+                }
+                if (m_includeFiles) {
+                    for (int index = 0; index < m_profileDataLimit; index++) {
+                        if (m_profileData[index]->getBackingStoreType() == BACKING_STORE_CONTENT_FILE) {
+                            success = downloadFileBackedDataFriend(index);
+                            if (!success) {
+                                m_deepPopulateStatus = 4;
+                            }
+                            foundFile = true;
+                            break;
                         }
-                        break;
+                    }
+                }
+                if (!foundFile) {
+                    success = 1;
+                }
+                for (int bucket = 0; bucket < values.m_bucketCount; bucket++) {
+                    for (CHash::Entry* entry = values.m_buckets[bucket]; entry != NULL; entry = entry->m_next) {
+                        delete static_cast<CNGSAttribute*>(entry->m_value);
                     }
                 }
             }
-            for (int bucket = 0; bucket < values.m_bucketCount; bucket++) {
-                for (CHash::Entry* entry = values.m_buckets[bucket]; entry != NULL; entry = entry->m_next) {
-                    delete static_cast<CNGSAttribute*>(entry->m_value);
-                }
-            }
         }
-        if (pendingFile) {
+        if (foundFile && success != 0) {
             return;
         }
-        if (m_deepPopulateStatus == 2) {
-            m_deepPopulateStatus = 1;
-        }
+    }
+    if (m_deepPopulateStatus == 2) {
+        m_deepPopulateStatus = 1;
     }
 
     CompleteReadRequestOutstanding();
+    unsigned char isFriend = m_isFriendOfLocalUser;
     CNotificationHandler* handler = CNGS::GetInstance()->GetLocalUser()->m_notificationHandler;
-    if (m_isFriendOfLocalUser) {
+    if (isFriend) {
         handler->HandleFriendDeepPopulated(this, success);
     } else {
         handler->HandleGuestDeepPopulated(this, success);
@@ -199,17 +205,36 @@ unsigned char CNGSRemoteUser::downloadFileBackedDataFriend(unsigned int index)
 {
     CNGSContentManager* contentManager = CNGSContentManager::GetInstance();
     CSaveRestoreInterface* collection = m_profileData[index];
-    CStrChar fileName = CNGSUtil::WStrToCStr(collection->getFilename());
+    char fileName[128];
+    size_t length;
+    {
+        CStrWChar wideName = collection->getFilename();
+        const wchar_t* name = wideName.GetWCharPtr();
+        size_t count = wcslen(name);
+        if (count >= sizeof(fileName)) {
+            return 0;
+        }
+        length = wcstombs(fileName, name, count + 1);
+        if (length == (size_t)-1 || length > count) {
+            return 0;
+        }
+        fileName[length] = '\0';
+    }
     CProfileDataDescriptor* descriptor = static_cast<CProfileDataDescriptor*>(collection->getDescriptor());
     if (descriptor != NULL) {
-        char suffix[] = {'.', (char)descriptor->getAB(), '\0'};
-        fileName += suffix;
+        if (length > sizeof(fileName) - 3) {
+            return 0;
+        }
+        fileName[length] = '.';
+        fileName[length + 1] = static_cast<char>(descriptor->getAB());
+        fileName[length + 2] = '\0';
     }
     contentManager->Unlock();
     if (contentManager->getContentManagerStatus() != CONTENT_MANAGER_READY) {
         return 0;
     }
-    contentManager->GetRemoteUserContentFriend(GetClientID(), fileName.GetCharPtr());
+    contentManager->GetRemoteUserContentFriend(GetClientID(), fileName);
+    // A ready manager can still refuse the request if it already holds a pending request.
     if (contentManager->m_transport == NULL) {
         contentManager->m_isFriendContent = 0;
         return 0;

@@ -8,6 +8,7 @@
 #include "CAchievementManager.h"
 #include "CAvatarManager.h"
 #include "CBH_Math.h"
+#include "CBH_GPSMap.h"
 #include "CBH_Player.h"
 #include "CBH_PersonType.h"
 #include "CBH_PersonTypeManager.h"
@@ -564,7 +565,11 @@ void CSwerveGame::UpdateUnits(int elapsed)
                 AvoidCollision(unit);
                 if (unit->m_type == UnitBoss) {
                     // the popup "boss is running away" is shown while a living boss escapes
-                    m_bossRunningAway = !unit->m_dead && !unit->m_invulnerable && unit->m_runningAway;
+                    if (!unit->m_dead && !unit->m_invulnerable && unit->m_runningAway) {
+                        m_bossRunningAway = true;
+                    } else {
+                        m_bossRunningAway = false;
+                    }
                 }
                 CheckVisibility(unit);
                 unit->Tick(elapsed);
@@ -573,8 +578,9 @@ void CSwerveGame::UpdateUnits(int elapsed)
     }
     UpdateAutoAim(elapsed);
     if (aimedUnit != NULL && aimedUnit == m_aimedUnit) {
-        m_aimedTimeMs += elapsed;
-        if (m_aimedTimeMs > static_cast<App*>(WindowApp::m_instance)->InitProgressSystem()->GetTaggingTimeMS()) {
+        int aimedTime = m_aimedTimeMs + elapsed;
+        m_aimedTimeMs = aimedTime;
+        if (aimedTime > static_cast<App*>(WindowApp::m_instance)->InitProgressSystem()->GetTaggingTimeMS()) {
             m_aimedTimeMs = 0;
             ShowUnitInfo(aimedUnit, 0);
         }
@@ -724,38 +730,38 @@ void CSwerveGame::UpdateAutoAim(int elapsed)
             }
         }
     }
-    if (target == NULL) {
+    if (target != NULL) {
+        float speed = elapsed * 0.005f;
+        float horizontalStep = speed * MathLib::Fabs(bestHorizontal);
+        if (MathLib::Fabs(horizontalStep) < 0.01f) {
+            horizontalStep = 0.0f;
+        }
+        if (MathLib::Fabs(bestHorizontal) >= horizontalStep) {
+            horizontalStep += m_previousAutoAimHorizontal * -0.05f;
+            float delta = horizontalStep;
+            if (bestHorizontal > 0.0f) {
+                delta = -horizontalStep;
+            }
+            m_camera->SetAngleH(m_camera->m_field0c + delta, true);
+        }
+        float verticalStep = speed * MathLib::Fabs(bestVertical);
+        if (MathLib::Fabs(verticalStep) < 0.01f) {
+            verticalStep = 0.0f;
+        }
+        if (MathLib::Fabs(bestVertical) >= verticalStep) {
+            verticalStep += m_previousAutoAimVertical * -0.05f;
+            float delta = verticalStep;
+            if (bestVertical > 0.0f) {
+                delta = -verticalStep;
+            }
+            m_camera->SetAngleV(m_camera->m_field1c + delta, true);
+        }
+        m_previousAutoAimHorizontal = horizontalStep;
+        m_previousAutoAimVertical = verticalStep;
+    } else {
         m_previousAutoAimHorizontal = 0.0f;
         m_previousAutoAimVertical = 0.0f;
-        return;
     }
-    float speed = elapsed * 0.005f;
-    float horizontalStep = speed * fabsf(bestHorizontal);
-    if (fabsf(horizontalStep) < 0.01f) {
-        horizontalStep = 0.0f;
-    }
-    if (fabsf(bestHorizontal) >= horizontalStep) {
-        horizontalStep += m_previousAutoAimHorizontal * -0.05f;
-        float delta = horizontalStep;
-        if (bestHorizontal > 0.0f) {
-            delta = -horizontalStep;
-        }
-        m_camera->SetAngleH(m_camera->m_field0c + delta, true);
-    }
-    float verticalStep = speed * fabsf(bestVertical);
-    if (fabsf(verticalStep) < 0.01f) {
-        verticalStep = 0.0f;
-    }
-    if (fabsf(bestVertical) >= verticalStep) {
-        verticalStep += m_previousAutoAimVertical * -0.05f;
-        float delta = verticalStep;
-        if (bestVertical > 0.0f) {
-            delta = -verticalStep;
-        }
-        m_camera->SetAngleV(m_camera->m_field1c + delta, true);
-    }
-    m_previousAutoAimHorizontal = horizontalStep;
-    m_previousAutoAimVertical = verticalStep;
 }
 
 void CSwerveGame::UpdateHitechVisor()
@@ -892,22 +898,43 @@ float CSwerveGame::GetDistanceToCollision(float x, float y)
     int screenHeight = helper->m_screenHeight;
     float relativeX = x / screenWidth;
     float relativeY = y / screenHeight;
-    float distance;
-    if (!m_collisionGeometry.pick(-1, relativeX, relativeY, camera, m_collisionIntersection)) {
-        distance = -1.0f;
-    } else {
+    typedef int (*ScreenPick)(IQueryInterface*, int, float, float, IQueryInterface*,
+                              IQueryInterface*, unsigned char*);
+    float distance = -1.0f;
+    unsigned char geometryHit;
+    unsigned char geometryResult;
+    {
+        RayIntersection intersection(m_collisionIntersection);
+        IQueryInterface* geometry = m_collisionGeometry.m_interface;
+        CKMethod<ScreenPick>(geometry, 0xcc)(geometry, -1, relativeX, relativeY, camera.m_interface,
+                                             intersection.m_interface, &geometryHit);
+        geometryResult = geometryHit;
+    }
+    if (geometryResult != 0) {
         if (m_collisionIntersection == NULL) {
-            return -1.0f;
+            return distance;
         }
         distance = m_collisionIntersection.getDistance();
     }
     for (int index = 0; index < m_vehicles.size(); ++index) {
-        if (m_vehicles[index] != NULL) {
-            if (m_vehicles[index].pick(-1, relativeX, relativeY, camera, m_collisionIntersection)) {
-                float vehicleDistance = m_collisionIntersection.getDistance();
-                if (distance < 0.0f || vehicleDistance < distance) {
-                    distance = vehicleDistance;
-                }
+        // Keep the current slot across AddRef, which can replace the array itself.
+        Group& vehicle = m_vehicles[index];
+        if (vehicle == NULL) {
+            continue;
+        }
+        unsigned char vehicleHit;
+        unsigned char vehicleResult;
+        {
+            RayIntersection intersection(m_collisionIntersection);
+            IQueryInterface* group = vehicle.m_interface;
+            CKMethod<ScreenPick>(group, 0xcc)(group, -1, relativeX, relativeY, camera.m_interface,
+                                             intersection.m_interface, &vehicleHit);
+            vehicleResult = vehicleHit;
+        }
+        if (vehicleResult != 0) {
+            float vehicleDistance = m_collisionIntersection.getDistance();
+            if (distance < 0.0f || vehicleDistance < distance) {
+                distance = vehicleDistance;
             }
         }
     }
@@ -920,9 +947,16 @@ vec3 CSwerveGame::GetCurrentCameraPos()
     // the camera node of the current point: translation column of its world transform
     XString name = XString::Format(L"Camera%02d", m_cameraId + 1);
     ::Camera camera(m_world.find(SwerveHelper::Id(XString::AnsiString(name.c_str()))));
-    if (camera != NULL) {
+    if (camera.m_interface != NULL) {
         ::Transform transform(CSwerve::GetInstance()->m_swerve);
-        camera.getTransformTo(m_world, transform);
+        {
+            // Swerve writes this out parameter. CK ignores its value.
+            bool connected;
+            ::Transform targetTransform(transform);
+            typedef int (*GetTransformTo)(IQueryInterface*, INodeInterface*, ITransformInterface*, bool*);
+            CKMethod<GetTransformTo>(camera.m_interface, 0xa4)(camera.m_interface, m_world.node(),
+                                                               targetTransform.transformInterface(), &connected);
+        }
         float matrix[16];
         transform.get(matrix);
         position.m_x = matrix[3];
@@ -1485,7 +1519,8 @@ void CSwerveGame::OnCommand(Event& event)
         break;
     case BuyVehicleMinigun: {
         CItem* minigun = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->getItemById(VehicleMinigunId);
-        if (CBH_Player::GetInstance()->m_credits >= minigun->getPriceCredits()) {
+        int credits = CBH_Player::GetInstance()->m_credits;
+        if (credits >= minigun->getPriceCredits()) {
             m_specialWeaponState = 1;
             CGameAnalytics::logVehicleMissionsMinigun(true);
         } else {
@@ -1565,15 +1600,18 @@ void CSwerveGame::OnPointerEvent(Event& event)
 }
 
 // Original 0x169488: the HUD result 4 is the medkit button (the HUD itself does not heal).
-bool CSwerveGame::HandleTouchPressed(int x, int y, int pointer)
+void CSwerveGame::HandleTouchPressed(int x, int y, int pointer)
 {
     int control = m_hud->PointerPressed(x, y, pointer);
-    if (control == 4) {
-        CBH_Player::GetInstance()->RestoreHealth();
-    } else if (control == 2) {
-        if (static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()->m_shootType != 2) {
+    if (control == 4 || control == 2) {
+        if (control == 4) {
+            CBH_Player::GetInstance()->RestoreHealth();
+        } else if (static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()->m_shootType != 2) {
             m_cursor->Fire();
         }
+        m_pointerDown[pointer] = false;
+        m_pointerX[pointer] = 0;
+        m_pointerY[pointer] = 0;
     } else if (control == -1 && m_cursor != NULL) {
         if (pointer < 1) {
             if (!m_player->IsInHide()) {
@@ -1588,7 +1626,6 @@ bool CSwerveGame::HandleTouchPressed(int x, int y, int pointer)
     m_pointerDown[pointer] = true;
     m_pointerX[pointer] = x;
     m_pointerY[pointer] = y;
-    return true;
 }
 
 void CSwerveGame::HandleTouchReleased(int x, int y, int pointer)
@@ -1638,7 +1675,7 @@ void CSwerveGame::Update()
         m_player->EndCover();
     }
     if (m_stateDelay >= 0) {
-        m_stateDelay -= elapsed;
+        m_stateDelay = static_cast<int>(static_cast<unsigned int>(m_stateDelay) - elapsed);
         if (m_stateDelay < 0) {
             fireInterrupt();
         }
@@ -1647,9 +1684,9 @@ void CSwerveGame::Update()
         return;
     }
     AmbientSoundsUpdate(elapsed);
-    // CBountyResultScreen::m_accepted (private, +0xf8): the player closed the result screen
+    // CBountyResultScreen::m_accepted (+0xf8): the player closed the result screen
     if (!m_exitAfterDialogs || !m_dialogQueue->IsEmpty()) {
-        if (m_resultScreen == NULL || !*(reinterpret_cast<bool*>(m_resultScreen) + 0xf8)) {
+        if (m_resultScreen == NULL || !m_resultScreen->m_accepted) {
             if (m_dialogQueue->IsEmpty() && m_exitAfterDialogs) {
                 m_dialogQueue->Start();
             }
@@ -1662,7 +1699,7 @@ void CSwerveGame::Update()
             case Loading:
                 break;
             case CameraIntro: {
-                int fade = m_loadingFadeMs - elapsed;
+                int fade = static_cast<int>(static_cast<unsigned int>(m_loadingFadeMs) - elapsed);
                 if (fade < 0) {
                     fade = 0;
                 }
@@ -1802,40 +1839,23 @@ void CSwerveGame::HuntingUpdate(int elapsed)
 
 void CSwerveGame::ShowObjective()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    const CHuntingInfo::SAssignedData& assignment = app->m_huntingInfo->m_assignedData;
-    if (m_player->m_missionBriefImage == NULL) {
+    CDialogWindow* dialog;
+    if (static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_hasTarget) {
+        dialog = CBH_GPSMap::CreateBeforeTargettingDialog(false);
+    } else {
+        dialog = CBH_GPSMap::CreateBeforeHuntDialog(false);
+    }
+    if (dialog == NULL) {
         return;
     }
-
-    CDialogWindow* dialog;
-    if (assignment.m_hasTarget) {
-        CBeforeTargettingDialog* target;
-        if (m_player->m_targetFriendId >= 0) {
-            target = new CBeforeTargettingDialog(m_player->m_targetFriendId);
-        } else {
-            target = new CBeforeTargettingDialog(m_player->m_missionBriefTargetFB);
-        }
-        target->SetMessageText(m_player->m_missionBriefText);
-        dialog = target;
-    } else {
-        dialog = new CBeforeHuntDialog();
-        dialog->SetMessageText(m_player->m_missionBriefText);
-    }
-    dialog->SetExtraImageFromImageID(m_player->m_missionBriefImage);
-    dialog->SetTitleText(m_player->m_missionBriefTitle);
-    dialog->SetMissionRewards(assignment.m_moneyReward, assignment.m_experienceReward,
-                              m_player->m_missionBriefEnergy, assignment.m_hasTarget);
-    dialog->SetButtons(CDialogWindow::BUTTON_OK);
+    ChangeState(Results, STATE_REPLACE);
     m_dialogQueue->Add(dialog);
+    m_dialogQueue->Start();
     m_dialogQueue->Start();
 }
 
 void CSwerveGame::ShowReturnToGpsConfirmation()
 {
-    if (!m_sceneReady || m_finishing) {
-        return;
-    }
     CTextDialog* dialog = new CTextDialog();
     dialog->SetTitleText("IDS_DIALOG_TITLE_WARNING");
     dialog->SetMessageText(ResString("IDS_RETURN_TO_GPS_TEXT"));
@@ -1843,6 +1863,8 @@ void CSwerveGame::ShowReturnToGpsConfirmation()
     dialog->SetButtonsCommands(0x1105a3a5, -1, -1);
     m_dialogQueue->Add(dialog);
     m_dialogQueue->Start();
+    m_dialogQueue->Start();
+    ChangeState(Results, STATE_REPLACE);
 }
 
 void CSwerveGame::AmbientSoundsUpdate(int)
@@ -1962,17 +1984,23 @@ void CSwerveGame::LaunchGrenade(const CDH_Weapon& weapon)
     if (m_grenadeLauncher == NULL) {
         return;
     }
+    float offsetX = weapon.m_projectileOffsetX;
+    float offsetY = weapon.m_projectileOffsetY;
     vec3 forward = m_camera->GetViewDirection();
-    forward.Normalize();
-    vec3 position = GetCurrentCameraPos();
+    forward = forward * MathLib::InvSqrt(forward.LengthSqr());
+    // Build the offset frame before reading the current camera position.
+    vec3 right = forward.Cross(vec3(0.0f, 0.0f, 1.0f));
+    right = right * MathLib::InvSqrt(right.LengthSqr());
+    vec3 up = forward.Cross(right);
+    float inverseUpLength = MathLib::InvSqrt(up.LengthSqr());
+    vec3 cameraPosition = GetCurrentCameraPos();
+    vec3 position = cameraPosition;
     if (!m_hud->m_scoped) {
-        vec3 right = vec3(0.0f, 0.0f, 1.0f).Cross(forward);
-        right.Normalize();
-        vec3 up = forward.Cross(right);
-        up.Normalize();
-        position = position + right * weapon.m_projectileOffsetX + up * weapon.m_projectileOffsetY;
+        up = up * inverseUpLength;
+        position = position + up * offsetY + right * offsetX;
     }
-    m_grenadeLauncher->AddProjectile(position, forward * -33.0f, 1.0f, weapon);
+    vec3 velocity = forward * -33.0f;
+    m_grenadeLauncher->AddProjectile(position, velocity, 1.0f, weapon);
 }
 
 void CSwerveGame::ShowLeftUnitPopUp(int defeated)
@@ -2003,11 +2031,8 @@ void CSwerveGame::ShowLeftUnitPopUp(int defeated)
 
 void CSwerveGame::BlastGrenade(const vec3& position, const vec3& normal, const CDH_Weapon& weapon)
 {
-    if (m_environment != NULL) {
-        m_environment->AddBlast(position, normal, 1.0f);
-    }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_soundManager->PlaySound("IDM_GRENADE_EXPLOSION", false, false);
+    PlayInternalExplosion(position, normal, 1.0f);
+    static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlaySound("IDM_GRENADE_EXPLOSION", false, false);
     Explode(position, weapon.damage(), 5, &weapon);
 }
 
@@ -2022,15 +2047,20 @@ void CSwerveGame::PlayInjureEffect(CUnit* unit, bool armor)
     vec3 view = m_camera->GetViewDirection();
     view.m_z = 0.0f;
     view = view * MathLib::InvSqrt(view.LengthSqr());
-    if (view.Dot(towardCamera) >= 0.1f) {
-        if (m_hud != NULL) {
-            // the HUD gets the side of the shooter (sine of the angle), never the armor flag
-            float side = view.m_x * towardCamera.m_y - view.m_y * towardCamera.m_x;
-            m_hud->PlayEnjureEffect(side, false);
+    if (view.Dot(towardCamera) < 0.1f) {
+        return;
+    }
+    if (m_hud != NULL) {
+        // The sign of the cross product selects which side displays the hit.
+        float side = view.m_x * towardCamera.m_y - view.m_y * towardCamera.m_x;
+        float angle = 90.0f;
+        if (side < 0.0f) {
+            angle = -90.0f;
         }
-        if (!armor) {
-            m_playerInjured = true;
-        }
+        m_hud->PlayEnjureEffect(angle, armor);
+    }
+    if (!armor) {
+        m_playerInjured = true;
     }
 }
 
@@ -2053,15 +2083,16 @@ void CSwerveGame::PlayInternalExplosion(const vec3& position, const vec3& normal
     }
     SwerveHelper::Transform transform = SwerveHelper::NewTransform();
     transform.setIdentity();
+    vec3 forward(normal.m_x, normal.m_y, normal.m_z);
     vec3 up(normal.m_y, normal.m_z, normal.m_x);
-    Angles angles(normal, up);
-    Quaternion quaternion;
-    angles.ToQuaternion(quaternion);
+    Angles angles(forward, up);
+    Quaternion result;
+    Quaternion quaternion = angles.ToQuaternion(result);
     const float translation[3] = { position.m_x, position.m_y, position.m_z };
-    const float rotation[4] = { quaternion.m_w, quaternion.m_x, quaternion.m_y, quaternion.m_z };
-    const float scales[3] = { scale, scale, scale };
     transform.postTranslate(translation);
+    const float rotation[4] = { quaternion.m_w, quaternion.m_x, quaternion.m_y, quaternion.m_z };
     transform.postRotate(rotation);
+    const float scales[3] = { scale, scale, scale };
     transform.postScale(scales);
     m_explosionEffect[m_explosionEffectIndex].setTransform(transform);
     m_explosionAnimation[m_explosionEffectIndex]->setCurrentController(m_missionElapsedMs, 0, false);
@@ -2080,14 +2111,26 @@ void CSwerveGame::HandleGameObjectShot(CDH_Weapon* weapon, float x, float y)
     if (weapon == NULL) {
         return;
     }
+    typedef bool (*PickObject)(IGameObject*, float, float, float, const DGCamera::Camera&);
+    typedef void (*DamageObject)(IGameObject*, int, int);
+    const float maxPickDistance = 999999.0f;
     for (int index = 0; index < m_objects.size(); ++index) {
         IGameObject* object = m_objects[index];
-        if (object != NULL && object->CanBeHandled()) {
+        if (object == NULL || !object->CanBeHandled()) {
+            continue;
+        }
+        // The original resolves the method before querying the scene or the weapon.
+        IQueryInterface* objectSlots = reinterpret_cast<IQueryInterface*>(object);
+        PickObject pick = CKMethod<PickObject>(objectSlots, 0x18);
+        bool picked;
+        {
             DGCamera::Camera camera = m_world.getActiveCamera();
-            bool picked = object->Pick(x, y, 1000000.0f, camera);
-            if (picked) {
-                object->ReceivedDamage(weapon->damage(), 0);
-            }
+            picked = pick(object, x, y, maxPickDistance, camera);
+        }
+        if (picked) {
+            DamageObject receiveDamage = CKMethod<DamageObject>(objectSlots, 8);
+            int damage = weapon->damage();
+            receiveDamage(object, damage, 0);
         }
     }
 }
@@ -2148,9 +2191,11 @@ bool CSwerveGame::DefineShotProbability(EHitType hit, const CDH_Weapon* weapon, 
     float dy = cameraPosition.m_y - unit->m_body.m_position.m_y;
     float dz = cameraPosition.m_z - unit->m_body.m_position.m_z;
     float distanceSqr = dx * dx + dy * dy + dz * dz;
-    if (distanceSqr * FeetSquaredPerMetreSquared > weapon->effectiveRange() * weapon->effectiveRange()) {
+    float firstRange = weapon->effectiveRange();
+    float secondRange = weapon->effectiveRange();
+    if (!(distanceSqr * FeetSquaredPerMetreSquared <= firstRange * secondRange)) {
         // out of range: a hit in 4 % of the shots only
-        if (!CBH_Math::GetProbabiliyOutcome(4)) {
+        if (CBH_Math::GetProbabiliyOutcome(4) != true) {
             return false;
         }
         ICDebug::LogMessage("out-of-range hit (%d%% chance): hit_type(%d), unit(%p), weapon(%p)", 4, hit, unit, weapon);
@@ -2187,28 +2232,29 @@ void CSwerveGame::UpdateWarTime(int elapsed)
     if (!m_multiplierEnabled) {
         return;
     }
-    m_warElapsed += elapsed;
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    const CHuntingInfo::SAssignedData& assignment = app->m_huntingInfo->m_assignedData;
-    int duration = assignment.m_cameraDurationMs;
-    int limit = assignment.m_escapeSeconds * 1000;
+    int warElapsed = static_cast<int>(static_cast<unsigned int>(m_warElapsed) + elapsed);
+    m_warElapsed = warElapsed;
+    int duration = static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_cameraDurationMs;
+    int limit = static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_escapeSeconds * 1000;
     if (duration > 0) {
         limit = duration;
     }
-    if (m_warElapsed > limit) {
+    if (warElapsed > limit) {
         CBH_Player::GetInstance()->m_gameStats.RegisterWarTimerEnd();
         m_bossMustEscape = true;
+        warElapsed = m_warElapsed;
     }
     // remaining time, clamped to [0, limit]
-    int remaining = limit - m_warElapsed;
+    GamePlayHUD* hud = m_hud;
+    int remaining = static_cast<int>(static_cast<unsigned int>(limit) - warElapsed);
     int shown = 0;
     if (remaining >= 0) {
-        shown = remaining;
         if (remaining > limit) {
-            shown = limit;
+            remaining = limit;
         }
+        shown = remaining;
     }
-    m_hud->SetCountdownTimerValue(shown);
+    hud->SetCountdownTimerValue(shown);
     m_hud->SetCountdownTimerLimit(limit);
 }
 
@@ -2309,25 +2355,25 @@ void CSwerveGame::DefineWinnerSide()
         QueueResult(BountyResultWin);
         return;
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    const CAmmo* firstAmmo = app->m_helper->GetGameData()->GetWeapon01(true)->GetActiveAmmo();
-    const CAmmo* secondAmmo = app->m_helper->GetGameData()->GetWeapon02(true)->GetActiveAmmo();
+    const CAmmo* firstAmmo = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true)->GetActiveAmmo();
+    const CAmmo* secondAmmo = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true)->GetActiveAmmo();
     int firstCount = CBH_Player::GetInstance()->GetAvailableAmmo(firstAmmo, true);
     int secondCount = CBH_Player::GetInstance()->GetAvailableAmmo(secondAmmo, true);
-    if (secondCount + firstCount < 1 && app->m_timeScale != 0.0f) {
+    int ammoCount = static_cast<int>(static_cast<unsigned int>(firstCount) + static_cast<unsigned int>(secondCount));
+    if (ammoCount <= 0 && static_cast<App*>(WindowApp::m_instance)->m_timeScale != 0.0f) {
         // out of ammo: offer the shop (ammo tab) or finish the hunt
         CDialogWindow* dialog = new CDialogWindow(true);
         dialog->SetMessageText(ResString("IDS_DIALOG_BUY_MORE_AMMO"), NULL);
         dialog->SetButtons(static_cast<CDialogWindow::EDialogButton>(14), CDialogWindow::BUTTON_IGNORE);
         dialog->SetButtonsCommands(static_cast<int>(0xb8418e92u), 0x118aa4cc, -1);
-        app->m_mainLayer->AddModal(dialog);
-        app->m_timeScale = 0.0f;
+        static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(dialog);
+        static_cast<App*>(WindowApp::m_instance)->m_timeScale = 0.0f;
         return;
     }
-    if (!app->m_huntingInfo->SilentKill()) {
+    if (!static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->SilentKill()) {
         return;
     }
-    if (app->m_huntingInfo->IsAmbush()) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->IsAmbush()) {
         return;
     }
     if (!m_missionAlert) {
@@ -2463,7 +2509,8 @@ void CSwerveGame::UpdateFOV(int elapsed)
 {
     if (m_fovDurationMs > 0 && m_camera != NULL) {
         float step = m_fovSpeed * elapsed / 1000.0f;
-        m_camera->SetFOV(m_camera->GetFOV() + step);
+        float currentFov = m_camera->GetFOV();
+        m_camera->SetFOV(currentFov + step);
         m_fovElapsedMs += elapsed;
         if (m_fovElapsedMs >= m_fovDurationMs) {
             m_fovDurationMs = 0;
@@ -2611,34 +2658,6 @@ bool CSwerveGame::IsOnBoat() const
     App* app = static_cast<App*>(WindowApp::m_instance);
     return app->m_huntingInfo->m_assignedData.m_locationName == XString("Bridge")
         && (m_cameraId == 0 || m_cameraId == 4);
-}
-
-void CSwerveGame::ShowAmmoDialog()
-{
-    m_waitingForAmmo = true;
-    m_hud->ResetFireButton();
-    CDialogWindow* dialog = new CDialogWindow(true);
-    dialog->SetMessageText(ResString("IDS_DIALOG_BUY_MORE_AMMO"));
-    dialog->SetButtons(CDialogWindow::BUTTON_AMMO, CDialogWindow::BUTTON_IGNORE);
-    dialog->SetButtonsCommands(-0x47be716e, 0x118aa4cc, -1);
-    m_dialogQueue->Add(dialog);
-    m_dialogQueue->Start();
-    static_cast<App*>(WindowApp::m_instance)->m_timeScale = 0.0f;
-}
-
-void CSwerveGame::OpenIngameShop()
-{
-    if (m_inGameShopOpen || m_hud == NULL) {
-        return;
-    }
-    m_inGameShopOpen = true;
-    m_hud->ResetFireButton();
-    if (m_cursor != NULL) {
-        m_cursor->PointerBreak();
-    }
-    memset(m_pointerDown, 0, sizeof(m_pointerDown));
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_mainLayer->AddModal(new CIngameShop());
 }
 
 void CSwerveGame::Paint(ICGraphics2d& graphics)
@@ -2943,7 +2962,7 @@ void CSwerveGame::ShowMissionFinalDialogs()
             dialog->SetTitleText(entry.m_title.Upper());
             CBH_PersonType* boss = static_cast<App*>(WindowApp::m_instance)->InitPersonTypeManager()->GetType(mission->m_boss);
             bool isMan = boss->m_visualCharacter->m_isMan;
-            XString text = CGPSHuntingItem::ParametrizeTextWithParams(entry.m_text, mission->m_bossName, isMan);
+            XString text = CGPSHuntingItem::ParametrizeTextWithParams(entry.m_text, XString(mission->m_bossName), isMan);
             dialog->SetMessageText(text, NULL);
             dialog->SetButtons(CDialogWindow::BUTTON_OK);
             dialog->SetButtonsCommands(static_cast<int>(0xd6cad5a6u), -1, -1);
@@ -3266,15 +3285,17 @@ void CSwerveGame::PreliminaryUnitsSumulation()
 /** Set `fog` on every appearance of `mesh`. */
 void ApplyFog(Mesh mesh, Fog fog)
 {
-    int count = mesh.getSubmeshCount();
-    for (int index = 0; index < count; ++index) {
-        IAppearanceInterface* handle = NULL;
-        mesh.getAppearance(index, &handle);
-        Appearance appearance(handle);
-        if (appearance != NULL) {
-            appearance.setFog(fog);
-        }
-    }
+    IAppearanceInterface* appearance = NULL;
+    int index = 1;
+    mesh.getAppearance(0, &appearance);
+    // The original assumes submesh zero exists and reuses the output handle.
+    typedef int (*SetFog)(IQueryInterface*, IObject3DInterface*);
+    int result;
+    do {
+        CKMethod<SetFog>(appearance, 0x60)(appearance, static_cast<IObject3DInterface*>(fog.m_interface));
+        result = mesh.getAppearance(index, &appearance);
+        ++index;
+    } while (result == 0);
 }
 
 void CSwerveGame::initHunting()
@@ -3380,14 +3401,10 @@ void CSwerveGame::CreateVehicles()
     m_vehicleTypes.ensureCapacity(10);
     m_vehicles.ensureCapacity(10);
     // the level marks parking places with groups named vehicle_01Transform, vehicle_02Transform, ...
+    char name[100];
     for (unsigned int number = 1; ; ++number) {
-        char name[100];
         ICStdUtil::SPrintF(name, "vehicle_%02uTransform", number);
-        SwerveHelper::Object3D found = m_world.find(DGHelper::getSwerveID(name));
-        if (found == NULL) {
-            return;
-        }
-        Group place(found);
+        Group place(m_world.find(DGHelper::getSwerveID(name)));
         if (place.m_interface == NULL) {
             return;
         }
@@ -3430,39 +3447,54 @@ void CSwerveGame::CreateScene(bool reload)
     int rain = -1;
     static_cast<App*>(WindowApp::m_instance)->m_helper->getUserParameter(worldTransform, "rain", &rain);
 
-    // scene bounds: two dummies mark opposite corners, default is a 200 x 200 square
-    SwerveHelper::Transform transform(CSwerve::GetInstance()->m_swerve);
-    vec3 firstCorner;
-    vec3 secondCorner;
-    SwerveHelper::Node firstDummy(m_world.find(DGHelper::getSwerveID("dummy_size_1Transform")));
-    SwerveHelper::Node secondDummy(m_world.find(DGHelper::getSwerveID("dummy_size_2Transform")));
-    bool hasBounds = firstDummy != ::Object3D() && secondDummy != ::Object3D();
-    if (hasBounds) {
-        firstDummy.getTransformTo(m_world, transform);
-        DGHelper::TransformPoint(transform, firstCorner);
-        secondDummy.getTransformTo(m_world, transform);
-        DGHelper::TransformPoint(transform, secondCorner);
-        m_sceneMin.m_x = secondCorner.m_x;
-        if (firstCorner.m_x < secondCorner.m_x) {
-            m_sceneMin.m_x = firstCorner.m_x;
+    {
+        // scene bounds: two dummies mark opposite corners, default is a 200 x 200 square
+        SwerveHelper::Transform transform(CSwerve::GetInstance()->m_swerve);
+        vec3 firstCorner;
+        vec3 secondCorner;
+        SwerveHelper::Node firstDummy(m_world.find(DGHelper::getSwerveID("dummy_size_1Transform")));
+        SwerveHelper::Node secondDummy(m_world.find(DGHelper::getSwerveID("dummy_size_2Transform")));
+        bool hasBounds = firstDummy != ::Object3D() && secondDummy != ::Object3D();
+        if (hasBounds) {
+            {
+                // The scene may be refreshed while the transform reference is retained.
+                bool connected;
+                Transform targetTransform(transform);
+                IQueryInterface* dummy = firstDummy.m_interface;
+                typedef int (*GetTransformTo)(IQueryInterface*, INodeInterface*, ITransformInterface*, bool*);
+                CKMethod<GetTransformTo>(dummy, 0xa4)(dummy, m_world.node(), targetTransform.transformInterface(), &connected);
+            }
+            DGHelper::TransformPoint(transform, firstCorner);
+            {
+                bool connected;
+                Transform targetTransform(transform);
+                IQueryInterface* dummy = secondDummy.m_interface;
+                typedef int (*GetTransformTo)(IQueryInterface*, INodeInterface*, ITransformInterface*, bool*);
+                CKMethod<GetTransformTo>(dummy, 0xa4)(dummy, m_world.node(), targetTransform.transformInterface(), &connected);
+            }
+            DGHelper::TransformPoint(transform, secondCorner);
+            m_sceneMin.m_x = secondCorner.m_x;
+            if (firstCorner.m_x < secondCorner.m_x) {
+                m_sceneMin.m_x = firstCorner.m_x;
+            }
+            m_sceneMin.m_y = secondCorner.m_y;
+            if (firstCorner.m_y < secondCorner.m_y) {
+                m_sceneMin.m_y = firstCorner.m_y;
+            }
+            m_sceneMax.m_x = secondCorner.m_x;
+            if (secondCorner.m_x < firstCorner.m_x) {
+                m_sceneMax.m_x = firstCorner.m_x;
+            }
+            m_sceneMax.m_y = secondCorner.m_y;
+            if (secondCorner.m_y < firstCorner.m_y) {
+                m_sceneMax.m_y = firstCorner.m_y;
+            }
+        } else {
+            m_sceneMin.m_x = -100.0f;
+            m_sceneMin.m_y = -100.0f;
+            m_sceneMax.m_x = 100.0f;
+            m_sceneMax.m_y = 100.0f;
         }
-        m_sceneMin.m_y = secondCorner.m_y;
-        if (firstCorner.m_y < secondCorner.m_y) {
-            m_sceneMin.m_y = firstCorner.m_y;
-        }
-        m_sceneMax.m_x = secondCorner.m_x;
-        if (secondCorner.m_x < firstCorner.m_x) {
-            m_sceneMax.m_x = firstCorner.m_x;
-        }
-        m_sceneMax.m_y = secondCorner.m_y;
-        if (secondCorner.m_y < firstCorner.m_y) {
-            m_sceneMax.m_y = firstCorner.m_y;
-        }
-    } else {
-        m_sceneMin.m_x = -100.0f;
-        m_sceneMin.m_y = -100.0f;
-        m_sceneMax.m_x = 100.0f;
-        m_sceneMax.m_y = 100.0f;
     }
 
     m_cameraCount = getCamerasCount();
@@ -3515,6 +3547,7 @@ void CSwerveGame::PlayInternalBodyBlast(const vec3& position)
 
 void CSwerveGame::SetRandomCamera()
 {
+    m_cameraId = 0;
     CUnitBody::Group root(m_world.find(SwerveHelper::Id("RootNode")));
     disableSpritePicking(root);
     // the level fog lives on the appearance named "fog"; spread it over the whole scene
@@ -3526,17 +3559,11 @@ void CSwerveGame::SetRandomCamera()
         }
     }
     // The original starts at Camera01 before selecting the mission's camera.
-    XString name = XString::Format(L"Camera%02d", 1);
-    XString::AnsiString ansiName(name.c_str());
-    Camera camera(m_world.find(SwerveHelper::Id(ansiName)));
-    if (camera == NULL) {
-        return;
-    }
-    m_cameraId = 0;
+    XString name = XString::Format(L"Camera%02d", m_cameraId + 1);
+    Camera camera(m_world.find(SwerveHelper::Id(XString::AnsiString(name.c_str()))));
     m_world.setActiveCamera(camera);
     App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_helper->SetCameraSize(camera, app->m_helper->m_screenWidth, app->m_helper->m_screenHeight,
-                                 CAMERA_SIZE_SET_ASPECT);
+    app->m_helper->SetCameraSize(camera, app->m_screenWidth, app->m_screenHeight, CAMERA_SIZE_SET_ASPECT);
 }
 
 /**

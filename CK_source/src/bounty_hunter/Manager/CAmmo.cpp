@@ -50,11 +50,10 @@ void CAmmo::setAvailable(bool available)
 void CAmmo::ParseGraphics(const TiXmlElement& element)
 {
     CItem::ParseGraphics(element);
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    XString name = CXmlHelper::GetAttributeValue(element, "equip_button");
-    m_equipButton = XString(app->InitResMap()->getResourceID(name));
-    name = CXmlHelper::GetAttributeValue(element, "bullet_icon");
-    m_bulletIcon = XString(app->InitResMap()->getResourceID(name));
+    XString equipButton = CXmlHelper::GetAttributeValue(element, "equip_button");
+    m_equipButton = XString(static_cast<App*>(WindowApp::m_instance)->InitResMap()->getResourceID(equipButton));
+    XString bulletIcon = CXmlHelper::GetAttributeValue(element, "bullet_icon");
+    m_bulletIcon = XString(static_cast<App*>(WindowApp::m_instance)->InitResMap()->getResourceID(bulletIcon));
 }
 
 XString CAmmo::GetStatsString() const

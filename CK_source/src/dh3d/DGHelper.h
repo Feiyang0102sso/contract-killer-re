@@ -60,7 +60,7 @@ public:
     static void TransformPoint(Transform& transform, vec3& point);
     static void TransformPoint(Transform& transform, swvVector3D& point);
     /** Unproject normalized screen coordinates onto the camera's near plane. */
-    static vec3 GetPointOnNear(float x, float y, Camera camera);
+    vec3 GetPointOnNear(float x, float y, Camera camera);
 
     /** Midpoint circle around (centerX, centerY). */
     void DrawCircle(int centerX, int centerY, int radius, int color, bool filled);
@@ -149,7 +149,6 @@ public:
     int m_startTimeMs;                                              // 0x120 creation time in milliseconds
     ConfigReader m_config;                                          // 0x124 dh3d_config.cfg
     bool m_loadingResource;                                         // 0x134 set by CDH_ResourceManager::getResourceData
-    World m_auxRender;        // 0x138 BIN_AUX_RENDER
 };
 
 #endif

@@ -54,16 +54,21 @@ void CZoomSliderControl::HandleLock(Event& event)
 {
     float progress = m_progress;
     double angle = SliderAngle(progress, m_maxAngle);
-    float vertical = m_radius * static_cast<float>(sin(angle));
-    int x = static_cast<int>(m_radius * static_cast<float>(cos(angle)) - m_centerOffset);
+    int radius = m_radius;
+    double sine = sin(angle);
+    double cosine = cos(angle);
+    int trackHeight = m_trackHeight;
+    float vertical = radius * static_cast<float>(sine);
     if (progress > 0.5f) {
         vertical = -vertical;
     }
-    m_locked = false;
+    int x = static_cast<int>(radius * static_cast<float>(cosine) - m_centerOffset);
+    bool locked = false;
     if (fabsf(static_cast<float>(x - event.m_param1)) < m_touchWidth / 2) {
-        int y = (m_trackHeight >> 1) - static_cast<int>(vertical);
-        m_locked = fabsf(static_cast<float>(y - event.m_param2)) < m_touchHeight / 2;
+        int y = (trackHeight >> 1) - static_cast<int>(vertical);
+        locked = fabsf(static_cast<float>(y - event.m_param2)) < m_touchHeight / 2;
     }
+    m_locked = locked;
     event.Clear();
 }
 

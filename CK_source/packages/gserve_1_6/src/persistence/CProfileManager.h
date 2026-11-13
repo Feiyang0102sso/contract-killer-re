@@ -99,10 +99,6 @@ public:
     TCVector<int> m_pendingCollections;                 // +0x84 requests in flight
     TCVector<int> m_savingCollections;                  // +0x9c reported to HandleProfileSaved
     TCVector<int> m_fileBackedCollections;              // +0xb4 attribute collections still to sync
-
-private:
-    void ApplyProfileResponse(CObjectMap* response, ProfileManagerFunctor* functor, bool conflict);
-    void FinishProfileLoad(unsigned char success);
 };
 
 #endif

@@ -25,10 +25,9 @@ public:
 
 private:
     CItem* GetItem() const;
-    CImageButton* CreateButton(const char* image, const XString& text, int align, int command);
     bool CanShowBuyButton();
     bool CanShowEquipButton();
-    static Window* CreateTextArea(const XString& text, int type);
+    Window* CreateTextArea(const XString& text, int type);
     LabelWithIcon* CreatePriceLabel();
     void UpdateAmmoLabel();
     void UpdateAmmoLabel(int quantity, const char* icon);

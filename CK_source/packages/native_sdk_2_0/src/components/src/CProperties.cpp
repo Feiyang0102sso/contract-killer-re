@@ -75,9 +75,7 @@ void CProperties::Load(CInputStream& stream, unsigned char merge)
                 }
                 if (index >= m_overriddenKeys->Size()) {
                     CStrChar* overridden = new CStrChar(key.m_string);
-                    if (m_overriddenKeys->Add((int)overridden) != 0) {
-                        delete overridden;
-                    }
+                    m_overriddenKeys->Add((int)overridden);
                 }
             }
         } else {
@@ -143,14 +141,17 @@ unsigned char CProperties::Add(const char* key, const char* value)
         return 0;
     }
 
-    Setting* added = new Setting();
-    added->m_keyHash = keyHash;
-    added->m_value = value;
-    if (m_settings.Add((int)added) == 0) {
-        return 1;
+    Setting* added = new Setting;
+    unsigned char inserted = 0;
+    if (added != NULL) {
+        added->m_keyHash = keyHash;
+        added->m_value = value;
+        inserted = m_settings.Add((int)added) == 0;
+        if (!inserted) {
+            delete added;
+        }
     }
-    delete added;
-    return 0;
+    return inserted;
 }
 
 int CProperties::KeyToIndex(unsigned int keyHash)

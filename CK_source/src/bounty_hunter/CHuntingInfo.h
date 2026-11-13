@@ -110,6 +110,13 @@ public:
     int m_primaryKills;           // 0xcc
     int m_secondaryKills;         // 0xd0
     int m_headshots;              // 0xd4
+
+private:
+    static const char* BOARD_XP;
+    static const char* BOARD_HEADSHOTS;
+    static const char* BOARD_TOTAL_KILLS;
+    static const char* BOARD_CONTRACTS_COMPLETED;
+    static const char* BOUNTY_TOTAL_CAPTURED;
 };
 
 #endif

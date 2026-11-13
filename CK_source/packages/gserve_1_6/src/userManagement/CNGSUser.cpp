@@ -45,7 +45,7 @@ public:
 
     virtual void requestCompleteCallback(CObjectMap* response)
     {
-        if (m_callback) {
+        if (m_callback && m_user != NULL) {
             (m_user->*m_callback)(response, this);
         }
     }
@@ -76,9 +76,7 @@ void CNGSUser::GetAvatarIdAndContinueDeepPopulate(bool includeFiles)
 
 void CNGSUser::HandleGetAvatarIdAndContinueDeepPopulateResponse(CObjectMap* response, CNGSUserFunctor* functor)
 {
-    if (WasErrorInResponse(response, functor, "HandleGetAvatarIdAndContinueDeepPopulateResponse")) {
-        SetIsValid(0);
-    } else {
+    if (WasErrorInResponse(response, functor, "HandleGetAvatarIdAndContinueDeepPopulateResponse") == 0) {
         CObjectMapValue* id = response->getDataAt(CStrWChar("list,0,id"), CStrWChar(","));
         if (id != NULL && id->getType() == CObjectMapValue::TYPE_INT) {
             m_credentials.m_avatarId = (int)static_cast<CObjectMapInt*>(id)->m_value;
@@ -90,6 +88,8 @@ void CNGSUser::HandleGetAvatarIdAndContinueDeepPopulateResponse(CObjectMap* resp
         } else {
             SetIsValid(1);
         }
+    } else {
+        SetIsValid(0);
     }
     CompleteReadRequestOutstanding();
     if (m_credentials.m_avatarId > 0) {
@@ -134,10 +134,9 @@ void CNGSUser::SendMessage(CObjectMapValue* content, unsigned int duration, long
                           unsigned char push, CNGSPushNotificationDetails* details)
 {
     CNGSLocalUser* local = CNGS::GetInstance()->GetLocalUser();
-    CNGSFromServerMessageQ* queue = local->m_messageQueue;
     TCVector<CObjectMapObject*> envelopes;
-    envelopes.Add(queue->CreateEnvelopeObject(m_credentials.m_userId, content, duration, type, push, details));
-    queue->PostEnvelopes(envelopes);
+    envelopes.Add(local->m_messageQueue->CreateEnvelopeObject(m_credentials.m_userId, content, duration, type, push, details));
+    local->m_messageQueue->PostEnvelopes(envelopes);
 }
 
 void CNGSUser::SendGift(CStrWChar text, long long itemType, int quantity, unsigned int duration,
@@ -145,8 +144,8 @@ void CNGSUser::SendGift(CStrWChar text, long long itemType, int quantity, unsign
 {
     CNGSFromServerMessageQ* queue = CNGS::GetInstance()->GetLocalUser()->m_messageQueue;
     CObjectMapObject* payload = queue->CreateGiftMsgObject(text, deductOnReceipt, itemType, quantity, 0, 0, 0);
+    // The original leaves the gift object allocated after encoding the envelope.
     SendMessage(payload, duration, 40, push, details);
-    delete payload;
 }
 
 void CNGSUser::SetNickName(const CStrWChar& nickName)

@@ -6,8 +6,6 @@
 #include "Vector_ss.h"
 #include "FrustumCulling.h"
 
-class vec3;
-
 class DGWorld {
 public:
     /** Hit effect kinds (index of m_effectNodes / m_effectDurations). */
@@ -36,7 +34,6 @@ public:
     void update();
     /** Pick the scene at a screen coordinate and start the CK dust effect. */
     void shot(int x, int y);
-    void AddBlast(const vec3& position, const vec3& normal, float scale);
     /** Animate and render the running effects (finished ones are removed). */
     void paintHitEffects(Graphics3D& graphics);
 

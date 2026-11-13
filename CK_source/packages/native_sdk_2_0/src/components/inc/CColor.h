@@ -27,9 +27,8 @@ enum ColorFormat {
     ColorFormat_X8R8G8B8    = 0xb0304,
     ColorFormat_A8R8G8B8    = 0xc4404,
     ColorFormat_A8B8G8R8    = 0xf4404,
-    ColorFormat_ARGB_Fixed  = 0x1e4410, // Color_ARGB_fixed: four 16.16 fixed point channels
-    ColorFormat_ARGB_Float  = 0x1f4410, // four floats, a, r, g, b (1.0 = full)
-    ColorFormat_RGBA_Fixed  = 0x204410  // four 16.16 fixed point channels, r, g, b, a
+    ColorFormat_ARGB_Fixed  = 0x1e4410, // Color_ARGB_fixed: four 16.16 fixed point channels, a, r, g, b
+    ColorFormat_RGBA_Fixed  = 0x1f4410  // four 16.16 fixed point channels, r, g, b, a
 };
 
 /** Converts a single pixel of any ColorFormat to a packed format. */
@@ -54,6 +53,13 @@ struct Color_A8R8G8B8_t {
     static const Color_A8R8G8B8_t Black;
 };
 
+/** A packed 0xAABBGGRR color. */
+struct Color_A8B8G8R8_t {
+    unsigned int value;
+
+    static const Color_A8B8G8R8_t Black;
+};
+
 /** A color with float channels (1.0 = full intensity). */  // added by b037x
 struct Color_RGBA {  // added by b037x
     float r;    // 0x00  // added by b037x
@@ -72,7 +78,9 @@ struct Color_ARGB_fixed {
     /** Set from one pixel stored in `format`; unknown formats leave the color unchanged. */
     void Make(ColorFormat format, const void* pixel);
 
-    static Color_ARGB_fixed White;
+    // Keep the original exported names for the fixed-point constants.
+    static const Color_ARGB_fixed Black __asm__("__ZN18Color_ARGB_fixed_t8m_blackfE");
+    static const Color_ARGB_fixed White __asm__("__ZN18Color_ARGB_fixed_t8m_whitefE");
 };
 
 /** A color table (one 0xAARRGGBB entry per index), loaded from a palette resource. */

@@ -46,7 +46,7 @@ public:
     int m_damage;                  // 0x0c
     int m_damageRadius;            // 0x10
     vec3 m_position;               // 0x14
-    Group m_parent;                // 0x20
+    unsigned int m_reserved20;     // 0x20 initialized to zero; no observed use.
     Group m_pickable;              // 0x24
     Group m_model;                 // 0x28
     XString m_name;                // 0x2c
@@ -58,7 +58,7 @@ public:
     bool m_pendingExplosion;      // 0x3e
     bool m_animationComplete;     // 0x3f
     CDH_Animation* m_animation;    // 0x40
-    RayIntersection m_intersection; // 0x44
+    RayIntersection m_intersection; // 0x44 reserved handle; Pick creates a local one.
 };
 
 #endif

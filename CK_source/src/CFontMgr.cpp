@@ -21,57 +21,44 @@ CFontMgr::~CFontMgr()
 
 void CFontMgr::FreeFont(int index)
 {
-    if (index < 0 || index >= FontCount || m_fonts[index] == NULL) {
-        return;
+    CFont*& cached = m_fonts[index];
+    CFont* font = cached;
+    if (font != NULL) {
+        const GameFontInfo* info = kTableGameFontInfo + index;
+        if (info != NULL) {
+            CApplet::m_pApp->m_resourceManager->ReleaseResource(info->m_image);
+            font = cached;
+            if (font == NULL) {
+                return;
+            }
+        }
+        delete font;
+        cached = NULL;
     }
-    const GameFontInfo& info = kTableGameFontInfo[index];
-    CApplet::m_pApp->m_resourceManager->ReleaseResource(info.m_image);
-    delete m_fonts[index];
-    m_fonts[index] = NULL;
 }
 
 CFont* CFontMgr::GetFont(int index)
 {
-    if (index < 0 || index >= FontCount) {
-        return NULL;
-    }
-    CFont* cached = m_fonts[index];
-    if (cached != NULL) {
-        return cached;
-    }
-
-    CResourceManager* resources = CApplet::m_pApp->m_resourceManager;
-    const GameFontInfo& info = kTableGameFontInfo[index];
-    CResource* atlasResource = NULL;
-    resources->CreateResource(info.m_image, &atlasResource);
-    if (atlasResource == NULL) {
-        return NULL;
-    }
-    CResource* metricsResource = NULL;
-    resources->CreateResource(info.m_metrics, &metricsResource);
-    if (metricsResource == NULL) {
-        resources->ReleaseResource(info.m_image);
-        return NULL;
-    }
-
-    ICRenderSurface* atlas = static_cast<ICRenderSurface*>(atlasResource->GetData());
-    CBinary* metrics = static_cast<CBinary*>(metricsResource->GetData());
-    CGraphicFont* font = NULL;
-    if (atlas != NULL && metrics != NULL) {
-        font = new CGraphicFont;
-        if (font != NULL) {
-            font->SetFontImage(atlas);
-            font->ParseFontMetrics(metrics->m_data, metrics->m_size);
-            if (font->m_metrics == NULL) {
-                delete font;
-                font = NULL;
+    CFont*& cached = m_fonts[index];
+    CFont* result = cached;
+    if (result == NULL) {
+        const GameFontInfo* info = kTableGameFontInfo + index;
+        if (info != NULL) {
+            CGraphicFont* font = new CGraphicFont;
+            if (font != NULL) {
+                CResourceManager* resources = CApplet::m_pApp->m_resourceManager;
+                CResource* resource = NULL;
+                resources->CreateResource(info->m_image, &resource);
+                ICRenderSurface* atlas = static_cast<ICRenderSurface*>(resource->GetData());
+                resources->CreateResource(kTableGameFontInfo[index].m_metrics, &resource);
+                CBinary* metrics = static_cast<CBinary*>(resource->GetData());
+                font->SetFontImage(atlas);
+                font->ParseFontMetrics(metrics->m_data, metrics->m_size);
+                cached = font;
+                resources->ReleaseResource(kTableGameFontInfo[index].m_metrics);
+                result = font;
             }
         }
     }
-    resources->ReleaseResource(info.m_metrics);
-    if (font == NULL) {
-        resources->ReleaseResource(info.m_image);
-    }
-    m_fonts[index] = font;
-    return font;
+    return result;
 }

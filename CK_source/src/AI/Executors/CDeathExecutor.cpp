@@ -10,23 +10,22 @@ typedef char DeathExecutorSizeCheck[sizeof(CDeathExecutor) == 0x1c ? 1 : -1];
 
 void CDeathExecutor::OnAnimationComplete(EPersonAnimType, const char* name)
 {
-    if (!IsAnimationTheSame(name)) {
+    if (IsAnimationTheSame(name) != 1) {
         return;
     }
     CUnit* unit = m_mind->GetUnit();
     if (unit == NULL) {
         return;
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
     if (unit->m_type == UnitBoss) {
-        app->m_helper->m_swerveGame->SetSlowMode(false);
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->SetSlowMode(false);
     }
     if (m_death) {
         unit->m_dead = true;
     } else {
         unit->m_tranquillized = true;
     }
-    app->m_helper->m_swerveGame->ShowUnitInfo(m_mind->GetUnit(), 0);
+    static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->ShowUnitInfo(m_mind->GetUnit(), 0);
     m_mind->CancelAllExecutors();
 }
 

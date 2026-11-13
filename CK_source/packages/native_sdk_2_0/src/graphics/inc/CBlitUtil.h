@@ -202,10 +202,6 @@ inline void CBlitUtil_AddBlitOps_OGLES()
         CBlitUtil::ColorKeyTest_Enabled, CBlitUtil::AlphaTest_None,
         CBlitUtil::Blend_None, CBlitUtil::BlitOpId_Stream,
         (void*)CBlit::Stream_A8R8G8B8_To_R4G4B4A4_ColorKeyE);
-    CBlitUtil::AddBlitOp(RSBFormat_A8B8G8R8, RSBFormat_R4G4B4A4,
-        CBlitUtil::ColorKeyTest_Enabled, CBlitUtil::AlphaTest_None,
-        CBlitUtil::Blend_None, CBlitUtil::BlitOpId_Stream,
-        (void*)CBlit::Stream_A8B8G8R8_To_R4G4B4A4_ColorKeyE);
     CBlitUtil::AddBlitOp(RSBFormat_R8G8B8, RSBFormat_B8G8R8,
         CBlitUtil::ColorKeyTest_Enabled, CBlitUtil::AlphaTest_None,
         CBlitUtil::Blend_None, CBlitUtil::BlitOpId_Stream,
@@ -226,10 +222,6 @@ inline void CBlitUtil_AddBlitOps_OGLES()
         CBlitUtil::ColorKeyTest_Enabled, CBlitUtil::AlphaTest_None,
         CBlitUtil::Blend_None, CBlitUtil::BlitOpId_Stream,
         (void*)CBlit::Stream_A8R8G8B8_To_A8B8G8R8_ColorKeyE);
-    CBlitUtil::AddBlitOp(RSBFormat_A8B8G8R8, RSBFormat_A8B8G8R8,
-        CBlitUtil::ColorKeyTest_Enabled, CBlitUtil::AlphaTest_None,
-        CBlitUtil::Blend_None, CBlitUtil::BlitOpId_Stream,
-        (void*)CBlit::Stream_A8B8G8R8_To_A8B8G8R8_ColorKeyE);
     CBlitUtil::AddBlitOp(RSBFormat_P16X8R8G8B8, RSBFormat_A8B8G8R8,
         CBlitUtil::ColorKeyTest_Enabled, CBlitUtil::AlphaTest_None,
         CBlitUtil::Blend_None, CBlitUtil::BlitOpId_Stream,

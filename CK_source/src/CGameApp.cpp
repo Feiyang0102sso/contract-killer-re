@@ -67,6 +67,9 @@ static const unsigned int CGameApp_InterestingEvents[] = {
     0xfe50251e, 0xfe50251d, 0xfe50251c, 0xfe50251b, 0x9f523292, 0x385a651b, 0
 };
 
+extern const wchar_t GAME_RES_FILE[];
+
+static const wchar_t IAP_ITEM_FORMAT[] = L"%02d_%s";
 static const wchar_t* const CK_PUSH_APP_KEY = L"XJAkth2_Rq-Tw5WxWW7aOQ";
 static const wchar_t* const CK_PUSH_APP_SECRET = L"gQwU19wfSVqQ-4ApTjV7WQ";
 
@@ -124,25 +127,38 @@ int CAppExecutor::InitRegistry()
 void CAppExecutor::ReleaseRegistry()
 {
     CExecutableRegistry* registry = m_registry;
+    CSystemElement* registered = NULL;
     CSystemElement* element = registry->m_head;
     while (element != registry->GetSentinel()) {
-        CSystemElement* next = element->m_next;
         CClass* object = static_cast<CClass*>(element->GetObject());
         if (object->m_classId == CEvent::ClassId || object->m_classId == CMessage::ClassId) {
             delete object;
+            CSystemElement* next = element->m_next;
             registry->Remove(*element);
+            if (next == NULL) {
+                next = element;
+            }
             delete element;
+            element = next;
+        } else if (element->m_next != NULL) {
+            element = element->m_next;
         }
-        element = next;
     }
 
-    const unsigned int handles[] = {0xc84e9c27, 0x92484fb2, 0x957ce610};
-    for (unsigned int index = 0; index < sizeof(handles) / sizeof(handles[0]); index++) {
-        if (registry->Query(0, handles[index], &element)) {
-            registry->Remove(*element);
-            delete static_cast<CClass*>(element->GetObject());
-            delete element;
-        }
+    if (registry->Query(0, 0xc84e9c27, &registered)) {
+        registry->Remove(*registered);
+        delete static_cast<CClass*>(registered->GetObject());
+        delete registered;
+    }
+    if (registry->Query(0, 0x92484fb2, &registered)) {
+        registry->Remove(*registered);
+        delete static_cast<CClass*>(registered->GetObject());
+        delete registered;
+    }
+    if (registry->Query(0, 0x957ce610, &registered)) {
+        registry->Remove(*registered);
+        delete static_cast<CClass*>(registered->GetObject());
+        delete registered;
     }
 }
 
@@ -304,53 +320,64 @@ void CGameApp::OnTapjoyVideoStateChanged(unsigned char active, void* context)
 
 int CGameApp::OnInit()
 {
-    m_accountChanged = false;
     XString::Init();
-    ICCore* core = CApplet::m_pCore;
-    CStrWChar platform = core->GetPlatformIdentifier();
-    if (platform == L"iPhone1,2" || platform == L"iPod1,2" || platform == L"iPod2,1") {
+    CStrWChar platform = CApplet::m_pCore->GetPlatformIdentifier();
+    if (wcscmp(platform.GetWCharPtr(), L"iPhone1,2") == 0 ||
+        wcscmp(platform.GetWCharPtr(), L"iPod1,2") == 0 ||
+        wcscmp(platform.GetWCharPtr(), L"iPod2,1") == 0) {
         App::m_platformType = 0;
     }
 
-    m_singletons = new CHash();
-    if (!m_singletons->Init(20, 20, 1)) {
-        return 1;
-    }
+    CHash* singletons = new CHash;
+    singletons->Init(20, 20, 1);
+    m_singletons = singletons;
     CreatePools();
     m_registry = new CRegistry();
-    InitRegistry();
+    if (m_registry != NULL) {
+        InitRegistry();
+    }
 
     m_resourceManager = new CResourceManager_v2();
-    bool ready = m_resourceManager->Initialize(CResourceManager::DefaultTableSize,
-                                                CResourceManager::DefaultNumOfElementsInInitialAlloc, 1) != 0;
+    if (m_resourceManager == NULL) {
+        OnFree();
+        return 1;
+    }
+    int initialized = m_resourceManager->Initialize(CResourceManager::DefaultTableSize,
+                                                    CResourceManager::DefaultNumOfElementsInInitialAlloc, 1);
     CResource* resource;
-    if (core->CanDetectLanguage()) {
+    if (CApplet::m_pCore->CanDetectLanguage()) {
         CStrChar language;
-        core->DetectLanguage(language);
-        m_resourceManager->CreateResource(language.GetCharPtr(), &resource);
+        CApplet::m_pCore->DetectLanguage(language);
+        CResourceManager* manager = m_resourceManager;
+        XString resourceName(language.GetCharPtr());
+        manager->CreateResource(XString::AnsiString(resourceName.c_str()), &resource);
     }
-    if (!m_resourceManager->CreateResource("en.big", &resource)) {
+    int englishLoaded = m_resourceManager->CreateResource("en.big", &resource);
+    bool ready = initialized != 0 && englishLoaded != 0;
+    if (App::IsWVGA() == 1 && !m_resourceManager->CreateResource("wvga.big", &resource)) {
         ready = false;
     }
-    if (App::IsWVGA() && !m_resourceManager->CreateResource("wvga.big", &resource)) {
+    if (App::IsXGA() == 1 && !m_resourceManager->CreateResource("xga.big", &resource)) {
         ready = false;
     }
-    if (App::IsXGA() && !m_resourceManager->CreateResource("xga.big", &resource)) {
+    if ((App::IsXGA() || App::IsVGA() == 1) && !m_resourceManager->CreateResource("vga.big", &resource)) {
         ready = false;
     }
-    if ((App::IsXGA() || App::IsVGA()) && !m_resourceManager->CreateResource("vga.big", &resource)) {
-        ready = false;
-    }
-    if (!m_resourceManager->CreateResource(L"BountyHunter.big", &resource) || !ready) {
+    int gameLoaded = m_resourceManager->CreateResource(GAME_RES_FILE, &resource);
+    if (!ready || gameLoaded == 0) {
         return 1;
     }
 
     m_executor = new CAppExecutor();
-    m_executor->Init();
-    m_eventListener = new CEventListener();
-    m_eventListener->m_object = this;
-    m_eventListener->m_handle = CStringToKey("GameApp", 0) | 0x80000000;
-    m_eventListener->m_callback = EventCB;
+    if (m_executor != NULL) {
+        m_executor->Init();
+    }
+    CEventListener* listener = new CEventListener();
+    m_eventListener = listener;
+    unsigned int listenerHandle = CStringToKey("GameApp", 0) | 0x80000000;
+    listener->m_object = this;
+    listener->m_handle = listenerHandle;
+    listener->m_callback = EventCB;
     m_eventListener->Register(CGameApp_InterestingEvents, 0x3fffffff);
 
     ICLicenseMgr::GetInstance();
@@ -363,27 +390,24 @@ int CGameApp::OnInit()
     CDemoMgr::GetInstance();
     CFontMgr::GetInstance();
 
-    const ICGraphics::Param graphicsParams[] = {{0, 0}};
+    ICGraphics::Param graphicsParams[] = {{0, 0}};
     ICGraphics* graphics = ICGraphics::GetInstance();
-    if (!graphics->Initialize(graphicsParams)) {
-        return 1;
-    }
+    graphics->Initialize(graphicsParams);
     const unsigned int clearFlags = ICGraphics::ClearFlag_Color | ICGraphics::ClearFlag_Depth |
                                     ICGraphics::ClearFlag_Stencil;
     graphics->ClearBuffers(clearFlags);
     graphics->SwapBuffers();
     graphics->ClearBuffers(clearFlags);
     ICGraphics2d* graphics2d = ICGraphics2d::GetInstance();
-    if (!graphics2d->Initialize()) {
-        return 1;
-    }
+    graphics2d->Initialize();
     graphics->SetDefaultActiveAbstractionLayer(graphics2d->GetActiveAbstractionLayer());
     // Third-party advertising providers use the integration available in the CK rebuild.
     ICAdManager::GetInstance()->Init(9657, 9658);
     CPHInterface::initFromBundle();
     ICNotification* notification = ICNotification::GetInstance();
     if (!notification->IsEnabled(ICNotification::Type_Push)) {
-        notification->Register(ICNotification::Type_Push, CK_PUSH_APP_KEY, CK_PUSH_APP_SECRET, NULL, NULL);
+        ICNotification::GetInstance()->Register(ICNotification::Type_Push, CK_PUSH_APP_KEY, CK_PUSH_APP_SECRET,
+                                                 NULL, NULL);
     }
     ICInAppPurchase::GetInstance()->Init(this);
     TapjoyInterface::initializeFromBundle();
@@ -395,71 +419,77 @@ int CGameApp::OnInit()
 
 void CGameApp::OnFree()
 {
-    if (m_singletons == NULL) {
-        return;
-    }
-    CPHInterface::cancelPublisherContentRequest();
-    TapjoyInterface::prepareToDestroy();
-    void* purchase = NULL;
-    m_singletons->Find(ClassId_ICInAppPurchase, &purchase);
-    delete static_cast<ICInAppPurchase*>(purchase);
+    ICInAppPurchase* purchase = ICInAppPurchase::GetInstance();
+    delete purchase;
     TapjoyInterface::destroy();
-    delete m_rootNode;
-    m_rootNode = NULL;
+    if (m_rootNode != NULL) {
+        delete m_rootNode;
+        m_rootNode = NULL;
+    }
 
-    void* fonts = NULL;
-    m_singletons->Find(CFontMgr::SingletonId, &fonts);
-    delete static_cast<CFontMgr*>(fonts);
-    void* ads = NULL;
-    m_singletons->Find(ICAdManager::ClassId, &ads);
+    CFontMgr* fonts = CFontMgr::GetInstance();
+    delete fonts;
+    ICAdManager* ads = ICAdManager::GetInstance();
     if (ads != NULL) {
-        ICAdManager* adManager = static_cast<ICAdManager*>(ads);
-        adManager->Destroy();
-        delete adManager;
+        ads->Destroy();
+        delete ads;
     }
     CPHInterface::destroy();
-    if (m_graphics2d != NULL) {
-        m_graphics2d->Destroy();
+    ICGraphics2d* graphics2d = ICGraphics2d::GetInstance();
+    if (graphics2d != NULL) {
+        graphics2d->Destroy();
+        delete graphics2d;
     }
-    if (m_graphics != NULL) {
-        m_graphics->Destroy();
+    ICGraphics* graphics = ICGraphics::GetInstance();
+    if (graphics != NULL) {
+        graphics->Destroy();
+        delete graphics;
     }
-    delete m_mediaPlayer;
-    m_mediaPlayer = NULL;
-    delete m_moviePlayer;
-    m_moviePlayer = NULL;
+    delete ICMediaPlayer::GetInstance();
+    delete ICMoviePlayer::GetInstance();
 
     if (m_resourceManager != NULL) {
         m_resourceManager->ReleaseResource("BountyHunter.big");
         m_resourceManager->Destroy();
-        delete m_resourceManager;
-        m_resourceManager = NULL;
+        if (m_resourceManager != NULL) {
+            delete m_resourceManager;
+            m_resourceManager = NULL;
+        }
     }
     if (m_eventListener != NULL) {
         m_eventListener->UnregisterAll();
-        delete m_eventListener;
-        m_eventListener = NULL;
-    }
-    delete m_executor;
-    m_executor = NULL;
-    if (m_registry != NULL) {
-        ReleaseRegistry();
-        delete m_registry;
-        m_registry = NULL;
-    }
-    DestroyPools();
-    for (int bucket = 0; bucket < m_singletons->m_bucketCount; bucket++) {
-        CHash::Entry* entry = m_singletons->m_buckets[bucket];
-        while (entry != NULL) {
-            CHash::Entry* next = entry->m_next;
-            delete static_cast<CSingleton*>(entry->m_value);
-            entry = next;
+        if (m_eventListener != NULL) {
+            delete m_eventListener;
+            m_eventListener = NULL;
         }
     }
-    delete m_singletons;
-    m_singletons = NULL;
-    m_graphics = NULL;
-    m_graphics2d = NULL;
+    if (m_executor != NULL) {
+        delete m_executor;
+        m_executor = NULL;
+    }
+    if (m_registry != NULL) {
+        ReleaseRegistry();
+        if (m_registry != NULL) {
+            delete m_registry;
+            m_registry = NULL;
+        }
+    }
+    DestroyPools();
+    if (m_singletons != NULL) {
+        int bucketCount = m_singletons->m_bucketCount;
+        for (int bucket = 0; bucket < bucketCount; ++bucket) {
+            CHash::Entry* entry = m_singletons->m_buckets[bucket];
+            while (entry != NULL) {
+                CSingleton* singleton = static_cast<CSingleton*>(entry->m_value);
+                entry = entry->m_next;
+                delete singleton;
+            }
+        }
+        if (m_singletons != NULL) {
+            delete m_singletons;
+            m_singletons = NULL;
+        }
+    }
     XString::Shutdown();
 }
 
@@ -522,61 +552,67 @@ void CGameApp::HandleRender()
 
 void CGameApp::OnIAPComplete(const XString& productId)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CIAPCurrency* item = app->InitIAPCurrencyManager()->getIAPCurrencyByAppleId(productId);
-    if (item == NULL) {
-        return;
-    }
-    XString name = XString::Format(L"%02d_%s", item->m_id, item->m_name.c_str());
-    CGameAnalytics::logItemPurchased(name, item->m_priceIAP, CGameAnalytics::CURRENCY_IAP);
+    // Keep both lookup temporaries alive until the original format call.
+    XString name = XString::Format(IAP_ITEM_FORMAT,
+        static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager()->getIAPCurrencyByAppleId(productId)->m_id,
+        static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager()->getIAPCurrencyByAppleId(productId)->m_name.c_str());
+    CIAPCurrencyManager* manager = static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager();
+    CGameAnalytics::logItemPurchased(name, manager->getIAPCurrencyByAppleId(productId)->m_priceIAP,
+                                     CGameAnalytics::CURRENCY_IAP);
     CGameAnalytics::logIAPPurchased(name, CBH_Player::GetInstance()->FieldAt(0x28));
-    item->Buy();
-    WindowApp::HandleTunnelCommand((int)0xbe344666, reinterpret_cast<int>(item), 0, 0);
+    manager = static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager();
+    manager->getIAPCurrencyByAppleId(productId)->Buy();
+    manager = static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager();
+    WindowApp::HandleTunnelCommand((int)0xbe344666,
+        reinterpret_cast<int>(manager->getIAPCurrencyByAppleId(productId)), 0, 0);
 }
 
 void CGameApp::RequestProductDataComplete(RequestProductDataState state,
     const TCVector<const ICInAppPurchaseProduct*>& products)
 {
-    if (WindowApp::m_instance == NULL) {
-        return;
-    }
+    int command;
     if (state == REQUEST_PRODUCT_DATA_TIMEOUT || state == REQUEST_PRODUCT_DATA_FAILED) {
-        WindowApp::HandleTunnelCommand((int)0xc24364a4, 0, 0, 0);
-        return;
-    }
-    if (state != REQUEST_PRODUCT_DATA_SUCCESS) {
-        return;
-    }
-
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CIAPCurrencyManager* manager = app->InitIAPCurrencyManager();
-    manager->SetAllUnavailable();
-    for (int index = 0; index < products.Size(); ++index) {
-        const ICInAppPurchaseProduct* product = products[index];
-        CStrWChar identifier = product->GetProductIdentifier();
-        CIAPCurrency* item = manager->getIAPCurrencyByAppleId(XString(identifier.GetWCharPtr()));
-        if (item != NULL) {
+        command = (int)0xc24364a4;
+    } else if (state == REQUEST_PRODUCT_DATA_SUCCESS) {
+        static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager()->SetAllUnavailable();
+        for (int index = 0; index < products.Size(); ++index) {
+            const ICInAppPurchaseProduct* product = products[index];
+            CIAPCurrencyManager* manager = static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager();
+            CIAPCurrency* item = manager->getIAPCurrencyByAppleId(XString(product->GetProductIdentifier().GetWCharPtr()));
             item->setAvailable(true);
             item->setPriceIAP(static_cast<int>(product->GetPrice() * 100.0f));
         }
+        command = (int)0xff403571;
+    } else {
+        return;
     }
-    WindowApp::HandleTunnelCommand((int)0xff403571, 0, 0, 0);
+    WindowApp::HandleTunnelCommand(command, 0, 0, 0);
 }
 
 void CGameApp::BuyProductComplete(BuyProductState state, const ICInAppPurchaseTransaction* transaction)
 {
-    if (transaction == NULL ||
-        (state != BUY_PRODUCT_SUCCESS && state != BUY_PRODUCT_CANCELLED && state != BUY_PRODUCT_FAILED)) {
+    switch (state) {
+    case BUY_PRODUCT_FAILED: {
+        XString productId(transaction->GetProductIdentifier().GetWCharPtr());
+        XString name = XString::Format(IAP_ITEM_FORMAT,
+            static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager()->getIAPCurrencyByAppleId(productId)->m_id,
+            static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager()->getIAPCurrencyByAppleId(productId)->m_name.c_str());
+        CGameAnalytics::logIAPPurchaseFailed(name);
+        WindowApp::HandleTunnelCommand(0x659570dc, 0, 0, 0);
         return;
     }
-    CStrWChar identifier = transaction->GetProductIdentifier();
-    XString productId(identifier.GetWCharPtr());
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CIAPCurrencyManager* manager = NULL;
-    if (app != NULL) {
-        manager = app->InitIAPCurrencyManager();
+    case BUY_PRODUCT_CANCELLED: {
+        XString productId(transaction->GetProductIdentifier().GetWCharPtr());
+        XString name = XString::Format(IAP_ITEM_FORMAT,
+            static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager()->getIAPCurrencyByAppleId(productId)->m_id,
+            static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager()->getIAPCurrencyByAppleId(productId)->m_name.c_str());
+        CGameAnalytics::logIAPPurchaseCanceled(name);
+        WindowApp::HandleTunnelCommand(0x5f9d3f54, 0, 0, 0);
+        return;
     }
-    if (state == BUY_PRODUCT_SUCCESS) {
+    case BUY_PRODUCT_SUCCESS: {
+        XString productId(transaction->GetProductIdentifier().GetWCharPtr());
+        CIAPCurrencyManager* manager = static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager();
         if (manager == NULL) {
             m_pendingPurchases.addElement(productId);
         } else {
@@ -584,22 +620,8 @@ void CGameApp::BuyProductComplete(BuyProductState state, const ICInAppPurchaseTr
         }
         return;
     }
-    if (app == NULL) {
+    default:
         return;
-    }
-    XString name = productId;
-    if (manager != NULL) {
-        CIAPCurrency* item = manager->getIAPCurrencyByAppleId(productId);
-        if (item != NULL) {
-            name = XString::Format(L"%02d_%s", item->m_id, item->m_name.c_str());
-        }
-    }
-    if (state == BUY_PRODUCT_CANCELLED) {
-        CGameAnalytics::logIAPPurchaseCanceled(name);
-        WindowApp::HandleTunnelCommand(0x5f9d3f54, 0, 0, 0);
-    } else {
-        CGameAnalytics::logIAPPurchaseFailed(name);
-        WindowApp::HandleTunnelCommand(0x659570dc, 0, 0, 0);
     }
 }
 

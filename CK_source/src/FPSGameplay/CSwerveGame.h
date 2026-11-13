@@ -132,7 +132,7 @@ public:
     void UpdateGameFinishing(int elapsedMs);
     void HuntingUpdate(int elapsedMs);
     void UpdatePopups(int elapsedMs);
-    bool HandleTouchPressed(int x, int y, int pointer);
+    void HandleTouchPressed(int x, int y, int pointer);
     void HandleTouchReleased(int x, int y, int pointer);
     void HandleTouchDragged(int x, int y, int pointer);
     void AmbientSoundsUpdate(int elapsed);
@@ -195,8 +195,6 @@ public:
     void PostFacebookMessageRandomFriend(CStrWChar friendId);
     /** Post the killed (target) or avenged story on the wall of the friend of this mission. */
     void PostFacebookMessageTargettedMission(bool killed);
-    void ShowAmmoDialog();
-    void OpenIngameShop();
     void RegisterUnitNeutralization(EUnitMindType type);
     void QueueResult(EBountyResult result);
     void Shot(int x, int y);

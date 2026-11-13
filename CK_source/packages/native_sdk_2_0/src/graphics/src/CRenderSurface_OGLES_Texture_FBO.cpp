@@ -43,31 +43,26 @@ unsigned char CRenderSurface_OGLES_Texture_FBO::Initialize(const InitParam* para
             depthFormat = GL_DEPTH_COMPONENT16_OES;
         }
     }
-    if (!result) {
-        Destroy();
-        return result;
-    }
-
-    // Restore the caller's renderbuffer and framebuffer after configuring the new target.
-    GLint previousFramebuffer = 0;
-    GLint previousRenderbuffer = 0;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING_OES, &previousFramebuffer);
-    glGetIntegerv(GL_RENDERBUFFER_BINDING_OES, &previousRenderbuffer);
-    glGenFramebuffersOES(1, &m_framebuffer);
-    glBindFramebufferOES(GL_FRAMEBUFFER_OES, m_framebuffer);
-    glFramebufferTexture2DOES(GL_FRAMEBUFFER_OES, GL_COLOR_ATTACHMENT0_OES, GL_TEXTURE_2D, m_texture, 0);
-    if (depthFormat != 0) {
-        CRenderSurfaceBuffer* buffer = m_buffers[Buffer_Color];
-        glGenRenderbuffersOES(1, &m_depthRenderbuffer);
-        glBindRenderbufferOES(GL_RENDERBUFFER_OES, m_depthRenderbuffer);
-        glRenderbufferStorageOES(GL_RENDERBUFFER_OES, depthFormat, buffer->m_width, buffer->m_height);
-        glFramebufferRenderbufferOES(GL_FRAMEBUFFER_OES, GL_DEPTH_ATTACHMENT_OES, GL_RENDERBUFFER_OES,
-                                     m_depthRenderbuffer);
-    }
-    result = glCheckFramebufferStatusOES(GL_FRAMEBUFFER_OES) == GL_FRAMEBUFFER_COMPLETE_OES;
-    glBindRenderbufferOES(GL_RENDERBUFFER_OES, previousRenderbuffer);
-    glBindFramebufferOES(GL_FRAMEBUFFER_OES, previousFramebuffer);
-    if (!result) {
+    if (result) {
+        // The original queries the renderbuffer binding for both saved names.
+        GLint previousFramebuffer = 0;
+        GLint previousRenderbuffer = 0;
+        glGetIntegerv(GL_RENDERBUFFER_BINDING_OES, &previousFramebuffer);
+        glGetIntegerv(GL_RENDERBUFFER_BINDING_OES, &previousRenderbuffer);
+        glGenFramebuffersOES(1, &m_framebuffer);
+        glBindFramebufferOES(GL_FRAMEBUFFER_OES, m_framebuffer);
+        glFramebufferTexture2DOES(GL_FRAMEBUFFER_OES, GL_COLOR_ATTACHMENT0_OES, GL_TEXTURE_2D, m_texture, 0);
+        if (depthFormat != 0) {
+            CRenderSurfaceBuffer* buffer = m_buffers[Buffer_Color];
+            glGenRenderbuffersOES(1, &m_depthRenderbuffer);
+            glBindRenderbufferOES(GL_RENDERBUFFER_OES, m_depthRenderbuffer);
+            glRenderbufferStorageOES(GL_RENDERBUFFER_OES, depthFormat, buffer->m_width, buffer->m_height);
+            glFramebufferRenderbufferOES(GL_FRAMEBUFFER_OES, GL_DEPTH_ATTACHMENT_OES, GL_RENDERBUFFER_OES,
+                                         m_depthRenderbuffer);
+        }
+        glBindRenderbufferOES(GL_RENDERBUFFER_OES, previousRenderbuffer);
+        glBindFramebufferOES(GL_FRAMEBUFFER_OES, previousFramebuffer);
+    } else {
         Destroy();
     }
     return result;

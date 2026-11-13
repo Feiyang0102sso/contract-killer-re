@@ -20,7 +20,7 @@ CFactionType::SReputationChanges::SReputationChanges()
     m_values[4] = 0;
 }
 
-CFactionType::CFactionType(TiXmlNode* node) : m_legal(false), m_smallIcon(NULL)
+CFactionType::CFactionType(TiXmlNode* node)
 {
     Parse(node);
 }
@@ -73,36 +73,40 @@ void CFactionType::ParseBoss(TiXmlNode* node)
 
 const XString& CFactionType::GetBoss() const
 {
-    static const XString empty;
-    App* app = static_cast<App*>(WindowApp::m_instance);
     int level = CBH_Player::GetInstance()->GetLevel();
     m_eligibleBosses.removeAllElements();
     for (int index = 0; index < m_bosses.size(); ++index) {
-        XString* name = &m_bosses.m_items[index];
-        CBH_PersonType* person = app->InitPersonTypeManager()->GetType(*name);
+        CBH_PersonTypeManager* people = static_cast<App*>(WindowApp::m_instance)->InitPersonTypeManager();
+        CBH_PersonType* person = people->GetType(m_bosses[index]);
         if (person != NULL && person->IsSuitableForPlayerLevel(level)) {
+            XString* name = &m_bosses.m_items[index];
             m_eligibleBosses.addElement(name);
         }
     }
+
     int count = m_eligibleBosses.size();
-    if (count < 1) {
-        return empty;
-    }
-    CSquadTypeManager* squads = app->InitSquadTypeManager();
     float totalDamage = 0.0f;
-    for (int index = 0; index < count; ++index) {
-        const CSquadType* squad = squads->GetType(*m_eligibleBosses[index]);
-        if (squad != NULL) {
-            totalDamage += squad->m_damage;
-        }
+    int damageCount = count;
+    for (int index = 0; index < damageCount; ++index) {
+        CSquadTypeManager* squads = static_cast<App*>(WindowApp::m_instance)->InitSquadTypeManager();
+        totalDamage += squads->GetType(*m_eligibleBosses[index])->m_damage;
+        damageCount = m_eligibleBosses.size();
     }
-    int selected = CRandGen::GetInstance()->GetRandRange(0, count - 1);
-    const XString& name = *m_eligibleBosses[selected];
-    CSquadType* squad = squads->GetType(name);
-    if (squad != NULL && totalDamage > 0.0f) {
-        squad->m_field18 = squad->m_damage / (totalDamage / count);
+
+    CRandGen* random = CRandGen::GetInstance();
+    float averageDamage = totalDamage / damageCount;
+    int last = count - 1;
+    int index = random->GetRandRange(0, last);
+    if (index < 0) {
+        index = 0;
+    } else if (index >= count) {
+        index = last;
     }
-    return name;
+    // Each boss in the shipped factions table also has a squad entry.
+    CSquadTypeManager* squads = static_cast<App*>(WindowApp::m_instance)->InitSquadTypeManager();
+    CSquadType* squad = squads->GetType(*m_eligibleBosses[index]);
+    squad->m_field18 = squad->m_damage / averageDamage;
+    return *m_eligibleBosses[index];
 }
 
 typedef char AssertFactionSize[sizeof(CFactionType) == 0x64 ? 1 : -1];

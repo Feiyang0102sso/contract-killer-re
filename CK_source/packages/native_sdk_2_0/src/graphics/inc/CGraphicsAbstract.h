@@ -112,6 +112,13 @@ public:
                                            const CVertexAttribute::Decl* decl, int indexBytes,
                                            unsigned int indexType);
 
+            /** The original textured-quad path stores the terminator without reserving its slot. */
+            template <bool ReserveTerminator>
+            CVertexBuffer* AquireVtxBufferInternal(DisplayProgram& program, const int* levelSizes,
+                                                   int bufferKind, int vertexBytes, unsigned int texture,
+                                                   const CVertexAttribute::Decl* decl, int indexBytes,
+                                                   unsigned int indexType);
+
             int m_stackCount;                   // 0x00
             TCStack<Component>* m_stacks;       // 0x04 np_malloc'ed array of m_stackCount stacks
             TCStack<Component*> m_order;        // 0x08 components being walked

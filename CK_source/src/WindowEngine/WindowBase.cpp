@@ -457,16 +457,14 @@ static inline float PositiveSpacing(int spacing)
 bool Window::IsLocalPos(int x, int y) const
 {
     Layout* layout = m_layout;
-    if (layout != NULL && (m_flags & FLAG_HIT_OUTSET) != 0) {
-        // The outset spacing belongs to the window too.
-        float localX = (float)x;
-        float localY = (float)y;
-        return localX >= -PositiveSpacing(layout->m_outset.m_left) &&
-               localX < (float)m_width + PositiveSpacing(layout->m_outset.m_right) &&
-               localY >= -PositiveSpacing(layout->m_outset.m_top) &&
-               localY < (float)m_height + PositiveSpacing(layout->m_outset.m_bottom);
+    if (layout == NULL || (m_flags & FLAG_HIT_OUTSET) == 0) {
+        return x >= 0 && x < m_width && y >= 0 && y < m_height;
     }
-    return x >= 0 && x < m_width && y >= 0 && y < m_height;
+    // The outset spacing belongs to the window too.
+    return (float)x >= -PositiveSpacing(layout->m_outset.m_left) &&
+           (float)x < (float)m_width + PositiveSpacing(layout->m_outset.m_right) &&
+           (float)y >= -PositiveSpacing(layout->m_outset.m_top) &&
+           (float)y < (float)m_height + PositiveSpacing(layout->m_outset.m_bottom);
 }
 
 bool Window::IsVisible() const
@@ -727,9 +725,11 @@ void Window::Layout::Table::PopulateCellWindows(Window* window)
             // An animated window keeps its own rectangle.
             continue;
         }
+        int column = layout->m_cellX;
+        int row = layout->m_cellY;
         Cell cell;
         cell.m_window = child;
-        SetCell(layout->m_cellX, layout->m_cellY, cell);
+        SetCell(column, row, cell);
     }
 }
 
@@ -762,9 +762,10 @@ int Window::Layout::Table::BalanceDim(int size, Vector<UnitValues>& values, bool
         percentTotal += value->m_percent;
     }
     if (size < pixelTotal && byContent) {
+        int lastMax = value->m_max;
         size = pixelTotal;
-        if (value->m_max > 0 && value->m_max < pixelTotal) {
-            size = value->m_max;
+        if (lastMax > 0 && lastMax < pixelTotal) {
+            size = lastMax;
         }
     }
     if (size <= minTotal) {
@@ -787,7 +788,7 @@ int Window::Layout::Table::BalanceDim(int size, Vector<UnitValues>& values, bool
     int freeCount = 0;
     for (int index = 0; index < count; index++) {
         UnitValues& current = values[index];
-        if (current.m_percent > 0) {
+        if (current.m_percent > 0.0f) {
             int percentSize = MathLib::Round(current.m_percent * sizeValue);
             if (percentSize < current.m_pixels) {
                 // The fixed size wins over the percentage.
@@ -826,17 +827,13 @@ int Window::Layout::Table::BalanceDim(int size, Vector<UnitValues>& values, bool
             float stretch = sizeValue / (float)wanted;
             for (int index = 0; index < count - 1; index++) {
                 UnitValues& current = values[index];
-                float currentSize;
                 if (current.m_pixels >= 1) {
-                    currentSize = (float)current.m_pixels;
+                    current.m_size = (int)((float)current.m_pixels * stretch);
                 } else if (current.m_percent > 0) {
-                    currentSize = sizeValue * current.m_percent;
+                    current.m_size = (int)((sizeValue * current.m_percent) * stretch);
                 } else {
                     current.m_size = 0;
-                    used += 0;
-                    continue;
                 }
-                current.m_size = (int)(currentSize * stretch);
                 if (current.m_max >= 1 && current.m_size > current.m_max) {
                     current.m_size = current.m_max;
                 }
@@ -1064,26 +1061,21 @@ void Window::Layout::Table::Reflow(Window* window, int width, int height, bool f
     if (m_columnCount <= 0) {
         return;
     }
-    int insetTop = 0;
-    int insetRight = 0;
-    int insetBottom = 0;
-    int insetLeft = 0;
+    Spacing inset;
     if (window->m_layout != NULL) {
-        insetTop = window->m_layout->m_inset.m_top;
-        insetRight = window->m_layout->m_inset.m_right;
-        insetBottom = window->m_layout->m_inset.m_bottom;
-        insetLeft = window->m_layout->m_inset.m_left;
+        inset = window->m_layout->m_inset;
     }
+    int insetTop = inset.m_top;
+    int insetRight = inset.m_right;
+    int insetBottom = inset.m_bottom;
+    int insetLeft = inset.m_left;
     PopulateWidthAndHeight(width, height);
     int innerHeight = height - (insetBottom + insetTop);
     int innerWidth = width - (insetLeft + insetRight);
     bool changed;
     do {
         Layout* layout = window->m_layout;
-        if (layout == NULL) {
-            m_width = BalanceDim(innerWidth, m_columns, false);
-            m_height = BalanceDim(innerHeight, m_rows, false);
-        } else {
+        if (layout != NULL) {
             bool widthByContent = layout->m_width.m_unit == UNIT_CONTENT;
             bool heightByContent = layout->m_height.m_unit == UNIT_CONTENT;
             m_width = BalanceDim(innerWidth, m_columns, widthByContent);
@@ -1094,6 +1086,9 @@ void Window::Layout::Table::Reflow(Window* window, int width, int height, bool f
             if (heightByContent && innerHeight < m_height) {
                 innerHeight = m_height;
             }
+        } else {
+            m_width = BalanceDim(innerWidth, m_columns, false);
+            m_height = BalanceDim(innerHeight, m_rows, false);
         }
         m_width = insetLeft + insetRight + m_width;
         m_height = m_height + insetBottom + insetTop;
@@ -1105,17 +1100,20 @@ void Window::Layout::Table::Reflow(Window* window, int width, int height, bool f
         changed = false;
         int y = insetTop;
         for (int row = 0;; row++) {
+            UnitValues& rowValues = m_rows[row];
             if (columnCount >= 1) {
                 int x = insetLeft;
                 for (int column = 0;;) {
+                    UnitValues* columns = m_columns.m_items;
                     Cell* cell = GetCell(this, column, row);
                     if (cell != NULL && cell->m_window != NULL) {
                         Window* child = cell->m_window;
                         Layout* childLayout = child->m_layout;
-                        int cellWidth = m_columns[column].m_size;
-                        int cellHeight = m_rows[row].m_size;
+                        UnitValues& columnValues = columns[column];
+                        int cellWidth = columnValues.m_size;
+                        int cellHeight = rowValues.m_size;
                         for (int span = 1; span < childLayout->m_colSpan && column + span < columnCount; span++) {
-                            cellWidth += m_columns[column + span].m_size;
+                            cellWidth += columns[column + span].m_size;
                         }
                         for (int span = 1; span < childLayout->m_rowSpan && row + span < rowCount; span++) {
                             cellHeight += m_rows[row + span].m_size;
@@ -1128,9 +1126,8 @@ void Window::Layout::Table::Reflow(Window* window, int width, int height, bool f
                             child->m_flags |= FLAG_RECT_PENDING;
                             // The child did not fit: widen the column / row and lay out again.
                             if (childLayout->m_colSpan == 1 && childWidth < child->m_width) {
-                                UnitValues& columnValues = m_columns[column];
                                 columnValues.Add(childLayout->m_width, outset.m_right + outset.m_left);
-                                int needed = outset.m_left + child->m_width + outset.m_right;
+                                int needed = outset.m_right + child->m_width + outset.m_left;
                                 float minSize = (float)columnValues.m_min;
                                 float neededSize = (float)needed;
                                 if (neededSize < minSize) {
@@ -1143,7 +1140,6 @@ void Window::Layout::Table::Reflow(Window* window, int width, int height, bool f
                                 }
                             }
                             if (childLayout->m_rowSpan == 1 && childHeight < child->m_height) {
-                                UnitValues& rowValues = m_rows[row];
                                 rowValues.Add(childLayout->m_height, outset.m_bottom + outset.m_top);
                                 int needed = outset.m_top + child->m_height + outset.m_bottom;
                                 float minSize = (float)rowValues.m_min;
@@ -1152,8 +1148,8 @@ void Window::Layout::Table::Reflow(Window* window, int width, int height, bool f
                                     neededSize = minSize;
                                 }
                                 rowValues.m_min = (short)neededSize;
-                                if (m_rows[row].m_size < needed) {
-                                    m_rows[row].m_size = needed;
+                                if (rowValues.m_size < needed) {
+                                    rowValues.m_size = needed;
                                     changed = true;
                                 }
                             }
@@ -1164,13 +1160,13 @@ void Window::Layout::Table::Reflow(Window* window, int width, int height, bool f
                     if (column >= columnCount) {
                         break;
                     }
-                    x += m_columns[column - 1].m_size;
+                    x += columns[column - 1].m_size;
                 }
             }
             if (rowCount - 1 == row) {
                 break;
             }
-            y += m_rows[row].m_size;
+            y += rowValues.m_size;
         }
     } while (changed);
 }
@@ -1377,33 +1373,33 @@ void Window::SetRect(int x, int y, int width, int height, bool force)
     int contentHeight = height;
     while (true) {
         do {
-            if (!force && (short)(deltaWidth | deltaHeight) == 0) {
-                if ((m_flags & FLAG_LAYOUT_DIRTY) == 0) {
-                    goto finished;
-                }
-            } else {
+            if (force || (short)(deltaWidth | deltaHeight) != 0) {
                 if (m_easy != NULL && (m_flags & FLAG_IN_EASY) == 0) {
                     OnLayoutEasy(oldX, oldY, (short)previousWidth, (short)previousHeight);
                 }
                 OnLayout();
+            } else if ((m_flags & FLAG_LAYOUT_DIRTY) == 0) {
+                goto finished;
             }
             m_flags &= ~FLAG_LAYOUT_DIRTY;
             if (m_firstChild == NULL) {
                 goto finished;
             }
             LayoutTable(force);
-            int innerWidth = m_width;
-            int innerHeight = m_height;
+            int currentWidth = m_width;
+            int currentHeight = m_height;
+            int innerWidth = currentWidth;
+            int innerHeight = currentHeight;
             int insetTop = 0;
             int insetLeft = 0;
             if (m_layout != NULL) {
                 insetTop = m_layout->m_inset.m_top;
                 insetLeft = m_layout->m_inset.m_left;
-                innerHeight = m_height - insetTop - m_layout->m_inset.m_bottom;
-                innerWidth = m_width - insetLeft - m_layout->m_inset.m_right;
+                innerHeight = currentHeight - insetTop - m_layout->m_inset.m_bottom;
+                innerWidth = currentWidth - insetLeft - m_layout->m_inset.m_right;
             }
-            deltaHeight = m_height - previousHeight;
-            deltaWidth = m_width - previousWidth;
+            deltaHeight = currentHeight - previousHeight;
+            deltaWidth = currentWidth - previousWidth;
             for (Window* child = m_firstChild; child != NULL; child = child->m_nextSibling) {
                 if ((child->m_flags & (FLAG_DEAD | FLAG_INITIALIZED | FLAG_CLOSING | FLAG_RECT_PENDING)) !=
                     FLAG_INITIALIZED) {
@@ -1612,6 +1608,7 @@ void Window::SetRect(int x, int y, int width, int height, bool force)
             goto finished;
         }
         ComputeSizeByContent(contentWidth, contentHeight, true);
+        layout = m_layout;
         previousWidth = m_width;
         previousHeight = m_height;
         unsigned short newWidth = previousWidth;
@@ -1664,8 +1661,7 @@ void Window::SetRect(int x, int y, int width, int height, bool force)
     }
 finished:
     if ((m_flags & FLAG_IN_EASY) == 0 && m_parent != NULL && (m_parent->m_flags & FLAG_LAYOUT_DIRTY) == 0) {
-        EasyParams* easy = m_easy;
-        if (easy == NULL || (easy->m_state == 1 && !easy->m_started)) {
+        if (m_easy == NULL || (m_easy->m_state == 1 && !m_easy->m_started)) {
             if (notifyStartup || (m_align & (ALIGN_RIGHT | ALIGN_HCENTER | ALIGN_BOTTOM | ALIGN_VCENTER)) == 0) {
                 OnStartupEasy();
                 DispatchEventListeners(Event::WINDOW_NOTIFY, NOTIFY_STARTUP);
@@ -1818,25 +1814,26 @@ int Window::DispatchEvent(Event& event)
     case Event::POINTER_DRAGGED:
     case Event::POINTER_RELEASED: {
         // Work in local coordinates, restore the global ones afterwards.
-        short globalX = event.m_param1;
-        short globalY = event.m_param2;
-        short pointer = event.m_param3;
+        int globalX = event.m_param1;
+        int globalY = event.m_param2;
+        int pointer = event.m_param3;
         int originX = 0;
         int originY = 0;
         for (Window* window = this; window != NULL; window = window->m_parent) {
             originX += window->m_x;
             originY += window->m_y;
         }
-        event.m_param1 = event.m_param1 - originX;
-        event.m_param2 = event.m_param2 - originY;
-        Window* capture = WindowApp::PointerCapture(event.m_param3);
+        event.m_param1 = globalX - originX;
+        event.m_param2 = globalY - originY;
+        Window* capture = WindowApp::PointerCapture(pointer);
+        Event::EType type = event.m_type;
         bool capturing;
-        if (event.m_type != Event::POINTER_PRESSED) {
+        if (type != Event::POINTER_PRESSED) {
             if ((m_flags & FLAG_POINTER_EXCLUSIVE) != 0 && capture != this) {
                 goto notHandled;
             }
         }
-        if (capture != this || event.m_type == Event::POINTER_PRESSED) {
+        if (capture != this || type == Event::POINTER_PRESSED) {
             if ((m_flags & FLAG_POINTER_HIT_TEST) != 0) {
                 int inside = IsLocalPos(event.m_param1, event.m_param2);
                 event.m_handled = inside ^ 1;
@@ -1845,7 +1842,7 @@ int Window::DispatchEvent(Event& event)
                 }
             }
         }
-        if (event.m_type == Event::POINTER_DRAGGED) {
+        if (type == Event::POINTER_DRAGGED) {
             OnPointerEvent(event);
             capturing = true;
             if (event.m_type == Event::NONE) {
@@ -1854,7 +1851,7 @@ int Window::DispatchEvent(Event& event)
             OnPointerDragged(event);
             DispatchEventListeners(event);
             capturing = true;
-        } else if (event.m_type == Event::POINTER_PRESSED) {
+        } else if (type == Event::POINTER_PRESSED) {
             OnPointerEvent(event);
             capturing = true;
             if (event.m_type == Event::NONE) {
@@ -1875,21 +1872,21 @@ int Window::DispatchEvent(Event& event)
         }
         if (event.m_type != Event::NONE) {
         notHandled:
-            event.m_param1 = globalX;
-            event.m_param2 = globalY;
+            event.m_param1 = (short)globalX;
+            event.m_param2 = (short)globalY;
             return 0;
         }
     handled:
-        event.m_param1 = globalX;
-        event.m_param2 = globalY;
+        event.m_param1 = (short)globalX;
+        event.m_param2 = (short)globalY;
         if (event.m_handler != NULL) {
             return 1;
         }
         event.m_handler = this;
         if (capturing) {
-            WindowApp::SetPointerCapture(pointer, this);
+            WindowApp::SetPointerCapture((short)pointer, this);
         } else {
-            WindowApp::SetPointerCapture(pointer, NULL);
+            WindowApp::SetPointerCapture((short)pointer, NULL);
         }
         return 1;
     }
@@ -2145,24 +2142,24 @@ void Window::UpdateEasy()
     }
     float now = EasyTime();
     EasyParams* easy = m_easy;
-    float opacityTime = now - easy->m_opacityStart;
     float timeX = now - easy->m_startX;
     float timeY = now - easy->m_startY;
+    float opacityTime = now - easy->m_opacityStart;
     if (easy->m_moving || easy->m_resizing) {
         int x;
         int y;
         if (easy->m_moving) {
-            if (easy->m_toX == easy->m_fromX) {
-                x = easy->m_fromX;
-            } else {
+            if (easy->m_toX != easy->m_fromX) {
                 x = easy->RunEasy(easy->m_methodX, timeX, &easy->m_fromX, easy->m_overshootX);
                 easy = m_easy;
-            }
-            if (easy->m_toY == easy->m_fromY) {
-                y = easy->m_fromY;
             } else {
+                x = easy->m_fromX;
+            }
+            if (easy->m_toY != easy->m_fromY) {
                 y = easy->RunEasy(easy->m_methodY, timeY, &easy->m_fromY, easy->m_overshootY);
                 easy = m_easy;
+            } else {
+                y = easy->m_fromY;
             }
         } else {
             x = m_x;
@@ -2171,16 +2168,16 @@ void Window::UpdateEasy()
         int width;
         int height;
         if (easy->m_resizing) {
-            if (easy->m_toWidth == easy->m_fromWidth) {
-                width = easy->m_fromWidth;
-            } else {
+            if (easy->m_toWidth != easy->m_fromWidth) {
                 width = easy->RunEasy(easy->m_methodX, timeX, &easy->m_fromWidth, easy->m_overshootX);
                 easy = m_easy;
-            }
-            if (easy->m_toHeight == easy->m_fromHeight) {
-                height = easy->m_fromHeight;
             } else {
+                width = easy->m_fromWidth;
+            }
+            if (easy->m_toHeight != easy->m_fromHeight) {
                 height = easy->RunEasy(easy->m_methodY, timeY, &easy->m_fromHeight, easy->m_overshootY);
+            } else {
+                height = easy->m_fromHeight;
             }
         } else {
             width = m_width;
@@ -2244,15 +2241,14 @@ void Window::HandleUpdate(bool updateSelf)
         bool hasClosing = false;
         for (Window* child = firstChild; child != NULL; child = child->m_nextSibling) {
             int flags = child->m_flags;
+            bool initialized;
+            bool takesFocus;
             if (flags < 0) {
                 // Dead: the parent has to lay out again.
-                layoutChanged = true;
-                m_flags |= FLAG_LAYOUT_DIRTY;
-                continue;
+                goto deadChild;
             }
             if ((flags & FLAG_CLOSING) != 0) {
-                hasClosing = true;
-                continue;
+                goto closingChild;
             }
             if ((flags & FLAG_STARTING) != 0) {
                 // Only the front window may start.
@@ -2263,7 +2259,8 @@ void Window::HandleUpdate(bool updateSelf)
                 flags &= ~FLAG_STARTING;
                 child->m_flags = flags;
             }
-            bool initialized = false;
+
+            initialized = false;
             if ((flags & FLAG_INITIALIZED) == 0) {
                 child->m_flags = flags | FLAG_INITIALIZED;
                 child->Init();
@@ -2279,20 +2276,11 @@ void Window::HandleUpdate(bool updateSelf)
                 OnChildInitialized(child);
             }
             flags = child->m_flags;
-            bool takesFocus;
+            takesFocus = false;
             if ((m_flags & FLAG_FOCUSED) != 0 && (flags & FLAG_FOCUSABLE) != 0) {
-                Window* focusChild = m_focusChild;
-                if (focusChild == NULL && focusFree) {
-                    takesFocus = true;
-                } else {
-                    takesFocus = focusChild == child;
-                }
-            } else {
-                takesFocus = false;
+                takesFocus = (m_focusChild == NULL && focusFree) || m_focusChild == child;
             }
-            bool stillFree = focusFree;
             if (takesFocus) {
-                stillFree = false;
                 if ((flags & FLAG_FOCUSED) == 0) {
                     for (Window* other = *firstLink; other != NULL; other = other->m_nextSibling) {
                         if ((other->m_flags & (FLAG_INITIALIZED | FLAG_FOCUSED)) == (FLAG_INITIALIZED | FLAG_FOCUSED)) {
@@ -2308,12 +2296,9 @@ void Window::HandleUpdate(bool updateSelf)
                     if ((flags & (FLAG_DEAD | FLAG_CLOSING)) != 0) {
                         m_focusChild = NULL;
                         if (flags < 0) {
-                            layoutChanged = true;
-                            m_flags |= FLAG_LAYOUT_DIRTY;
-                        } else {
-                            hasClosing = true;
+                            goto deadChild;
                         }
-                        continue;
+                        goto closingChild;
                     }
                 }
             } else if ((flags & FLAG_FOCUSED) != 0) {
@@ -2321,30 +2306,33 @@ void Window::HandleUpdate(bool updateSelf)
                 flags = child->m_flags;
                 if ((flags & (FLAG_DEAD | FLAG_CLOSING)) != 0) {
                     if (flags < 0) {
-                        layoutChanged = true;
-                        m_flags |= FLAG_LAYOUT_DIRTY;
-                    } else {
-                        hasClosing = true;
+                        goto deadChild;
                     }
-                    continue;
+                    goto closingChild;
                 }
+            }
+            if (takesFocus) {
+                focusFree = false;
             }
             if (pass == 1 || initialized) {
                 child->HandleUpdate(updateChildren);
                 flags = child->m_flags;
                 if ((flags & (FLAG_DEAD | FLAG_CLOSING)) != 0) {
-                    focusFree = stillFree;
                     if (flags < 0) {
-                        layoutChanged = true;
-                        m_flags |= FLAG_LAYOUT_DIRTY;
-                    } else {
-                        hasClosing = true;
+                        goto deadChild;
                     }
-                    continue;
+                    goto closingChild;
                 }
             }
-            focusFree = stillFree;
             frontChild = false;
+            continue;
+
+        deadChild:
+            layoutChanged = true;
+            m_flags |= FLAG_LAYOUT_DIRTY;
+            continue;
+        closingChild:
+            hasClosing = true;
         }
         if ((m_flags & (FLAG_DEAD | FLAG_CLOSING)) != 0) {
             return;
@@ -2511,34 +2499,26 @@ void Window::HandlePaint(ICGraphics2d& graphics)
     if (m_width > 0 && m_height > 0) {
         bool setClip;
         if ((m_flags & FLAG_CLIP_SCREEN) != 0) {
+            WindowApp* screenApp = WindowApp::m_instance;
+            int screenWidth = screenApp->m_screenWidth;
+            int screenHeight = screenApp->m_screenHeight;
             setClip = true;
-            clip.m_x = 0;
-            clip.m_y = 0;
-            clip.m_width = app->m_screenWidth;
-            clip.m_height = app->m_screenHeight;
+            clip = CRectangle(0, 0, screenWidth, screenHeight);
         } else {
             setClip = false;
             if ((m_flags & FLAG_NO_CLIP) == 0) {
-                CRectangle windowRect;
-                windowRect.m_x = translation.x;
-                windowRect.m_y = translation.y;
-                windowRect.m_width = m_width;
-                windowRect.m_height = m_height;
+                CRectangle windowRect(translation.x, translation.y, m_width, m_height);
                 clip.Clip(windowRect);
-                if (clip.m_width < 1) {
+                if (clip.m_width < 1 || clip.m_height < 1) {
                     app->PopTranslation();
                     return;
                 }
                 setClip = true;
-                if (clip.m_height < 1) {
-                    app->PopTranslation();
-                    return;
-                }
             }
         }
         // Translate takes 16.16 fixed point.
-        int offsetX = m_x << 16;
-        int offsetY = m_y << 16;
+        unsigned int offsetX = (unsigned int)m_x << 16;
+        unsigned int offsetY = (unsigned int)m_y << 16;
         graphics.Translate(offsetX, offsetY);
         if (setClip) {
             graphics.SetClip(clip);
@@ -2547,13 +2527,13 @@ void Window::HandlePaint(ICGraphics2d& graphics)
         app->OnBeginWindowPaint(graphics, this);
         if ((m_flags & FLAG_PAINT_3D) != 0) {
             RunPaint3D(graphics);
-        } else if (opacity < 0.999f) {
+        } else if (opacity >= 0.999f) {
+            Paint(graphics);
+        } else {
             // A translucent window paints through a blend state.
             BeginBlend(graphics, 1.0f, 0.0f, 0.0f, 0.0f, false, false);
             Paint(graphics);
             EndBlend(graphics);
-        } else {
-            Paint(graphics);
         }
         app->OnEndWindowPaint(graphics, this);
         // The children are painted back to front (the list is front to back): the first four directly,
@@ -2620,11 +2600,7 @@ bool Window::ClipRect(ICGraphics2d& graphics, int x, int y, int width, int heigh
         y += window->m_y;
     }
     CRectangle clip = graphics.GetClip();
-    CRectangle bounds;
-    bounds.m_x = x;
-    bounds.m_y = y;
-    bounds.m_width = width;
-    bounds.m_height = height;
+    CRectangle bounds(x, y, width, height);
     clip.Clip(bounds);
     graphics.SetClip(clip);
     return (short)(clip.m_width | clip.m_height) < 1;
@@ -2934,8 +2910,8 @@ void Window::DrawRectImageHoriz(ICGraphics2d& graphics, ICRenderSurface* left, I
     if (left != NULL) {
         DrawTileImageVert(graphics, left, x, y, height);
         int leftWidth = ImageWidth(left);
-        width -= leftWidth;
         x += leftWidth;
+        width -= leftWidth;
     }
     if (right != NULL) {
         int rightWidth = ImageWidth(right);

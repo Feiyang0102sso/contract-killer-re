@@ -2,13 +2,11 @@
 
 #include "CUnit.h"
 
-namespace {
-const vec3 MemberOffsets[] = {
+static const vec3 g_position[] = {
     vec3(1.5f, -1.5f, 0.0f), vec3(-1.5f, -1.5f, 0.0f),
     vec3(1.5f, 1.5f, 0.0f), vec3(-1.5f, 1.5f, 0.0f),
     vec3(0.0f, -1.5f, 0.0f), vec3(0.0f, 1.5f, 0.0f)
 };
-}
 
 CSquad::CSquad() : m_members(8), m_position(0.0f, 0.0f, 0.0f), m_right(0.0f, 0.0f, 0.0f),
                    m_forward(0.0f, 0.0f, 0.0f), m_leader(NULL), m_hasLeader(false)
@@ -30,11 +28,12 @@ void CSquad::AddLeader(CUnit* unit)
 void CSquad::AddMember(CUnit* unit)
 {
     static int index = 0;
-    if (unit != NULL) {
-        m_members.Add(HashTableKey<const CUnit*>(unit), MemberOffsets[index]);
-        index = (index + 1) % 6;
-        unit->SetSquad(this);
+    if (unit == NULL) {
+        return;
     }
+    m_members.Add(HashTableKey<const CUnit*>(unit), g_position[index]);
+    index = (index + 1) % 6;
+    unit->SetSquad(this);
 }
 
 void CSquad::NoticeUnitParams(CUnit* unit)
@@ -64,13 +63,11 @@ void CSquad::LeaveSquad(CUnit* unit)
 
 vec3 CSquad::GetLocalSquadPosition(CUnit* unit)
 {
-    if (unit != NULL) {
-        const vec3* offset = m_members.Get(HashTableKey<const CUnit*>(unit));
-        if (offset != NULL) {
-            return m_position + m_right * offset->m_x + m_forward * offset->m_y;
-        }
+    if (unit == NULL) {
+        return m_position;
     }
-    return m_position;
+    const vec3* offset = m_members.Get(HashTableKey<const CUnit*>(unit));
+    return m_right * offset->m_x + m_forward * offset->m_y + m_position;
 }
 
 typedef char AssertSquadSize[sizeof(CSquad) == 0x38 ? 1 : -1];

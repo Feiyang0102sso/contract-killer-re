@@ -10,9 +10,20 @@
 #include "CRandGen.h"
 #include "CXmlHelper.h"
 #include "DGHelper.h"
+#include "ICStdUtil.h"
 #include "ResMap.h"
 
 const char* CVisualCharacterType::m_pBodyDummyName = "dummy_guyTransform";
+const char* CVisualCharacterType::m_pIdleAnimationPrefix = "idle_";
+const char* CVisualCharacterType::m_pAfraidAnimationPrefix = "affride";
+const char* CVisualCharacterType::m_pWalkAnimationPrefix = "walk_";
+const char* CVisualCharacterType::m_pWoundAnimationPrefix = "wound_";
+const char* CVisualCharacterType::m_pDeathFrontAnimationPrefix = "death_shoot_front_";
+const char* CVisualCharacterType::m_pDeathBackAnimationPrefix = "death_shoot_back_";
+const char* CVisualCharacterType::m_pStunAnimationPrefix = "ultra_sound_pain_";
+const char* CVisualCharacterType::m_pAttutideAffix[4] = {"stand", "crouch", "wallR", "wallL"};
+const char* CVisualCharacterType::m_pDirectionAffix[2] = {"up", "front"};
+const char* CVisualCharacterType::m_pWeaponAffix[4] = {"pistol", "rifle", "shotgun", "mashinegun"};
 float CVisualCharacterType::m_walkSpeedMan;
 float CVisualCharacterType::m_walkSpeedWoman;
 float CVisualCharacterType::m_runSpeedMan;
@@ -23,18 +34,13 @@ const char* CVisualCharacterType::m_commonMapResourceID;
 const char* CVisualCharacterType::m_commonAnmResourceID;
 
 namespace {
-const char* const ShotAttitudes[] = {"stand", "crouch", "wallR", "wallL"};
-const char* const ShotDirections[] = {"up", "front"};
-const char* const ShotWeapons[] = {"pistol", "rifle", "shotgun", "mashinegun"};
-
 typedef int (*GetCount)(IQueryInterface*, int*);
 typedef int (*GetChild)(IQueryInterface*, int, IQueryInterface**);
-typedef int (*GetObject)(IQueryInterface*, IQueryInterface**);
 typedef int (*SetObject)(IQueryInterface*, IQueryInterface*);
 
 AnimationImpl* AnimationAt(const Vector<AnimationImpl*>& animations, int index)
 {
-    if (animations.size() == 0) {
+    if (animations.size() < 1) {
         return NULL;
     }
     if (index < 0) {
@@ -70,14 +76,17 @@ void CVisualCharacterType::ParseInfo(TiXmlNode* node)
     if (node == NULL) {
         return;
     }
-    m_isMan = CXmlHelper::GetAttributeValue(node, "gender").ToInt() == 0;
-    m_isWoman = CXmlHelper::GetAttributeValue(node, "gender").ToInt() == 1;
+    int gender = CXmlHelper::GetAttributeValue(node, "gender").ToInt();
+    m_isMan = gender == 0;
+    gender = CXmlHelper::GetAttributeValue(node, "gender").ToInt();
+    m_isWoman = gender == 1;
     const char* screenImage = node->ToElement()->Attribute("screenImage");
     if (screenImage == NULL) {
         m_screenImage = 0;
     } else {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        m_screenImage = app->InitResMap()->getResourceID(XString(screenImage).Replace(L"\\n", L"\n", true));
+        ResMap* resources = static_cast<App*>(WindowApp::m_instance)->InitResMap();
+        XString name(screenImage);
+        m_screenImage = resources->getResourceID(name.Replace(L"\\n", L"\n", true));
     }
 }
 
@@ -95,8 +104,6 @@ void CVisualCharacterType::CleanupResources() const
 {
     memset(m_animations, 0, sizeof(m_animations));
     m_idle.removeAllElements();
-    m_afraid.removeAllElements();
-    m_walk.removeAllElements();
     m_wound.removeAllElements();
     m_shot.removeAllElements();
     m_hide.removeAllElements();
@@ -105,9 +112,7 @@ void CVisualCharacterType::CleanupResources() const
     m_getWeapon.removeAllElements();
     m_deathFront.removeAllElements();
     m_deathBack.removeAllElements();
-    m_stun.removeAllElements();
-    m_animationTypes.Clear();
-    m_model = Object3D();
+    m_model.Clear();
 }
 
 void CVisualCharacterType::LoadCommonInfo(TiXmlNode* node)
@@ -124,13 +129,11 @@ void CVisualCharacterType::LoadCommonInfo(TiXmlNode* node)
 void CVisualCharacterType::LoadCommonAnimation(TiXmlNode* node)
 {
     if (node != NULL) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        ResMap* resources = app->InitResMap();
-        m_commonMapResourceID = resources->getResourceID(CXmlHelper::GetAttributeValue(node, "map"));
-        m_commonAnmResourceID = resources->getResourceID(CXmlHelper::GetAttributeValue(node, "anm"));
-        if (m_commonAnmResourceID != NULL) {
-            app->m_helper->LoadAnims(m_commonAnimation, m_commonAnmResourceID);
-        }
+        XString map = CXmlHelper::GetAttributeValue(node, "map");
+        XString animation = CXmlHelper::GetAttributeValue(node, "anm");
+        m_commonMapResourceID = static_cast<App*>(WindowApp::m_instance)->InitResMap()->getResourceID(map);
+        m_commonAnmResourceID = static_cast<App*>(WindowApp::m_instance)->InitResMap()->getResourceID(animation);
+        static_cast<App*>(WindowApp::m_instance)->m_helper->LoadAnims(m_commonAnimation, m_commonAnmResourceID);
     }
 }
 
@@ -141,10 +144,15 @@ void CVisualCharacterType::DestroyCommonAnimation()
 
 void CVisualCharacterType::LoadModel() const
 {
-    XString::AnsiString bodyName(m_bodyResource.c_str());
-    XString::AnsiString headName(m_headResource.c_str());
-    Object3D body = App::LoadObject3D(bodyName);
-    Group head(App::LoadObject3D(headName));
+    Object3D body = App::LoadObject3D(XString::AnsiString(m_bodyResource.c_str()));
+    Group head;
+    {
+        XString::AnsiString name(m_headResource.c_str());
+        Object3D loadedHead = App::LoadObject3D(name);
+        Group headGroup(loadedHead);
+        head.m_interface = headGroup.m_interface;
+        QueryInterface::AddReference(head.m_interface);
+    }
     if (body == NULL || head == NULL) {
         return;
     }
@@ -153,15 +161,12 @@ void CVisualCharacterType::LoadModel() const
     if (m_model == NULL) {
         return;
     }
-    int headTransform = DGHelper::getSwerveID("Player01 HeadTransform");
-    Group bodyAttachment(body.find(headTransform));
-    Group headAttachment(head.find(headTransform));
+    Group bodyAttachment(body.find(DGHelper::getSwerveID("Player01 HeadTransform")));
+    Group headAttachment(head.find(DGHelper::getSwerveID("Player01 HeadTransform")));
     if (bodyAttachment == NULL || headAttachment == NULL) {
         return;
     }
-    IQueryInterface* parent = NULL;
-    CKMethod<GetObject>(headAttachment.m_interface, 0x80)(headAttachment.m_interface, &parent);
-    Group oldParent((Object3D(parent)));
+    Group oldParent(headAttachment.getParent());
     if (oldParent != NULL) {
         CKMethod<SetObject>(oldParent.m_interface, 0xc4)(oldParent.m_interface, headAttachment.m_interface);
     }
@@ -173,19 +178,11 @@ CVisualCharacterType::Group CVisualCharacterType::GetCharacterModelCopy() const
     if (m_model == NULL) {
         LoadModel();
     }
-    if (m_model == NULL) {
-        return Group();
-    }
     if (m_modelCopies == 0) {
         ParseAnimation();
     }
-    IQueryInterface* copy = NULL;
-    CKMethod<GetObject>(m_model.m_interface, 0x48)(m_model.m_interface, &copy);
-    Group result((Object3D(copy)));
-    if (result != NULL) {
-        ++m_modelCopies;
-    }
-    return result;
+    ++m_modelCopies;
+    return Group(m_model.duplicate());
 }
 
 void CVisualCharacterType::ReleaseCharacterModelCopy() const
@@ -198,19 +195,18 @@ void CVisualCharacterType::ReleaseCharacterModelCopy() const
 
 void CVisualCharacterType::ChangeImageRecursively(Object3D object, Image2D image) const
 {
-    if (object == NULL) {
-        return;
-    }
     SwerveHelper::Mesh mesh(object);
     if (mesh != NULL) {
-        int count = 0;
+        int count;
         CKMethod<GetCount>(mesh.m_interface, 0xc0)(mesh.m_interface, &count);
         for (int index = 0; index < count; ++index) {
-            IQueryInterface* appearance = NULL;
-            CKMethod<GetChild>(mesh.m_interface, 0xcc)(mesh.m_interface, index, &appearance);
+            IQueryInterface* appearanceResult;
+            CKMethod<GetChild>(mesh.m_interface, 0xcc)(mesh.m_interface, index, &appearanceResult);
+            IQueryInterface* appearance = appearanceResult;
             if (appearance != NULL) {
-                IQueryInterface* texture = NULL;
-                CKMethod<GetChild>(appearance, 0x74)(appearance, 0, &texture);
+                IQueryInterface* textureResult;
+                CKMethod<GetChild>(appearance, 0x74)(appearance, 0, &textureResult);
+                IQueryInterface* texture = textureResult;
                 if (texture != NULL) {
                     CKMethod<SetObject>(texture, 0x88)(texture, image.m_interface);
                     texture->Release();
@@ -221,12 +217,10 @@ void CVisualCharacterType::ChangeImageRecursively(Object3D object, Image2D image
     }
     Group group(object);
     if (group != NULL) {
-        int count = 0;
-        CKMethod<GetCount>(group.m_interface, 0xb8)(group.m_interface, &count);
+        int count = group.getChildCount();
         for (int index = 0; index < count; ++index) {
-            IQueryInterface* child = NULL;
-            CKMethod<GetChild>(group.m_interface, 0xbc)(group.m_interface, index, &child);
-            ChangeImageRecursively(Object3D(child), image);
+            Node child = group.getChild(index);
+            ChangeImageRecursively(child, image);
         }
     }
 }
@@ -236,10 +230,8 @@ void CVisualCharacterType::ReplaceTexture(Object3D body, Object3D head) const
     if (body == NULL || head == NULL) {
         return;
     }
-    XString::AnsiString bodyName(m_bodyTexture.c_str());
-    XString::AnsiString headName(m_headTexture.c_str());
-    Image2D bodyImage(App::LoadObject3D(bodyName));
-    Image2D headImage(App::LoadObject3D(headName));
+    Image2D bodyImage(App::LoadObject3D(XString::AnsiString(m_bodyTexture.c_str())));
+    Image2D headImage(App::LoadObject3D(XString::AnsiString(m_headTexture.c_str())));
     if (bodyImage != NULL && headImage != NULL) {
         ChangeImageRecursively(body, bodyImage);
         ChangeImageRecursively(head, headImage);
@@ -249,34 +241,87 @@ void CVisualCharacterType::ReplaceTexture(Object3D body, Object3D head) const
 int CVisualCharacterType::GetEnumerateAnimationCount(const Vector<AnimationImpl*>* animations) const
 {
     int count = animations->size();
-    if (count == 0) {
+    if (count < 1) {
         return -1;
     }
-    return CRandGen::GetInstance()->GetRandRange(0, count - 1);
+    int lastIndex = count - 1;
+    int index = CRandGen::GetInstance()->GetRandRange(0, lastIndex);
+    if (index < 0) {
+        return 0;
+    }
+    if (index >= count) {
+        return lastIndex;
+    }
+    return index;
 }
 
 AnimationImpl* CVisualCharacterType::GetAnimation(EPersonAnimType type) const
 {
-    const Vector<AnimationImpl*>* animations = NULL;
     switch (type) {
-    case 0: animations = &m_idle; break;
-    case 1: animations = &m_afraid; break;
-    case 2: animations = &m_walk; break;
-    case 13: animations = &m_wound; break;
-    case 14: animations = &m_deathFront; break;
-    case 15: animations = &m_deathBack; break;
-    case 16: animations = &m_stun; break;
-    default:
-        if (static_cast<unsigned int>(type) < 23) {
-            return m_animations[type];
+    case 0: {
+        int index = GetEnumerateAnimationCount(&m_idle);
+        if (index >= 0) {
+            return m_idle[index];
         }
         return NULL;
     }
-    int index = GetEnumerateAnimationCount(animations);
-    if (index >= 0) {
-        return (*animations)[index];
+    case 1: {
+        int index = GetEnumerateAnimationCount(&m_afraid);
+        if (index >= 0) {
+            return m_afraid[index];
+        }
+        return NULL;
     }
-    return NULL;
+    case 2: {
+        int index = GetEnumerateAnimationCount(&m_walk);
+        if (index >= 0) {
+            return m_walk[index];
+        }
+        return NULL;
+    }
+    case 13: {
+        int index = GetEnumerateAnimationCount(&m_wound);
+        if (index >= 0) {
+            return m_wound[index];
+        }
+        return NULL;
+    }
+    case 14: {
+        int index = GetEnumerateAnimationCount(&m_deathFront);
+        if (index >= 0) {
+            return m_deathFront[index];
+        }
+        return NULL;
+    }
+    case 15: {
+        int index = GetEnumerateAnimationCount(&m_deathBack);
+        if (index >= 0) {
+            return m_deathBack[index];
+        }
+        return NULL;
+    }
+    case 16: {
+        int index = GetEnumerateAnimationCount(&m_stun);
+        if (index >= 0) {
+            return m_stun[index];
+        }
+        return NULL;
+    }
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 17:
+    case 18:
+    case 19:
+    case 20:
+    case 21:
+    case 22:
+        return m_animations[type];
+    default:
+        return NULL;
+    }
 }
 
 AnimationImpl* CVisualCharacterType::GetIdleAnimation(int index) const
@@ -284,7 +329,7 @@ AnimationImpl* CVisualCharacterType::GetIdleAnimation(int index) const
     if (index < 0 || index >= m_idle.size()) {
         index = 0;
     }
-    return AnimationAt(m_idle, index);
+    return m_idle[index];
 }
 
 AnimationImpl* CVisualCharacterType::GetBossAfraidAnimation() const
@@ -343,61 +388,132 @@ EPersonAnimType CVisualCharacterType::GetAnimationTypeByName(const char* name) c
 
 void CVisualCharacterType::ParseAnimation() const
 {
-    ParseEnumerateAnimation(&m_idle, "idle_", static_cast<EPersonAnimType>(0));
-    ParseEnumerateAnimation(&m_afraid, "affride", static_cast<EPersonAnimType>(1));
-    ParseEnumerateAnimation(&m_walk, "walk_", static_cast<EPersonAnimType>(2));
-    ParseShotAnimation();
-    ParseHideUnhideAndReloadAnimation();
-    ParseGetWeaponAnimation();
-    ParseEnumerateAnimation(&m_wound, "wound_", static_cast<EPersonAnimType>(13));
-    ParseEnumerateAnimation(&m_deathFront, "death_shoot_front_", static_cast<EPersonAnimType>(14));
-    ParseEnumerateAnimation(&m_deathBack, "death_shoot_back_", static_cast<EPersonAnimType>(15));
-    ParseEnumerateAnimation(&m_stun, "ultra_sound_pain_", static_cast<EPersonAnimType>(16));
-
-    const struct {
-        int type;
-        const char* name;
-    } clips[] = {
-        {3, "girl_walk"}, {4, "run_simple"}, {5, "girl_run"}, {6, "run_crouch"}, {7, "run_wound"},
-        {17, "tranquilise"}, {18, "start_burn"}, {19, "cyckle_burn"}, {20, "end_burn"},
-        {21, "bullet_hit"}, {22, "bullet_hit_short"}
-    };
-    for (unsigned int index = 0; index < sizeof(clips) / sizeof(clips[0]); ++index) {
-        int type = clips[index].type;
-        const char* name = clips[index].name;
-        m_animations[type] = AnimationImpl::getAnimationByName(name, m_commonAnimation);
-        m_animationTypes.Set(XString(name), static_cast<EPersonAnimType>(type));
+    for (int index = 0; index < 23; ++index) {
+        switch (index) {
+        case 0:
+            ParseEnumerateAnimation(&m_idle, m_pIdleAnimationPrefix, static_cast<EPersonAnimType>(0));
+            m_animations[index] = NULL;
+            break;
+        case 1:
+            ParseEnumerateAnimation(&m_afraid, m_pAfraidAnimationPrefix, static_cast<EPersonAnimType>(1));
+            m_animations[index] = NULL;
+            break;
+        case 2:
+            ParseEnumerateAnimation(&m_walk, m_pWalkAnimationPrefix, static_cast<EPersonAnimType>(2));
+            m_animations[index] = NULL;
+            break;
+        case 3:
+            m_animations[index] = AnimationImpl::getAnimationByName("girl_walk", m_commonAnimation);
+            m_animationTypes.Set(XString("girl_walk"), static_cast<EPersonAnimType>(3));
+            break;
+        case 4:
+            m_animations[index] = AnimationImpl::getAnimationByName("run_simple", m_commonAnimation);
+            m_animationTypes.Set(XString("run_simple"), static_cast<EPersonAnimType>(4));
+            break;
+        case 5:
+            m_animations[index] = AnimationImpl::getAnimationByName("girl_run", m_commonAnimation);
+            m_animationTypes.Set(XString("girl_run"), static_cast<EPersonAnimType>(5));
+            break;
+        case 6:
+            m_animations[index] = AnimationImpl::getAnimationByName("run_crouch", m_commonAnimation);
+            m_animationTypes.Set(XString("run_crouch"), static_cast<EPersonAnimType>(6));
+            break;
+        case 7:
+            m_animations[index] = AnimationImpl::getAnimationByName("run_wound", m_commonAnimation);
+            m_animationTypes.Set(XString("run_wound"), static_cast<EPersonAnimType>(7));
+            break;
+        case 8:
+            ParseShotAnimation();
+            m_animations[index] = NULL;
+            break;
+        default:
+            // Each of the three hide/unhide/reload types triggers the full parse.
+            ParseHideUnhideAndReloadAnimation();
+            m_animations[index] = NULL;
+            break;
+        case 12:
+            ParseGetWeaponAnimation();
+            m_animations[index] = NULL;
+            break;
+        case 13:
+            ParseEnumerateAnimation(&m_wound, m_pWoundAnimationPrefix, static_cast<EPersonAnimType>(13));
+            m_animations[index] = NULL;
+            break;
+        case 14:
+            ParseEnumerateAnimation(&m_deathFront, m_pDeathFrontAnimationPrefix, static_cast<EPersonAnimType>(14));
+            m_animations[index] = NULL;
+            break;
+        case 15:
+            ParseEnumerateAnimation(&m_deathBack, m_pDeathBackAnimationPrefix, static_cast<EPersonAnimType>(15));
+            m_animations[index] = NULL;
+            break;
+        case 16:
+            ParseEnumerateAnimation(&m_stun, m_pStunAnimationPrefix, static_cast<EPersonAnimType>(16));
+            m_animations[index] = NULL;
+            break;
+        case 17:
+            m_animations[index] = AnimationImpl::getAnimationByName("tranquilise", m_commonAnimation);
+            m_animationTypes.Set(XString("tranquilise"), static_cast<EPersonAnimType>(17));
+            break;
+        case 18:
+            m_animations[index] = AnimationImpl::getAnimationByName("start_burn", m_commonAnimation);
+            m_animationTypes.Set(XString("start_burn"), static_cast<EPersonAnimType>(18));
+            break;
+        case 19:
+            m_animations[index] = AnimationImpl::getAnimationByName("cyckle_burn", m_commonAnimation);
+            m_animationTypes.Set(XString("cyckle_burn"), static_cast<EPersonAnimType>(19));
+            break;
+        case 20:
+            m_animations[index] = AnimationImpl::getAnimationByName("end_burn", m_commonAnimation);
+            m_animationTypes.Set(XString("end_burn"), static_cast<EPersonAnimType>(20));
+            break;
+        case 21:
+            m_animations[index] = AnimationImpl::getAnimationByName("bullet_hit", m_commonAnimation);
+            m_animationTypes.Set(XString("bullet_hit"), static_cast<EPersonAnimType>(21));
+            break;
+        case 22:
+            m_animations[index] = AnimationImpl::getAnimationByName("bullet_hit_short", m_commonAnimation);
+            m_animationTypes.Set(XString("bullet_hit_short"), static_cast<EPersonAnimType>(22));
+            break;
+        }
     }
 }
 
 void CVisualCharacterType::ParseEnumerateAnimation(Vector<AnimationImpl*>* animations,
                                                   const char* prefix, EPersonAnimType type) const
 {
-    char name[100];
-    for (unsigned int index = 1; ; ++index) {
-        snprintf(name, sizeof(name), "%s%02u", prefix, index);
-        AnimationImpl* animation = AnimationImpl::getAnimationByName(name, m_commonAnimation);
-        if (animation == NULL) {
-            break;
+    char format[100];
+    ICStdUtil::SPrintF(format, "%s%s", prefix, "%02u");
+    int count = -1;
+    char probe[100];
+    do {
+        ++count;
+        ICStdUtil::SPrintF(probe, format, count + 1);
+    } while (AnimationImpl::getAnimationByName(probe, m_commonAnimation) != NULL);
+    if (count > 0) {
+        animations->ensureCapacity(count);
+        for (int index = 0; index < count; ++index) {
+            char name[100];
+            ICStdUtil::SPrintF(name, format, index + 1);
+            AnimationImpl* animation = AnimationImpl::getAnimationByName(name, m_commonAnimation);
+            animations->addElement(animation);
+            m_animationTypes.Set(XString(name), type);
         }
-        animations->addElement(animation);
-        m_animationTypes.Set(XString(name), type);
     }
 }
 
 void CVisualCharacterType::ParseShotAnimation() const
 {
-    AnimationImpl* fallback = AnimationImpl::getAnimationByName("fire_stand_mashinegun_front", m_commonAnimation);
-    char name[100];
+    char name[200];
     m_shot.ensureCapacity(32);
     for (int attitude = 0; attitude < 4; ++attitude) {
         for (int direction = 0; direction < 2; ++direction) {
             for (int weapon = 0; weapon < 4; ++weapon) {
-                snprintf(name, sizeof(name), "fire_%s_%s_%s", ShotAttitudes[attitude], ShotDirections[direction],
-                         ShotWeapons[weapon]);
+                ICStdUtil::SPrintF(name, "fire_%s_%s_%s", m_pAttutideAffix[attitude], m_pDirectionAffix[direction],
+                         m_pWeaponAffix[weapon]);
                 AnimationImpl* animation = AnimationImpl::getAnimationByName(name, m_commonAnimation);
                 if (animation == NULL) {
-                    animation = fallback;
+                    animation = AnimationImpl::getAnimationByName("fire_stand_mashinegun_front", m_commonAnimation);
                 }
                 m_shot.addElement(animation);
                 m_animationTypes.Set(XString(name), static_cast<EPersonAnimType>(8));
@@ -408,27 +524,36 @@ void CVisualCharacterType::ParseShotAnimation() const
 
 void CVisualCharacterType::ParseHideUnhideAndReloadAnimation() const
 {
-    const char* const actions[] = {"hide", "unhide", "reload"};
-    Vector<AnimationImpl*>* animations[] = {&m_hide, &m_unhide, &m_reload};
-    char name[100];
-    for (int action = 0; action < 3; ++action) {
-        animations[action]->ensureCapacity(16);
-        for (int attitude = 0; attitude < 4; ++attitude) {
-            for (int weapon = 0; weapon < 4; ++weapon) {
-                snprintf(name, sizeof(name), "%s_%s_%s", actions[action], ShotAttitudes[attitude], ShotWeapons[weapon]);
-                animations[action]->addElement(AnimationImpl::getAnimationByName(name, m_commonAnimation));
-                m_animationTypes.Set(XString(name), static_cast<EPersonAnimType>(9 + action));
-            }
+    m_hide.ensureCapacity(16);
+    m_unhide.ensureCapacity(16);
+    m_reload.ensureCapacity(16);
+    char name[200];
+    for (int attitude = 0; attitude < 4; ++attitude) {
+        for (int weapon = 0; weapon < 4; ++weapon) {
+            const char* attitudeName = m_pAttutideAffix[attitude];
+            const char* weaponName = m_pWeaponAffix[weapon];
+
+            ICStdUtil::SPrintF(name, "hide_%s_%s", attitudeName, weaponName);
+            m_hide.addElement(AnimationImpl::getAnimationByName(name, m_commonAnimation));
+            m_animationTypes.Set(XString(name), static_cast<EPersonAnimType>(9));
+
+            ICStdUtil::SPrintF(name, "unhide_%s_%s", attitudeName, weaponName);
+            m_unhide.addElement(AnimationImpl::getAnimationByName(name, m_commonAnimation));
+            m_animationTypes.Set(XString(name), static_cast<EPersonAnimType>(10));
+
+            ICStdUtil::SPrintF(name, "reload_%s_%s", attitudeName, weaponName);
+            m_reload.addElement(AnimationImpl::getAnimationByName(name, m_commonAnimation));
+            m_animationTypes.Set(XString(name), static_cast<EPersonAnimType>(11));
         }
     }
 }
 
 void CVisualCharacterType::ParseGetWeaponAnimation() const
 {
-    char name[100];
+    char name[200];
     m_getWeapon.ensureCapacity(4);
     for (int weapon = 0; weapon < 4; ++weapon) {
-        snprintf(name, sizeof(name), "get_%s", ShotWeapons[weapon]);
+        ICStdUtil::SPrintF(name, "get_%s", m_pWeaponAffix[weapon]);
         m_getWeapon.addElement(AnimationImpl::getAnimationByName(name, m_commonAnimation));
         m_animationTypes.Set(XString(name), static_cast<EPersonAnimType>(12));
     }

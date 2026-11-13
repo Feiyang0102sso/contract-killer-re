@@ -13,13 +13,11 @@
 #include "CXmlHelper.h"
 
 CGPSHuntingItem::CGPSHuntingItem(CGPSHauntCamera* camera)
-    : m_experienceReward(0), m_moneyReward(0), m_experiencePenalty(0), m_moneyPenalty(0),
-      m_boss(NULL), m_bossIsMan(true), m_energyCost(0), m_civilianCount(0), m_alertSeconds(0),
-      m_escapeSeconds(0), m_warTimer(false), m_bossFirst(false), m_bossWins(false),
-      m_tranquillize(false), m_bossSpawnsLast(false), m_silentKill(false), m_targetFriendId(-1),
-      m_revenge(false), m_minWeaponRange(-1.0f), m_gatedWeapon(-1), m_weaponGated(false),
+    : m_minWeaponRange(-1.0f), m_gatedWeapon(-1), m_weaponGated(false),
       m_randomWeapon(-1), m_hasBonus(false), m_camera(camera)
 {
+    m_targetFriendId = -1;
+    m_revenge = false;
     m_seed = CRandGen::GetInstance()->GetRand(0x0fffffff);
     m_playerLevel = CBH_Player::GetInstance()->GetLevel();
     m_creationTime = App::GetTime();
@@ -97,8 +95,9 @@ TiXmlElement* CGPSHuntingItem::Save(TiXmlElement* parent)
     element->SetAttribute("hasBonus", m_hasBonus);
     element->SetAttribute("minimalWeaponRange", static_cast<int>(m_minWeaponRange));
     element->SetAttribute("creationTime", static_cast<int>(m_creationTime));
-    parent->LinkEndChild(element);
-    return element;
+    TiXmlElement* copy = parent->InsertEndChild(*element)->ToElement();
+    delete element;
+    return copy;
 }
 
 XString CGPSHuntingItem::ParametrizeText(const XString& text) const
@@ -106,44 +105,59 @@ XString CGPSHuntingItem::ParametrizeText(const XString& text) const
     return ParametrizeTextWithParams(text, m_bossName, m_bossIsMan);
 }
 
+void CGPSHuntingItem::SetBossScreenName(const XString& name)
+{
+    m_bossName.Assign(name.Clone());
+}
+
 bool CGPSHuntingItem::SetTargetFriendId(int friendId)
 {
     m_targetFriendId = friendId;
+    XString name("win32");
     CNGSLocalUser* local = CNGS::GetInstance()->GetLocalUser();
     CNGSRemoteUser* target = local->m_remoteUserLists[0]->findRemoteUserByID(friendId);
-    if (target == NULL) {
+    bool found;
+    if (target != NULL) {
+        {
+            CStrWChar nickname = target->GetNickName();
+            name = nickname.GetWCharPtr();
+        }
+        SetBossScreenName(name);
+        found = true;
+    } else {
         m_targetFriendId = -1;
-        return false;
+        found = false;
     }
-    CStrWChar nickname = target->GetNickName();
-    SetBossScreenName(nickname.GetWCharPtr());
-    return true;
+    return found;
 }
 
 bool CGPSHuntingItem::SetTargetFBUser(CStrWChar identity)
 {
     m_targetFBUser = identity.GetWCharPtr();
-    if (m_targetFBUser.Length() == 0) {
-        return false;
-    }
+    XString name("unknown");
     CNGSSocialInterface* facebook = CNGS_Platform::GetInstance()->getSocialInterface(SOCIAL_INTERFACE_FACEBOOK);
-    if (facebook == NULL) {
-        return false;
+    {
+        CStrWChar alias = facebook->getFriendNameFromSortedListWithId(identity);
+        name = alias.GetWCharPtr();
     }
-    CStrWChar alias = facebook->getFriendNameFromSortedListWithId(identity);
-    XString name(alias.GetWCharPtr());
-    if (name.Length() == 0 || name == XString(L"unknown")) {
-        return false;
+    int comparison = XString::CmpData(name.c_str(), name.ByteSize(), L"unknown",
+                                     wcslen(L"unknown") * sizeof(wchar_t), 0x7fffffff);
+    bool found = false;
+    if (comparison != 0) {
+        found = true;
+        SetBossScreenName(name);
     }
-    SetBossScreenName(name);
-    return true;
+    return found;
 }
 
 XString CGPSHuntingItem::ParametrizeTextWithParams(const XString& text, XString bossName, bool isMan)
 {
     XString result = text.Replace(L"[BossName]", bossName.c_str(), true);
-    result = result.Replace(L"[PlayerName]", CBH_Player::GetInstance()->m_playerName.c_str(), true);
-    if (isMan) {
+    {
+        XString playerName = CBH_Player::GetInstance()->m_playerName;
+        result = result.Replace(L"[PlayerName]", playerName.c_str(), true);
+    }
+    if (isMan == true) {
         result = result.Replace(L"[he]", L"he", true);
         result = result.Replace(L"[He]", L"He", true);
         result = result.Replace(L"[his]", L"his", true);

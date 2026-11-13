@@ -54,11 +54,7 @@ public:
 
 class CNGSLoginStep_CheckVersion : public CNGSLoginStep {
 public:
-    CNGSLoginStep_CheckVersion()
-    {
-        m_name = "CheckVersion";
-        m_classId = 0x81a8233f;
-    }
+    CNGSLoginStep_CheckVersion();
 
     virtual void Excute();
     virtual void OnEvent(eLoginFlowEvent event, const char* caller);

@@ -1,8 +1,16 @@
 #include "CSocialGiftsManager.h"
 
 #include "App.h"
+#include "CAmmoManager.h"
+#include "CAmmoPackManager.h"
+#include "CArmorManager.h"
 #include "CBH_Player.h"
+#include "CDH_WeaponsManager.h"
 #include "CEnergy.h"
+#include "CEnergyManager.h"
+#include "CGoPillManager.h"
+#include "CMedicantManager.h"
+#include "CMiscItemManager.h"
 #include "CShopItem.h"
 #include "CXmlHelper.h"
 #include "ResMap.h"
@@ -20,39 +28,57 @@ CSocialGiftManager::~CSocialGiftManager()
 
 void CSocialGiftManager::ParseConfig()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    char* text = app->InitResMap()->loadText(XString(L"res/common/configs/gserve_gifts.xml"));
-    if (text == NULL) {
-        return;
-    }
+    ResMap* resources = static_cast<App*>(WindowApp::m_instance)->InitResMap();
+    char* text = resources->loadText(XString(L"res/common/configs/gserve_gifts.xml"));
     TiXmlDocument document;
     document.Parse(text, NULL, TIXML_ENCODING_UNKNOWN);
-    free(text);
-    const TiXmlElement* root = document.FirstChildElement("gifts");
-    if (root == NULL) {
-        return;
+    if (text != NULL) {
+        free(text);
     }
+    const TiXmlNode* root = document.FirstChild("gifts");
     // The server sends the one-based XML position, including gifts hidden from the sender.
-    for (const TiXmlElement* entry = root->FirstChildElement("gift"); entry != NULL;
-         entry = entry->NextSiblingElement("gift")) {
-        XString type = CXmlHelper::GetAttributeValue(*entry, "type");
-        SGift* gift = new SGift;
-        gift->m_itemManager = GetItemManager(type);
-        gift->m_itemId = CXmlHelper::GetAttributeValue(*entry, "item_id").ToInt();
-        gift->m_hidden = CXmlHelper::GetAttributeValue(*entry, "hidden").ToBool();
-        m_gifts.addElement(gift);
+    const TiXmlNode* entry = root->FirstChild("gift");
+    while (entry != NULL) {
+        XString type = CXmlHelper::GetAttributeValue(entry, "type");
+        CItemManager* manager = GetItemManager(type);
+        if (manager != NULL) {
+            SGift* gift = new SGift();
+            gift->m_itemManager = manager;
+            gift->m_itemId = CXmlHelper::GetAttributeValue(entry, "item_id").ToInt();
+            m_gifts.addElement(gift);
+            gift->m_hidden = CXmlHelper::GetAttributeValue(entry, "hidden").ToBool();
+        }
+        entry = entry->NextSibling("gift");
     }
 }
 
 CItemManager* CSocialGiftManager::GetItemManager(XString& type)
 {
+    if (type == XString("ammo")) {
+        return static_cast<App*>(WindowApp::m_instance)->InitAmmoManager();
+    }
+    if (type == XString("medkit")) {
+        return static_cast<App*>(WindowApp::m_instance)->m_medicantManager;
+    }
+    if (type == XString("weapon")) {
+        return static_cast<App*>(WindowApp::m_instance)->InitWeaponManager();
+    }
+    if (type == XString("goPill")) {
+        return static_cast<App*>(WindowApp::m_instance)->m_goPillManager;
+    }
+    if (type == XString("energy")) {
+        return static_cast<App*>(WindowApp::m_instance)->m_energyManager;
+    }
     if (type == XString("ammo_pack")) {
-        return App::GetItemManagerByType(9);
+        return static_cast<App*>(WindowApp::m_instance)->m_ammoPackManager;
+    }
+    if (type == XString("armor")) {
+        return static_cast<App*>(WindowApp::m_instance)->m_armorManager;
     }
     if (type == XString("misc")) {
-        return App::GetItemManagerByType(12);
+        return static_cast<App*>(WindowApp::m_instance)->InitMiscItemManager();
     }
-    return App::GetItemManagerByName(type);
+    return NULL;
 }
 
 int CSocialGiftManager::GetGiftsCount()

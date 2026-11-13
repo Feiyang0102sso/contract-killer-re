@@ -11,7 +11,7 @@ public:
     virtual void DebugRender(CAuxRender* render);
     virtual void OnPathComplete();
     virtual void OnReceiveDamage();
-    virtual void OnCancel();
+    // no OnCancel override: the original vtable keeps IExecutor::OnCancel
     virtual const wchar_t* GetName() const;
 
     void StartAnimation();

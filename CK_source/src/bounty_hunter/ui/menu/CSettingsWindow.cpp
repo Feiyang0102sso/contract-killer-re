@@ -28,7 +28,7 @@ enum SettingsCommand {
     ResetProgress = 0x74146762
 };
 
-void AddFrameTile(Window* frame, ImageWindow::EFillType fill, const char* resource, int column, int row)
+inline __attribute__((always_inline)) void AddFrameTile(Window* frame, ImageWindow::EFillType fill, const char* resource, int column, int row)
 {
     ImageWindow* tile = new ImageWindow(fill, ImageRes(resource));
     tile->SetLayoutType(Window::LAYOUT_TABLE);
@@ -37,7 +37,7 @@ void AddFrameTile(Window* frame, ImageWindow::EFillType fill, const char* resour
 }
 
 // The header frame builds each tile with the default ctor and SetImage.
-void AddHeaderTile(Window* frame, ImageWindow::EFillType fill, const char* resource, int column)
+inline __attribute__((always_inline)) void AddHeaderTile(Window* frame, ImageWindow::EFillType fill, const char* resource, int column)
 {
     ImageWindow* tile = new ImageWindow();
     tile->SetFillType(fill);
@@ -49,8 +49,7 @@ void AddHeaderTile(Window* frame, ImageWindow::EFillType fill, const char* resou
 }
 
 CSettingsWindow::CSettingsWindow(bool pauseMenu, bool returnToGPS)
-    : Window(false), m_sound(NULL), m_music(NULL), m_fireButton(NULL), m_push(NULL),
-      m_fieldb4(NULL), m_facebook(NULL), m_content(NULL), m_pauseMenu(pauseMenu), m_returnToGPS(returnToGPS)
+    : Window(false), m_pauseMenu(pauseMenu), m_returnToGPS(returnToGPS)
 {
     SetWidthByContent(0, 0);
     SetHeightByContent(0, 0);
@@ -102,7 +101,9 @@ CSettingsWindow::CSettingsWindow(bool pauseMenu, bool returnToGPS)
     ImageWindow* background = new ImageWindow(ImageWindow::FILL_NONE, ImageRes("SUR_FRAME_PAUSE_BG"));
     background->SetLayoutType(LAYOUT_SIMPLE);
     background->SetAlign(ALIGN_LEFT | ALIGN_BOTTOM);
-    background->SetOutsetSpacing(0, 0, SScreenAdaptingConstant(10, 15, 15)(), SScreenAdaptingConstant(10, 15, 15)());
+    int bottomInset = SScreenAdaptingConstant(10, 15, 15)();
+    int leftInset = SScreenAdaptingConstant(10, 15, 15)();
+    background->SetOutsetSpacing(0, 0, bottomInset, leftInset);
     host->AddToFront(background);
 
     Window* content;
@@ -121,12 +122,13 @@ CSettingsWindow::~CSettingsWindow()
 {
 }
 
-CImageButton* CSettingsWindow::AddItem(Window* content, const char* label, int command, int row)
+inline __attribute__((always_inline)) CImageButton* CSettingsWindow::AddItem(Window* content, const char* label, int command, int row)
 {
     CImageButton* button = new CImageButton();
     button->SetText(ResString(label).Upper(), ALIGN_HCENTER | ALIGN_VCENTER, NULL, 0, 0);
-    button->m_command = command;
-    content->AddToFront(button, 0, row);
+    button->SetCellPos(0, row, 1, 1);
+    button->SetCommandParameters(command, 0, 0, 0);
+    content->AddToFront(button);
     return button;
 }
 
@@ -144,12 +146,15 @@ Window* CSettingsWindow::CreatePauseMenu()
     content->AddToFront(CBaseScreen::createLineSplitter(0, 1));
     int row = 2;
     if (m_returnToGPS) {
-        AddItem(content, "IDS_MENU_RETURN_TO_GPS", AskReturnToGPS, row++);
-        content->AddToFront(CBaseScreen::createLineSplitter(0, row++));
+        AddItem(content, "IDS_MENU_RETURN_TO_GPS", AskReturnToGPS, 2);
+        content->AddToFront(CBaseScreen::createLineSplitter(0, 3));
+        row = 4;
     }
     if (m_pauseMenu && static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsShowObjective()) {
-        AddItem(content, "IDS_MENU_OBJECTIVE", Objective, row++);
-        content->AddToFront(CBaseScreen::createLineSplitter(0, row++));
+        AddItem(content, "IDS_MENU_OBJECTIVE", Objective, row);
+        ++row;
+        content->AddToFront(CBaseScreen::createLineSplitter(0, row));
+        ++row;
     }
     AddItem(content, "IDS_MENU_SETTINGS", Settings, row);
     return content;
@@ -165,41 +170,65 @@ Window* CSettingsWindow::CreateSettingMenu()
     content->SetInsetSpacing(App::Scale() * 20, 0, 0, 0);
     content->SetLayoutType(LAYOUT_SIMPLE);
     content->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    AppSettings* settings = static_cast<App*>(WindowApp::m_instance)->m_settings;
-    Window* row = CreateRadioGroup(&m_sound, "IDS_MENU_SOUND", "IDS_ON", "IDS_OFF", !settings->IsSoundEnabled());
+    bool enabled = static_cast<App*>(WindowApp::m_instance)->m_settings->IsSoundEnabled();
+    Window* row = CreateRadioGroup(&m_sound, "IDS_MENU_SOUND", "IDS_ON", "IDS_OFF", !enabled);
     row->SetAlign(ALIGN_RIGHT);
-    content->AddToFront(row, 0, 0);
-    content->AddToFront(CreateRadioGroup(&m_music, "IDS_MENU_MUSIC", "IDS_ON", "IDS_OFF",
-                                         !settings->IsMusicEnabled()), 0, 1);
-    content->AddToFront(CreateRadioGroup(&m_fireButton, "IDS_MENU_FIRE_BUTTON", "IDS_ON", "IDS_OFF",
-                                         !settings->IsFireButtonEnabled()), 0, 2);
-    content->AddToFront(CreateRadioGroup(&m_push, "IDS_MENU_PUSHES", "IDS_ON", "IDS_OFF",
-                                         !settings->IsLocalPushEnabled()), 0, 3);
-    content->AddToFront(CreateRadioGroup(&m_facebook, "IDS_MENU_FACEBOOK_REMINDER", "IDS_ON", "IDS_OFF",
-                                         !settings->IsFBReminderEnabled()), 0, 4);
+    row->SetCellPos(0, 0, 1, 1);
+    content->AddToFront(row);
+
+    enabled = static_cast<App*>(WindowApp::m_instance)->m_settings->IsMusicEnabled();
+    row = CreateRadioGroup(&m_music, "IDS_MENU_MUSIC", "IDS_ON", "IDS_OFF", !enabled);
+    row->SetLayoutType(LAYOUT_TABLE);
+    row->SetCellPos(0, 1, 1, 1);
+    content->AddToFront(row);
+
+    enabled = static_cast<App*>(WindowApp::m_instance)->m_settings->IsFireButtonEnabled();
+    row = CreateRadioGroup(&m_fireButton, "IDS_MENU_FIRE_BUTTON", "IDS_ON", "IDS_OFF", !enabled);
+    row->SetLayoutType(LAYOUT_TABLE);
+    row->SetCellPos(0, 2, 1, 1);
+    content->AddToFront(row);
+
+    enabled = static_cast<App*>(WindowApp::m_instance)->m_settings->IsLocalPushEnabled();
+    row = CreateRadioGroup(&m_push, "IDS_MENU_PUSHES", "IDS_ON", "IDS_OFF", !enabled);
+    row->SetLayoutType(LAYOUT_TABLE);
+    row->SetCellPos(0, 3, 1, 1);
+    content->AddToFront(row);
+
+    enabled = static_cast<App*>(WindowApp::m_instance)->m_settings->IsFBReminderEnabled();
+    row = CreateRadioGroup(&m_facebook, "IDS_MENU_FACEBOOK_REMINDER", "IDS_ON", "IDS_OFF", !enabled);
+    row->SetLayoutType(LAYOUT_TABLE);
+    row->SetCellPos(0, 4, 1, 1);
+    content->AddToFront(row);
 
     Window* helpRow = new Window(false);
     helpRow->SetHeightByContent(0, 0);
+    helpRow->SetLayoutType(LAYOUT_SIMPLE);
+    helpRow->SetCellPos(0, 5, 1, 1);
     CImageButton* help = new CImageButton();
     help->SetText(ResString("IDS_MENU_HELP"), ALIGN_HCENTER | ALIGN_VCENTER, NULL, 0, 0);
+    help->SetLayoutType(LAYOUT_SIMPLE);
     help->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    help->m_command = Help;
+    help->SetCommandParameters(Help, 0, 0, 0);
     helpRow->AddToFront(help);
-    content->AddToFront(helpRow, 0, 5);
+    content->AddToFront(helpRow);
 
     Window* buttons = new Window(false);
     buttons->SetHeightByContent(0, 0);
+    buttons->SetLayoutType(LAYOUT_TABLE);
+    buttons->SetCellPos(0, 6, 1, 1);
     CImageButton* back = new CImageButton();
     back->SetText(ResString("IDS_MENU_BACK").Upper(), ALIGN_HCENTER | ALIGN_TOP, NULL, 0, 0);
+    back->SetLayoutType(LAYOUT_SIMPLE);
     back->SetAlign(ALIGN_LEFT | ALIGN_BOTTOM);
-    back->m_command = Back;
+    back->SetCommandParameters(Back, 0, 0, 0);
     buttons->AddToFront(back);
     CImageButton* done = new CImageButton();
     done->SetText(ResString("IDS_BTN_DONE"), ALIGN_HCENTER | ALIGN_TOP, NULL, 0, 0);
+    done->SetLayoutType(LAYOUT_SIMPLE);
     done->SetAlign(ALIGN_RIGHT | ALIGN_BOTTOM);
-    done->m_command = Done;
+    done->SetCommandParameters(Done, 0, 0, 0);
     buttons->AddToFront(done);
-    content->AddToFront(buttons, 0, 6);
+    content->AddToFront(buttons);
     return content;
 }
 
@@ -232,21 +261,7 @@ void CSettingsWindow::OnClosed()
 
 void CSettingsWindow::OnCommand(Event& event)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
     switch (event.m_id) {
-    case ResetProgress:
-        app->m_saveManager->PauseSaving();
-        app->m_saveManager->Reset();
-        WindowApp::HandleTunnelCommand(DisplayWindow::COMMAND_EXIT_CONSUMED, 0, 0, 0);
-        event.Clear();
-        return;
-    case Objective:
-        app->m_helper->m_swerveGame->ShowObjective();
-        Close();
-        return;
-    case Help:
-        app->m_mainLayer->AddModal(new CHelpScreen());
-        return;
     case Settings:
         if (m_content != NULL) {
             m_content->ReverseEasy(FLAG_CLOSE_AFTER_EASY);
@@ -254,38 +269,53 @@ void CSettingsWindow::OnCommand(Event& event)
         m_content = CreateSettingMenu();
         ShowContent(m_content);
         return;
-    case AskReturnToGPS:
-        app->m_helper->m_swerveGame->ShowReturnToGpsConfirmation();
-        Close();
+    case Help: {
+        CHelpScreen* help = new CHelpScreen();
+        static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(help);
+        return;
+    }
+    case ResetProgress:
+        static_cast<App*>(WindowApp::m_instance)->m_saveManager->PauseSaving();
+        static_cast<App*>(WindowApp::m_instance)->m_saveManager->Reset();
+        WindowApp::HandleTunnelCommand(DisplayWindow::COMMAND_EXIT_CONSUMED, 0, 0, 0);
         event.Clear();
+        return;
+    case Back:
+        if (m_pauseMenu) {
+            m_content->ReverseEasy(FLAG_CLOSE_AFTER_EASY);
+            m_content = CreatePauseMenu();
+            ShowContent(m_content);
+        } else {
+            ReverseEasy(FLAG_CLOSE_AFTER_EASY);
+        }
         return;
     case Continue:
         ReverseEasy(FLAG_CLOSE_AFTER_EASY);
         event.Clear();
         return;
+    case AskReturnToGPS:
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->ShowReturnToGpsConfirmation();
+        Close();
+        event.Clear();
+        return;
+    case Objective:
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->ShowObjective();
+        Close();
+        return;
     case Done: {
-        AppSettings* settings = app->m_settings;
+        AppSettings* settings = static_cast<App*>(WindowApp::m_instance)->m_settings;
         settings->SetMusicEnabled(m_music->GetValue() == 0);
-        app->m_settings->SetSoundEnabled(m_sound->GetValue() == 0);
-        app->m_media->Update();
-        app->m_settings->SetFireButtonEnabled(m_fireButton->GetValue() == 0);
-        app->m_settings->SetLocalPushEnabled(m_push->GetValue() == 0);
-        app->m_settings->SetFBReminderEnabled(m_facebook->GetValue() == 0);
-        app->m_settings->Save();
+        static_cast<App*>(WindowApp::m_instance)->m_settings->SetSoundEnabled(m_sound->GetValue() == 0);
+        static_cast<App*>(WindowApp::m_instance)->m_media->Update();
+        static_cast<App*>(WindowApp::m_instance)->m_settings->SetFireButtonEnabled(m_fireButton->GetValue() == 0);
+        static_cast<App*>(WindowApp::m_instance)->m_settings->SetLocalPushEnabled(m_push->GetValue() == 0);
+        static_cast<App*>(WindowApp::m_instance)->m_settings->SetFBReminderEnabled(m_facebook->GetValue() == 0);
+        static_cast<App*>(WindowApp::m_instance)->m_settings->Save();
         // Original: re-dispatches a Back command to itself.
         Event back(Event::NONE, Back, 0, 0, 0);
         OnCommand(back);
         return;
     }
-    case Back:
-        if (!m_pauseMenu) {
-            ReverseEasy(FLAG_CLOSE_AFTER_EASY);
-            return;
-        }
-        m_content->ReverseEasy(FLAG_CLOSE_AFTER_EASY);
-        m_content = CreatePauseMenu();
-        ShowContent(m_content);
-        return;
     default:
         return;
     }

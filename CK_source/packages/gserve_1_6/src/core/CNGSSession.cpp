@@ -1,15 +1,24 @@
 // CNGSSession.cpp - gServe session of the local user.
 #include "CNGSSession.h"
+#include "CFileUtil_gServe.h"
 
-
+const wchar_t* CNGSSession::LocalFileName = L"ngsSession.dat";
 
 CNGSSession::CNGSSession()
 {
     m_time = CNGSTime();
     CNGSSessionConfig savedConfig;
-    CStrWChar fileName(L"Session.dat");
+    CStrWChar fileName(LocalFileName);
     CStrWChar key(L"xxx");
     unsigned char loaded = savedConfig.readFromFile(fileName, key, false);
+    if (loaded == 0) {
+        fileName = L"Session.dat";
+        loaded = savedConfig.readFromFile(fileName, key, false);
+        if (loaded != 0) {
+            CFileUtil_gServe::WriteApplicationDataFile(fileName.GetWCharPtr(),
+                                                      reinterpret_cast<const unsigned char*>(" "), 1, NULL);
+        }
+    }
     m_config = savedConfig;
     SetIsValid(loaded);
 }
@@ -47,7 +56,7 @@ void CNGSSession::tick(unsigned int elapsedMs)
 
 void CNGSSession::invalidate()
 {
-    CStrWChar fileName(L"Session.dat");
+    CStrWChar fileName(LocalFileName);
     CStrWChar key(L"xxx");
     SetIsValid(0);
     m_config.reset();

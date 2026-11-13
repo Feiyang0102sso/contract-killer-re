@@ -70,21 +70,26 @@ void CProfileManager::setCollectionRange(int first, int last)
 void CProfileManager::registerSaveRestoreInterface(CSaveRestoreInterface* current, CSaveRestoreInterface* server,
                                                    CSaveRestoreInterface* local)
 {
-    int type = current->getCollectionType();
-    int index = type - m_firstCollectionType;
-    m_currentData[index] = current;
-    m_serverData[index] = server;
-    m_localData[index] = local;
+    m_currentData[current->getCollectionType() - m_firstCollectionType] = current;
+    m_serverData[server->getCollectionType() - m_firstCollectionType] = server;
+    m_localData[local->getCollectionType() - m_firstCollectionType] = local;
     if (current->getBackingStoreType() == BACKING_STORE_CONTENT_FILE) {
-        CSaveRestoreInterface* copies[] = { current, local, server };
-        int descriptorType = CProfileDataDescriptor::generateCollectionType(type);
-        for (int copy = 0; copy < 3; copy++) {
-            CProfileDataDescriptor* descriptor = new CProfileDataDescriptor();
-            descriptor->setCollectionType(descriptorType);
-            descriptor->setFile(copies[copy]);
-            copies[copy]->setDescriptor(descriptor);
-            m_registeredData.Add(descriptor);
-        }
+        CProfileDataDescriptor* currentDescriptor = new CProfileDataDescriptor;
+        CProfileDataDescriptor* serverDescriptor = new CProfileDataDescriptor;
+        CProfileDataDescriptor* localDescriptor = new CProfileDataDescriptor;
+        int descriptorType = CProfileDataDescriptor::generateCollectionType(current->getCollectionType());
+        currentDescriptor->setCollectionType(descriptorType);
+        serverDescriptor->setCollectionType(descriptorType);
+        localDescriptor->setCollectionType(descriptorType);
+        current->setDescriptor(currentDescriptor);
+        local->setDescriptor(localDescriptor);
+        server->setDescriptor(serverDescriptor);
+        currentDescriptor->setFile(current);
+        localDescriptor->setFile(local);
+        serverDescriptor->setFile(server);
+        m_registeredData.Add(currentDescriptor);
+        m_registeredData.Add(localDescriptor);
+        m_registeredData.Add(serverDescriptor);
     }
 }
 
@@ -135,27 +140,22 @@ bool CProfileManager::dataExistsForUser(int userId)
     CStrWChar subDirectory = CNGSUserCredentials::getSubDirectoryPath(userId);
     CStrWChar directory = CNGSUserCredentials::getFullDirectoryPathForSubdir(subDirectory);
     CNGSUtil::DebugLog("checking for existance of %s", CNGSUtil::WStrToCStr(directory).GetCharPtr());
-    bool exists = false;
-    if (CFileUtil_gServe::ExistsDir(directory.GetWCharPtr()) && contentExistsWithinDir(directory.GetWCharPtr())) {
-        exists = true;
-    }
-    return exists;
+    return CFileUtil_gServe::ExistsDir(directory.GetWCharPtr()) && contentExistsWithinDir(directory.GetWCharPtr());
 }
 
 bool CProfileManager::anonymousLocalDataPromote()
 {
     TCVector<int> types;
-    for (int type = m_firstCollectionType; type <= m_lastCollectionType; type++) {
-        if (loadFromFileSystem(type, -1)) {
-            types.Add(type);
-        }
-    }
-    if (types.Size() == 0) {
-        return false;
+    getAllRegisteredCollections(types);
+    int count = types.Size();
+    for (int index = 0; index < count; ++index) {
+        loadFromFileSystem(types[index], -1);
     }
     useDataFromLocal(types);
-    // Keep the anonymous files available if account migration is interrupted.
-    return invalidateLocalData(types, false) != 0;
+    // CK deletes the anonymous files even if invalidation failed to write the new copy.
+    invalidateLocalData(types, false);
+    anonymousLocalDataDelete();
+    return false;
 }
 
 bool CProfileManager::anonymousLocalDataDelete()
@@ -170,62 +170,99 @@ bool CProfileManager::anonymousLocalDataDelete()
 bool CProfileManager::checkAnonymousLocalData()
 {
     CNGSUserCredentials& credentials = CNGS::GetInstance()->GetLocalUser()->m_credentials;
-    if (!credentials.isValid() || credentials.m_userId == -1 || dataExistsForUser(credentials.m_userId)) {
+    if (!credentials.isValid() || credentials.m_userId == -1 || !dataExistsForUser(-1)) {
         return false;
     }
-    return dataExistsForUser(-1) && anonymousLocalDataPromote();
+    if (dataExistsForUser(credentials.m_userId)) {
+        anonymousLocalDataDelete();
+        return false;
+    }
+    anonymousLocalDataPromote();
+    return true;
 }
 
 int CProfileManager::load(const TCVector<int>& collectionTypes)
 {
+    CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
     if (!isAvailable()) {
         return 0;
     }
-    checkAnonymousLocalData();
-    CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
-    const bool online = user->isValid() && user->m_credentials.hasValidAvatar();
+    if (checkAnonymousLocalData()) {
+        return load(collectionTypes);
+    }
+
     loadSaveStart();
-    TCVector<int> missing;
+    TCVector<int> loaded;
     TCVector<int> invalidated;
-    m_savingCollections.Copy(collectionTypes);
-    m_pendingCollections.Clear();
-    for (int index = 0; index < collectionTypes.Size(); index++) {
-        int type = collectionTypes[index];
-        CSaveRestoreInterface* current = getGameData(type, GAME_DATA_CURRENT);
-        CSaveRestoreInterface* local = getGameData(type, GAME_DATA_LOCAL);
-        if (current == NULL || local == NULL) {
+    TCVector<int> savedLocally;
+    TCVector<int> missing;
+    for (int index = 0; index < collectionTypes.Size(); ++index) {
+        CSaveRestoreInterface* local = getGameData(collectionTypes[index], GAME_DATA_LOCAL);
+        CSaveRestoreInterface* current = getGameData(collectionTypes[index], GAME_DATA_CURRENT);
+        if (!loadFromFileSystem(collectionTypes[index], user->m_credentials.m_userId)) {
+            missing.Add(collectionTypes[index]);
             continue;
         }
-        if (!loadFromFileSystem(type, user->m_credentials.m_userId) ||
-            local->getDataSaveStatus() == PROFILE_DATA_NOT_LOADED) {
-            if (online) {
-                missing.Add(type);
-            } else {
-                current->setDataSaveStatus(PROFILE_DATA_SAVED_LOCAL);
-            }
-        } else if (local->getDataSaveStatus() == PROFILE_DATA_INVALIDATED && online) {
-            invalidated.Add(type);
-        } else {
+        switch (local->getDataSaveStatus()) {
+        case PROFILE_DATA_NOT_LOADED:
+            CNGSUtil::DebugLog("Error: local datastore read with state PDSS_NO_DATA");
+            missing.Add(collectionTypes[index]);
+            break;
+        case PROFILE_DATA_SAVED_LOCAL:
             current->copyAllData(*local);
-            if (current->getDescriptor() != NULL && local->getDescriptor() != NULL) {
+            if (current->getDescriptor() != NULL) {
                 current->getDescriptor()->copyAllData(*local->getDescriptor());
+            }
+            loaded.Add(collectionTypes[index]);
+            savedLocally.Add(collectionTypes[index]);
+            break;
+        case PROFILE_DATA_SYNCED:
+            current->copyAllData(*local);
+            if (current->getDescriptor() != NULL) {
+                current->getDescriptor()->copyAllData(*local->getDescriptor());
+            }
+            loaded.Add(collectionTypes[index]);
+            break;
+        case PROFILE_DATA_INVALIDATED:
+            invalidated.Add(collectionTypes[index]);
+            break;
+        default:
+            break;
+        }
+    }
+
+    m_savingCollections.Clear();
+    m_pendingCollections.Clear();
+    if (loaded.Size() > 0) {
+        m_savingCollections.AddAll(loaded);
+    }
+    if (invalidated.Size() > 0) {
+        m_savingCollections.AddAll(invalidated);
+        if (user->isValid()) {
+            m_pendingCollections.AddAll(invalidated);
+            resolveLocalServerDataConflicts(invalidated);
+        } else {
+            copyDataBuffer(collectionTypes, &m_currentData, &m_localData);
+        }
+    }
+
+    int result = 1;
+    if (missing.Size() > 0) {
+        m_savingCollections.AddAll(missing);
+        if (user->isValid()) {
+            m_pendingCollections.AddAll(missing);
+            result = loadFromServer(missing);
+        } else {
+            result = 0;
+            for (int index = 0; index < missing.Size(); ++index) {
+                getGameData(missing[index], GAME_DATA_CURRENT)->setDataSaveStatus(PROFILE_DATA_SAVED_LOCAL);
             }
         }
     }
-    m_pendingCollections.AddAll(invalidated);
-    m_pendingCollections.AddAll(missing);
-    int result = 1;
-    if (missing.Size() != 0) {
-        result = loadFromServer(missing);
-    }
-    if (invalidated.Size() != 0) {
-        resolveLocalServerDataConflicts(invalidated);
-        return 1;
-    }
-    if (missing.Size() == 0) {
+    if (m_pendingCollections.Size() == 0) {
         loadSaveEnd();
-        if (user->m_notificationHandler != NULL) {
-            user->m_notificationHandler->HandleProfileLoaded(1, m_savingCollections);
+        if (result != 0) {
+            user->m_notificationHandler->HandleProfileLoaded(result, m_savingCollections);
         }
     }
     return result;
@@ -321,26 +358,27 @@ void CProfileManager::resolveLocalServerDataConflicts(const TCVector<int>& colle
 
 bool CProfileManager::downloadFileBackedData(const TCVector<int>& collectionTypes, CSaveRestoreInterface* collection)
 {
-    if (collectionTypes.Size() == 0) {
-        return false;
-    }
-    CStrChar name = CNGSUtil::WStrToCStr(collection->getFilename());
-    CProfileDataDescriptor* descriptor = static_cast<CProfileDataDescriptor*>(collection->getDescriptor());
-    if (descriptor != NULL) {
-        char extension[] = { '.', (char)descriptor->getAB(), 0 };
-        name += extension;
-    }
     CNGSContentManager* manager = CNGSContentManager::GetInstance();
-    manager->Unlock();
-    if (manager->getContentManagerStatus() != CONTENT_MANAGER_READY) {
-        return false;
+    bool ready = false;
+    for (int index = 0; index < collectionTypes.Size(); index++) {
+        char name[128];
+        {
+            CStrWChar filename = collection->getFilename();
+            const wchar_t* text = filename.GetWCharPtr();
+            wcstombs(name, text, wcslen(text) + 1);
+        }
+        CProfileDataDescriptor* descriptor = static_cast<CProfileDataDescriptor*>(collection->getDescriptor());
+        if (descriptor != NULL) {
+            char extension[] = { '.', (char)descriptor->getAB(), 0 };
+            strcat(name, extension);
+        }
+        manager->Unlock();
+        ready = manager->getContentManagerStatus() == CONTENT_MANAGER_READY;
+        if (ready) {
+            manager->GetProfileContentSelf(name, collection);
+        }
     }
-    if (manager->GetProfileContentSelf(name.GetCharPtr(), collection)) {
-        return true;
-    }
-    manager->m_isProfileContent = 0;
-    manager->m_profileData = NULL;
-    return false;
+    return ready;
 }
 
 unsigned char CProfileManager::loadFromFileSystem(int collectionType, int userId)
@@ -349,16 +387,27 @@ unsigned char CProfileManager::loadFromFileSystem(int collectionType, int userId
     if (data != NULL) {
         data->resetAllData();
     }
-    unsigned int size = CFileUtil_gServe::GetFilesize(CNGSUserCredentials::getSubDirectoryPath(userId).GetWCharPtr(),
-                                                      data->getFilename().GetWCharPtr());
+    unsigned int size;
+    {
+        CStrWChar directory = CNGSUserCredentials::getSubDirectoryPath(userId);
+        const wchar_t* path = directory.GetWCharPtr();
+        CStrWChar filename = data->getFilename();
+        size = CFileUtil_gServe::GetFilesize(path, filename.GetWCharPtr());
+    }
     if (size == 0) {
         return 0;
     }
     unsigned char loaded = 0;
     unsigned char* buffer = new unsigned char[size];
     memset(buffer, 0, size);
-    unsigned char read = CFileUtil_gServe::ReadApplicationDataFile(data->getFilename().GetWCharPtr(), buffer, size,
-                                                                   CNGSUserCredentials::getSubDirectoryPath(userId).GetWCharPtr());
+    unsigned char read;
+    {
+        CStrWChar filename = data->getFilename();
+        const wchar_t* name = filename.GetWCharPtr();
+        unsigned int fileSize = size;
+        CStrWChar directory = CNGSUserCredentials::getSubDirectoryPath(userId);
+        read = CFileUtil_gServe::ReadApplicationDataFile(name, buffer, fileSize, directory.GetWCharPtr());
+    }
     if (read && !data->isValidJsonData(buffer, size)) {
         // Let the game convert an old file format.
         unsigned char* convertedData = NULL;
@@ -380,8 +429,12 @@ unsigned char CProfileManager::loadFromFileSystem(int collectionType, int userId
             if (data->getBackingStoreType() == BACKING_STORE_CONTENT_FILE) {
                 CSaveRestoreInterface* descriptor = data->getDescriptor();
                 if (descriptor != NULL) {
-                    size = CFileUtil_gServe::GetFilesize(CNGSUserCredentials::getSubDirectoryPath(userId).GetWCharPtr(),
-                                                         descriptor->getFilename().GetWCharPtr());
+                    {
+                        CStrWChar directory = CNGSUserCredentials::getSubDirectoryPath(userId);
+                        const wchar_t* path = directory.GetWCharPtr();
+                        CStrWChar filename = descriptor->getFilename();
+                        size = CFileUtil_gServe::GetFilesize(path, filename.GetWCharPtr());
+                    }
                     if (size == 0) {
                         loaded = 0;
                         descriptor->resetAllData();
@@ -392,9 +445,15 @@ unsigned char CProfileManager::loadFromFileSystem(int collectionType, int userId
                         buffer = new unsigned char[size];
                         loaded = 0;
                         memset(buffer, 0, size);
-                        unsigned char descriptorRead =
-                            CFileUtil_gServe::ReadApplicationDataFile(descriptor->getFilename().GetWCharPtr(), buffer, size,
-                                                                      CNGSUserCredentials::getSubDirectoryPath(userId).GetWCharPtr());
+                        unsigned char descriptorRead;
+                        {
+                            CStrWChar filename = descriptor->getFilename();
+                            const wchar_t* name = filename.GetWCharPtr();
+                            unsigned int fileSize = size;
+                            CStrWChar directory = CNGSUserCredentials::getSubDirectoryPath(userId);
+                            descriptorRead = CFileUtil_gServe::ReadApplicationDataFile(name, buffer, fileSize,
+                                                                                      directory.GetWCharPtr());
+                        }
                         descriptor->resetAllData();
                         if (descriptorRead && ReadRawFileDataToAttributes(buffer, size, descriptor)) {
                             loaded = 1;
@@ -453,116 +512,113 @@ static inline void DeleteAttributes(CHash& attributes)
 
 void CProfileManager::handleResponseLoadFromServer(CObjectMap* response, ProfileManagerFunctor* functor)
 {
-    ApplyProfileResponse(response, functor, false);
+    CNGSUtil::DebugLog("CProfileManager::handleResponseLoadFromServer");
+    CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
+    CAttributeManager* attributeManager = CAttributeManager::GetInstance();
+    const TCVector<int>& collections = functor->m_collectionTypes;
+    unsigned char success = 0;
+    if (!WasErrorInResponse(response, functor, "CProfileManager::handleResponseLoadFromServer")) {
+        CHash attributes;
+        attributes.Init(20, 20, 1);
+        attributeManager->extractAttributeValuesAsHashMap(response, functor, attributes);
+        for (int index = 0; index < collections.Size(); ++index) {
+            CSaveRestoreInterface* server = getGameData(collections[index], GAME_DATA_SERVER);
+            server->setDataSaveStatus(PROFILE_DATA_SYNCED);
+            server->setData(&attributes);
+            if (server->getBackingStoreType() == BACKING_STORE_ATTRIBUTES) {
+                if (server->getDataSaveStatus() == PROFILE_DATA_NOT_LOADED) {
+                    CSaveRestoreInterface* local = getGameData(collections[index], GAME_DATA_LOCAL);
+                    CSaveRestoreInterface* current = getGameData(collections[index], GAME_DATA_CURRENT);
+                    if (local->getDataSaveStatus() == PROFILE_DATA_NOT_LOADED) {
+                        current->resetAllData();
+                        current->setDataSaveStatus(PROFILE_DATA_SAVED_LOCAL);
+                        if (current->getFile() != NULL) {
+                            current->getFile()->resetAllData();
+                            current->getFile()->setDataSaveStatus(PROFILE_DATA_SAVED_LOCAL);
+                        }
+                    }
+                    if (server->getFile() != NULL) {
+                        int fileType = server->getFile()->getCollectionType();
+                        m_pendingCollections.Remove(fileType);
+                    }
+                } else {
+                    CSaveRestoreInterface* current = getGameData(collections[index], GAME_DATA_CURRENT);
+                    if (current->getDataSaveStatus() != PROFILE_DATA_INVALIDATED) {
+                        current->copyAllData(*server);
+                        current->setDataSaveStatus(PROFILE_DATA_SYNCED);
+                        if (current->getFile() != NULL) {
+                            TCVector<int> files;
+                            files.Add(current->getFile()->getCollectionType());
+                            downloadFileBackedData(files, current->getFile());
+                            continue;
+                        }
+                    }
+                }
+            }
+            m_pendingCollections.Remove(collections[index]);
+        }
+        success = 1;
+    } else {
+        TCVector<int> files;
+        files.Copy(collections);
+        ReplaceDescriptorWithFile(files);
+        invalidateLocalData(files, false);
+        m_pendingCollections.RemoveAll(files);
+    }
+    if (m_pendingCollections.Size() == 0) {
+        loadSaveEnd();
+        user->m_notificationHandler->HandleProfileLoaded(success, m_savingCollections);
+    }
+    CompleteReadRequestOutstanding();
 }
 
 void CProfileManager::handleResponseResolveLocalServerDataConflicts(CObjectMap* response,
                                                                    ProfileManagerFunctor* functor)
 {
-    ApplyProfileResponse(response, functor, true);
-}
-
-void CProfileManager::ApplyProfileResponse(CObjectMap* response, ProfileManagerFunctor* functor, bool conflict)
-{
-    const TCVector<int>& query = functor->m_collectionTypes;
-    const char* operation = "CProfileManager::handleResponseLoadFromServer";
-    if (conflict) {
-        operation = "CProfileManager::handleResponseResolveLocalServerDataConflicts";
-    }
-    unsigned char success = WasErrorInResponse(response, functor, operation) == 0;
-    if (!success) {
-        TCVector<int> files(query);
-        ReplaceDescriptorWithFile(files);
-        if (conflict) {
-            useDataFromLocal(files);
-            invalidateLocalData(files, false);
-        }
-        m_pendingCollections.RemoveAll(files);
-    } else {
-        if (conflict) {
-            resetDataBuffer(query, PROFILE_DATA_SYNCED);
-        }
+    CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
+    CAttributeManager* attributeManager = CAttributeManager::GetInstance();
+    const TCVector<int>& collections = functor->m_collectionTypes;
+    if (!WasErrorInResponse(response, functor, "CProfileManager::handleResponseResolveLocalServerDataConflicts")) {
+        resetDataBuffer(collections, PROFILE_DATA_SYNCED);
         CHash attributes;
         attributes.Init(20, 20, 1);
-        CAttributeManager::GetInstance()->extractAttributeValuesAsHashMap(response, functor, attributes);
-        for (int index = 0; index < query.Size(); index++) {
-            int type = query[index];
-            CSaveRestoreInterface* server = getGameData(type, GAME_DATA_SERVER);
-            CSaveRestoreInterface* current = getGameData(type, GAME_DATA_CURRENT);
-            server->setDataSaveStatus(PROFILE_DATA_SYNCED);
-            server->setData(&attributes);
-            if (server->getDataSaveStatus() == PROFILE_DATA_NOT_LOADED) {
-                if (!conflict && current->getDataSaveStatus() == PROFILE_DATA_NOT_LOADED) {
-                    current->setDataSaveStatus(PROFILE_DATA_SAVED_LOCAL);
-                }
-            } else if (!conflict) {
-                current->copyAllData(*server);
-                current->setDataSaveStatus(PROFILE_DATA_SYNCED);
-            }
-
-            CSaveRestoreInterface* file = server->getFile();
-            if (file == NULL) {
-                m_pendingCollections.Remove(type);
-                continue;
-            }
-            int fileType = file->getCollectionType();
-            if (server->getDataSaveStatus() == PROFILE_DATA_SYNCED) {
-                TCVector<int> files;
-                files.Add(fileType);
-                if (!conflict) {
-                    file = current->getFile();
-                }
-                if (downloadFileBackedData(files, file)) {
-                    continue;
-                }
-                if (conflict) {
-                    server->setDataSaveStatus(PROFILE_DATA_NOT_LOADED);
+        attributeManager->extractAttributeValuesAsHashMap(response, functor, attributes);
+        bool requestedFile = false;
+        for (int index = 0; index < collections.Size(); ++index) {
+            CSaveRestoreInterface* server = getGameData(collections[index], GAME_DATA_SERVER);
+            if (server->getBackingStoreType() == BACKING_STORE_ATTRIBUTES) {
+                server->setDataSaveStatus(PROFILE_DATA_SYNCED);
+                server->setData(&attributes);
+                if (server->getFile() != NULL) {
+                    if (server->getDataSaveStatus() != PROFILE_DATA_NOT_LOADED) {
+                        TCVector<int> files;
+                        files.Add(server->getFile()->getCollectionType());
+                        downloadFileBackedData(files, server->getFile());
+                        requestedFile = true;
+                        continue;
+                    }
+                    int fileType = server->getFile()->getCollectionType();
+                    m_pendingCollections.Remove(fileType);
                 }
             }
-            m_pendingCollections.Remove(fileType);
+            if (!requestedFile) {
+                m_pendingCollections.Remove(collections[index]);
+            }
         }
-        DeleteAttributes(attributes);
-    }
-    if (conflict && success) {
-        CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
-        if (user != NULL && user->m_notificationHandler != NULL) {
-            CNGSHandleProfileDataConflict(query);
-        } else if (m_pendingCollections.Size() == 0) {
+        CNGSHandleProfileDataConflict(collections);
+    } else {
+        TCVector<int> files;
+        files.Copy(collections);
+        ReplaceDescriptorWithFile(files);
+        useDataFromLocal(files);
+        invalidateLocalData(files, false);
+        m_pendingCollections.RemoveAll(files);
+        if (m_pendingCollections.Size() == 0) {
             loadSaveEnd();
+            user->m_notificationHandler->HandleProfileLoaded(false, m_savingCollections);
         }
     }
     CompleteReadRequestOutstanding();
-    if ((!conflict || !success) && m_pendingCollections.Size() == 0 && isReady()) {
-        FinishProfileLoad(success);
-    }
-}
-
-void CProfileManager::FinishProfileLoad(unsigned char success)
-{
-    loadSaveEnd();
-    CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
-    if (user == NULL || user->m_notificationHandler == NULL) {
-        return;
-    }
-    if (!success) {
-        user->m_notificationHandler->HandleProfileLoaded(false, m_savingCollections);
-        return;
-    }
-    TCVector<int> conflicts;
-    for (int index = 0; index < m_savingCollections.Size(); index++) {
-        int type = m_savingCollections[index];
-        CSaveRestoreInterface* local = getGameData(type, GAME_DATA_LOCAL);
-        CSaveRestoreInterface* server = getGameData(type, GAME_DATA_SERVER);
-        if (local != NULL && server != NULL && local->getDataSaveStatus() == PROFILE_DATA_INVALIDATED &&
-            server->getDataSaveStatus() == PROFILE_DATA_SYNCED && !local->compareData(server)) {
-            conflicts.Add(type);
-        }
-    }
-    if (conflicts.Size() > 0) {
-        user->m_notificationHandler->HandleProfileDataConflict(conflicts);
-    } else {
-        user->m_notificationHandler->HandleProfileLoaded(success, m_savingCollections);
-    }
 }
 
 /**
@@ -669,7 +725,6 @@ unsigned char CProfileManager::ReadRawFileDataToAttributes(const unsigned char* 
     }
 
     // Obfuscated format: CRC, text length, key length, key + text.
-    loaded = 0;
     if (stream.Open(data, size)) {
         unsigned int crc = stream.ReadUInt32();
         unsigned int textLength = stream.ReadUInt32();
@@ -678,7 +733,7 @@ unsigned char CProfileManager::ReadRawFileDataToAttributes(const unsigned char* 
         unsigned int bytes = (keyLength + textLength) * 4;
         if (bytes <= size - 12) {
             stream.Read((unsigned char*)text, bytes);
-            text[bytes + 1] = 0;
+            text[bytes | 1] = 0;
             sDataBlock block;
             if (CNGSUtil::DeObfuscateString(block, text, PROFILE_FILE_KEY, textLength, keyLength) == 0) {
                 char* plain = (char*)malloc(block.m_size + (1 - keyLength));
@@ -686,6 +741,7 @@ unsigned char CProfileManager::ReadRawFileDataToAttributes(const unsigned char* 
                 wcstombs(plain, plainText, wcslen(plainText) + 1);
                 loaded = 0;
                 if (CCrc32::GetInstance()->Crc32((unsigned char*)plain, strlen(plain)) == crc) {
+                    CNGSUtil::DebugLog("WcsLen = %d and length = %d", strlen(plain), block.m_size);
                     CStrWChar json(plain);
                     CObjectMapObject* root = (CObjectMapObject*)CNGSJSONParser::decodeValue(json);
                     CHash attributes;
@@ -777,6 +833,7 @@ bool CProfileManager::save(const TCVector<int>& collectionTypes, bool syncToServ
         for (int index = 0; index < collectionTypes.Size(); index++) {
             CSaveRestoreInterface* data = getGameData(collectionTypes[index], GAME_DATA_CURRENT);
             if (data->getBackingStoreType() != BACKING_STORE_CONTENT_FILE && data->getDataSaveStatus() == PROFILE_DATA_NOT_LOADED) {
+                CNGSUtil::DebugLog("Error: Attempt to Save without loading");
                 return false;
             }
         }
@@ -805,13 +862,16 @@ bool CProfileManager::save(const TCVector<int>& collectionTypes, bool syncToServ
                 }
                 break;
             default:
+                CNGSUtil::DebugLog("Error: How did we get here?");
                 saved = false;
                 break;
             }
         }
+        unsigned char valid = localUser->isValid();
+        CNGSUtil::DebugLog("CProfileManager::save: %d, %d, %d", syncToServer, saved, valid);
         if (saved && syncToServer && localUser->isValid()) {
             m_pendingCollections.Clear();
-            m_savingCollections = collectionTypes;
+            m_savingCollections.Copy(collectionTypes);
             syncWithServer(collectionTypes);
         } else {
             loadSaveEnd();
@@ -872,26 +932,31 @@ bool CProfileManager::syncWithServer(const TCVector<int>& collectionTypes)
     CNGSLocalUser* localUser = CNGS::GetInstance()->GetLocalUser();
     CAttributeManager* attributeManager = CAttributeManager::GetInstance();
     TCVector<CNGSAttribute*> attributes;
-    TCVector<int> collections(collectionTypes);
+    TCVector<int> collections;
+    collections.Copy(collectionTypes);
+    CNGSUtil::DebugLog("CProfileManager::syncWithServer %d", collections.Size());
     if (!isLocalDataValid(collections)) {
         loadSaveEnd();
         localUser->m_notificationHandler->HandleProfileSaved(0, collectionTypes);
     } else {
+        CNGSUtil::DebugLog("CProfileManager::syncWithServer isLocalDataValid(cts)");
         m_fileBackedCollections.Clear();
         bool uploading = false;
         bool hasContentFiles = false;
-        for (int index = 0; index < collections.Size(); index++) {
-            CSaveRestoreInterface* data = getGameData(collections[index], GAME_DATA_CURRENT);
+        int count = collections.Size();
+        const int* types = collections.m_data;
+        for (int index = 0; index < count; index++) {
+            CSaveRestoreInterface* data = getGameData(types[index], GAME_DATA_CURRENT);
             if (data->getBackingStoreType() == BACKING_STORE_ATTRIBUTES) {
-                m_fileBackedCollections.Add(collections[index]);
+                m_fileBackedCollections.Add(types[index]);
             } else if (data->getBackingStoreType() == BACKING_STORE_CONTENT_FILE) {
                 hasContentFiles = true;
                 if (localUser->m_session->isSessionKeyValid() == 1) {
                     uploading = true;
                     TCVector<int> single;
-                    single.Add(collections[index]);
+                    single.Add(types[index]);
                     uploadFileBackedData(single);
-                    m_pendingCollections.Add(collections[index]);
+                    m_pendingCollections.Add(types[index]);
                 }
             }
         }
@@ -900,11 +965,13 @@ bool CProfileManager::syncWithServer(const TCVector<int>& collectionTypes)
                 loadSaveEnd();
                 localUser->m_notificationHandler->HandleProfileSaved(0, collectionTypes);
             } else {
-                for (int index = 0; index < collections.Size(); index++) {
-                    CSaveRestoreInterface* data = getGameData(collections[index], GAME_DATA_CURRENT);
+                // Resnapshot the storage for the attribute pass after the first pass has run.
+                types = *static_cast<int* volatile*>(&collections.m_data);
+                for (int index = 0; index < count; index++) {
+                    CSaveRestoreInterface* data = getGameData(types[index], GAME_DATA_CURRENT);
                     if (data->getBackingStoreType() == BACKING_STORE_ATTRIBUTES) {
                         data->getAllData(attributes);
-                        m_pendingCollections.Add(collections[index]);
+                        m_pendingCollections.Add(types[index]);
                     }
                 }
             }
@@ -934,6 +1001,7 @@ unsigned char CProfileManager::isLocalDataValid(const TCVector<int>& collectionT
 
 void CProfileManager::handleResponseSyncWithServer(CObjectMap* response, ProfileManagerFunctor* functor)
 {
+    CNGSUtil::DebugLog("CProfileManager::handleResponseSyncWithServer");
     CNGSLocalUser* localUser = CNGS::GetInstance()->GetLocalUser();
     TCVector<int> failed;
     if (CNGSServerObject::WasErrorInResponse(response, functor, "CProfileManager::handleResponseSyncWithServer") == 0) {
@@ -1002,57 +1070,55 @@ unsigned char CProfileManager::WriteAttributesToRawFileData(CSaveRestoreInterfac
         delete message;
     }
 
-    unsigned char written = 0;
-    unsigned int fileSize = 0;
-    bool sized = false;
+    unsigned int fileSize;
     sDataBlock block;
     if (!m_obfuscateFiles) {
         unsigned int utfLength = CUtf::GetUtfLen(json.GetWCharPtr(), json.GetLength());
-        if (utfLength != 0) {
-            // JMUtf: 16-bit length prefix, JMUtf32 above 64 KB.
-            fileSize = utfLength + 3;
-            if (fileSize > 0xffff) {
-                fileSize = utfLength + 5;
-            }
-            sized = true;
+        if (utfLength == 0) {
+            return 0;
+        }
+        // JMUtf: 16-bit length prefix, JMUtf32 above 64 KB.
+        fileSize = utfLength + 3;
+        if (fileSize > 0xffff) {
+            fileSize = utfLength + 5;
         }
     } else {
-        if (CNGSUtil::ObfuscateString(block, json.GetWCharPtr(), PROFILE_FILE_KEY) == 0) {
-            fileSize = block.m_size + 4;
-            sized = true;
+        if (CNGSUtil::ObfuscateString(block, json.GetWCharPtr(), PROFILE_FILE_KEY) != 0) {
+            return 0;
         }
+        fileSize = block.m_size + 4;
     }
-    if (sized && fileSize != 0) {
-        unsigned char* buffer = new unsigned char[fileSize];
-        memset(buffer, 0, fileSize);
-        CArrayOutputStream_gServe stream;
-        if (stream.Open(buffer, fileSize)) {
-            if (!m_obfuscateFiles) {
-                if (fileSize >= 0x10000) {
-                    stream.WriteJMUtf32(json.GetWCharPtr());
-                } else {
-                    stream.WriteJMUtf(json.GetWCharPtr());
-                }
-            } else {
-                // CRC of the plain JSON, then the obfuscated block.
-                char plain[json.GetLength() + 1];
-                wcstombs(plain, json.GetWCharPtr(), wcslen(json.GetWCharPtr()) + 1);
-                unsigned int crc = CCrc32::GetInstance()->Crc32((unsigned char*)plain, json.GetLength());
-                stream.WriteUInt32(crc);
-                stream.Write((unsigned char*)block.m_data, block.m_size);
-                free(block.m_data);
-            }
-            stream.Close();
-            data = buffer;
-            size = fileSize;
-            return 1;
-        }
+    if (fileSize == 0) {
+        return 0;
+    }
+    unsigned char* buffer = new unsigned char[fileSize];
+    memset(buffer, 0, fileSize);
+    CArrayOutputStream_gServe stream;
+    if (!stream.Open(buffer, fileSize)) {
         if (buffer != NULL) {
             delete[] buffer;
         }
         return 0;
     }
-    return written;
+    if (!m_obfuscateFiles) {
+        if (fileSize >= 0x10000) {
+            stream.WriteJMUtf32(json.GetWCharPtr());
+        } else {
+            stream.WriteJMUtf(json.GetWCharPtr());
+        }
+    } else {
+        // CRC of the plain JSON, then the obfuscated block.
+        char plain[json.GetLength() + 1];
+        wcstombs(plain, json.GetWCharPtr(), wcslen(json.GetWCharPtr()) + 1);
+        unsigned int crc = CCrc32::GetInstance()->Crc32((unsigned char*)plain, json.GetLength());
+        stream.WriteUInt32(crc);
+        stream.Write((unsigned char*)block.m_data, block.m_size);
+        free(block.m_data);
+    }
+    stream.Close();
+    data = buffer;
+    size = fileSize;
+    return 1;
 }
 
 CSaveRestoreInterface* CProfileManager::getManagedObjectFromBuffer(ProfileDataSaveStatus status, int collectionType)
@@ -1173,45 +1239,47 @@ unsigned char CProfileManager::HandleContentFileDownloadedSelf(unsigned char suc
     CStrWChar downloadedName(contentManager->m_fileName.GetWCharPtr());
     downloadedName = downloadedName.GetSubString(0, downloadedName.GetLength() - 3);
     if (downloadedName == collection->getFilename()) {
-        if (success) {
-            if (collection->isValidJsonData(data, size)) {
-                serverData->setDataSaveStatus(PROFILE_DATA_SYNCED);
-                if (ReadRawFileDataToAttributes(data, size, serverData)) {
-                    if (currentData == collection) {
-                        currentData->copyAllData(*serverData);
-                        currentData->setDataSaveStatus(PROFILE_DATA_SYNCED);
-                        saveToFileSystem(currentData, localUser->m_credentials.getSubDirectoryPath());
-                    }
-                } else {
-                    serverData->setDataSaveStatus(PROFILE_DATA_SAVED_LOCAL);
-                    success = 0;
-                }
-            } else {
-                success = 0;
-                CSaveRestoreInterface* localData = getGameData(collection->getCollectionType(), GAME_DATA_LOCAL);
-                if (localData->getDataSaveStatus() == PROFILE_DATA_INVALIDATED && serverData == collection) {
-                    // The server copy is unusable: push the local data instead.
-                    TCVector<int> collectionTypes;
-                    getAllRegisteredCollections(collectionTypes);
-                    useDataFromLocal(collectionTypes);
-                    save(collectionTypes, false);
-                }
+        if (!success) {
+            serverData->setDataSaveStatus(PROFILE_DATA_SAVED_LOCAL);
+            TCVector<int> collectionTypes;
+            getAllRegisteredCollections(collectionTypes);
+            useDataFromLocal(collectionTypes);
+            invalidateLocalData(collectionTypes, false);
+        } else if (size < 1) {
+            TCVector<int> collectionTypes;
+            getAllRegisteredCollections(collectionTypes);
+            useDataFromLocal(collectionTypes);
+            save(collectionTypes, false);
+        } else if (!collection->isValidJsonData(data, size)) {
+            CSaveRestoreInterface* localData = getGameData(collection->getCollectionType(), GAME_DATA_LOCAL);
+            success = 0;
+            if (localData->getDataSaveStatus() == PROFILE_DATA_INVALIDATED && serverData == collection) {
+                // The server copy is unusable: push the local data instead.
+                TCVector<int> collectionTypes;
+                getAllRegisteredCollections(collectionTypes);
+                useDataFromLocal(collectionTypes);
+                save(collectionTypes, false);
             }
         } else {
-            serverData->setDataSaveStatus(PROFILE_DATA_SAVED_LOCAL);
-            success = 0;
+            serverData->setDataSaveStatus(PROFILE_DATA_SYNCED);
+            if (!ReadRawFileDataToAttributes(data, size, serverData)) {
+                serverData->setDataSaveStatus(PROFILE_DATA_SAVED_LOCAL);
+                success = 0;
+            } else if (currentData == collection) {
+                currentData->copyAllData(*serverData);
+                currentData->setDataSaveStatus(PROFILE_DATA_SYNCED);
+                saveToFileSystem(currentData, localUser->m_credentials.getSubDirectoryPath());
+            }
         }
     }
     int collectionType = collection->getCollectionType();
     m_pendingCollections.Remove(collectionType);
     if (m_pendingCollections.Size() == 0) {
         loadSaveEnd();
-        if (localUser->m_notificationHandler != NULL) {
-            if (currentData == collection || !success) {
-                localUser->m_notificationHandler->HandleProfileLoaded(success, m_savingCollections);
-            } else if (serverData == collection) {
-                localUser->m_notificationHandler->HandleProfileDataConflict(m_savingCollections);
-            }
+        if (currentData == collection || !success) {
+            localUser->m_notificationHandler->HandleProfileLoaded(success, m_savingCollections);
+        } else if (serverData == collection) {
+            localUser->m_notificationHandler->HandleProfileDataConflict(m_savingCollections);
         }
     }
     return 1;

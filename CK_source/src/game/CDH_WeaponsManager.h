@@ -16,6 +16,7 @@ class TiXmlNode;
 class CDH_WeaponsManager : public CItemManager {
 public:
     CDH_WeaponsManager();
+    /** Save and delete every weapon. */
     ~CDH_WeaponsManager();
 
     virtual int getItemsCount()                                     // 0x00
@@ -28,8 +29,6 @@ public:
 
     /** Reload weapons.xml when it changed. */
     void ReloadConfig();
-    /** Save and delete every weapon. */
-    void CleanupAll();
     /** releaseResources() of every weapon. */
     void releaseResource();
     /** Release the 3D model of weapon `id`. */

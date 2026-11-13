@@ -13,11 +13,13 @@ CCountNotificationWindow::CCountNotificationWindow()
     m_left.Create("SUR_HUD_COUNT_NOTIFICATION_BAR_LEFT");
     m_middle.Create("SUR_HUD_COUNT_NOTIFICATION_BAR");
     m_right.Create("SUR_HUD_COUNT_NOTIFICATION_BAR_RIGHT");
-    int fontIndex = 8;
-    if (App::IsHD()) {
-        fontIndex = 5;
+    bool highDefinition = App::IsHD();
+    CFontMgr* fonts = CFontMgr::GetInstance();
+    int fontIndex = 5;
+    if (!highDefinition) {
+        fontIndex = 8;
     }
-    m_font = CFontMgr::GetInstance()->GetFont(fontIndex);
+    m_font = fonts->GetFont(fontIndex);
     if (m_font != NULL) {
         m_leftWidth = ImageWidth(m_left.GetSurface());
         m_middleWidth = ImageWidth(m_middle.GetSurface());
@@ -31,9 +33,8 @@ void CCountNotificationWindow::UpdateCount()
 {
     m_text = XString::ToString(m_count);
     if (m_font != NULL) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        XString::AnsiString number(m_text.c_str());
-        m_textWidth = app->m_helper->GetTextWidth(number, m_font);
+        DGHelper* helper = static_cast<App*>(WindowApp::m_instance)->m_helper;
+        m_textWidth = helper->GetTextWidth(XString::AnsiString(m_text.c_str()), m_font);
         m_textHeight = m_font->GetFontHeight();
     }
 }
@@ -57,14 +58,21 @@ void CCountNotificationWindow::Paint(ICGraphics2d& graphics)
     }
     int width = m_leftWidth + m_rightWidth;
     int x = m_posX;
-    DrawImage(graphics, m_left.GetSurface(), x, m_posY, 0, 0);
+    int minimumWidth = 2 * m_textWidth;
+    ICRenderSurface* left = m_left.GetSurface();
+    DrawImage(graphics, left, x, m_posY, 0, 0);
     x += m_leftWidth;
-    if (width < m_textWidth * 2) {
-        DrawImage(graphics, m_middle.GetSurface(), x, m_posY, 0, 0);
-        x += m_middleWidth;
+    if (minimumWidth > width) {
+        ICRenderSurface* middle = m_middle.GetSurface();
+        DrawImage(graphics, middle, x, m_posY, 0, 0);
+        int middleWidth = m_middleWidth;
+        ICRenderSurface* right = m_right.GetSurface();
+        DrawImage(graphics, right, x + middleWidth, m_posY, 0, 0);
         width += m_middleWidth;
+    } else {
+        ICRenderSurface* right = m_right.GetSurface();
+        DrawImage(graphics, right, x, m_posY, 0, 0);
     }
-    DrawImage(graphics, m_right.GetSurface(), x, m_posY, 0, 0);
     if (m_font != NULL) {
         m_font->PaintText(m_text.c_str(), -1, m_posX + (width - m_textWidth) / 2,
                           m_posY + (m_barHeight - m_textHeight) / 2, -1, -1);

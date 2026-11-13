@@ -48,7 +48,7 @@ CCollision::OcTreeSector::OcTreeSector(OcTreeSector* parent, const AABB& bounds,
     }
     // Three longest-axis bisections create eight children, in low-to-high traversal order.
     AABB childBounds[8];
-    bounds.Split(childBounds[0], childBounds[4]);
+    m_bounds.Split(childBounds[0], childBounds[4]);
     childBounds[0].Split(childBounds[0], childBounds[2]);
     childBounds[4].Split(childBounds[4], childBounds[6]);
     childBounds[0].Split(childBounds[0], childBounds[1]);
@@ -138,10 +138,7 @@ void CCollision::BuildMesh(CollisionNode& node, unsigned int& vertexOffset,
                            unsigned int& triangleOffset, unsigned int& meshOffset)
 {
     CollisionNode reference = node;
-    while (CollisionWorld(reference).m_interface == NULL) {
-        if (reference.getParent().m_interface == NULL) {
-            break;
-        }
+    while (CollisionWorld(reference).m_interface == NULL && reference.getParent().m_interface != NULL) {
         reference = reference.getParent();
     }
     CollisionMesh mesh(node);
@@ -161,39 +158,43 @@ void CCollision::BuildMesh(CollisionNode& node, unsigned int& vertexOffset,
             vertex.m_x = (float)components[index * 3] * scaleBias[0] + scaleBias[1];
             vertex.m_y = (float)components[index * 3 + 1] * scaleBias[0] + scaleBias[2];
             vertex.m_z = (float)components[index * 3 + 2] * scaleBias[0] + scaleBias[3];
-            vertex = matrix.TransformFast(vertex);
+            vec3& transformedVertex = m_vertices[vertexOffset + index];
+            transformedVertex = matrix.TransformFast(transformedVertex);
         }
         delete[] components;
         for (int submesh = 0; submesh < mesh.getSubmeshCount(); submesh++) {
             m_meshNodes[meshOffset + submesh] = mesh.getAppearance(submesh);
             CollisionIndexBuffer buffer = mesh.getTriangleIndexBuffer(submesh);
-            unsigned int* indices = new unsigned int[buffer.getIndexCount()];
+            unsigned int indexCount = buffer.getIndexCount();
+            unsigned int* indices = new unsigned int[indexCount];
             buffer.getIndices(buffer.getIndexCount(), indices);
             int triangleCount = buffer.getIndexCount() / 3;
             for (int index = 0; index < triangleCount; index++) {
                 Triangle& triangle = m_triangles[triangleOffset];
                 triangle.m_meshIndex = meshOffset + submesh;
-                triangle.m_vertices[0] = vertexOffset + indices[index * 3];
-                triangle.m_vertices[1] = vertexOffset + indices[index * 3 + 1];
-                triangle.m_vertices[2] = vertexOffset + indices[index * 3 + 2];
-                if (triangle.m_vertices[0] == triangle.m_vertices[1] ||
-                    triangle.m_vertices[0] == triangle.m_vertices[2] ||
-                    triangle.m_vertices[1] == triangle.m_vertices[2]) {
+                int first = vertexOffset + indices[index * 3];
+                triangle.m_vertices[0] = first;
+                int second = vertexOffset + indices[index * 3 + 1];
+                triangle.m_vertices[1] = second;
+                int third = vertexOffset + indices[index * 3 + 2];
+                triangle.m_vertices[2] = third;
+                if (first == second || first == third || second == third) {
                     continue;
                 }
-                m_edgeVectors1c[triangleOffset] = m_vertices[triangle.m_vertices[1]] - m_vertices[triangle.m_vertices[0]];
+                m_edgeVectors1c[triangleOffset] = m_vertices[second] - m_vertices[first];
                 m_edgeVectors20[triangleOffset] = m_vertices[triangle.m_vertices[2]] - m_vertices[triangle.m_vertices[0]];
                 const vec3& firstEdge = m_edgeVectors1c[triangleOffset];
                 const vec3& secondEdge = m_edgeVectors20[triangleOffset];
                 vec3 normal = firstEdge.Cross(secondEdge);
-                normal = normal * MathLib::InvSqrt(normal.LengthSqr());
-                m_normals[triangleOffset] = normal;
+                vec3& storedNormal = m_normals[triangleOffset];
+                storedNormal = normal * MathLib::InvSqrt(normal.LengthSqr());
+                m_planes[triangleOffset].m_x = m_edgeVectors1c[triangleOffset].Dot(m_edgeVectors1c[triangleOffset]);
+                m_planes[triangleOffset].m_y = m_edgeVectors1c[triangleOffset].Dot(m_edgeVectors20[triangleOffset]);
+                m_planes[triangleOffset].m_z = m_edgeVectors20[triangleOffset].Dot(m_edgeVectors20[triangleOffset]);
                 vec4& products = m_planes[triangleOffset];
-                products.m_x = firstEdge.Dot(firstEdge);
-                products.m_y = secondEdge.Dot(firstEdge);
-                products.m_z = secondEdge.Dot(secondEdge);
                 products.m_w = products.m_y * products.m_y - products.m_x * products.m_z;
-                if (normal.m_x != 0.0f || normal.m_y != 0.0f || normal.m_z != 0.0f) {
+                const vec3& finalNormal = m_normals[triangleOffset];
+                if (finalNormal.m_x != 0.0f || finalNormal.m_y != 0.0f || finalNormal.m_z != 0.0f) {
                     triangleOffset++;
                 }
             }
@@ -226,6 +227,16 @@ bool CCollision::IntersectAnyOcTree(OcTreeSector* sector, const Line& line, vec3
     if (!Intersect(line, sector->m_bounds, point)) {
         return false;
     }
+    if (sector->m_triangleCount == 0) {
+        if (sector->m_children[0] != NULL) {
+            for (int index = 0; index < 8; ++index) {
+                if (IntersectAnyOcTree(sector->m_children[index], line, point, normal, triangle)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     vec3 direction = line.m_to - line.m_from;
     for (int index = 0; index < sector->m_triangleCount; ++index) {
         int triangleIndex = sector->m_triangleIndices[index];
@@ -256,13 +267,6 @@ bool CCollision::IntersectAnyOcTree(OcTreeSector* sector, const Line& line, vec3
         normal = triangleNormal;
         triangle = candidate;
         return true;
-    }
-    if (sector->m_children[0] != NULL) {
-        for (int index = 0; index < 8; ++index) {
-            if (IntersectAnyOcTree(sector->m_children[index], line, point, normal, triangle)) {
-                return true;
-            }
-        }
     }
     return false;
 }

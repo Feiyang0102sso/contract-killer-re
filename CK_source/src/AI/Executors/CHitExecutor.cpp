@@ -34,12 +34,11 @@ void CHitExecutor::OnStart()
     CUnitBody* body = m_mind->GetUnit()->GetBody();
     m_activeAnimation = body->StartAnimation(animation, false);
     if (m_explosive) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        vec3 position = body->m_position;
-        position.m_z += 0.5f;
         vec3 normal(0.0f, 1.0f, 0.0f);
-        app->m_helper->m_swerveGame->PlayInternalExplosion(position, normal, 0.3f);
-        app->m_soundManager->PlayRandomSound("KEYSET_SOUND_MAN_EXPLODE", true);
+        vec3 position = m_mind->GetUnit()->GetBody()->m_position;
+        position.m_z += 0.5f;
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->PlayInternalExplosion(position, normal, 0.3f);
+        static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlayRandomSound("KEYSET_SOUND_MAN_EXPLODE", true);
     }
 }
 

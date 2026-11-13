@@ -56,6 +56,16 @@ public:
     void ParseGetWeaponAnimation() const;
 
     static const char* m_pBodyDummyName;
+    static const char* m_pIdleAnimationPrefix;
+    static const char* m_pAfraidAnimationPrefix;
+    static const char* m_pWalkAnimationPrefix;
+    static const char* m_pWoundAnimationPrefix;
+    static const char* m_pDeathFrontAnimationPrefix;
+    static const char* m_pDeathBackAnimationPrefix;
+    static const char* m_pStunAnimationPrefix;
+    static const char* m_pAttutideAffix[4];
+    static const char* m_pDirectionAffix[2];
+    static const char* m_pWeaponAffix[4];
     static float m_walkSpeedMan;
     static float m_walkSpeedWoman;
     static float m_runSpeedMan;

@@ -141,38 +141,38 @@ void CUnitMind::CancelAllExecutors()
 
 void CUnitMind::FinishExecutor(const IExecutor* executor, EExecutosResult result)
 {
+    Vector<IExecutor*>& executors = m_executors;
+    int count = executors.size();
     int index = GetExecutorIndex(executor);
-    if (index < 0) {
-        return;
-    }
     // only the top executor may finish
-    int lastIndex = m_executors.size() - 1;
-    if (lastIndex != index) {
+    int lastIndex = count - 1;
+    if (index < 0 || lastIndex != index) {
         return;
     }
     delete executor;
-    m_executors.setSize(lastIndex);
+    executors.setSize(lastIndex);
     if (index > 0) {
-        m_executors[index - 1]->OnChildFinished(result);
+        executors[index - 1]->OnChildFinished(result);
     }
 }
 
 void CUnitMind::CancelChildrenExecutors(const IExecutor* executor)
 {
+    Vector<IExecutor*>& executors = m_executors;
+    int count = executors.size();
     int index = GetExecutorIndex(executor);
     if (index < 0) {
         return;
     }
-    int count = m_executors.size();
     int firstChild = index + 1;
     for (int i = firstChild; i < count; i++) {
-        IExecutor* child = m_executors[i];
+        IExecutor* child = executors[i];
         if (child != NULL) {
             child->OnCancel();
             delete child;
         }
     }
-    m_executors.setSize(firstChild);
+    executors.setSize(firstChild);
 }
 
 IExecutor* CUnitMind::GetExecutor(const wchar_t* name)

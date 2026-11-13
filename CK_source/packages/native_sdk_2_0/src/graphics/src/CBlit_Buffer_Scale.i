@@ -47,15 +47,20 @@
                 sourcePixel = sourceRow;
             } else {
                 // one pixel to reach a 4 byte aligned source
-                unsigned short value = *(const unsigned short*)sourceRow;
-                for (unsigned char* row = destinationRow; row < destinationRow + blockBytes; row += op.m_destinationPitch) {
-                    BLIT_REPLICATE(unsigned short, row, scaleX, value);
+                if (blockBytes > 0) {
+                    unsigned short value = *(const unsigned short*)sourceRow;
+                    for (unsigned char* row = destinationRow; row < destinationRow + blockBytes; row += op.m_destinationPitch) {
+                        BLIT_REPLICATE(unsigned short, row, scaleX, value);
+                    }
                 }
                 count--;
                 pixel = destination + y * blockBytes + pixelBytes;
                 sourcePixel = source + y * sourcePitch + sourceOffset + sourceStep;
             }
             int pairs = count & ~1;
+            if (pairs < 0) {
+                pairs = 0;
+            }
             if (scaleX != 2 || scaleY != 2) {
                 unsigned char* block = pixel;
                 const unsigned char* sourcePair = sourcePixel;
@@ -93,7 +98,7 @@
                 }
                 pixel += pairs * 4;
             }
-            if (count & 1) {
+            if ((count & 1) && blockBytes > 0) {
                 unsigned short value = *(const unsigned short*)sourcePixel;
                 for (unsigned char* row = pixel; row < pixel + blockBytes; row += op.m_destinationPitch) {
                     BLIT_REPLICATE(unsigned short, row, scaleX, value);
@@ -102,9 +107,11 @@
         } else {
             // reading backwards: the pair below the current pixel
             if (((unsigned int)sourceRow & 3) == 0) {
-                unsigned short value = *(const unsigned short*)sourceRow;
-                for (unsigned char* row = destinationRow; row < destinationRow + blockBytes; row += op.m_destinationPitch) {
-                    BLIT_REPLICATE(unsigned short, row, scaleX, value);
+                if (blockBytes > 0) {
+                    unsigned short value = *(const unsigned short*)sourceRow;
+                    for (unsigned char* row = destinationRow; row < destinationRow + blockBytes; row += op.m_destinationPitch) {
+                        BLIT_REPLICATE(unsigned short, row, scaleX, value);
+                    }
                 }
                 count--;
                 pixel = destinationRow + pixelBytes;
@@ -116,6 +123,9 @@
                 sourcePixel += sourceStep;
             }
             int pairs = count & ~1;
+            if (pairs < 0) {
+                pairs = 0;
+            }
             if (scaleX != 2 || scaleY != 2) {
                 unsigned char* block = pixel;
                 const unsigned char* sourcePair = sourcePixel;
@@ -153,7 +163,7 @@
                 }
                 pixel += pairs * 4;
             }
-            if (count & 1) {
+            if ((count & 1) && blockBytes > 0) {
                 if (count > 1) {
                     sourcePixel -= sourceStep;
                 }

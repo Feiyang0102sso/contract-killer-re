@@ -113,9 +113,12 @@ ESaveResult CSaveManager::ParseData(unsigned char* data, int size, TiXmlDocument
 
 ESaveResult CSaveManager::Save(bool force)
 {
-    CNGSUtil::DebugLog("CSaveManager::Save %d, %d, %d, %d, %d", m_pauseSaving, m_pauseGServe,
-                       static_cast<App*>(WindowApp::m_instance)->m_field3a0,
-                       CNGSLoginFlow::GetInstance()->IsRunning(), force);
+    int pauseGServe = m_pauseGServe;
+    int pauseSaving = m_pauseSaving;
+    int appPaused = static_cast<App*>(WindowApp::m_instance)->m_field3a0;
+    int loginRunning = CNGSLoginFlow::GetInstance()->IsRunning();
+    CNGSUtil::DebugLog("CSaveManager::Save %d, %d, %d, %d, %d", pauseSaving, pauseGServe,
+                       appPaused, loginRunning, force);
     if (m_pauseSaving) {
         return SAVE_PAUSED;
     }
@@ -168,7 +171,7 @@ ESaveResult CSaveManager::Save(bool force)
             if (finalPath.GetLength() > 0) {
                 finalPath += ICFileMgr::GetInstance()->GetPathSeparator() + CStrWChar(XString::AnsiString(profile.c_str()));
             }
-            ICFileMgr::GetInstance()->Exists(XString(finalPath.GetWCharPtr()).c_str());
+            ICFileMgr::GetInstance()->Exists(XString(path.GetWCharPtr()).c_str());
             finalPath += ICFileMgr::GetInstance()->GetPathSeparator() + CStrWChar(SAVE_FILE_NAME);
             ICFileMgr::GetInstance()->Delete(finalPath.GetWCharPtr());
             ICFileMgr::GetInstance()->Rename(path.GetWCharPtr(), finalPath.GetWCharPtr());
@@ -200,8 +203,9 @@ ESaveResult CSaveManager::Save(bool force)
 
                 TCVector<int> collections;
                 static_cast<App*>(WindowApp::m_instance)->m_profileManager->getAllRegisteredCollections(collections);
-                static_cast<App*>(WindowApp::m_instance)->m_profileManager->save(
-                    collections, static_cast<App*>(WindowApp::m_instance)->m_networkAvailability->IsAvailable());
+                CProfileManager* manager = static_cast<App*>(WindowApp::m_instance)->m_profileManager;
+                bool online = static_cast<App*>(WindowApp::m_instance)->m_networkAvailability->IsAvailable() != 0;
+                manager->save(collections, online);
                 CGameApp::syncServerFlag = true;
             }
         }

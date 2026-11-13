@@ -133,10 +133,10 @@ void CNGSLoginFlow::NextStep()
         m_timeoutReported = 0;
         m_currentStep++;
         CNGS::GetInstance()->GetLocalUser()->m_notificationHandler->HandleLoginFlowNextStep();
-        if (m_currentStep == m_steps.Size()) {
-            CNGSUtil::DebugLog("Login Flow - Finished");
-        } else {
+        if (m_currentStep != m_steps.Size()) {
             PrepareStep(m_currentStep);
+        } else {
+            CNGSUtil::DebugLog("Login Flow - Finished");
         }
     }
 }

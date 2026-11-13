@@ -93,7 +93,7 @@ void SimpleDialog::ItemsWindow::SetSelectedIndex(int index)
         }
         dialog->SelectedItemChanged(m_items[m_selectedIndex].m_id);
         static_cast<App*>(WindowApp::m_instance)->m_media->Play(
-            AppMedia::CHANNEL_MULTIPLE, dialog->m_soundClick, 0, AppMedia::PLAY_ONCE, AppMedia::START_IF_IDLE);
+            AppMedia::CHANNEL_MULTIPLE, Dialog()->m_soundClick, 0, AppMedia::PLAY_ONCE, AppMedia::START_IF_IDLE);
     }
 }
 
@@ -149,9 +149,10 @@ void SimpleDialog::ItemsWindow::SetSubitemSelectedIndex(int index, int subIndex)
     if (dialog == NULL) {
         return;
     }
-    dialog->SelectedSubitemChanged(item.m_id, item.m_subItems[wrapped].m_id);
+    int itemId = item.m_id;
+    dialog->SelectedSubitemChanged(itemId, item.m_subItems[wrapped].m_id);
     static_cast<App*>(WindowApp::m_instance)->m_media->Play(
-        AppMedia::CHANNEL_MULTIPLE, dialog->m_soundClick, 0, AppMedia::PLAY_ONCE, AppMedia::START_IF_IDLE);
+        AppMedia::CHANNEL_MULTIPLE, Dialog()->m_soundClick, 0, AppMedia::PLAY_ONCE, AppMedia::START_IF_IDLE);
 }
 
 int SimpleDialog::ItemsWindow::MaxIconWidth() const
@@ -320,8 +321,10 @@ void SimpleDialog::PaintItemIcon(ICGraphics2d& graphics, int index, bool selecte
     unsigned int width;
     unsigned int height;
     surface->GetWidthAndHeight(width, height);
+    int centerX = (x - (int)width) / 2;
+    unsigned int halfHeight = height / 2;
     graphics.PushTransform();
-    graphics.Translate(IntToFixed((x - (int)width) / 2), IntToFixed(y - height / 2));
+    graphics.Translate(IntToFixed(centerX), IntToFixed(y - halfHeight));
     graphics.Draw(*surface, ICGraphics2d::Flip_None, NULL);
     graphics.PopTransform();
 }
@@ -350,7 +353,7 @@ void SimpleDialog::ItemsWindow::PaintItem(ICGraphics2d& graphics, int index, int
 void SimpleDialog::ItemsWindow::PaintSubItem(ICGraphics2d& graphics, int index, int x, int y)
 {
     CFont* font = ItemFontByIndex(index);
-    Item& item = m_items[index];
+    Item* items = m_items.m_items;
     int fontHeight = font->GetFontHeight();
     int selected = m_selectedIndex;
     int leftWidth = 0;
@@ -368,6 +371,7 @@ void SimpleDialog::ItemsWindow::PaintSubItem(ICGraphics2d& graphics, int index, 
         rightHalfHeight = (int)height / 2;
         rightWidth = width;
     }
+    Item& item = items[index];
     if (item.m_subItems.size() < 1) {
         return;
     }
@@ -385,9 +389,12 @@ void SimpleDialog::ItemsWindow::PaintSubItem(ICGraphics2d& graphics, int index, 
         item.m_arrowWidth[1] = item.m_arrowX[1] - item.m_arrowX[0];
         item.m_arrowWidth[0] = item.m_arrowWidth[1];
         if (m_arrowLeft.GetSurface() != NULL) {
-            int centerY = fontHeight / 2 + y;
+            unsigned int listWidth = static_cast<unsigned short>(m_width);
+            int rightX = listWidth - rightWidth;
+            int halfFontHeight = fontHeight / 2;
             graphics.PushTransform();
-            graphics.Translate(IntToFixed(m_width - rightWidth), IntToFixed(centerY - rightHalfHeight));
+            int centerY = halfFontHeight + y;
+            graphics.Translate(IntToFixed(rightX), IntToFixed(centerY - rightHalfHeight));
             graphics.Draw(*m_arrowRight.GetSurface(), ICGraphics2d::Flip_None, NULL);
             graphics.PopTransform();
             graphics.PushTransform();
@@ -454,29 +461,30 @@ void SimpleDialog::ItemsWindow::OnPointerEvent(Event& event)
     int dx;
     int dy;
     WindowApp::GetPointerOffset(event.m_param3, dx, dy);
-    if (event.m_type == Event::POINTER_DRAGGED) {
+    if (event.m_type == Event::POINTER_PRESSED) {
+        m_dragging = false;
+    } else if (event.m_type == Event::POINTER_DRAGGED) {
         int scrollY = m_scrollY - dy;
         int virtualHeight = VirtualHeight();
-        if (virtualHeight - scrollY < m_height) {
-            scrollY = virtualHeight - m_height;
+        int height = m_height;
+        if (virtualHeight - scrollY < height) {
+            scrollY = virtualHeight - height;
         }
         if (scrollY < 0) {
             scrollY = 0;
         }
         m_scrollY = scrollY;
-        if (m_height < VirtualHeight()) {
+        if (height < VirtualHeight()) {
             m_dragging = true;
         }
-    } else if (event.m_type == Event::POINTER_PRESSED) {
-        m_dragging = false;
     }
     if (m_dragging) {
         return;
     }
     int count = m_items.size();
     int selected = m_selectedIndex;
-    int pointerX = event.m_param1;
     int pointerY = event.m_param2;
+    int pointerX = event.m_param1;
     int line = 0;
     for (int y = 0; y < m_height; line++) {
         int top = 0;
@@ -497,8 +505,8 @@ void SimpleDialog::ItemsWindow::OnPointerEvent(Event& event)
             if (index == selected) {
                 // a press on one of the sub item arrows works like the left / right key
                 for (int arrow = 0; arrow < 2; arrow++) {
-                    if (pointerX >= item.m_arrowX[arrow] &&
-                        pointerX < item.m_arrowX[arrow] + item.m_arrowWidth[arrow]) {
+                    int left = item.m_arrowX[arrow];
+                    if (pointerX >= left && pointerX < left + item.m_arrowWidth[arrow]) {
                         if (event.m_type == Event::POINTER_RELEASED) {
                             int command = COMMAND_RIGHT;
                             if (arrow == 0) {
@@ -648,16 +656,19 @@ void SimpleDialog::AdjustByRect(int x, int y, int width, int height)
                 textHeight = m_textArea->MinHeight();
             }
         }
+        bool hasText = textHeight != 0;
         int itemsHeight = 0;
-        int itemsGap = 0;
         if (m_itemsWindow != NULL) {
             itemsHeight = m_itemsWindow->VirtualHeight();
-            if (itemsHeight != 0 && textHeight != 0) {
-                itemsGap = m_margins[MARGIN_ITEMS];
-            }
+        }
+        int bottomMargin = m_margins[MARGIN_BOTTOM];
+        int topMargin = m_margins[MARGIN_TOP];
+        int itemsGap = 0;
+        if (itemsHeight != 0 && hasText) {
+            itemsGap = m_margins[MARGIN_ITEMS];
         }
         int contentWidth = 0;
-        if (textHeight != 0) {
+        if (hasText) {
             contentWidth = m_textArea->MinWidth() + m_margins[MARGIN_SIDE] * 2;
         }
         if (contentWidth < m_width) {
@@ -678,8 +689,7 @@ void SimpleDialog::AdjustByRect(int x, int y, int width, int height)
         if (dialogX < x) {
             dialogX = x;
         }
-        int dialogHeight = titleHeight + textHeight + itemsHeight + itemsGap + m_margins[MARGIN_TOP] +
-                           m_margins[MARGIN_BOTTOM];
+        int dialogHeight = titleHeight + textHeight + itemsHeight + itemsGap + topMargin + bottomMargin;
         int dialogY = m_y + m_height / 2 - dialogHeight / 2;
         if (dialogY < y) {
             dialogY = y;
@@ -707,7 +717,11 @@ void SimpleDialog::AdjustByRect(int x, int y, int width, int height)
             }
         }
         SetRect(dialogX, dialogY, dialogWidth, dialogHeight, true);
-    } while (again && pass++ < MAX_ADJUST_PASSES);
+        if (!again || pass >= MAX_ADJUST_PASSES) {
+            return;
+        }
+        pass++;
+    } while (true);
 }
 
 void SimpleDialog::AdjustByDefRect()
@@ -798,10 +812,8 @@ void SimpleDialog::AddResourceItem(const char* text, const ImageRes& pressed, co
 {
     AddResourceItem(text, id, type);
     Item* item = ItemByKey(id);
-    if (item != NULL) {
-        item->m_pressedIcon = pressed;
-        item->m_icon = image;
-    }
+    item->m_pressedIcon = pressed;
+    item->m_icon = image;
 }
 
 __attribute__((noinline)) SimpleDialog::Item* SimpleDialog::ItemByKey(int id) const
@@ -869,11 +881,12 @@ void SimpleDialog::SetRect(int x, int y, int width, int height, bool force)
 void SimpleDialog::OnEasyStarted()
 {
     if (m_flags & FLAG_SHOW_AFTER_EASY) {
+        float delay = (m_easy->m_delayX + m_easy->m_delayY) * 0.5f;
         float duration = m_easy->m_fullTime;
         if (m_easy->m_state == 2) {
             duration = m_easy->m_reverseTime;
         }
-        float delay = (m_easy->m_delayX + m_easy->m_delayY) * 0.5f + duration * 0.3f;
+        delay += duration * 0.3f;
         static_cast<App*>(WindowApp::m_instance)->m_media->Play(
             AppMedia::CHANNEL_MULTIPLE, m_soundSelect, delay, AppMedia::PLAY_ONCE, AppMedia::START_IF_IDLE);
     }

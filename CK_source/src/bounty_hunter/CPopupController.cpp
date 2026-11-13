@@ -6,6 +6,7 @@
 #include "CFontMgr.h"
 #include "CStdUtil_Cocoa.h"
 #include "ServiceWindows.h"
+#include "SScreenAdaptingConstant.h"
 
 const unsigned int CPopupController::POPUP_TIME_INTERVAL_MS[PositionCount] = {500, 1500, 500, 500, 7000};
 const int CPopupController::POPUP_STACK_MAX_SIZE[PositionCount] = {8, 8, 8, 8, 25};
@@ -24,11 +25,10 @@ CPopupController::~CPopupController()
 {
     for (int position = 0; position < PositionCount; ++position) {
         for (int index = 0; index < m_queues[position].size(); ++index) {
-            Window* popup = m_queues[position][index];
-            popup->CloseChilds();
-            popup->HandleUpdate(true);
-            popup->HandleUpdate(true);
-            popup->Close();
+            m_queues[position][index]->CloseChilds();
+            m_queues[position][index]->HandleUpdate(true);
+            m_queues[position][index]->HandleUpdate(true);
+            m_queues[position][index]->Close();
         }
         m_queues[position].removeAllElements();
     }
@@ -50,25 +50,28 @@ void CPopupController::OnCommand(Event& event)
         AddPopup(NULL, ResString("IDS_POPUP_LEVELUP"), Center, Brief, 9);
         break;
     case -0x53245bd8: {
-        XString text = ResString("IDS_POPUP_XP_MULTIPLIER");
-        AddPopup(NULL, XString::Format(text.c_str(), event.m_param1), RightCenter, Announcement, 15);
-        break;
+        XString text = XString::Format(ResString("IDS_POPUP_XP_MULTIPLIER").c_str(), event.m_param1);
+        AddPopup(NULL, text, RightCenter, Announcement, 15);
+        event.Clear();
+        return;
     }
     case -0x5220a649: {
+        int count = event.m_param1;
         XString text;
-        if (event.m_param1 < 1) {
+        if (count < 1) {
             text = ResString("IDS_POPUP_CLEAR");
-        } else if (event.m_param1 == 1) {
+        } else if (count == 1) {
             text = XString::Format(ResString("IDS_POPUP_ENEMY_LEFT").c_str(), 1);
         } else {
-            text = XString::Format(ResString("IDS_POPUP_ENEMIES_LEFT").c_str(), event.m_param1);
+            text = XString::Format(ResString("IDS_POPUP_ENEMIES_LEFT").c_str(), count);
         }
         if (m_enemiesLeft == NULL) {
             m_enemiesLeft = AddPopup(NULL, text, RightCenter, Announcement, 15);
         } else {
             static_cast<LabelWithIcon*>(m_enemiesLeft->m_firstChild)->SetTextWithSameFont(text);
         }
-        break;
+        event.Clear();
+        return;
     }
     case 0x48a1ff19:
         AddPopup("IDB_HUD_ICON_HEALTH", event.m_param1 / 1000, BottomLeft, Recovery, 15);
@@ -84,11 +87,9 @@ void CPopupController::OnCommand(Event& event)
 
 Window* CPopupController::AddPopup(const char* icon, XString text, EPosition position, EAnimationStyle style, int font)
 {
-    if (m_queues[position].size() > POPUP_STACK_MAX_SIZE[position]) {
-        return NULL;
-    }
     AnimatedWindow* popup = new AnimatedWindow(static_cast<AnimatedWindow::EMode>(2));
-    popup->AddToFront(new LabelWithIcon(icon, text, false, CFontMgr::GetInstance()->GetFont(font), 0));
+    LabelWithIcon* label = new LabelWithIcon(icon, XString(text), false, CFontMgr::GetInstance()->GetFont(font), 0);
+    popup->AddToFront(label);
     SetupStyle(popup, style);
     SetupPosition(popup, position);
     AddPopupInQueue(popup, position);
@@ -124,22 +125,22 @@ void CPopupController::AddTrickShotPopup(const XString& name, const XString& poi
 
 void CPopupController::SetupStyle(AnimatedWindow* window, EAnimationStyle style)
 {
-    int scale = App::Scale();
     EasyLib::EMethod linear = static_cast<EasyLib::EMethod>(0);
     switch (style) {
     case Announcement:
-        window->SetCloseEasy(0, -50 * scale, 1.5f, 1.0f, 0.0f, 1.5f, linear);
+        window->SetCloseEasy(0, -50 * App::Scale(), 1.5f, 1.0f, 0.0f, 1.5f, linear);
         break;
     case Recovery:
-        window->SetStartEasy(0, 20 * scale, 0.5f, 0.0f, 1.0f, 0.0f, linear);
-        window->SetCloseEasy(0, -40 * scale, 0.5f, 1.0f, 0.0f, 0.5f, linear);
+        window->SetStartEasy(0, 20 * App::Scale(), 0.5f, 0.0f, 1.0f, 0.0f, linear);
+        window->SetCloseEasy(0, -40 * App::Scale(), 0.5f, 1.0f, 0.0f, 0.5f, linear);
         break;
     case Brief:
+        App::Scale();
         window->SetStartEasy(0, 0, 0.55f, 0.0f, 0.7f, 0.0f, linear);
-        window->SetCloseEasy(0, -70 * scale, 0.3f, 0.7f, 0.0f, 0.05f, linear);
+        window->SetCloseEasy(0, -70 * App::Scale(), 0.3f, 0.7f, 0.0f, 0.05f, linear);
         break;
     case Award:
-        window->SetStartEasy(0, 70 * scale, 0.5f, 0.0f, 1.0f, 0.0f, static_cast<EasyLib::EMethod>(26));
+        window->SetStartEasy(0, 70 * App::Scale(), 0.5f, 0.0f, 1.0f, 0.0f, static_cast<EasyLib::EMethod>(26));
         window->SetCloseEasy(0, 0, 2.0f, 1.0f, 0.0f, 4.0f, linear);
         break;
     }
@@ -147,31 +148,40 @@ void CPopupController::SetupStyle(AnimatedWindow* window, EAnimationStyle style)
 
 void CPopupController::SetupPosition(AnimatedWindow* window, EPosition position)
 {
-    int scale = App::Scale();
-    window->SetLayoutType(LAYOUT_SIMPLE);
-    window->ClearFlags(FLAG_FOCUSABLE | FLAG_ENABLED);
     switch (position) {
-    case TopRight:
+    case TopRight: {
+        window->SetLayoutType(LAYOUT_SIMPLE);
         window->SetAlign(ALIGN_RIGHT | ALIGN_TOP);
-        window->SetOutsetSpacing(45 * scale, 20 * scale, 0, 0);
+        int top = SScreenAdaptingConstant(45, 90)();
+        int right = SScreenAdaptingConstant(20, 40)();
+        window->SetOutsetSpacing(top, right, 0, 0);
         break;
-    case RightCenter:
+    }
+    case RightCenter: {
+        window->SetLayoutType(LAYOUT_SIMPLE);
         window->SetAlign(ALIGN_RIGHT | ALIGN_VCENTER);
-        window->SetOutsetSpacing(20 * scale, 20 * scale, 0, 0);
+        int top = SScreenAdaptingConstant(20, 40)();
+        int right = SScreenAdaptingConstant(20, 40)();
+        window->SetOutsetSpacing(top, right, 0, 0);
         break;
-    case BottomLeft:
+    }
+    case BottomLeft: {
+        window->SetLayoutType(LAYOUT_SIMPLE);
         window->SetAlign(ALIGN_LEFT | ALIGN_BOTTOM);
-        window->SetOutsetSpacing(0, 0, 50 * scale, 60 * scale);
+        int bottom = SScreenAdaptingConstant(50, 100)();
+        int left = SScreenAdaptingConstant(60, 120)();
+        window->SetOutsetSpacing(0, 0, bottom, left);
         break;
+    }
     case Center:
+        window->SetLayoutType(LAYOUT_SIMPLE);
         window->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-        window->SetOutsetSpacing(0, 0, 20 * scale, 0);
+        window->SetOutsetSpacing(0, 0, SScreenAdaptingConstant(20, 40)(), 0);
         break;
     case Achievement:
+        window->SetLayoutType(LAYOUT_SIMPLE);
         window->SetAlign(ALIGN_HCENTER | ALIGN_BOTTOM);
-        window->SetOutsetSpacing(0, 0, -35 * scale, 0);
-        break;
-    default:
+        window->SetOutsetSpacing(0, 0, SScreenAdaptingConstant(-35, -70)(), 0);
         break;
     }
 }
@@ -191,10 +201,9 @@ void CPopupController::AddPopupInQueue(Window* window, EPosition position)
 
 void CPopupController::Update()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
     for (int position = 0; position < PositionCount; ++position) {
         Vector<Window*>& queue = m_queues[position];
-        if (queue.size() == 0) {
+        if (queue.size() < 1) {
             continue;
         }
         unsigned int now = CStdUtil_Cocoa::GetUpTimeMS();
@@ -205,7 +214,7 @@ void CPopupController::Update()
             if (popup == m_enemiesLeft) {
                 m_enemiesLeft = NULL;
             }
-            app->m_mainLayer->AddToFront(popup);
+            static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddToFront(popup);
             m_lastPopupMS[position] = now;
         }
     }

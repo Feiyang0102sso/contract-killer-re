@@ -22,11 +22,7 @@ SwerveHelper::Group CVisualObject::GetModelCopy(const char* const& resource, con
         LoadModelImpl(resource, root);
     }
     ++m_copyCount;
-    if (m_model == NULL) {
-        return SwerveHelper::Group();
-    }
-    SwerveHelper::Group copy(m_model.duplicate());
-    return SwerveHelper::FullObjectDuplicate(copy, 0);
+    return SwerveHelper::FullObjectDuplicate(SwerveHelper::Group(m_model.duplicate()), 0);
 }
 
 void CVisualObject::LoadModelImpl(const char* const& resource, const char* root)

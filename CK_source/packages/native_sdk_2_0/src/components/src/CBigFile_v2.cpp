@@ -301,7 +301,7 @@ unsigned char CBigFile_v2::Load(CInputStream& stream, unsigned int size)
     // every stream slot gets its own handle on the archive file
     ICFileMgr* fileMgr = ICFileMgr::GetInstance();
     const wchar_t* path = CResourceDataBlockFileAccess::GetInstance()->m_path.m_string;
-    m_streamManager.Initialize(4);
+    m_streamManager.Initialize(2);
     for (unsigned int i = 0; i < m_streamManager.m_count; i++) {
         m_streamManager.m_slots[i].m_file = fileMgr->Open(path, ICFileMgr::AccessRead);
     }

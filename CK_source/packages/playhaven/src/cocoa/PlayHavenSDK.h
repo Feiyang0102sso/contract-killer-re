@@ -102,7 +102,7 @@ typedef NSString PHPublisherContentDismissType;
 - (UIImage*)request:(PHPublisherContentRequest*)request closeButtonImageForControlState:(UIControlState)state content:(PHContent*)content;
 - (UIColor*)request:(PHPublisherContentRequest*)request borderColorForContent:(PHContent*)content;
 - (void)request:(PHPublisherContentRequest*)request unlockedReward:(PHReward*)reward;
-- (void)request:(PHPublisherContentRequest*)request makePurchase:(PHPurchase*)purchase;
+// no request:makePurchase: in this SDK version (original protocol metadata ends at unlockedReward:)
 @end
 
 @interface PHPublisherContentRequest : PHAPIRequest {

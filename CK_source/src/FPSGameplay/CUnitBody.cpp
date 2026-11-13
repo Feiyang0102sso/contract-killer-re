@@ -28,8 +28,6 @@
 class CSur : public CRenderSurface_OGLES_Targetable {
 };
 
-static const char TAG_CHARACTERS[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ', 'f', 't'};
-
 namespace {
 const int CharacterFadeMs = 300;
 const float DegreesPerRadian = 57.29582595825195f;
@@ -54,10 +52,12 @@ int WrapDegrees(int degrees)
     return degrees;
 }
 
-void BlockAngles(bool* blocked, int angle, int halfWidth)
+__attribute__((always_inline)) inline void BlockAngles(int* blocked, int angle, int halfWidth)
 {
-    for (int offset = -halfWidth; offset <= halfWidth; ++offset) {
-        blocked[WrapDegrees(angle + offset)] = true;
+    angle = WrapDegrees(angle);
+    for (int offset = 0; offset <= halfWidth; ++offset) {
+        blocked[WrapDegrees(angle - offset)] = 1;
+        blocked[WrapDegrees(angle + offset)] = 1;
     }
 }
 
@@ -222,7 +222,8 @@ void CUnitBody::Init(CUnit* unit, int point)
     BindToWorld();
     BindWeaponToHand();
     BindShadow();
-    // Build the distance tag glyph cache when the visor first needs it and a target is bound.
+    // Build the distance tag glyph cache before placing the unit.
+    InitDistanceTag();
     SetToPoint(point);
     if (point != -1) {
         SetExactlyToPoint();
@@ -309,29 +310,32 @@ void CUnitBody::Tick(int elapsed)
 
 void CUnitBody::AvoidObstacles()
 {
-    if (m_staticObstacles.size() == 0 && m_dynamicObstacles.size() == 0) {
+    if (m_dynamicObstacles.size() == 0 && m_staticObstacles.size() == 0) {
         return;
     }
-    bool blocked[360];
+    float directionYaw = GetYawAngle(m_direction);
+    int blocked[360];
     memset(blocked, 0, sizeof(blocked));
+    int heading = WrapDegrees(static_cast<int>(directionYaw));
     for (int index = 0; index < m_dynamicObstacles.size(); ++index) {
         vec3 direction = m_dynamicObstacles[index].m_position - m_position;
         BlockAngles(blocked, static_cast<int>(GetYawAngle(direction)), 44);
     }
     for (int index = 0; index < m_staticObstacles.size(); ++index) {
         const SStaticObstacle& obstacle = m_staticObstacles[index];
-        vec3 edge = obstacle.m_points[1] - obstacle.m_points[0];
+        vec3 edge = obstacle.m_points[0] - obstacle.m_points[1];
         vec3 middle = (obstacle.m_points[0] + obstacle.m_points[1]) * 0.5f;
-        vec3 outward(edge.m_y, -edge.m_x, 0.0f);
+        vec3 outward(-edge.m_y, edge.m_x, 0.0f);
+        vec3 fromBody = middle - m_position;
+        float side = (fromBody.m_y * edge.m_x - fromBody.m_x * edge.m_y) + fromBody.m_z * 0.0f;
         // the original turns the normal away from the wall middle (negates when the dot is positive)
-        if (outward.Dot(middle - m_position) > 0.0f) {
-            outward = outward * -1.0f;
+        if (side > 0.0f) {
+            outward = vec3(edge.m_y, -edge.m_x, -0.0f);
         }
         BlockAngles(blocked, static_cast<int>(GetYawAngle(outward)), 88);
     }
     // Original 0xdad64: the search sets "found" before testing each side, so the rotation below is
     // never applied (original bug, kept). Units are not turned by obstacle avoidance.
-    int heading = WrapDegrees(static_cast<int>(GetYawAngle(m_direction)));
     bool found = false;
     bool positive = true;
     int degrees = 0;
@@ -400,8 +404,16 @@ void CUnitBody::UpdatePosition(int elapsed)
         return;
     }
     SwerveHelper::Transform transform(CSwerve::GetInstance()->m_swerve);
-    transform.postTranslate(&m_position.m_x);
-    float orientation[4] = {m_yaw, 0.0f, 0.0f, 1.0f};
+    float translation[3];
+    translation[0] = m_position.m_x;
+    translation[1] = m_position.m_y;
+    translation[2] = m_position.m_z;
+    transform.postTranslate(translation);
+    float orientation[4];
+    orientation[0] = m_yaw;
+    orientation[1] = 0.0f;
+    orientation[2] = 0.0f;
+    orientation[3] = 1.0f;
     transform.postRotate(orientation);
     m_model.setTransform(transform);
     transform.Clear();
@@ -418,12 +430,12 @@ void CUnitBody::UpdateHealthBar()
         return;
     }
     if (m_unit->m_wounded && !m_pulsar->IsPlaying()) {
-        CSwerveGame* game = GetApp()->m_helper->m_swerveGame;
-        int time = game->m_missionElapsedMs;
-        m_pulsar->StartAtTimeMS(time, 1.0f, time, 0.0f, 1.0f);
+        m_pulsar->Start(0.0f, 1.0f, 0.0f, 0.0f, 1.0f);
     }
+    float healthFraction = m_unit->m_healthFraction;
+    float duration = m_health->m_durationSec;
     m_health->Start(0.0f, 1.0f, 0.0f, 0.0f, 1.0f);
-    m_health->SetPositionSec((1.0f - m_unit->m_healthFraction) * m_health->m_durationSec);
+    m_health->SetPositionSec(duration * (1.0f - healthFraction));
     m_health->Pause();
 }
 
@@ -498,154 +510,6 @@ void CUnitBody::ShowDistanceTag(bool show)
     m_showDistanceTag = show;
 }
 
-ICRenderSurface* CUnitBody::CreateDistanceTagSurface()
-{
-    const ICRenderSurface::InitParam surfaceDesc[] = {
-        {ICRenderSurface::InitParam_ColorFormat, ColorFormat_A8B8G8R8},
-        {ICRenderSurface::InitParam_Targetable, 1},
-        {ICRenderSurface::InitParam_Width, 100},
-        {ICRenderSurface::InitParam_Height, 100},
-        {ICRenderSurface::InitParam_End, 0}
-    };
-    CSur* target = new CSur();
-    if (!target->CRenderSurface_OGLES_Texture::Initialize(surfaceDesc)) {
-        delete target;
-        return NULL;
-    }
-    return target;
-}
-
-void CUnitBody::InitDistanceTag()
-{
-    CSwerveGame* game = GetApp()->m_helper->m_swerveGame;
-    CFont* font = CFontMgr::GetInstance()->GetFont(19);
-    if (font == NULL || ICGraphics::GetInstance()->GetTargetSurface() == NULL) {
-        return;
-    }
-    ICRenderSurface* target = NULL;
-    for (unsigned int index = 0; index < sizeof(TAG_CHARACTERS); ++index) {
-        XString glyph(TAG_CHARACTERS[index]);
-        if (game->GetTagImage(glyph) != NULL) {
-            continue;
-        }
-        if (target == NULL) {
-            target = CreateDistanceTagSurface();
-            if (target == NULL) {
-                return;
-            }
-        }
-        unsigned char* pixels = NULL;
-        int width = 0;
-        int height = 0;
-        SwerveHelper::DrawToArray(&pixels, &width, &height, target, glyph, font);
-        if (pixels != NULL) {
-            game->SetTagImage(glyph, pixels, width, height);
-        }
-    }
-    delete target;
-}
-
-void CUnitBody::UpdateDistanceTag()
-{
-    if (!m_unit->CanBeHandled()) {
-        UnsetDistanceTag();
-        return;
-    }
-    unsigned int now = CStdUtil_Cocoa::GetUpTimeMS();
-    if (m_distanceTagTime != 0 && now - m_distanceTagTime <= DistanceTagRefreshMs) {
-        return;
-    }
-    CSwerveGame* game = GetApp()->m_helper->m_swerveGame;
-    int distance = static_cast<int>(game->GetDistanceToUnit(m_unit) * FeetPerMeter);
-    if (distance != m_distanceTagValue || m_distanceTag == NULL) {
-        m_distanceTagTime = now;
-        if (SetDistanceTag(distance)) {
-            m_distanceTagValue = distance;
-        }
-    }
-}
-
-void CUnitBody::CombineCharImages(unsigned char** pixels, int* width, int* height, const XString& text)
-{
-    *pixels = NULL;
-    *width = 0;
-    *height = 0;
-    Vector<const STagImage*> glyphs;
-    CSwerveGame* game = GetApp()->m_helper->m_swerveGame;
-    int fullWidth = 0;
-    int fullHeight = 0;
-    for (int index = 0; index < text.Length(); ++index) {
-        wchar_t character[] = {text.Char(index), 0};
-        const STagImage* glyph = game->GetTagImage(XString(character));
-        if (glyph == NULL) {
-            return;
-        }
-        glyphs.addElement(glyph);
-        fullWidth += glyph->m_width;
-        if (fullHeight < glyph->m_height) {
-            fullHeight = glyph->m_height;
-        }
-    }
-    if (fullWidth == 0 || fullHeight == 0) {
-        return;
-    }
-    unsigned char* image = new unsigned char[fullWidth * fullHeight * 4];
-    memset(image, 0, fullWidth * fullHeight * 4);
-    int x = 0;
-    for (int index = 0; index < glyphs.size(); ++index) {
-        const STagImage* glyph = glyphs[index];
-        int rowBytes = glyph->m_width * 4;
-        for (int row = 0; row < glyph->m_height; ++row) {
-            memcpy(image + (row * fullWidth + x) * 4, glyph->m_pixels + row * rowBytes, rowBytes);
-        }
-        x += glyph->m_width;
-    }
-    *pixels = image;
-    *width = fullWidth;
-    *height = fullHeight;
-}
-
-bool CUnitBody::SetDistanceTag(int distance)
-{
-    Group mount(m_model.find(DGHelper::getSwerveID(CVisualCharacterType::m_pBodyDummyName)));
-    if (mount == NULL) {
-        return false;
-    }
-    InitDistanceTag();
-    unsigned char* pixels = NULL;
-    int width = 0;
-    int height = 0;
-    CombineCharImages(&pixels, &width, &height, XString::Format(L"%d ft", distance));
-    if (pixels == NULL) {
-        return false;
-    }
-    Node sprite = SwerveHelper::CreateSprite(pixels, width, height);
-    delete[] pixels;
-    if (sprite == NULL) {
-        return false;
-    }
-    SwerveHelper::Transform transform = SwerveHelper::NewTransform();
-    if (transform == NULL) {
-        return false;
-    }
-    transform.setIdentity();
-    CSwerveGame* game = GetApp()->m_helper->m_swerveGame;
-    if (game->m_world != NULL) {
-        sprite.getTransformTo(game->m_world, transform);
-    }
-    const float position[] = {0.0f, 0.0f, 3.2f};
-    const float scale[] = {1.0f, 0.6f, 1.0f};
-    transform.postTranslate(position);
-    transform.postScale(scale);
-    sprite.setTransform(transform);
-    if (m_distanceTag != NULL) {
-        mount.removeChild(m_distanceTag);
-    }
-    mount.addChild(sprite);
-    m_distanceTag = sprite;
-    return true;
-}
-
 void CUnitBody::OnTagged(bool known)
 {
     CUnit* unit = m_unit;
@@ -670,18 +534,22 @@ void CUnitBody::BindKnownIcon()
         return;
     }
     const char* resource;
-    if (m_unit->m_type == UnitBoss) {
+    switch (m_unit->m_type) {
+    case UnitBoss:
         resource = "BIN_CHARACTER_MARK_MIND_BOSS_M3G";
-    } else if (m_unit->m_type == UnitWarrior) {
+        break;
+    case UnitWarrior:
         resource = "BIN_CHARACTER_MARK_MIND_MINION_M3G";
-    } else if (m_unit->m_type == UnitCivilian) {
+        break;
+    case UnitCivilian:
         resource = "BIN_CHARACTER_MARK_MIND_CIVILIAN_M3G";
+        break;
     }
     SwerveHelper::Object3D mark = App::LoadObject3D(resource);
     m_knownIcon = Group(mark.find(DGHelper::getSwerveID("dummy_markTransform")));
     mark.Clear();
     Group mount(m_model.find(DGHelper::getSwerveID(CVisualCharacterType::m_pBodyDummyName)));
-    if (mount != NULL && m_knownIcon != NULL) {
+    if (mount != NULL) {
         m_knownIcon.setPickingEnable(false);
         mount.addChild(m_knownIcon);
         // The original calls SetIconTransparencyParameters() after mounting the icon.
@@ -698,7 +566,7 @@ void CUnitBody::BindUnknownIcon()
     m_knownIcon = Group(mark.find(DGHelper::getSwerveID("dummy_markTransform")));
     mark.Clear();
     Group mount(m_model.find(DGHelper::getSwerveID(CVisualCharacterType::m_pBodyDummyName)));
-    if (mount != NULL && m_knownIcon != NULL) {
+    if (mount != NULL) {
         m_knownIcon.setPickingEnable(false);
         mount.addChild(m_knownIcon);
         // Apply the same rendering layer to the unknown marker.
@@ -730,9 +598,13 @@ void CUnitBody::SetAttitude(EPersonAnimShotAttitudeType attitude)
 
 void CUnitBody::DefineCameraPitch(const vec3& direction)
 {
-    vec3 forward = direction * MathLib::InvSqrt(direction.LengthSqr());
     vec3 planar(direction.m_x, direction.m_y, 0.0f);
-    planar = planar * MathLib::InvSqrt(planar.LengthSqr());
+    float planarSquared = planar.m_x * planar.m_x + planar.m_y * planar.m_y;
+    float inverseLength = MathLib::InvSqrt(planarSquared + direction.m_z * direction.m_z);
+    vec3 forward = direction;
+    float inversePlanarLength = MathLib::InvSqrt(planarSquared + planar.m_z * planar.m_z);
+    forward = forward * inverseLength;
+    planar = planar * inversePlanarLength;
     m_shotDirection = static_cast<EPersonAnimShotDirectionType>(!(forward.Dot(planar) < 0.86f));
 }
 
@@ -764,39 +636,41 @@ void CUnitBody::SetMovementParam(const vec3& target, float speed)
     m_moved = true;
 }
 
-// Original 0xdba48 (from the decompilation): fixed 1.4 m range; very close units only halve the
-// speed, otherwise the unit turns away by -(cone + 2 * angle). The direction is scaled by
-// InvSqrt(m_speed) as in the original.
+// Original 0xdba48: use the full 3D distance and halve speed at very short range.
 void CUnitBody::AvoidCollision(CUnitBody* other)
 {
-    float dx = other->m_position.m_x - m_position.m_x;
-    float dy = other->m_position.m_y - m_position.m_y;
-    float dz = other->m_position.m_z - m_position.m_z;
-    float planarSq = dx * dx + dy * dy;
-    float distance = MathLib::InvSqrt(planarSq) * (planarSq + dz * dz);
-    if (distance < 1.4) {
-        float speed = m_speed;
-        float approach = dx * (m_direction.m_x * speed) + dy * (m_direction.m_y * speed)
-            + dz * (m_direction.m_z * speed);
-        if (approach > 0.0f) {
-            if (distance > 0.5f) {
-                float scale = MathLib::InvSqrt(m_speed);
-                float vx = m_direction.m_x * m_speed - other->m_direction.m_x * other->m_speed;
-                float vy = m_direction.m_y * m_speed - other->m_direction.m_y * other->m_speed;
-                float vz = m_direction.m_z * m_speed - other->m_direction.m_z * other->m_speed;
-                float velocityScale = MathLib::InvSqrt(vx * vx + vy * vy + vz * vz);
-                float cosine = dx * scale * (vx * velocityScale) + dy * scale * (vy * velocityScale)
-                    + dz * scale * (vz * velocityScale);
-                float angle = static_cast<float>(acos(cosine) * 57.29582595825195);
-                float cone = static_cast<float>(atan(1.4 / distance) * 57.29582595825195);
-                if (angle < cone && -cone < angle) {
-                    AdditionalRotate(-(cone + angle) - angle);
-                }
-            } else {
-                m_speed = speed * 0.5f;
-            }
-        }
+    vec3 separation = other->m_position - m_position;
+    float distanceSquared = separation.LengthSqr();
+    float distance = MathLib::InvSqrt(distanceSquared) * distanceSquared;
+    if (distance >= 1.4f) {
+        return;
     }
+    float speed = m_speed;
+    if (separation.Dot(m_direction * speed) <= 0.0f) {
+        return;
+    }
+    if (distance <= 0.5f) {
+        m_speed = speed * 0.5f;
+        return;
+    }
+    vec3 normal = separation * MathLib::InvSqrt(distanceSquared);
+    vec3 relativeVelocity = m_direction * m_speed - other->m_direction * other->m_speed;
+    relativeVelocity = relativeVelocity * MathLib::InvSqrt(relativeVelocity.LengthSqr());
+    float cosine = normal.Dot(relativeVelocity);
+    double angleRadians = acos(cosine);
+    double coneRadians = atan(1.4f / distance);
+    float angle = static_cast<float>(angleRadians * 57.29582595825195);
+    float cone = static_cast<float>(coneRadians * 57.29582595825195);
+    if (angle >= cone || angle <= -cone) {
+        return;
+    }
+    float turn;
+    if (angle >= 0.0f) {
+        turn = cone - angle;
+    } else {
+        turn = -(cone + angle);
+    }
+    AdditionalRotate(turn);
 }
 
 void CUnitBody::AdditionalRotate(float degrees)
@@ -877,8 +751,11 @@ const char* CUnitBody::PlayAfraidAnimation()
 
 const char* CUnitBody::PlayDeathAnimation(const vec3& from)
 {
-    vec3 direction = m_direction * MathLib::InvSqrt(m_direction.LengthSqr());
-    float facing = (from - m_position).Dot(direction);
+    // Fall orientation uses the XY plane even for bodies above or below the impact.
+    vec3 direction(m_direction.m_x, m_direction.m_y, 0.0f);
+    vec3 offset(from.m_x - m_position.m_x, from.m_y - m_position.m_y, 0.0f);
+    direction = direction * MathLib::InvSqrt(direction.LengthSqr());
+    float facing = offset.Dot(direction);
     SetOrientationToPoint(from, facing > 0.0f);
     m_yaw = GetYawAngle(m_direction);
     if (m_groundShadow != NULL) {
@@ -960,7 +837,7 @@ const char* CUnitBody::PlayReloadAnimation(bool* available)
             *available = false;
             return NULL;
         }
-        m_transition->startAnimation(animation, 1.0f, false, CharacterFadeMs, 1.0f, 0.0f);
+        m_transition->startAnimation(animation, 1.0f, false, 0, 1.0f, 0.0f);
         m_animationType = static_cast<EPersonAnimType>(11);
         *available = true;
         return animation->getName();
@@ -1029,27 +906,68 @@ void CUnitBody::UnbindFromWorld()
     world.removeChild(m_model);
 }
 
+// The Swerve screen pick writes the hit flag and accepts a null intersection handle.
+static inline bool PickBodyZone(const Group& zone, float x, float y, const Camera& camera,
+                                const RayIntersection& intersection)
+{
+    typedef int (*ScreenPick)(IQueryInterface*, int, float, float, IQueryInterface*,
+                              IQueryInterface*, unsigned char*);
+    unsigned char hit;
+    CKMethod<ScreenPick>(zone.m_interface, 0xcc)(zone.m_interface, -1, x, y,
+                                                camera.m_interface, intersection.m_interface, &hit);
+    return hit != 0;
+}
+
 void CUnitBody::DefineBodyZones(EHitType* type, float x, float y, const Camera& camera)
 {
-    if (m_zoneIntersection == NULL) {
+    bool armorHit = false;
+    {
+        // Keep the body result alive until the complete armor test is done.
+        RayIntersection bodyIntersection;
+        if (m_bodyArmorZone != NULL) {
+            bodyIntersection.m_interface = m_zoneIntersection.m_interface;
+            QueryInterface::AddReference(bodyIntersection.m_interface);
+            armorHit = PickBodyZone(m_bodyArmorZone, x, y, camera, bodyIntersection);
+        }
+        if (!armorHit && m_headArmorZone != NULL) {
+            RayIntersection headIntersection(m_zoneIntersection);
+            armorHit = PickBodyZone(m_headArmorZone, x, y, camera, headIntersection);
+        }
+    }
+    if (armorHit) {
+        *type = HitArmor;
         return;
     }
-    if ((m_bodyArmorZone != NULL && m_bodyArmorZone.pick(-1, x, y, camera, m_zoneIntersection)) ||
-        (m_headArmorZone != NULL && m_headArmorZone.pick(-1, x, y, camera, m_zoneIntersection))) {
-        *type = HitArmor;
-    } else if (m_headZone != NULL && m_headZone.pick(-1, x, y, camera, m_zoneIntersection)) {
-        *type = HitHead;
-    } else if (m_vitalZone != NULL && m_vitalZone.pick(-1, x, y, camera, m_zoneIntersection)) {
-        *type = HitVital;
+
+    if (m_headZone != NULL) {
+        bool headHit;
+        {
+            RayIntersection intersection(m_zoneIntersection);
+            headHit = PickBodyZone(m_headZone, x, y, camera, intersection);
+        }
+        if (headHit) {
+            *type = HitHead;
+            return;
+        }
+    }
+    if (m_vitalZone != NULL) {
+        bool vitalHit;
+        {
+            RayIntersection intersection(m_zoneIntersection);
+            vitalHit = PickBodyZone(m_vitalZone, x, y, camera, intersection);
+        }
+        if (vitalHit) {
+            *type = HitVital;
+        }
     }
 }
 
 void CUnitBody::CalculateStep(int elapsed)
 {
-    if (m_speed > 0.0f) {
-        vec3 step = m_direction * m_speed * static_cast<float>(elapsed) * 0.001f;
+    if (!(m_speed <= 0.0f)) {
+        vec3 step = m_direction * m_speed * static_cast<float>(elapsed);
         m_speed = 0.0f;
-        m_position = m_position + step;
+        m_position = m_position + step * 0.001f;
     }
 }
 
@@ -1060,14 +978,15 @@ bool CUnitBody::Pick(float x, float y, float maximumDistance, Camera& camera, EH
     typedef int (*GetPicking)(IQueryInterface*, unsigned char*);
     unsigned char previous;
     CKMethod<GetPicking>(m_model.m_interface, 0x94)(m_model.m_interface, &previous);
+    bool wasPickingEnabled = previous != 0;
     m_model.setPickingEnable(true);
     int screenWidth = static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenWidth;
     int screenHeight = static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenHeight;
     RayIntersection intersection(CSwerve::GetInstance()->m_swerve);
     float relativeX = x / screenWidth;
     float relativeY = y / screenHeight;
-    bool hit = false;
-    if (m_model.pick(-1, relativeX, relativeY, camera, intersection)) {
+    bool hit = PickBodyZone(m_model, relativeX, relativeY, camera, RayIntersection(intersection));
+    if (hit) {
         float distance = intersection.getDistance();
         m_pickDistance = distance;
         if (maximumDistance > 0.0f && distance > maximumDistance) {
@@ -1076,10 +995,9 @@ bool CUnitBody::Pick(float x, float y, float maximumDistance, Camera& camera, EH
         intersection.getRay(m_pickRay);
         m_hitDistance = intersection.getDistance();
         type = HitBody;
-        hit = true;
         DefineBodyZones(&type, relativeX, relativeY, camera);
     }
-    m_model.setPickingEnable(previous != 0);
+    m_model.setPickingEnable(wasPickingEnabled);
     return hit;
 }
 
@@ -1139,9 +1057,17 @@ vec3 CUnitBody::GetAutoAimPointPosition()
 {
     // Original: the head zone's world position, with no fallback.
     vec3 position;
-    SwerveHelper::Transform transform = SwerveHelper::NewTransform();
+    bool transformed;
+    SwerveHelper::Transform transform(CSwerve::GetInstance()->m_swerve);
     CSwerveGame* game = GetApp()->m_helper->m_swerveGame;
-    m_headZone.getTransformTo(game->m_world, transform);
+    {
+        // Copy the transform handle for the node query, as in the original by-value call.
+        SwerveHelper::Transform destination(transform);
+        typedef int (*GetTransformTo)(IQueryInterface*, INodeInterface*, ITransformInterface*, bool*);
+        CKMethod<GetTransformTo>(m_headZone.m_interface, 0xa4)(
+            m_headZone.m_interface, static_cast<INodeInterface*>(game->m_world.m_interface),
+            static_cast<ITransformInterface*>(destination.m_interface), &transformed);
+    }
     float matrix[16];
     transform.get(matrix);
     position.m_x = matrix[3];
@@ -1165,8 +1091,11 @@ void CUnitBody::eventListener(const AnimationEvent& event, AnimationInstance* in
 
 void CUnitBody::DrawHitEffect()
 {
-    if (m_blood.getParent() == NULL) {
-        m_model.addChild(m_blood);
+    {
+        Node parent = m_blood.getParent();
+        if (parent.m_interface == NULL) {
+            m_model.addChild(m_blood);
+        }
     }
     m_hitEffectTransform = SwerveHelper::NewTransform();
     m_hitEffectTransform.setIdentity();
@@ -1185,6 +1114,143 @@ void CUnitBody::DrawHitEffect()
     m_blood.setRenderingEnable(true);
     m_showBlood = true;
     m_bloodTimeMs = 0;
+}
+
+void CUnitBody::UpdateDistanceTag()
+{
+    float feet = GetApp()->m_helper->m_swerveGame->GetDistanceToUnit(m_unit) * FeetPerMeter;
+    if (CStdUtil_Cocoa::GetUpTimeMS() - m_distanceTagTime > DistanceTagRefreshMs) {
+        int distance = (int)feet;
+        if (m_distanceTagValue != distance) {
+            m_distanceTagValue = distance;
+            m_distanceTagTime = CStdUtil_Cocoa::GetUpTimeMS();
+            SetDistanceTag(m_distanceTagValue);
+        }
+    }
+}
+
+void CUnitBody::SetDistanceTag(int distance)
+{
+    Group mount(m_model.find(DGHelper::getSwerveID(CVisualCharacterType::m_pBodyDummyName)));
+    if (mount == NULL) {
+        return;
+    }
+    mount.removeChild(m_distanceTag);
+    m_distanceTag.Clear();
+    unsigned char* pixels;
+    int width = 0;
+    int height = 0;
+    CombineCharImages(&pixels, &width, &height, XString::Format(L"%d ft", distance));
+    m_distanceTag.QueryInterface::operator=(SwerveHelper::CreateSprite(pixels, width, height).m_interface);
+    SwerveHelper::Transform transform = SwerveHelper::NewTransform();
+    transform.setIdentity();
+    CSwerveGame* game = GetApp()->m_helper->m_swerveGame;
+    {
+        SwerveHelper::Transform destination(transform);
+        bool transformed;
+        typedef int (*GetTransformTo)(IQueryInterface*, INodeInterface*, ITransformInterface*, bool*);
+        CKMethod<GetTransformTo>(m_distanceTag.m_interface, 0xa4)(
+            m_distanceTag.m_interface, static_cast<INodeInterface*>(game->m_world.m_interface),
+            static_cast<ITransformInterface*>(destination.m_interface), &transformed);
+    }
+    float position[3];
+    position[0] = 0.0f;
+    position[1] = 0.0f;
+    position[2] = 3.2f;
+    transform.postTranslate(position);
+    float scale[3];
+    scale[0] = 1.0f;
+    scale[1] = 0.6f;
+    scale[2] = 1.0f;
+    transform.postScale(scale);
+    m_distanceTag.setTransform(transform);
+    mount.addChild(m_distanceTag);
+    delete[] pixels;
+}
+
+void CUnitBody::CombineCharImages(unsigned char** pixels, int* width, int* height, const XString& text)
+{
+    Vector<const STagImage*> glyphs;
+    int fullWidth = 0;
+    int fullHeight = 0;
+    for (int index = 0; index < text.Length(); ++index) {
+        char character = static_cast<char>(text.Char(index));
+        CSwerveGame* game = GetApp()->m_helper->m_swerveGame;
+        const STagImage* glyph = game->GetTagImage(XString(character));
+        if (glyph != NULL) {
+            int glyphWidth = glyph->m_width;
+            int glyphHeight = glyph->m_height;
+            glyphs.addElement(glyph);
+            if (fullHeight < glyphHeight) {
+                fullHeight = glyphHeight;
+            }
+            fullWidth += glyphWidth;
+        }
+    }
+    int glyphCount = glyphs.size();
+    unsigned char* image = new unsigned char[fullWidth * fullHeight * 4];
+    int offset = 0;
+    for (int index = 0; index < glyphCount; ++index) {
+        const STagImage* glyph = glyphs[index];
+        int rowBytes = glyph->m_width * 4;
+        unsigned char* destination = image + offset;
+        const unsigned char* source = glyph->m_pixels;
+        for (int row = 0; row < glyph->m_height; ++row) {
+            for (int byte = 0; byte < glyph->m_width * 4; ++byte) {
+                destination[byte] = source[byte];
+            }
+            destination += fullWidth * 4;
+            source += rowBytes;
+        }
+        offset += glyph->m_width * 4;
+    }
+    *pixels = image;
+    *width = fullWidth;
+    *height = fullHeight;
+}
+
+ICRenderSurface* CUnitBody::CreateDistanceTagSurface()
+{
+    ICRenderSurface::InitParam surfaceDesc[] = {
+        {ICRenderSurface::InitParam_ColorFormat, ColorFormat_A8B8G8R8},
+        {ICRenderSurface::InitParam_Targetable, 1},
+        {ICRenderSurface::InitParam_Width, 100},
+        {ICRenderSurface::InitParam_Height, 100},
+        {ICRenderSurface::InitParam_End, 0}
+    };
+    CSur* target = new CSur;
+    target->CRenderSurface_OGLES_Texture::Initialize(surfaceDesc);
+    return target;
+}
+
+// Lazily emitted (plain static, first used by InitDistanceTag below), so it lands after surfaceDesc
+// like in the original __TEXT,__const.
+static const char TAG_CHARACTERS[16] = "0123456789 ft";
+
+void CUnitBody::InitDistanceTag()
+{
+    ICRenderSurface* target = CreateDistanceTagSurface();
+    for (int index = 0; index < sizeof(TAG_CHARACTERS) - 3; ++index) {
+        char character = TAG_CHARACTERS[index];
+        const STagImage* cached;
+        {
+            CSwerveGame* game = GetApp()->m_helper->m_swerveGame;
+            XString glyph(character);
+            cached = game->GetTagImage(glyph);
+        }
+        if (cached == NULL) {
+            unsigned char* pixels;
+            int width = 0;
+            int height = 0;
+            {
+                XString glyph(character);
+                CFont* font = CFontMgr::GetInstance()->GetFont(19);
+                SwerveHelper::DrawToArray(&pixels, &width, &height, target, glyph, font);
+            }
+            GetApp()->m_helper->m_swerveGame->SetTagImage(XString(character), pixels, width, height);
+        }
+    }
+    delete target;
 }
 
 void CUnitBody::SetAsKnown()

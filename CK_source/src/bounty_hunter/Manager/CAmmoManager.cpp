@@ -16,23 +16,22 @@ CAmmoManager::CAmmoManager()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     char* text = app->InitResMap()->loadText(XString(L"res/common/configs/ammo.xml"));
-    if (text == NULL) {
-        return;
-    }
     TiXmlDocument document;
     document.Parse(text, NULL, TIXML_ENCODING_UNKNOWN);
-    free(text);
-    for (TiXmlElement* element = document.FirstChildElement("ammo"); element != NULL;
-         element = element->NextSiblingElement("ammo")) {
+    if (text != NULL) {
+        free(text);
+    }
+
+    // The original expects at least one ammo entry and records every XML row in order.
+    const TiXmlDocument& xml = document;
+    const TiXmlElement* element = xml.FirstChild("ammo")->ToElement();
+    do {
         CAmmo* ammo = new CAmmo;
         ammo->init(*element);
-        if (m_ammo.Get(ammo->m_ammoType) == NULL) {
-            m_types.addElement(ammo->m_ammoType);
-        } else {
-            delete *m_ammo.Get(ammo->m_ammoType);
-        }
-        m_ammo.Set(ammo->m_ammoType, ammo);
-    }
+        m_ammo.Set(XString(ammo->m_ammoType), ammo);
+        m_types.addElement(XString(ammo->m_ammoType));
+        element = element->NextSiblingElement("ammo");
+    } while (element != NULL);
 }
 
 CAmmoManager::~CAmmoManager()

@@ -16,22 +16,37 @@ void CPeaceTimeSquadExecutor::Tick(int elapsed)
 
 void CPeaceTimeSquadExecutor::MoveToSquadPoint()
 {
+    if (m_squadMind == NULL) {
+        return;
+    }
     CUnit* unit = m_squadMind->GetUnit();
     if (unit == NULL || unit->m_squad == NULL) {
         return;
     }
+    CSquad* squad = unit->m_squad;
     CUnitBody* body = unit->GetBody();
-    vec3 target = unit->m_squad->GetLocalSquadPosition(unit);
-    vec3 difference = target - body->m_position;
-    m_waiting = difference.LengthSqr() < 0.01f || !unit->m_squad->m_hasLeader;
-    if (m_waiting) {
-        body->SetMovementParam(body->m_position, 0.1f);
-    } else {
-        float speed;
-        EPersonAnimType animation;
-        unit->GetMovementAnimParam(&speed, &animation, false);
-        body->SetMovementParam(target, speed);
+    if (body == NULL) {
+        return;
     }
+    vec3 target = squad->GetLocalSquadPosition(unit);
+    vec3 difference = target - body->m_position;
+    float distanceSquared = difference.LengthSqr();
+    float distance = MathLib::InvSqrt(distanceSquared) * distanceSquared;
+    if (distance < 0.1f) {
+        body->SetMovementParam(body->m_position, 0.0f);
+        m_waiting = true;
+        return;
+    }
+    m_waiting = false;
+    if (!squad->m_hasLeader) {
+        body->SetMovementParam(body->m_position, 0.0f);
+        m_waiting = true;
+        return;
+    }
+    float speed;
+    EPersonAnimType animation;
+    unit->GetMovementAnimParam(&speed, &animation, false);
+    body->SetMovementParam(target, speed);
 }
 
 void CPeaceTimeSquadExecutor::OnAnimationComplete(EPersonAnimType, const char* animation)
@@ -74,12 +89,19 @@ void CPeaceTimeSquadExecutor::PlayMoveBehaviour()
 
 void CPeaceTimeSquadExecutor::OnStart()
 {
-    CUnit* unit = m_squadMind->GetUnit();
-    if (unit != NULL && unit->m_squad != NULL && unit->m_squad->m_hasLeader) {
-        unit->m_body.m_position = unit->m_squad->GetLocalSquadPosition(unit);
-        unit->m_body.m_moved = true;
-        PlayMoveBehaviour();
+    if (m_squadMind == NULL) {
+        return;
     }
+    CUnit* unit = m_squadMind->GetUnit();
+    if (unit == NULL || unit->m_squad == NULL) {
+        return;
+    }
+    CUnitBody* body = unit->GetBody();
+    if (body == NULL) {
+        return;
+    }
+    body->m_position = unit->m_squad->GetLocalSquadPosition(unit);
+    PlayMoveBehaviour();
 }
 
 void AddPeaceTimeSquadExecutor(CUnitMind* mind)

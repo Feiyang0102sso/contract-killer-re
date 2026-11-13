@@ -37,9 +37,8 @@ bool COverrideManager::LoadFromServer(bool forceDownload)
 
 void COverrideManager::HandleResponse(char* data, int length, bool notModified)
 {
-    CObjectMapValue* previous = m_root;
     HandleValidateCNGSJSONDataResponse(data, length, notModified);
-    if (m_root != previous && m_root != NULL) {
+    if (length != 0 && !notModified && m_root != NULL) {
         ++m_changeMark;
     }
 }

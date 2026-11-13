@@ -20,50 +20,6 @@ static const unsigned int Texture_LockSurfaceParam4 = 4;
 /** Round `dimension` up to a power of two (0 above 0x1000); defined at the end of the file. */
 static int CRenderSurface_OGLES_Texture_AdjustToPowOfTwoDimension(int dimension);
 
-/**
- * Fill the format replacement tables of a decoder: image formats without alpha become `opaque`, the
- * ones with alpha `alpha`; with a color key (second table) `keyedOpaque` / `keyedAlpha`.
- */
-static inline void CRenderSurface_OGLES_Texture_SetFormatMap(CRenderSurfaceBuffer::SourceStreamDesc& desc,
-                                                             RSBFormat opaque, RSBFormat alpha,
-                                                             RSBFormat keyedOpaque, RSBFormat keyedAlpha)
-{
-    CRenderSurfaceBuffer::FormatMapEntry* plain = desc.m_formatMap[0];
-    CRenderSurfaceBuffer::FormatMapEntry* keyed = desc.m_formatMap[1];
-    plain[0].m_from = RSBFormat_R5G6B5;
-    plain[0].m_to = RSBFormat_R5G6B5;
-    plain[1].m_from = RSBFormat_R8G8B8;
-    plain[1].m_to = opaque;
-    plain[2].m_from = RSBFormat_A8R8G8B8;
-    plain[2].m_to = alpha;
-    plain[3].m_from = RSBFormat_A8B8G8R8;
-    plain[3].m_to = alpha;
-    plain[4].m_from = RSBFormat_P16X8R8G8B8;
-    plain[4].m_to = opaque;
-    plain[5].m_from = RSBFormat_P16A8R8G8B8;
-    plain[5].m_to = alpha;
-    plain[6].m_from = RSBFormat_P256X8R8G8B8;
-    plain[6].m_to = opaque;
-    plain[7].m_from = RSBFormat_P256A8R8G8B8;
-    plain[7].m_to = alpha;
-    keyed[0].m_from = RSBFormat_R5G6B5;
-    keyed[0].m_to = RSBFormat_R5G5B5A1;
-    keyed[1].m_from = RSBFormat_R8G8B8;
-    keyed[1].m_to = keyedOpaque;
-    keyed[2].m_from = RSBFormat_A8R8G8B8;
-    keyed[2].m_to = keyedAlpha;
-    keyed[3].m_from = RSBFormat_A8B8G8R8;
-    keyed[3].m_to = keyedAlpha;
-    keyed[4].m_from = RSBFormat_P16X8R8G8B8;
-    keyed[4].m_to = keyedOpaque;
-    keyed[5].m_from = RSBFormat_P16A8R8G8B8;
-    keyed[5].m_to = keyedAlpha;
-    keyed[6].m_from = RSBFormat_P256X8R8G8B8;
-    keyed[6].m_to = keyedOpaque;
-    keyed[7].m_from = RSBFormat_P256A8R8G8B8;
-    keyed[7].m_to = keyedAlpha;
-}
-
 typedef char TextureSizeCheck[sizeof(CRenderSurface_OGLES_Texture) == 0x30 ? 1 : -1];
 typedef char SurfaceDescriptionSizeCheck[sizeof(ICRenderSurface::Description) == 0x34 ? 1 : -1];
 
@@ -117,7 +73,6 @@ unsigned char CRenderSurface_OGLES_Texture::Initialize(const InitParam* params)
 void CRenderSurface_OGLES_Texture::InitializeTextureObjects()
 {
     DestroyTextureObjects();
-    CGraphics_OGLES* graphics = CGraphics_OGLES::GetHardware();
     CRenderSurface_OGLES_Texture* source = GetSourceTexture();
     CRenderSurfaceBuffer* buffer = source->m_buffers[Buffer_Color];
 
@@ -156,7 +111,7 @@ void CRenderSurface_OGLES_Texture::InitializeTextureObjects()
     }
 
     // images larger than the device allows are split into tiles
-    const ICGraphics::Description& description = graphics->m_description;
+    const ICGraphics::Description& description = *ICGraphics::GetInstance()->GetDescription(ICGraphics::Abstraction_Hardware);
     unsigned int tileWidth = description.m_maxRenderTargetWidth;
     unsigned int tileHeight = description.m_maxRenderTargetHeight;
 
@@ -171,10 +126,8 @@ void CRenderSurface_OGLES_Texture::InitializeTextureObjects()
     } else {
         lastColumnWidth = tileWidth;
     }
-    unsigned int lastColumnTextureWidth = lastColumnWidth;
-    if (m_flags & Flag_PowerOfTwo) {
-        lastColumnTextureWidth = CRenderSurface_OGLES_Texture_AdjustToPowOfTwoDimension((unsigned short)lastColumnWidth);
-    }
+    unsigned int lastColumnTextureWidth =
+        CRenderSurface_OGLES_Texture_AdjustToPowOfTwoDimension((unsigned short)lastColumnWidth);
 
     unsigned int imageHeight = buffer->m_imageHeight;
     unsigned int lastRowHeight = imageHeight % (unsigned short)tileHeight;
@@ -186,12 +139,11 @@ void CRenderSurface_OGLES_Texture::InitializeTextureObjects()
     } else {
         lastRowHeight = tileHeight;
     }
-    unsigned int lastRowTextureHeight = lastRowHeight;
-    if (m_flags & Flag_PowerOfTwo) {
-        lastRowTextureHeight = CRenderSurface_OGLES_Texture_AdjustToPowOfTwoDimension((unsigned short)lastRowHeight);
-    }
+    int textureCount = columns * rows;
+    unsigned int lastRowTextureHeight =
+        CRenderSurface_OGLES_Texture_AdjustToPowOfTwoDimension((unsigned short)lastRowHeight);
 
-    source->m_textureCount = columns * rows;
+    source->m_textureCount = textureCount;
     if (source->m_textureCount >= 2) {
         source->m_textures = new GLuint[source->m_textureCount];
         glGenTextures(source->m_textureCount, source->m_textures);
@@ -205,23 +157,23 @@ void CRenderSurface_OGLES_Texture::InitializeTextureObjects()
         tileBuffer = (unsigned char*)malloc(tileHeight * tileWidth * (buffer->m_format & RSBFormat_BytesPerPixelMask));
     }
 
+    CBlit::BufferOpDesc copy;
     CBlitUtil::BlitOpDesc blitOp;
     blitOp.m_function = NULL;
-    CBlit::BufferOpDesc copy;
-    void* pixels;
-    unsigned int uploadWidth;
-    unsigned int uploadHeight;
+    void* pixels = NULL;
     unsigned short column = 0;
     unsigned short row = 0;
     for (int index = 0; index < source->m_textureCount; index++) {
+        unsigned int uploadWidth = (unsigned short)lastColumnTextureWidth;
+        unsigned int uploadHeight;
         if (source->m_textureCount == 1) {
             pixels = buffer->GetLevel(0);
-            uploadWidth = (unsigned short)lastColumnTextureWidth;
             uploadHeight = (unsigned short)lastRowTextureHeight;
         } else {
             if (blitOp.m_function == NULL) {
-                blitOp.m_source = buffer->m_format;
-                blitOp.m_destination = buffer->m_format;
+                RSBFormat copyFormat = buffer->m_format;
+                blitOp.m_source = copyFormat;
+                blitOp.m_destination = copyFormat;
                 blitOp.m_colorKeyTest = CBlitUtil::ColorKeyTest_None;
                 blitOp.m_alphaTest = CBlitUtil::AlphaTest_None;
                 blitOp.m_blend = CBlitUtil::Blend_None;
@@ -238,7 +190,6 @@ void CRenderSurface_OGLES_Texture::InitializeTextureObjects()
             }
             if (column == columns - 1) {
                 copy.m_width = (unsigned short)lastColumnWidth;
-                uploadWidth = (unsigned short)lastColumnTextureWidth;
                 copy.m_destinationPitch = (short)((blitOp.m_destination & RSBFormat_BytesPerPixelMask) * uploadWidth);
             } else {
                 copy.m_width = tileWidth;
@@ -251,8 +202,8 @@ void CRenderSurface_OGLES_Texture::InitializeTextureObjects()
                 copy.m_height = tileHeight;
             }
             copy.m_source = (unsigned char*)buffer->GetLevel(0) +
-                            tileWidth * column * (blitOp.m_source & RSBFormat_BytesPerPixelMask) +
-                            copy.m_sourcePitch * (row * tileHeight);
+                            (tileWidth * column * (blitOp.m_source & RSBFormat_BytesPerPixelMask) +
+                             copy.m_sourcePitch * (row * tileHeight));
             ((void (*)(const CBlit::BufferOpDesc&))blitOp.m_function)(copy);
             if (row == rows - 1) {
                 uploadHeight = (unsigned short)lastRowTextureHeight;
@@ -266,10 +217,6 @@ void CRenderSurface_OGLES_Texture::InitializeTextureObjects()
             }
         }
 
-        if ((m_flags & Flag_PowerOfTwo) == 0) {
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        }
-        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, source->GetTextureName(index));
 
         if ((int)buffer->m_format < 0) {
@@ -278,9 +225,6 @@ void CRenderSurface_OGLES_Texture::InitializeTextureObjects()
                                    buffer->m_pitch * buffer->m_height, pixels);
         } else {
             glTexImage2D(GL_TEXTURE_2D, 0, glFormat, uploadWidth, uploadHeight, 0, glFormat, glType, pixels);
-        }
-        if ((m_flags & Flag_PowerOfTwo) == 0) {
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         }
         glTexParameterx(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameterx(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -547,9 +491,9 @@ unsigned char CRenderSurface_OGLES_Texture::GetDescription(Description& descript
 unsigned char CRenderSurface_OGLES_Texture::InitializeBuffers(const InitParam* params)
 {
     RSBFormat formats[BufferCount];
-    formats[Buffer_Color] = RSBFormat_None;
-    formats[Buffer_Depth] = RSBFormat_None;
     formats[Buffer_Stencil] = RSBFormat_None;
+    formats[Buffer_Depth] = RSBFormat_None;
+    formats[Buffer_Color] = RSBFormat_None;
     Destroy();
 
     unsigned int colorKey = Color_X8R8G8B8_t::Magenta.value;
@@ -561,14 +505,16 @@ unsigned char CRenderSurface_OGLES_Texture::InitializeBuffers(const InitParam* p
     unsigned int referenceType = 0;
     CInputStream* sourceStream = NULL;
     unsigned int sourceType = 0;
-    unsigned char highColor = 0;
+    unsigned int highColor = 0;
     unsigned char hasColorKey = 0;
-    unsigned char flipYOff = 0;
-    unsigned char transpose = 0;
-    unsigned char flipX = 0;
-    unsigned char failed = 0;
-    for (const InitParam* param = params; param->m_key != InitParam_End && !failed; param++) {
-        switch (param->m_key) {
+    bool flipYOff = false;
+    bool transpose = false;
+    bool flipX = false;
+    bool failed = false;
+    const InitParam* param = params;
+    unsigned int key = param->m_key;
+    while (key != InitParam_End) {
+        switch (key) {
         case InitParam_Width:
             width = param->m_value;
             break;
@@ -577,10 +523,13 @@ unsigned char CRenderSurface_OGLES_Texture::InitializeBuffers(const InitParam* p
             break;
         case InitParam_Window:
             // a texture cannot be the window
-            failed = (unsigned char)param->m_value != 0;
+            if (*reinterpret_cast<const unsigned char*>(&param->m_value) != 0) {
+                failed = true;
+                goto parsed;
+            }
             break;
         case InitParam_Mipmaps:
-            if ((unsigned char)param->m_value) {
+            if (*reinterpret_cast<const unsigned char*>(&param->m_value) != 0) {
                 m_flags |= Flag_Mipmaps;
             }
             break;
@@ -598,11 +547,11 @@ unsigned char CRenderSurface_OGLES_Texture::InitializeBuffers(const InitParam* p
             break;
         case InitParam_ColorKey:
             if (reference != NULL || referenceType != 0) {
-                failed = 1;
-            } else {
-                colorKey = param->m_value;
-                hasColorKey = 1;
+                failed = true;
+                goto parsed;
             }
+            colorKey = param->m_value;
+            hasColorKey = 1;
             break;
         case InitParam_Palette:
             palette = (void*)param->m_value;
@@ -612,23 +561,23 @@ unsigned char CRenderSurface_OGLES_Texture::InitializeBuffers(const InitParam* p
             break;
         case InitParam_ReferenceType:
             if (referenceType != 0 || sourceStream != NULL || sourceType != 0) {
-                failed = 1;
-            } else {
-                referenceType = param->m_value;
+                failed = true;
+                goto parsed;
             }
+            referenceType = param->m_value;
             break;
         case InitParam_SourceStream:
             sourceStream = (CInputStream*)param->m_value;
             break;
         case InitParam_SourceType:
             if (sourceType != 0 || reference != NULL || referenceType != 0) {
-                failed = 1;
-            } else {
-                sourceType = param->m_value;
+                failed = true;
+                goto parsed;
             }
+            sourceType = param->m_value;
             break;
         case InitParam_HighColor:
-            highColor = (unsigned char)param->m_value;
+            highColor = param->m_value;
             break;
         case InitParam_Orientation:
             switch (param->m_value) {
@@ -668,17 +617,21 @@ unsigned char CRenderSurface_OGLES_Texture::InitializeBuffers(const InitParam* p
                 flipX = 1;
                 break;
             default:
-                failed = 1;
-                break;
+                failed = true;
+                goto parsed;
             }
             break;
         case InitParam_SourceTexture:
             sourceTexture = (ICRenderSurface*)param->m_value;
             break;
         }
+        ++param;
+        key = param->m_key;
     }
+
+parsed:
     if (sourceTexture != NULL && reference != NULL) {
-        failed = 1;
+        failed = true;
     }
 
     if (!failed) {
@@ -721,27 +674,50 @@ unsigned char CRenderSurface_OGLES_Texture::InitializeBuffers(const InitParam* p
                 if (formats[Buffer_Color] == RSBFormat_None) {
                     // the decoder picks the format: map every image format to one the device has
                     RSBFormat defaultFormat = (RSBFormat)ICGraphics::GetInstance()->GetDefaultColorFormat();
-                    if (highColor) {
-                        if (defaultFormat == RSBFormat_A8B8G8R8) {
-                            CRenderSurface_OGLES_Texture_SetFormatMap(desc, RSBFormat_B8G8R8, RSBFormat_A8B8G8R8,
-                                                                      RSBFormat_A8B8G8R8, RSBFormat_A8B8G8R8);
-                            desc.m_formatMap[1][8].m_to = RSBFormat_A8B8G8R8;
-                        } else if (defaultFormat == RSBFormat_R5G6B5) {
-                            CRenderSurface_OGLES_Texture_SetFormatMap(desc, RSBFormat_R5G6B5, RSBFormat_A8B8G8R8,
-                                                                      RSBFormat_A8B8G8R8, RSBFormat_A8B8G8R8);
-                        } else {
-                            unsupported = 1;
+                    // The same seven source formats are used with and without a color key.
+                    if (defaultFormat == RSBFormat_A8B8G8R8 || defaultFormat == RSBFormat_R5G6B5) {
+                        RSBFormat rgb = RSBFormat_R5G6B5;
+                        RSBFormat alpha = RSBFormat_R4G4B4A4;
+                        RSBFormat keyedRgb = RSBFormat_R5G5B5A1;
+                        if ((unsigned char)highColor != 0) {
+                            if (defaultFormat == RSBFormat_A8B8G8R8) {
+                                rgb = RSBFormat_B8G8R8;
+                            }
+                            alpha = RSBFormat_A8B8G8R8;
+                            keyedRgb = RSBFormat_A8B8G8R8;
                         }
+                        CRenderSurfaceBuffer::FormatMapEntry* plain = desc.m_formatMap[0];
+                        CRenderSurfaceBuffer::FormatMapEntry* keyed = desc.m_formatMap[1];
+                        plain[0].m_from = RSBFormat_R5G6B5;
+                        plain[0].m_to = RSBFormat_R5G6B5;
+                        plain[1].m_from = RSBFormat_R8G8B8;
+                        plain[1].m_to = rgb;
+                        plain[2].m_from = RSBFormat_A8R8G8B8;
+                        plain[2].m_to = alpha;
+                        plain[3].m_from = RSBFormat_P16X8R8G8B8;
+                        plain[3].m_to = rgb;
+                        plain[4].m_from = RSBFormat_P16A8R8G8B8;
+                        plain[4].m_to = alpha;
+                        plain[5].m_from = RSBFormat_P256X8R8G8B8;
+                        plain[5].m_to = rgb;
+                        plain[6].m_from = RSBFormat_P256A8R8G8B8;
+                        plain[6].m_to = alpha;
+                        keyed[0].m_from = RSBFormat_R5G6B5;
+                        keyed[0].m_to = RSBFormat_R5G5B5A1;
+                        keyed[1].m_from = RSBFormat_R8G8B8;
+                        keyed[1].m_to = keyedRgb;
+                        keyed[2].m_from = RSBFormat_A8R8G8B8;
+                        keyed[2].m_to = alpha;
+                        keyed[3].m_from = RSBFormat_P16X8R8G8B8;
+                        keyed[3].m_to = keyedRgb;
+                        keyed[4].m_from = RSBFormat_P16A8R8G8B8;
+                        keyed[4].m_to = alpha;
+                        keyed[5].m_from = RSBFormat_P256X8R8G8B8;
+                        keyed[5].m_to = keyedRgb;
+                        keyed[6].m_from = RSBFormat_P256A8R8G8B8;
+                        keyed[6].m_to = alpha;
                     } else {
-                        if (defaultFormat == RSBFormat_A8B8G8R8) {
-                            CRenderSurface_OGLES_Texture_SetFormatMap(desc, RSBFormat_R5G6B5, RSBFormat_R4G4B4A4,
-                                                                      RSBFormat_R5G5B5A1, RSBFormat_R4G4B4A4);
-                        } else if (defaultFormat == RSBFormat_R5G6B5) {
-                            CRenderSurface_OGLES_Texture_SetFormatMap(desc, RSBFormat_R5G6B5, RSBFormat_R4G4B4A4,
-                                                                      RSBFormat_R5G5B5A1, RSBFormat_R4G4B4A4);
-                        } else {
-                            unsupported = 1;
-                        }
+                        unsupported = 1;
                     }
                 }
             }

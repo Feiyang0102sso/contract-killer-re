@@ -45,7 +45,7 @@ void CRenderText2d::Destroy()
         m_model.m_surfaceResource = NULL;
     }
     // a text decoded from a stream is owned
-    if (!(m_model.m_flags & Flag_TextReferenced)) {
+    if (!(m_model.m_flags & Flag_TextReferenced) && m_model.m_text != NULL) {
         free((void*)m_model.m_text);
     }
     m_model.m_length = 0;
@@ -320,18 +320,10 @@ void CRenderText2d::CreateModelWStr(wchar_t** text, CInputStream& stream, unsign
 
 unsigned char CRenderText2d::AssocSystemFont()
 {
-    if (m_model.m_surfaceResource == NULL && !CreateUninitializedSurface()) {
-        return 0;
-    }
-    ICRenderSurface* surface = static_cast<ICRenderSurface*>(m_model.m_surfaceResource->GetData());
-    if (surface == NULL) {
-        return 0;
-    }
+    CreateUninitializedSurface();
     ICSystemFont* font = static_cast<ICSystemFont*>(m_model.m_font);
-    if (!font->InitializeSurfaceWithText(*surface, (const wchar_t*)m_model.m_text, m_model.m_length, -1, -1)) {
-        return 0;
-    }
-    return (surface->m_flags & ICRenderSurface::Flag_Initialized) != 0;
+    ICRenderSurface* surface = static_cast<ICRenderSurface*>(m_model.m_surfaceResource->GetData());
+    return font->InitializeSurfaceWithText(*surface, (const wchar_t*)m_model.m_text, m_model.m_length, -1, -1);
 }
 
 unsigned char CRenderText2d::GetDescription(Description& description)
@@ -379,14 +371,8 @@ unsigned char CRenderText2d::CreateUninitializedSurface()
     if (GetAbstraction() == ICGraphicsAbstract::Abstraction_Hardware) {
         mimeType = 0xe179f4be;
     }
-    CResource* resource = NULL;
-    if (!CResourceFactory::GetInstance()->CreateResource(mimeType, &resource)) {
-        return 0;
-    }
-    if (resource->Create(CHandleFactory::GetInstance()->CreateHandle(), NULL, mimeType) == CResource::CreateResult_Failed) {
-        delete resource;
-        return 0;
-    }
-    m_model.m_surfaceResource = resource;
+    CResourceFactory::GetInstance()->CreateResource(mimeType, &m_model.m_surfaceResource);
+    CResource* resource = m_model.m_surfaceResource;
+    resource->Create(CHandleFactory::GetInstance()->CreateHandle(), NULL, mimeType);
     return 1;
 }

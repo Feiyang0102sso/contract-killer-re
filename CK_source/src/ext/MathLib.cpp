@@ -772,10 +772,10 @@ vec3 Angles::Forward() const
     return forward;
 }
 
-void Angles::ToQuaternion(Quaternion& quaternion) const
+Quaternion& Angles::ToQuaternion(Quaternion& quaternion) const
 {
     Vectors vectors;
-    ToVectors(vectors).ToQuaternion(quaternion);
+    return ToVectors(vectors).ToQuaternion(quaternion);
 }
 
 Vectors& Quaternion::ToVectors(Vectors& vectors) const

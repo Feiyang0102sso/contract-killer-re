@@ -118,23 +118,13 @@ unsigned char CResourceManager_v2::GetStream(const char* name, CInputStream& str
 
     // a loose file in the application folder wins over the archives
     wchar_t path[0x100];
-    const size_t pathCapacity = sizeof(path) / sizeof(path[0]);
-    const size_t prefixLength = m_appPath.m_length;
-    if (prefixLength >= pathCapacity) {
-        return found;
-    }
-    if (prefixLength != 0) {
-        wmemcpy(path, m_appPath.m_string, prefixLength);
-    }
-    const size_t nameCapacity = pathCapacity - prefixLength;
-    if (mbstowcs(path + prefixLength, name, nameCapacity) >= nameCapacity) {
-        return found;
-    }
+    wcscpy(path, m_appPath.m_string);
+    mbstowcs(path + m_appPath.m_length, name, strlen(name) + 1);
     if (!ICFileMgr::GetInstance()->Exists(path)) {
         return found;
     }
 
-    if (m_nextFileStream >= FileStreamCount) {
+    if (m_nextFileStream >= (int)FileStreamCount) {
         m_nextFileStream = 0;
     }
     CFileInputStream* fileStream = &m_fileStreams[m_nextFileStream++];
@@ -148,9 +138,7 @@ unsigned char CResourceManager_v2::GetStream(const char* name, CInputStream& str
     }
     // an archive file: remember where it comes from
     mimeType = MimeType_BigFile;
-    if (bigFileElement != NULL) {
-        *bigFileElement = NULL;
-    }
+    *bigFileElement = NULL;
     CResourceDataBlockFileAccess::GetInstance()->m_path = path;
     return 1;
 }
@@ -252,32 +240,38 @@ CResourceManager::CConsecutiveResourceIdItr* CResourceManager_v2::CreateAndInitC
     unsigned int handle, unsigned int count)
 {
     CConsecutiveResourceIdItr* names = new CConsecutiveResourceIdItr();
-    for (CRegistryItr itr(m_bigFiles); !itr.IsDone(); itr++) {
+    CRegistryItr itr(m_bigFiles);
+    while (!itr.IsDone()) {
         BigFileEntry* entry = (BigFileEntry*)(*itr).m_object;
         if (names->m_names.Initialize(*entry->m_bigFile, handle, count)) {
-            return names;
+            break;
         }
+        itr++;
     }
-    if (names != NULL) {
+    if (itr.IsDone()) {
         delete names;
+        names = NULL;
     }
-    return NULL;
+    return names;
 }
 
 CResourceManager::CConsecutiveResourceIdItr* CResourceManager_v2::CreateAndInitConsecutiveResourceIdItr(
     const char* name, unsigned int count)
 {
     CConsecutiveResourceIdItr* names = new CConsecutiveResourceIdItr();
-    for (CRegistryItr itr(m_bigFiles); !itr.IsDone(); itr++) {
+    CRegistryItr itr(m_bigFiles);
+    while (!itr.IsDone()) {
         BigFileEntry* entry = (BigFileEntry*)(*itr).m_object;
         if (names->m_names.Initialize(*entry->m_bigFile, name, count)) {
-            return names;
+            break;
         }
+        itr++;
     }
-    if (names != NULL) {
+    if (itr.IsDone()) {
         delete names;
+        names = NULL;
     }
-    return NULL;
+    return names;
 }
 
 CResourceManager::CConsecutiveResourceIdItr* CResourceManager_v2::CreateAndInitConsecutiveResourceIdItr(

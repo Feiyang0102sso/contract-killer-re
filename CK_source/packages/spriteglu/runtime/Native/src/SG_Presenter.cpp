@@ -108,18 +108,9 @@ void SG_Presenter::SetAnimation(int animation, unsigned char loop)
 
 void SG_Presenter::SetAnimation(int animation, unsigned char loop, unsigned char transform)
 {
-    if (m_instance == NULL || !m_instance->IsLoadedArchetypeCharacter(m_archetype, m_character)) {
-        return;
-    }
-    SG_Archetype* archetype = m_instance->m_archetypes[m_archetype];
-    if (animation < 0 || animation >= archetype->m_animationCount) {
-        return;
-    }
-    SG_Animation& selected = archetype->m_animations[animation];
-    if (selected.m_frameCount == 0) {
-        return;
-    }
+    SG_Animation* animations = m_instance->m_archetypes[m_archetype]->m_animations;
     m_animation = animation;
+    SG_Animation& selected = animations[animation];
     m_frameDurations = selected.m_frameDurations;
     m_frameCount = selected.m_frameCount;
     m_totalDuration = 0;
@@ -148,7 +139,7 @@ void SG_Presenter::setScale(unsigned short percent)
 
 unsigned char SG_Presenter::Update(int elapsed)
 {
-    if (m_frameDurations == NULL || m_totalDuration == 0 || HasFinished()) {
+    if (HasFinished()) {
         return 0;
     }
     if (elapsed == 0) {
@@ -208,23 +199,11 @@ void SG_Presenter::Draw()
 
 void SG_Presenter::Draw(int x, int y)
 {
-    if (!IsViable()) {
-        return;
-    }
     ICRenderSurface* target = ICGraphics::GetInstance()->GetTargetSurface();
-    if (target == NULL) {
-        return;
-    }
     unsigned int width;
     unsigned int height;
     target->GetWidthAndHeight(width, height);
-    short clipHeight = height;
-    short clipWidth = width;
-    CRectangle clip;
-    clip.m_x = 0;
-    clip.m_y = 0;
-    clip.m_width = clipWidth;
-    clip.m_height = clipHeight;
+    CRectangle clip(0, 0, width, height);
     m_instance->drawInit(m_x + x, m_y + y, clip);
     TraverseCurrentFrame(SG_TraverseMode_Draw);
     m_instance->drawResolve(*this);
@@ -252,7 +231,8 @@ void SG_Presenter::TraverseCurrentFrame(SG_TraverseMode mode)
         // entries from the last to the first
         SG_Layer& layerData = layers[layer];
         for (int entryIndex = layerData.m_count - 1; entryIndex >= 0; entryIndex--) {
-            SG_LayerEntry& entry = layerData.m_entries[entryIndex];
+            SG_LayerEntry* entries = layerData.m_entries;
+            SG_LayerEntry& entry = entries[entryIndex];
             unsigned int infoCount = 1;
             SpriteDrawInfo* infos = NULL;
             m_instance->computeSpriteDrawInfos(infos, infoCount, m_archetype, m_character, entry.m_sprite);
@@ -307,7 +287,8 @@ void SG_Presenter::TraverseCurrentFrame(SG_TraverseMode mode)
                 case SG_TraverseMode_Collide:
                     if ((m_collisionSpritesOnly && !m_instance->IsCollisionSprite(sprite)) ||
                         m_instance->m_collisionTag != -1) {
-                        if (m_instance->m_collisionTag != m_instance->GetTag(sprite)) {
+                        int collisionTag = m_instance->m_collisionTag;
+                        if (collisionTag != m_instance->GetTag(sprite)) {
                             break;
                         }
                     }
@@ -317,12 +298,17 @@ void SG_Presenter::TraverseCurrentFrame(SG_TraverseMode mode)
                 case SG_TraverseMode_CollisionInit:
                     if ((m_collisionSpritesOnly && !m_instance->IsCollisionSprite(sprite)) ||
                         m_instance->m_collisionTag != -1) {
-                        if (m_instance->m_collisionTag != m_instance->GetTag(sprite)) {
+                        int collisionTag = m_instance->m_collisionTag;
+                        if (collisionTag != m_instance->GetTag(sprite)) {
                             break;
                         }
                     }
                     // the first matching sprite is the collision rectangle
-                    m_instance->collisionInit(drawX, drawY, width, height, m_instance->GetTag(sprite), sprite);
+                    {
+                        SG_Instance* instance = m_instance;
+                        int tag = instance->GetTag(sprite);
+                        instance->collisionInit(drawX, drawY, width, height, tag, sprite);
+                    }
                     return;
                 default:
                     m_instance->boundsAccumulate(drawX, drawY, width, height, entry.m_rotation, entry.m_scaleX,
@@ -355,9 +341,6 @@ void SG_Presenter::Bounds(CRectangle& bounds)
 
 void SG_Presenter::Reset()
 {
-    if (m_frameDurations == NULL) {
-        return;
-    }
     int direction = m_direction;
     ResetPoles(direction);
     m_time = m_pole0;

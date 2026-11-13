@@ -28,10 +28,6 @@ public:
 
     int m_bountyType;                       // 0x6c
     EBoutnyMessageType m_messageType;
-
-private:
-    const CBountyManager::SMessage* GetMessage() const;
-    XString ReplaceMissionTerms(XString text, bool title) const;
 };
 
 #endif

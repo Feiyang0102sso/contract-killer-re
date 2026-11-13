@@ -4,7 +4,6 @@
 #include "CGraphics_OGLES_Cocoa.h"
 #include "CInputStream.h"
 #include "CIdToObjectRouter.h"
-#include "CSharedPtr.h"
 
                                                                          
 
@@ -41,9 +40,10 @@ CRenderSurface::~CRenderSurface()
 
 void CRenderSurface::Destroy()
 {
-    CGraphics_OGLES* graphics = CGraphics_OGLES::GetHardware();
-    if (graphics != NULL && graphics->m_target == this) {
+    CGraphics_HAL* graphics = static_cast<CGraphics_HAL*>(ICGraphics::GetInstance());
+    if (graphics->m_target == this) {
         graphics->m_target = NULL;
+        graphics->m_hardware->m_target = NULL;
     }
     if (m_palette != NULL) {
         if (m_flags & Flag_OwnsPalette) {
@@ -109,10 +109,6 @@ unsigned char CRenderSurface::Load(CInputStream& stream, unsigned int type,
     unsigned int sourceType = 0;
     unsigned int referenceType = 0;
     CInputStream sourceStream;
-    CSharedPtr<void*> palette;
-    CSharedPtr<void*> reference;
-    CSharedPtr<void*> namedPalette;
-    CSharedPtr<void*> namedReference;
     char name[256];
     InitParam params[LoadMaxParams];
     memset(params, 0, sizeof(params));
@@ -125,51 +121,47 @@ unsigned char CRenderSurface::Load(CInputStream& stream, unsigned int type,
         do {
             count = index + 1;
             int key = stream.ReadUInt32();
-            if (key >= LoadKey_PaletteByName) {
-                if (key == LoadKey_PaletteByName) {
-                    char* character = name;
-                    unsigned char value;
-                    do {
-                        value = stream.ReadUInt8();
-                        *character = value;
-                        character++;
-                    } while (value != 0);
-                    unsigned int paletteType;
-                    result = router->NameToPointer(name, namedPalette, paletteType);
-                    if (result) {
-                        params[index].m_key = InitParam_Palette;
-                        params[index].m_value = (unsigned int)((Color_Palette*)*namedPalette)->m_colors;
-                    }
-                } else if (key == LoadKey_ReferenceByName) {
-                    char* character = name;
-                    unsigned char value;
-                    do {
-                        value = stream.ReadUInt8();
-                        *character = value;
-                        character++;
-                    } while (value != 0);
-                    result = router->NameToPointer(name, namedReference, referenceType);
-                    if (result) {
-                        params[index].m_key = InitParam_Reference;
-                        params[index].m_value = (unsigned int)*namedReference;
-                    }
-                } else if (key == LoadKey_SourceByName) {
-                    char* character = name;
-                    unsigned char value;
-                    do {
-                        value = stream.ReadUInt8();
-                        *character = value;
-                        character++;
-                    } while (value != 0);
-                    result = router->NameToInputStream(name, sourceStream, sourceType);
-                    if (result) {
-                        params[index].m_key = InitParam_SourceStream;
-                        params[index].m_value = (unsigned int)&sourceStream;
-                    }
-                } else {
-                    // unknown keys end the list
-                    params[index].m_key = InitParam_End;
-                    params[index].m_value = stream.ReadUInt32();
+            if (key == LoadKey_PaletteByName) {
+                char* character = name;
+                unsigned char value;
+                do {
+                    value = stream.ReadUInt8();
+                    *character = value;
+                    character++;
+                } while (value != 0);
+                unsigned int paletteType;
+                void* namedPalette;
+                result = router->NameToPointer(name, &namedPalette, paletteType);
+                if (result) {
+                    params[index].m_key = InitParam_Palette;
+                    params[index].m_value = (unsigned int)static_cast<Color_Palette*>(namedPalette)->m_colors;
+                }
+            } else if (key == LoadKey_ReferenceByName) {
+                char* character = name;
+                unsigned char value;
+                do {
+                    value = stream.ReadUInt8();
+                    *character = value;
+                    character++;
+                } while (value != 0);
+                void* namedReference;
+                result = router->NameToPointer(name, &namedReference, referenceType);
+                if (result) {
+                    params[index].m_key = InitParam_Reference;
+                    params[index].m_value = (unsigned int)namedReference;
+                }
+            } else if (key == LoadKey_SourceByName) {
+                char* character = name;
+                unsigned char value;
+                do {
+                    value = stream.ReadUInt8();
+                    *character = value;
+                    character++;
+                } while (value != 0);
+                result = router->NameToInputStream(name, sourceStream, sourceType);
+                if (result) {
+                    params[index].m_key = InitParam_SourceStream;
+                    params[index].m_value = (unsigned int)&sourceStream;
                 }
             } else {
                 switch (key) {
@@ -177,60 +169,42 @@ unsigned char CRenderSurface::Load(CInputStream& stream, unsigned int type,
                     params[index].m_key = key;
                     unsigned int format = stream.ReadUInt32();
                     if (format == 0) {
-                        params[index].m_value = 0;
                         zeroColorFormat = 1;
-                    } else {
-                        if (format == 0xffffffff) {
-                            format = 0;
-                        }
-                        params[index].m_value = format;
+                    } else if (format == 0xffffffff) {
+                        format = 0;
                     }
+                    params[index].m_value = format;
                     break;
                 }
-                default:
-                    // unknown keys end the list
-                    key = InitParam_End;
-                case 0:
-                case InitParam_Width:
-                case InitParam_Height:
-                case InitParam_Window:
-                case 4:
-                case InitParam_Mipmaps:
-                case InitParam_DepthFormat:
-                case InitParam_StencilFormat:
-                case InitParam_ColorKey:
-                case InitParam_HighColor:
-                case InitParam_Orientation:
-                case InitParam_Multisample:
-                case InitParam_MagFilter:
-                case InitParam_MinFilter:
-                case InitParam_WrapS:
-                case InitParam_WrapT:
-                    params[index].m_key = key;
-                    params[index].m_value = stream.ReadUInt32();
-                    break;
                 case InitParam_Palette: {
                     unsigned int paletteType;
-                    result = router->KeyToPointer(stream.ReadUInt32(), palette, paletteType);
+                    void* palette;
+                    result = router->KeyToPointer(stream.ReadUInt32(), &palette, paletteType);
                     if (result) {
                         params[index].m_key = key;
-                        params[index].m_value = (unsigned int)((Color_Palette*)*palette)->m_colors;
+                        params[index].m_value = (unsigned int)static_cast<Color_Palette*>(palette)->m_colors;
                     }
                     break;
                 }
-                case InitParam_Reference:
-                    result = router->KeyToPointer(stream.ReadUInt32(), reference, referenceType);
+                case InitParam_Reference: {
+                    void* reference;
+                    result = router->KeyToPointer(stream.ReadUInt32(), &reference, referenceType);
                     if (result) {
                         params[index].m_key = key;
-                        params[index].m_value = (unsigned int)*reference;
+                        params[index].m_value = (unsigned int)reference;
                     }
                     break;
+                }
                 case InitParam_SourceStream:
                     result = router->KeyToInputStream(stream.ReadUInt32(), sourceStream, sourceType);
                     if (result) {
                         params[index].m_key = key;
                         params[index].m_value = (unsigned int)&sourceStream;
                     }
+                    break;
+                default:
+                    params[index].m_key = key;
+                    params[index].m_value = stream.ReadUInt32();
                     break;
                 }
             }

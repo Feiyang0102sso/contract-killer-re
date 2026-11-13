@@ -33,7 +33,6 @@ private:
     CDH_LoadingBarWidget* m_bar;
     bool m_finished;
     bool m_firstUpdate;
-    bool m_titleLoaded;
 };
 
 #endif

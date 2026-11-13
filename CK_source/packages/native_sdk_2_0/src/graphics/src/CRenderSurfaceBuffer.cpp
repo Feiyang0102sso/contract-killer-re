@@ -19,11 +19,10 @@ extern "C" {
 // mime type keys of the image formats Initialize decodes
 static const unsigned int ImageType_PNG = 0xb7178678;
 static const unsigned int ImageType_DIB = 0xb717945f;
-static const unsigned int ImageType_SBI = 0x0c20040b;
-static const unsigned int ImageType_M3G = 0x6e0412f4;
 static const unsigned int ImageType_JPEG = 0x7179dacc;
 // largest image dimension
 static const unsigned int MaxImageDimension = 0x1000;
+static const int SurfaceDimensionLimit = 0x10000; // first value outside a 16-bit dimension
 // size of the buffer the decoders read palettes into
 static const unsigned int PaletteBufferSize = 0x400;
 // color the decoders fill transparent palette entries / the background with
@@ -168,76 +167,57 @@ unsigned char CRenderSurfaceBuffer::Initialize(RSBFormat format, unsigned short 
     m_flags = sizeFlags;
 
     unsigned char result = 0;
-    if (allocatedWidth <= MaxImageDimension && allocatedHeight <= MaxImageDimension) {
-        unsigned short rowPitch = 0;
-        if (format != RSBFormat_None && allocatedWidth != 0 && allocatedHeight != 0) {
-            if (pitchCondition == PitchCondition_Given) {
-                rowPitch = pitch;
-                m_pitch = rowPitch;
-            } else if ((unsigned int)pitchCondition <= PitchCondition_Negative) {
-                // The original range check is unsigned (BHI at 0x80ba6).
-                rowPitch = (format & RSBFormat_BytesPerPixelMask) * allocatedWidth;
-                m_pitch = rowPitch;
-            }
+    unsigned short rowPitch = 0;
+    if (format != RSBFormat_None && allocatedWidth != 0 && allocatedHeight != 0) {
+        if (pitchCondition == PitchCondition_Given) {
+            rowPitch = pitch;
+            m_pitch = rowPitch;
+        } else if ((unsigned int)pitchCondition <= PitchCondition_Negative) {
+            // The original range check is unsigned.
+            rowPitch = (format & RSBFormat_BytesPerPixelMask) * allocatedWidth;
+            m_pitch = rowPitch;
         }
-        if (allocatedWidth != 0 && pixels != NULL && allocatedHeight != 0) {
-            if (rowPitch == 0) {
-                rowPitch = 0;
-                result = 0;
-            } else {
-                // the caller's memory
-                m_data = pixels;
-                if (pitchCondition == PitchCondition_Negative) {
-                    rowPitch = -rowPitch;
-                    m_pitch = rowPitch;
+    }
+    if (allocatedWidth != 0 && pixels != NULL && allocatedHeight != 0 && rowPitch != 0) {
+        // the caller's memory
+        m_data = pixels;
+        if (pitchCondition == PitchCondition_Negative) {
+            rowPitch = -rowPitch;
+            m_pitch = rowPitch;
+        }
+        result = 1;
+        m_flags = externalFlags;
+    }
+    if (desc != NULL) {
+        if (desc->m_type == ImageType_PNG) {
+            result = InitializeFromPNG(paletteBuffer, palette, desc, pitchCondition, 0, pixels);
+        } else if (desc->m_type == ImageType_JPEG) {
+            result = InitializeFromJPEG(paletteBuffer, palette, desc, pitchCondition, 0, pixels);
+        } else if (desc->m_type == ImageType_DIB) {
+            result = InitializeFromDIB(paletteBuffer, palette, desc, pitchCondition, 0, pixels);
+        } else {
+            result = 0;
+        }
+    } else if (pixels == NULL) {
+        // allocate the pixels
+        if (format != RSBFormat_None && allocatedWidth != 0 && height != 0 && rowPitch != 0) {
+            int signedPitch = (short)rowPitch;
+            int sign = signedPitch >> 31;
+            unsigned int absolutePitch = (signedPitch ^ sign) - sign;
+            if (absolutePitch >= (format & RSBFormat_BytesPerPixelMask) * allocatedWidth) {
+                unsigned int size = allocatedHeight * absolutePitch;
+                m_data = malloc(size);
+                memset(m_data, 0, size);
+                if (pitchCondition == PitchCondition_Negative || m_pitch < 0) {
+                    MakePitchNegative();
                 }
-                result = 1;
-                m_flags = externalFlags;
+                m_flags = (m_flags & ~(Flag_OwnsData | Flag_ExternalData)) | Flag_OwnsData;
+                return 1;
             }
         }
-        if (desc != NULL) {
-            switch (desc->m_type) {
-            case ImageType_SBI:
-                result = InitializeFromSBI(paletteBuffer, palette, desc, pitchCondition, 0, pixels);
-                break;
-            case ImageType_JPEG:
-                result = InitializeFromJPEG(paletteBuffer, palette, desc, pitchCondition, 0, pixels);
-                break;
-            case ImageType_M3G:
-                result = InitializeFromM3G(paletteBuffer, palette, desc, pitchCondition, 0, pixels);
-                break;
-            case ImageType_PNG:
-                result = InitializeFromPNG(paletteBuffer, palette, desc, pitchCondition, 0, pixels);
-                break;
-            case ImageType_DIB:
-                result = InitializeFromDIB(paletteBuffer, palette, desc, pitchCondition, 0, pixels);
-                break;
-            default:
-                result = 0;
-                break;
-            }
-        } else if (pixels == NULL) {
-            // allocate the pixels
-            if (format != RSBFormat_None && allocatedWidth != 0 && height != 0 && rowPitch != 0) {
-                unsigned int absolutePitch = (short)rowPitch;
-                if ((short)rowPitch < 0) {
-                    absolutePitch = -(short)rowPitch;
-                }
-                if (absolutePitch >= (format & RSBFormat_BytesPerPixelMask) * allocatedWidth) {
-                    unsigned int size = allocatedHeight * absolutePitch;
-                    m_data = malloc(size);
-                    memset(m_data, 0, size);
-                    if (pitchCondition == PitchCondition_Negative || m_pitch < 0) {
-                        MakePitchNegative();
-                    }
-                    m_flags = (m_flags & ~(Flag_OwnsData | Flag_ExternalData)) | Flag_OwnsData;
-                    return 1;
-                }
-            }
-        }
-        if (result) {
-            return result;
-        }
+    }
+    if (result) {
+        return result;
     }
     Destroy();
     return 0;
@@ -333,8 +313,11 @@ unsigned char CRenderSurfaceBuffer::InitializeFromDIB(unsigned char* buffer, voi
         rowBytes = info.m_width * (bitCount >> 3);
         ok = 1;
     }
-    if (info.m_width > (int)MaxImageDimension || info.m_height > (int)MaxImageDimension || !ok) {
+    if (!ok) {
         return 0;
+    }
+    if (info.m_width >= SurfaceDimensionLimit || info.m_height >= SurfaceDimensionLimit) {
+        return ok;
     }
     RSBFormat sourceFormat = RSBFormat_R8G8B8;
     if (info.m_paletteSize != 0) {
@@ -387,7 +370,7 @@ unsigned char CRenderSurfaceBuffer::InitializeFromDIB(unsigned char* buffer, voi
                     paletteData = buffer;
                 } else {
                     // a palettized buffer keeps the palette
-                    paletteData = (unsigned char*)malloc(PaletteBufferSize);
+                    paletteData = (unsigned char*)malloc(info.m_paletteSize);
                     *palette = paletteData;
                     if (paletteData == NULL) {
                         ok = 0;
@@ -586,6 +569,9 @@ unsigned char CRenderSurfaceBuffer::InitializeFromJPEG(unsigned char* buffer, vo
     if (error.m_valid) {
         jpeg_start_decompress(&cinfo);
         ok = error.m_valid;
+        if (ok && cinfo.out_color_components == 1) {
+            ok = 0;
+        }
     }
 
     unsigned int imageWidth = cinfo.output_width;
@@ -602,9 +588,6 @@ unsigned char CRenderSurfaceBuffer::InitializeFromJPEG(unsigned char* buffer, vo
 
     unsigned char result = 0;
     if (ok) {
-        if (cinfo.output_width > MaxImageDimension || cinfo.output_height > MaxImageDimension) {
-            ok = 0;
-        }
         unsigned int imageHeight = cinfo.output_height;
         unsigned int allocatedWidth;
         unsigned int allocatedHeight;
@@ -660,7 +643,7 @@ unsigned char CRenderSurfaceBuffer::InitializeFromJPEG(unsigned char* buffer, vo
             } else {
                 rowPitch = bytesPerPixel * (unsigned short)rowWidth;
             }
-            short existingPitch = m_pitch;
+            int existingPitch = m_pitch;
             if (existingPitch != 0) {
                 if (existingPitch < 0) {
                     existingPitch = -existingPitch;
@@ -926,7 +909,10 @@ unsigned char CRenderSurfaceBuffer::InitializeFromPNG(unsigned char* buffer, voi
                     ok = 1;
                 }
             }
-            if (width <= MaxImageDimension && height <= MaxImageDimension && ok) {
+            // Dimensions outside the 16-bit fields skip the decode but retain the bit-depth result.
+            if (ok && (width >= (unsigned int)SurfaceDimensionLimit || height >= (unsigned int)SurfaceDimensionLimit)) {
+                result = ok;
+            } else if (ok) {
                 unsigned int colorKey = desc->m_colorKey;
                 unsigned char colorKeyEnabled = desc->m_colorKeyEnabled;
                 unsigned char transGreen = 0;
@@ -1026,12 +1012,12 @@ unsigned char CRenderSurfaceBuffer::InitializeFromPNG(unsigned char* buffer, voi
                             }
                         }
                     }
+                    if (ok && (m_format & 0x8000)) {
+                        // palettized buffers keep the palette indices: no color key
+                        colorKeyEnabled = 0;
+                    }
+                    CArrayInputStream rowStreamUnused;
                     if (ok) {
-                        if (m_format & 0x8000) {
-                            // palettized buffers keep the palette indices: no color key
-                            colorKeyEnabled = 0;
-                        }
-                        CArrayInputStream rowStreamUnused;
                         unsigned int rowBytes = png_get_rowbytes(png, info);
                         unsigned int rowCount = height;
                         if (passes < 2) {

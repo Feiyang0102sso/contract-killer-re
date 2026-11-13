@@ -21,14 +21,27 @@
 static int g_unitGUID;
 
 CUnit::CUnit(const CBH_PersonType* type, CPathCalculator* calculator, const CGameAIMap* map)
-    : m_body(type, map), m_mind(calculator), m_hitWeapon(NULL), m_damage(0), m_damageType(HitBody),
-      m_fatalDamage(false), m_type(UnitCivilian), m_weaponAnimType(PERSON_ANIM_TYPE_DEFAULT),
-      m_pickType(HitBody), m_squad(NULL), m_hp(0), m_maxHp(0), m_healthFraction(0.0f), m_wounded(false),
-      m_dead(false), m_tranquillized(false), m_invulnerable(false), m_removed(false), m_runningAway(false),
-      m_picked(false), m_inCover(false), m_tagged(false), m_field1f0(0), m_guid(g_unitGUID++)
+    : m_body(type, map), m_mind(calculator)
 {
+    m_type = UnitCivilian;
+    m_weaponAnimType = PERSON_ANIM_TYPE_DEFAULT;
+    m_pickType = HitBody;
+    m_squad = NULL;
+    m_field1f0 = 0;
+    m_tagged = false;
+    m_removed = false;
+    m_runningAway = false;
+    m_picked = false;
+    m_inCover = false;
+    m_wounded = false;
+    m_dead = false;
+    m_tranquillized = false;
+    m_invulnerable = false;
+    m_healthFraction = 0.0f;
+    m_guid = g_unitGUID++;
+
     CalculateHP(type);
-    if (type != NULL && type->m_weapon != NULL) {
+    if (type->m_weapon != NULL) {
         m_weaponAnimType = type->m_weapon->GetCharacterAnimationType();
     }
 }
@@ -127,28 +140,39 @@ bool CUnit::GetPickInfo(EHitType* type)
 
 void CUnit::CalcDamageAndKillingPosibility(EHitType type, const CDH_Weapon* weapon)
 {
-    int damage = 0;
-    if (weapon != NULL && !weapon->m_tranquillizer) {
-        damage = weapon->damage();
-        switch (type) {
-        case HitHead:
-            damage = m_hp;
-            break;
-        case HitVital:
-            damage *= 2;
-            break;
-        case HitArmor:
-            damage /= 2;
-            break;
-        case HitBody:
-            break;
-        default:
-            damage = 0;
-            break;
-        }
+    m_damagePosition.m_x = 0;
+    m_damagePosition.m_y = 0;
+    m_damagePosition.m_z = 0;
+    m_hitWeapon = NULL;
+    m_damage = 0;
+    m_damageType = HitBody;
+    m_fatalDamage = false;
+    if (weapon == NULL) {
+        return;
     }
-    CalcDamageAndKillingPosibility(damage, weapon);
-    m_damageType = type;
+    m_hitWeapon = weapon;
+    if (m_invulnerable || weapon->m_tranquillizer) {
+        return;
+    }
+    int damage = weapon->damage();
+    switch (type) {
+    case HitHead:
+        damage = m_hp;
+        break;
+    case HitVital:
+        damage *= 2;
+        break;
+    case HitArmor:
+        damage /= 2;
+        break;
+    case HitBody:
+        break;
+    default:
+        damage = 0;
+        break;
+    }
+    m_damage = damage;
+    m_fatalDamage = m_hp <= damage;
 }
 
 void CUnit::CalcDamageAndKillingPosibility(int damage, const CDH_Weapon* weapon)
@@ -201,13 +225,14 @@ void CUnit::ReceivedDamage(bool suppressEffects)
         WindowApp::HandleTunnelCommand(-0x1c8ca178, 0, 0, 0);
         static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_headshots++;
         if (m_hitWeapon != NULL) {
-            CBH_Player::GetInstance()->m_gameStats.RegisterHeadshot(m_hitWeapon);
+            CBH_Player* player = CBH_Player::GetInstance();
             headshot = true;
+            player->m_gameStats.RegisterHeadshot(m_hitWeapon);
         }
         if (m_type == UnitBoss) {
-            CSwerveGame* game = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame;
-            if (!game->m_hud->m_scoped
-                && static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_cameraDurationMs < 0) {
+            App* app = static_cast<App*>(WindowApp::m_instance);
+            CSwerveGame* game = app->m_helper->m_swerveGame;
+            if (!game->m_hud->m_scoped && app->m_huntingInfo->m_assignedData.m_cameraDurationMs < 0) {
                 game->SetSlowMode(true);
             }
         }
@@ -216,10 +241,10 @@ void CUnit::ReceivedDamage(bool suppressEffects)
         }
     }
     if (m_hitWeapon != NULL) {
-        if (m_hitWeapon->GetActiveAmmo()->m_ammoType == XString("incendiary")) {
+        if (XString(m_hitWeapon->GetActiveAmmo()->m_ammoType) == XString("incendiary")) {
             m_mind.OnBurnt(7000, m_damage / 2);
         }
-        if (m_hitWeapon != NULL && m_hitWeapon->GetActiveAmmo()->m_ammoType == XString("explosive")) {
+        if (m_hitWeapon != NULL && XString(m_hitWeapon->GetActiveAmmo()->m_ammoType) == XString("explosive")) {
             m_mind.OnHit(true);
         }
     }
@@ -276,10 +301,10 @@ void CUnit::ReceivedDamage(bool suppressEffects)
         const CAmmo* ammo = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()
             ->GetActiveAmmo();
         if (ammo != NULL) {
-            if (ammo->m_ammoType == XString("incendiary")) {
+            if (XString(ammo->m_ammoType) == XString("incendiary")) {
                 CBH_Player::GetInstance()->m_gameStats.m_incendiaryAmmoKills++;
             }
-            if (ammo->m_ammoType == XString("explosive")) {
+            if (XString(ammo->m_ammoType) == XString("explosive")) {
                 CBH_Player::GetInstance()->m_gameStats.m_explosiveAmmoKills++;
             }
         }
@@ -301,19 +326,23 @@ void CUnit::ReceivedDamage(bool suppressEffects)
 
 void CUnit::PlayWoundingSound()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    const char* sound = "KEYSET_SOUND_MEN_HIT_LOW_HEALTH";
-    if (m_body.m_type != NULL && m_body.m_type->m_visualCharacter != NULL &&
-        !m_body.m_type->m_visualCharacter->m_isMan) {
-        if (m_healthFraction > 0.5f) {
-            sound = "KEYSET_SOUND_WOMEN_HIT_FULL_HEALTH";
-        } else {
-            sound = "KEYSET_SOUND_WOMEN_HIT_LOW_HEALTH";
-        }
-    } else if (m_healthFraction > 0.5f) {
-        sound = "KEYSET_SOUND_MEN_HIT_FULL_HEALTH";
+    bool fullHealth = false;
+    if (m_maxHp != 0) {
+        fullHealth = static_cast<float>(m_hp * 100) / m_maxHp > 50.0f;
     }
-    app->m_soundManager->PlayRandomSound(sound, false);
+    const char* sound;
+    if (m_body.m_type->m_visualCharacter->m_isMan) {
+        if (fullHealth) {
+            sound = "KEYSET_SOUND_MEN_HIT_FULL_HEALTH";
+        } else {
+            sound = "KEYSET_SOUND_MEN_HIT_LOW_HEALTH";
+        }
+    } else if (fullHealth) {
+        sound = "KEYSET_SOUND_WOMEN_HIT_FULL_HEALTH";
+    } else {
+        sound = "KEYSET_SOUND_WOMEN_HIT_LOW_HEALTH";
+    }
+    static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlayRandomSound(sound, false);
 }
 
 void CUnit::GetMovementAnimParam(float* speed, EPersonAnimType* animation, bool run)
@@ -322,20 +351,23 @@ void CUnit::GetMovementAnimParam(float* speed, EPersonAnimType* animation, bool 
     if (m_hp < m_maxHp) {
         *speed = CVisualCharacterType::m_runWoundSpeed;
         type = 7;
-    } else if (m_body.m_type->m_visualCharacter->m_isMan) {
+    } else {
+        bool isMan = m_body.m_type->m_visualCharacter->m_isMan;
         if (run) {
-            *speed = CVisualCharacterType::m_runSpeedMan;
-            type = 4;
-        } else {
+            if (isMan) {
+                *speed = CVisualCharacterType::m_runSpeedMan;
+                type = 4;
+            } else {
+                *speed = CVisualCharacterType::m_runSpeedWoman;
+                type = 5;
+            }
+        } else if (isMan) {
             *speed = CVisualCharacterType::m_walkSpeedMan;
             type = 2;
+        } else {
+            *speed = CVisualCharacterType::m_walkSpeedWoman;
+            type = 3;
         }
-    } else if (run) {
-        *speed = CVisualCharacterType::m_runSpeedWoman;
-        type = 5;
-    } else {
-        *speed = CVisualCharacterType::m_walkSpeedWoman;
-        type = 3;
     }
     *animation = static_cast<EPersonAnimType>(type);
 }

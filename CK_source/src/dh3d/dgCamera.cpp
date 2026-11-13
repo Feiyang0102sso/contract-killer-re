@@ -7,29 +7,19 @@
 #include "CSwerveGame.h"
 #include "DGHelper.h"
 #include "Fixed.h"
-
-#include <math.h>
+#include "GamePlayHUD.h"
 
 namespace {
 typedef ::Group Group;
-typedef int (*SetVector)(IQueryInterface*, const float*);
 typedef int (*SetChild)(IQueryInterface*, IQueryInterface*);
-typedef int (*SetRendering)(IQueryInterface*, bool);
-
-float AimAngleFromSlope(float slope)
-{
-    // The original fixed-point series is accurate near the scope center.
-    if (fabsf(slope) <= 1.0f) {
-        return Fixed::toFloat(Fixed::rad2grad(Fixed::atan(Fixed::fromFloat(slope))));
-    }
-    return atanf(slope) * 57.2957795f;
-}
+typedef int (*Align)(IQueryInterface*, IQueryInterface*, int, IQueryInterface*, int);
+typedef int (*GetTransformTo)(IQueryInterface*, INodeInterface*, ITransformInterface*, bool*);
 }
 
 DGCamera::DGCamera(Camera camera, float horizontalLimit, float verticalLimit)
     : m_camera(camera), m_baseTransform(CSwerve::GetInstance()->m_swerve),
       m_defaultFov(-1.0f), m_horizontalLimit(horizontalLimit), m_verticalLimit(verticalLimit + 15.0f),
-      m_zoomEffect(false), m_savedFov(-1.0f), m_effectFov(-1.0f), m_recoilAngle(0),
+      m_zoomEffect(false), m_savedFov(m_fov), m_recoilAngle(0),
       m_recoilDuration(0), m_recoilElapsed(-1), m_fov(-1.0f),
       m_viewportWidth(1.0f), m_viewportHeight(1.0f), m_shotEffect(false), m_shotDuration(0), m_shotElapsed(0),
       m_wanderLimitH(0), m_wanderLimitV(0), m_wanderAmplitudeH(0), m_wanderAmplitudeV(0),
@@ -53,13 +43,11 @@ void DGCamera::Init(Camera camera, float horizontalLimit, float verticalLimit)
     m_verticalLimit = verticalLimit + 15.0f;
     App* app = static_cast<App*>(WindowApp::m_instance);
     Background background = app->m_helper->m_swerveGame->m_world.getBackground();
-    if (background.m_interface != NULL) {
-        m_viewport.m_x = background.getCropX();
-        m_viewport.m_y = background.getCropY();
-        m_viewport.m_width = background.getCropWidth();
-        m_viewport.m_height = background.getCropHeight();
-    }
-    Transform projection = app->m_helper->m_transform;
+    m_viewport.m_x = background.getCropX();
+    m_viewport.m_y = background.getCropY();
+    m_viewport.m_width = background.getCropWidth();
+    m_viewport.m_height = background.getCropHeight();
+    Transform projection = static_cast<App*>(WindowApp::m_instance)->m_helper->m_transform;
     m_camera.getProjection(projection);
     projection.invert();
     m_initialProjectionPoint.x = -1.0f;
@@ -68,10 +56,8 @@ void DGCamera::Init(Camera camera, float horizontalLimit, float verticalLimit)
     DGHelper::TransformPoint(projection, m_initialProjectionPoint);
     m_projectionPoint = m_initialProjectionPoint;
     m_frustum.UpdatePlanes();
-    if (background.m_interface != NULL) {
-        background.setColorClearEnable(false);
-    }
-    m_headShotFov = app->m_helper->m_config.GetFloatValueByToken("HEAD_SHOT_EFFECT_FOV", true);
+    background.setColorClearEnable(false);
+    m_headShotFov = static_cast<App*>(WindowApp::m_instance)->m_helper->m_config.GetFloatValueByToken("HEAD_SHOT_EFFECT_FOV", true);
 }
 
 void DGCamera::ReInit()
@@ -146,10 +132,16 @@ void DGCamera::restoreView(bool immediately)
 
 void DGCamera::updateTransform(bool)
 {
+    bool connected;
     App* app = static_cast<App*>(WindowApp::m_instance);
     Transform transform = app->m_helper->m_transform;
     m_camera.setTransform(m_baseTransform);
-    app->m_helper->m_swerveGame->m_world.getTransformTo(m_camera, transform);
+    {
+        CSwerveGame* game = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame;
+        Transform output = transform;
+        IQueryInterface* world = game->m_world.m_interface;
+        CKMethod<GetTransformTo>(world, 0xa4)(world, m_camera.node(), output.transformInterface(), &connected);
+    }
     static const swvVector3D axis_end = {0, 0, 1};
     swvVector3D end = axis_end;
     swvVector3D start = {0, 0, 0};
@@ -163,23 +155,26 @@ void DGCamera::updateTransform(bool)
     transform.postRotate(&m_field0c);
     transform.postRotate(&m_field1c);
     transform.postMultiply(m_baseTransform);
-    if (m_recoilElapsed >= 0 && m_recoilDuration > 0) {
-        float elapsed = m_recoilElapsed;
-        float duration = m_recoilDuration;
-        float recoil;
-        if (elapsed < duration * 0.1) {
-            recoil = m_recoilAngle * elapsed / duration;
+    if (m_recoilElapsed >= 0) {
+        float rotation[4];
+        if (m_recoilElapsed < m_recoilDuration * 0.1) {
+            rotation[0] = m_recoilAngle * static_cast<float>(m_recoilElapsed) / m_recoilDuration;
         } else {
-            duration *= 0.9f;
-            recoil = m_recoilAngle * (1.0f - (elapsed - duration) / duration);
+            float duration = m_recoilDuration * 0.9f;
+            rotation[0] = m_recoilAngle * (1.0f - (m_recoilElapsed - duration) / duration);
         }
-        float rotation[] = {recoil, 1.0f, 0.0f, 0.0f};
+        rotation[1] = 1.0f;
+        rotation[2] = 0.0f;
+        rotation[3] = 0.0f;
         transform.postRotate(rotation);
     } else if (!m_wanderDisabled && (m_wanderLimitH > 0 || m_wanderLimitV > 0)) {
-        float horizontal[] = {m_wanderAngleH, 0.0f, 1.0f, 0.0f};
-        float vertical[] = {m_wanderAngleV, 1.0f, 0.0f, 0.0f};
-        transform.postRotate(horizontal);
-        transform.postRotate(vertical);
+        float rotation[] = {m_wanderAngleH, 0.0f, 1.0f, 0.0f};
+        transform.postRotate(rotation);
+        rotation[0] = m_wanderAngleV;
+        rotation[1] = 1.0f;
+        rotation[2] = 0.0f;
+        rotation[3] = 0.0f;
+        transform.postRotate(rotation);
     }
     m_camera.setTransform(transform);
     m_previousAngleH = m_field0c;
@@ -297,64 +292,63 @@ void DGCamera::Shot(float recoil, int durationMs)
 void DGCamera::Update(int elapsedMs)
 {
     UpdateReturnToCenter(elapsedMs);
-    if (!m_shotEffect) {
-        if (m_recoilElapsed < 0) {
-            updateWander(elapsedMs);
-            updateTransform(false);
-        } else {
-            m_recoilElapsed += elapsedMs;
-            updateTransform(false);
-            if (m_recoilElapsed > m_recoilDuration) {
-                m_recoilElapsed = -1;
-            }
-        }
-    } else {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        CSwerveGame::World& world = app->m_helper->m_swerveGame->m_world;
-        Group bullet(world.find(DGHelper::getSwerveID("bulletTransform")));
+    if (m_shotEffect) {
         if (m_shotElapsed >= m_shotDuration) {
             m_shotEffect = false;
-            Group cylinder(world.find(DGHelper::getSwerveID("Cylinder03Transform")));
-            if (bullet.m_interface != NULL) {
-                CKMethod<SetRendering>(bullet.m_interface, 0x90)(bullet.m_interface, false);
-            }
-            if (cylinder.m_interface != NULL) {
-                CKMethod<SetRendering>(cylinder.m_interface, 0x90)(cylinder.m_interface, true);
-            }
+            App* app = static_cast<App*>(WindowApp::m_instance);
+            Group bullet(app->m_helper->m_swerveGame->m_world.find(DGHelper::getSwerveID("bulletTransform")));
+            app = static_cast<App*>(WindowApp::m_instance);
+            Group cylinder(app->m_helper->m_swerveGame->m_world.find(DGHelper::getSwerveID("Cylinder03Transform")));
+            bullet.setRenderingEnable(false);
+            cylinder.setRenderingEnable(true);
         } else {
-            m_shotElapsed += elapsedMs;
-            if (m_shotElapsed > m_shotDuration) {
-                m_shotElapsed = m_shotDuration;
+            int duration = m_shotDuration;
+            int elapsed = m_shotElapsed + elapsedMs;
+            if (elapsed >= duration) {
+                elapsed = duration;
             }
-            float phase = static_cast<float>(m_shotElapsed) / m_shotDuration;
+            m_shotElapsed = elapsed;
+            float phase = static_cast<float>(elapsed) / duration;
             float camera[] = {
-                m_shotStartPosition.x + (m_shotDisplacement.x - 3.0f) * phase,
-                m_shotStartPosition.y + (m_shotDisplacement.y + 3.0f) * phase,
-                m_shotStartPosition.z + (m_shotDisplacement.z + 3.0f) * phase + 3.0f
+                (m_shotDisplacement.x - 3.0f) * phase + m_shotStartPosition.x,
+                (m_shotDisplacement.y + 3.0f) * phase + m_shotStartPosition.y,
+                (m_shotDisplacement.z + 3.0f) * phase + (m_shotStartPosition.z + 3.0f)
             };
             float bulletPhase = phase + 0.1f;
             if (bulletPhase > 1.0f) {
                 bulletPhase = 1.0f;
             }
             float position[] = {
-                m_bulletStartPosition.x + (m_bulletEndPosition.x - m_bulletStartPosition.x) * bulletPhase,
-                m_bulletStartPosition.y + (m_bulletEndPosition.y - m_bulletStartPosition.y) * bulletPhase,
-                m_bulletStartPosition.z + (m_bulletEndPosition.z - m_bulletStartPosition.z) * bulletPhase
+                (m_bulletEndPosition.x - m_bulletStartPosition.x) * bulletPhase + m_bulletStartPosition.x,
+                (m_bulletEndPosition.y - m_bulletStartPosition.y) * bulletPhase + m_bulletStartPosition.y,
+                (m_bulletEndPosition.z - m_bulletStartPosition.z) * bulletPhase + m_bulletStartPosition.z
             };
-            CKMethod<SetVector>(m_camera.m_interface, 0x50)(m_camera.m_interface, camera);
-            if (bullet.m_interface != NULL) {
-                CKMethod<SetVector>(bullet.m_interface, 0x50)(bullet.m_interface, position);
-                Group target(CSwerve::GetInstance()->m_swerve);
-                CKMethod<SetVector>(target.m_interface, 0x50)(target.m_interface, &m_bulletEndPosition.x);
-                CKMethod<SetChild>(world.m_interface, 0xc0)(world.m_interface, target.m_interface);
-                static const swvVector3D scale = {-1.0f, 1.0f, -1.0f};
-                CKMethod<SetVector>(m_camera.m_interface, 0x58)(m_camera.m_interface, &scale.x);
-                typedef int (*Align)(IQueryInterface*, IQueryInterface*, int, IQueryInterface*, int);
-                CKMethod<Align>(m_camera.m_interface, 0xa8)(m_camera.m_interface, target.m_interface,
-                                                                  0x91, world.m_interface, 0x94);
-                CKMethod<SetChild>(m_camera.m_interface, 0xb4)(m_camera.m_interface, bullet.m_interface);
-                CKMethod<SetChild>(world.m_interface, 0xc4)(world.m_interface, target.m_interface);
+            m_camera.setTranslation(camera);
+            App* app = static_cast<App*>(WindowApp::m_instance);
+            Group bullet(app->m_helper->m_swerveGame->m_world.find(DGHelper::getSwerveID("bulletTransform")));
+            bullet.setTranslation(position);
+            app = static_cast<App*>(WindowApp::m_instance);
+            CSwerveGame::World world = app->m_helper->m_swerveGame->m_world;
+            float scale[] = {-1.0f, 1.0f, -1.0f};
+            Group target(CSwerve::GetInstance()->m_swerve);
+            target.setTranslation(&m_bulletEndPosition.x);
+            world.addChild(target);
+            m_camera.setScale(scale);
+            CKMethod<Align>(m_camera.m_interface, 0xa8)(m_camera.m_interface, target.m_interface,
+                                                       0x91, world.m_interface, 0x94);
+            CKMethod<SetChild>(m_camera.m_interface, 0xb4)(m_camera.m_interface, bullet.m_interface);
+            CKMethod<SetChild>(world.m_interface, 0xc4)(world.m_interface, target.m_interface);
+        }
+    } else {
+        if (m_recoilElapsed >= 0) {
+            m_recoilElapsed += elapsedMs;
+            updateTransform(false);
+            if (m_recoilElapsed > m_recoilDuration) {
+                m_recoilElapsed = -1;
             }
+        } else {
+            updateWander(elapsedMs);
+            updateTransform(false);
         }
     }
     HandleZoomEffect(elapsedMs);
@@ -389,36 +383,35 @@ void DGCamera::UpdateReturnToCenter(int elapsedMs)
 
 void DGCamera::updateWander(int elapsedMs)
 {
-    if (m_wanderLimitH <= 0 && m_wanderLimitV <= 0) {
+    if (!(m_wanderLimitH > 0) && !(m_wanderLimitV > 0)) {
         return;
     }
     m_wanderElapsedH += elapsedMs;
     if (m_wanderElapsedH > m_wanderPeriodH) {
         m_wanderElapsedH = 0;
-        m_wanderAmplitudeH = (CRandGen::GetInstance()->GetRand(10) + 1) * m_wanderLimitH / 10.0f;
+        m_wanderAmplitudeH = static_cast<unsigned int>(CRandGen::GetInstance()->GetRand(10) + 1) * m_wanderLimitH / 10.0f;
     }
-    if (m_wanderPeriodH > 0) {
-        float phase = static_cast<float>(m_wanderElapsedH) / m_wanderPeriodH;
-        m_wanderAngleH = Fixed::toFloat(Fixed::sin(Fixed::fromFloat(phase * 360.0f))) * m_wanderAmplitudeH;
-    } else {
-        m_wanderAngleH = 0;
-    }
+    float phaseH = static_cast<float>(m_wanderElapsedH) / m_wanderPeriodH;
+    m_wanderAngleH = Fixed::toFloat(Fixed::sin(Fixed::fromFloat(phaseH * 360.0f))) * m_wanderAmplitudeH;
     m_wanderElapsedV += elapsedMs;
     if (m_wanderElapsedV > m_wanderPeriodV) {
         m_wanderElapsedV = 0;
-        m_wanderAmplitudeV = (CRandGen::GetInstance()->GetRand(10) + 1) * m_wanderLimitV / 10.0f;
+        m_wanderAmplitudeV = static_cast<unsigned int>(CRandGen::GetInstance()->GetRand(10) + 1) * m_wanderLimitV / 10.0f;
     }
-    if (m_wanderPeriodV > 0) {
-        float phase = static_cast<float>(m_wanderElapsedV) / m_wanderPeriodV;
-        m_wanderAngleV = Fixed::toFloat(Fixed::sin(Fixed::fromFloat(phase * 360.0f))) * m_wanderAmplitudeV;
-    } else {
-        m_wanderAngleV = 0;
-    }
+    float phaseV = static_cast<float>(m_wanderElapsedV) / m_wanderPeriodV;
+    m_wanderAngleV = Fixed::toFloat(Fixed::sin(Fixed::fromFloat(phaseV * 360.0f))) * m_wanderAmplitudeV;
     App* app = static_cast<App*>(WindowApp::m_instance);
-    float skill = app->m_helper->GetPlayerData()->GetSkillLevelCoef(static_cast<CDH_PlayerData::skill_type_t>(0));
+    float skill = app->m_helper->m_gamePlayManager.m_playerData.GetSkillLevelCoef(static_cast<CDH_PlayerData::skill_type_t>(0));
+    app = static_cast<App*>(WindowApp::m_instance);
     float divisor = skill + skill + 1.0f + app->m_helper->GetPlayerData()->m_fieldac;
     m_wanderAngleH = m_wanderAngleH / divisor * 0.05f;
     m_wanderAngleV = m_wanderAngleV / divisor * 0.05f;
+    app = static_cast<App*>(WindowApp::m_instance);
+    if (app->m_helper->m_swerveGame->m_hud->IsSteadyAimActive()) {
+        float coefficient = app->m_helper->m_config.GetFloatValueByToken("STEADY_REDUCE_WANDER_COEF", true);
+        m_wanderAngleH *= coefficient;
+        m_wanderAngleV *= coefficient;
+    }
 }
 
 void DGCamera::HandleZoomEffect(int elapsedMs)
@@ -463,26 +456,22 @@ void DGCamera::CheckConstraints()
 
 void DGCamera::SetTargetPoint(float x, float y)
 {
-    vec3 nearPoint = DGHelper::GetPointOnNear(x, y, m_camera);
-    if (nearPoint.m_z == 0.0f) {
-        return;
-    }
-    float horizontalSlope = nearPoint.m_x / nearPoint.m_z;
-    float verticalSlope = nearPoint.m_y / nearPoint.m_z;
-    if (!isfinite(horizontalSlope) || !isfinite(verticalSlope)) {
-        return;
-    }
-    float horizontal = AimAngleFromSlope(horizontalSlope);
-    float vertical = AimAngleFromSlope(verticalSlope);
-    if (horizontal >= 0) {
-        rotateLeft(horizontal, false);
-    } else {
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    vec3 nearPoint = app->m_helper->GetPointOnNear(x, y, m_camera);
+    int horizontalFixed = Fixed::rad2grad(Fixed::atan(Fixed::fromFloat(nearPoint.m_x / nearPoint.m_z)));
+    int verticalFixed = Fixed::rad2grad(Fixed::atan(Fixed::fromFloat(nearPoint.m_y / nearPoint.m_z)));
+    float horizontal = Fixed::toFloat(horizontalFixed);
+    float vertical = Fixed::toFloat(verticalFixed);
+    float down = Fixed::toFloat(verticalFixed) * -1.0f;
+    if (horizontal < -0.0f) {
         rotateRight(-horizontal, false);
-    }
-    if (vertical >= 0) {
-        rotateUp(vertical, false);
     } else {
-        rotateDown(-vertical, false);
+        rotateLeft(horizontal, false);
+    }
+    if (vertical < -0.0f) {
+        rotateDown(down, false);
+    } else {
+        rotateUp(vertical, false);
     }
 }
 
@@ -528,12 +517,22 @@ void DGCamera::SetAngleV(float angle, bool unconstrained)
 
 vec3 DGCamera::GetViewDirection()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
     Transform transform(CSwerve::GetInstance()->m_swerve);
-    m_camera.getTransformTo(app->m_helper->m_swerveGame->m_world, transform);
+    bool connected;
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    CSwerveGame* game = app->m_helper->m_swerveGame;
+    {
+        Transform output = transform;
+        CKMethod<GetTransformTo>(m_camera.m_interface, 0xa4)(m_camera.m_interface, game->m_world.node(),
+                                                            output.transformInterface(), &connected);
+    }
     float matrix[16];
     transform.get(matrix);
-    return vec3(matrix[2], matrix[6], matrix[10]);
+    vec3 direction;
+    direction.m_x = matrix[2];
+    direction.m_y = matrix[6];
+    direction.m_z = matrix[10];
+    return direction;
 }
 
 typedef char AssertDGCameraSize[sizeof(DGCamera) == 0x168 ? 1 : -1];

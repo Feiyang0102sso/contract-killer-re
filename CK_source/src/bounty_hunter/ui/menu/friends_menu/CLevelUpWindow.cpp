@@ -9,33 +9,48 @@
 #include "ServiceWindows.h"
 
 CLevelUpAnimWindow::CLevelUpAnimWindow()
-    : Window(false), m_sprites(new SG_Instance()), m_animation(NULL)
+    : Window(false)
 {
-    char hvga[] = "LEVEL_UP_HVGA";
-    char vga[] = "LEVEL_UP_VGA";
-    char wvga[] = "LEVEL_UP_WVGA";
-    char* resources = hvga;
-    if (App::IsWVGA()) {
-        resources = wvga;
-    } else if (App::IsHD()) {
-        resources = vga;
+    SG_Instance* sprites = new SG_Instance();
+    m_sprites = sprites;
+    const char* resources = "LEVEL_UP_WVGA";
+    if (!App::IsWVGA()) {
+        if (App::IsHD()) {
+            resources = "LEVEL_UP_VGA";
+        } else {
+            resources = "LEVEL_UP_HVGA";
+        }
     }
-    m_sprites->Init(resources);
-    m_sprites->QueueArchetypeCharacter(0, 0);
+    sprites->Init(const_cast<char*>(resources));
+    sprites = m_sprites;
     unsigned char finished = 0;
-    while (m_sprites->LoadQueued(1000, finished)) {
+    if (!App::IsWVGA()) {
+        App::IsHD();
+    }
+    sprites->QueueArchetypeCharacter(0, 0);
+    while (sprites->LoadQueued(1000, finished)) {
     }
     m_animation = new SG_Presenter(0, 0);
-    m_animation->SetSGInstance(m_sprites);
+    m_animation->SetSGInstance(sprites);
     m_animation->SetAnimation(0);
     m_animation->SetLoop(false);
-    ClearFlags(FLAG_FOCUSABLE | FLAG_ENABLED);
 }
 
 CLevelUpAnimWindow::~CLevelUpAnimWindow()
 {
-    delete m_animation;
-    delete m_sprites;
+    SG_Instance* sprites = static_cast<App*>(WindowApp::m_instance)->m_sgInstance;
+    if (!App::IsWVGA()) {
+        App::IsHD();
+    }
+    sprites->DumpArchetypeCharacter(0, 0);
+    if (m_animation != NULL) {
+        delete m_animation;
+        m_animation = NULL;
+    }
+    if (m_sprites != NULL) {
+        delete m_sprites;
+        m_sprites = NULL;
+    }
 }
 
 void CLevelUpAnimWindow::Paint(ICGraphics2d&)
@@ -49,8 +64,9 @@ void CLevelUpAnimWindow::Update()
 }
 
 CLevelUpWindow::CLevelUpWindow(XString message, bool allowShare)
-    : CTextDialog(), m_closeCommand(0), m_levelMessage(message)
+    : CTextDialog(), m_closeCommand(0)
 {
+    m_levelMessage = message;
     SetTitleText("");
     Window* controls = new Window(false);
     controls->SetPercentWidth(100, 0, 0);
@@ -66,7 +82,7 @@ CLevelUpWindow::CLevelUpWindow(XString message, bool allowShare)
     GetBackgroundImage()->AddToFront(backdrop);
     AddMessageText();
 
-    if (allowShare) {
+    if (allowShare == true) {
         WindowTransparent* shareSpacing = new WindowTransparent(false);
         shareSpacing->SetCellPos(0, 1, 1, 1);
         TextWindow* spacer = new TextWindow(XString(" "), CFontMgr::GetInstance()->GetFont(22));

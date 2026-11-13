@@ -257,11 +257,18 @@ void CDH_Weapon::ItemsGroup::setActiveID(int id)
     m_activeId = id;
     for (int index = 0; index < m_items.size(); ++index) {
         ItemDesc* item = m_items[index];
-        bool visible = index == m_activeId;
-        for (int nodeIndex = 0; nodeIndex < item->m_nodes.size(); ++nodeIndex) {
-            if (item->m_nodes[nodeIndex] != NULL) {
-                item->m_nodes[nodeIndex].setRenderingEnable(visible);
-            }
+        int count = item->m_nodes.size();
+        if (count > 0) {
+            bool visible = index == m_activeId;
+            int nodeIndex = 0;
+            do {
+                Node& node = item->m_nodes[nodeIndex];
+                if (node != NULL) {
+                    node.setRenderingEnable(visible);
+                    count = item->m_nodes.size();
+                }
+                ++nodeIndex;
+            } while (nodeIndex < count);
         }
     }
 }
@@ -552,10 +559,12 @@ void CDH_Weapon::loadWeaponModel(bool forMenu)
         }
     }
     if (m_reloadStartAnimId >= 0) {
-        int available = CBH_Player::GetInstance()->GetAvailableAmmo(GetActiveAmmo(), true);
+        CBH_Player* player = CBH_Player::GetInstance();
+        int available = player->GetAvailableAmmo(GetActiveAmmo(), true);
+        int clipSize = m_clipSize;
         m_animation->setControllerDuration(m_reloadStartAnimId, (int)(m_reloadTime * 0.15f));
-        if (available > m_clipSize) {
-            available = m_clipSize;
+        if (available > clipSize) {
+            available = clipSize;
         }
         m_animation->setControllerDuration(m_reloadProcessAnimId, (int)(m_reloadTime * RELOAD_PROCESS_PART / (float)available));
         m_animation->setControllerDuration(m_reloadEndAnimId, (int)(m_reloadTime * 0.15f));
@@ -744,7 +753,8 @@ void CDH_Weapon::ParseParts(const TiXmlElement& element)
             Vector<XString> names;
             for (const TiXmlNode* object = item->FirstChild("object"); object != NULL;
                  object = object->NextSibling("object")) {
-                names.addElement(XString(object->ToElement()->Attribute("id")));
+                XString id(object->ToElement()->Attribute("id"));
+                names.addElement(id);
             }
             ItemDesc* entry = new ItemDesc(name, names, GameApp()->InitResMap()->getResourceID(image), credits,
                                            points, points == 0 && credits == 0);

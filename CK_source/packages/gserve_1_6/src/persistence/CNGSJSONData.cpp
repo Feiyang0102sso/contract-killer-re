@@ -90,12 +90,16 @@ int CNGSJSONData::GetContent(const char* path, bool forceDownload)
     if (m_requestCallback == NULL) {
         m_requestCallback = new CNGSJSONDataRequestFunctor(this, &CNGSJSONData::HandleValidateCNGSJSONDataResponse);
     }
-    if (m_baseURL.GetLength() == 0) {
-        m_baseURL = "http://s3.amazonaws.com/gserve/";
+    if (strncmp("http://", path, 7) != 0) {
+        if (m_baseURL.GetLength() == 0) {
+            m_baseURL = "http://s3.amazonaws.com/gserve/";
+        }
+    } else {
+        m_baseURL = "";
     }
 
-    CStrChar url(m_baseURL);
-    url += path;
+    CStrChar url(m_baseURL.GetCharPtr());
+    url.Concatenate(path);
     CNetMessageServer server(url);
     server.m_value10 = 1;
     SwpDeviceInfo deviceInfo;
@@ -106,45 +110,45 @@ int CNGSJSONData::GetContent(const char* path, bool forceDownload)
 
     CHttpTransport_gServe* transport = new CHttpTransport_gServe();
     m_transport = transport;
-    int result;
-    if (m_lastAccessTime != 0 && !forceDownload) {
-        // Conditional GET: only when changed since the cached copy.
-        char modifiedSince[256];
-        strftime(modifiedSince, 256, "%a, %d %b %Y %H:%M:%S %Z", gmtime(&m_lastAccessTime));
-        result = m_transport->Get(deviceInfo, CStrChar(server.m_url).GetCharPtr(), 0, NULL, modifiedSince);
-    } else {
-        result = transport->Get(deviceInfo, CStrChar(server.m_url).GetCharPtr(), 0, NULL, NULL);
+    if (m_lastAccessTime == 0 || forceDownload) {
+        return transport->Get(deviceInfo, CStrChar(server.m_url).GetCharPtr(), 0, NULL, NULL);
     }
-    return result;
+
+    // Conditional GET: only when changed since the cached copy.
+    char modifiedSince[256];
+    strftime(modifiedSince, sizeof(modifiedSince), "%a, %d %b %Y %H:%M:%S %Z", gmtime(&m_lastAccessTime));
+    transport = m_transport;
+    return transport->Get(deviceInfo, CStrChar(server.m_url).GetCharPtr(), 0, NULL, modifiedSince);
 }
 
 void CNGSJSONData::HandleValidateCNGSJSONDataResponse(char* data, int length, bool notModified)
 {
-    if (data != NULL && length > 0 && !notModified) {
-        char* json = new char[length + 1];
-        if (json != NULL) {
-            memcpy(json, data, length);
-            json[length] = 0;
-            CObjectMapValue* root = CNGSJSONParser::decodeValue(CStrWChar(json));
-            if (root != NULL) {
-                delete m_root;
-                delete[] m_rawJSON;
-                m_root = root;
-                m_rawJSON = json;
-                if (!m_noSaveToDisk) {
-                    SaveToDisk();
-                }
-            } else {
-                delete[] json;
-            }
+    if (length != 0 && !notModified) {
+        if (m_rawJSON != NULL) {
+            delete[] m_rawJSON;
+            m_rawJSON = NULL;
+        }
+        unsigned int size = static_cast<unsigned int>(length) + 1u;
+        unsigned int allocationSize = size;
+        if (allocationSize > 0x7fffffffu) {
+            allocationSize = static_cast<unsigned int>(-1);
+        }
+        char* json = new char[allocationSize];
+        m_rawJSON = json;
+        strncpy(json, data, size);
+        json[length] = 0;
+        m_root = CNGSJSONParser::decodeValue(CStrWChar(m_rawJSON));
+        if (m_root != NULL && !m_noSaveToDisk) {
+            SaveToDisk();
         }
     }
+
     m_busy = false;
-    CNGSLoginFlow* login = CNGSLoginFlow::GetInstance();
-    if (login->IsRunning()) {
-        CNGSLoginStep* step = login->GetCurrentStep();
-        if (step != NULL && step->GetClassId() == 0xd538bed3) {
-            login->OnEvent(LoginFlowSuccess, "Override");
+    CNGSLoginFlow* flow = CNGSLoginFlow::GetInstance();
+    if (flow->IsRunning()) {
+        CNGSLoginStep* step = CNGSLoginFlow::GetInstance()->GetCurrentStep();
+        if (step->GetClassId() == 0xd538bed3) {
+            CNGSLoginFlow::GetInstance()->OnEvent(LoginFlowSuccess, "Override");
         }
     }
 }
@@ -208,83 +212,75 @@ unsigned char CNGSJSONData::LoadFromDisk(const CStrWChar& fileName)
     CStrWChar path;
     CFileUtil::GetApplicationDataPathForFile(path, fileName.GetWCharPtr());
     CFileInputStream stream;
-    if (!stream.Open(path.GetWCharPtr()) || stream.Available() < 20) {
+    if (!stream.Open(path.GetWCharPtr())) {
+        return stream.m_error;
+    }
+
+    m_lastAccessTime = stream.ReadUInt32();
+    if (difftime(getCurrentTime(), m_lastAccessTime) < 0.0) {
+        return 1;
+    }
+    int version = stream.ReadInt32();
+    m_field68 = version;
+    m_field6c = version >> 31;
+    if (version != 0x100) {
         return 1;
     }
 
-    time_t savedTime = stream.ReadUInt32();
-    unsigned int version = stream.ReadUInt32();
     unsigned int length = stream.ReadUInt32();
+    unsigned int size = length + 1;
+    unsigned char* buffer = static_cast<unsigned char*>(malloc(size));
+    if (buffer == NULL) {
+        return 1;
+    }
+
+    unsigned int actualCRC = 0;
     unsigned int crc = stream.ReadUInt32();
-    unsigned int padding = stream.ReadUInt32();
-    if (difftime(getCurrentTime(), savedTime) < 0.0 || version != 0x100 ||
-        padding > stream.Available() || length < 9) {
-        return 1;
-    }
-    stream.Skip(padding);
-    if (length - 1 > stream.Available()) {
-        return 1;
-    }
+    stream.Skip(stream.ReadInt32());
+    m_rawJSON = static_cast<char*>(malloc(size));
+    memset(m_rawJSON, 0, size);
     unsigned int textLength = stream.ReadUInt32();
     unsigned int keyLength = stream.ReadUInt32();
-    unsigned int wordCount = (length - 9) / sizeof(wchar_t);
-    if (textLength == 0 || keyLength == 0 || textLength > wordCount ||
-        keyLength > wordCount - textLength) {
-        return 1;
-    }
+    unsigned int payloadBytes = (textLength + keyLength) * sizeof(wchar_t);
+    stream.Read(buffer, payloadBytes);
+    buffer[payloadBytes | 1] = 0;
 
-    unsigned int obfuscatedLength = textLength + keyLength;
-    wchar_t* obfuscated = new wchar_t[obfuscatedLength];
-    if (obfuscated == NULL) {
-        return 1;
-    }
-    stream.Read(reinterpret_cast<unsigned char*>(obfuscated), obfuscatedLength * sizeof(wchar_t));
+    CStrWChar key("x0x0x0x0");
     sDataBlock block;
-    unsigned char result = CNGSUtil::DeObfuscateString(block, obfuscated, L"x0x0x0x0", textLength, keyLength);
-    delete[] obfuscated;
-    if (result != 0 || block.m_data == NULL) {
+    if (CNGSUtil::DeObfuscateString(block, reinterpret_cast<const wchar_t*>(buffer),
+                                   key.GetWCharPtr(), textLength, keyLength) == 0) {
+        unsigned int textBytes = textLength * sizeof(wchar_t);
+        unsigned int wideSize = textBytes + sizeof(wchar_t);
+        wchar_t* wide = static_cast<wchar_t*>(malloc(wideSize));
+        memset(wide, 0, wideSize);
+        memcpy(wide, static_cast<const wchar_t*>(block.m_data) + keyLength, textBytes);
+        memset(buffer, 0, sizeof(wchar_t));
+        wcstombs(reinterpret_cast<char*>(buffer), wide, wcslen(wide) + 1);
+        buffer[textLength] = 0;
+        if (wide != NULL) {
+            free(wide);
+        }
+        if (block.m_data != NULL) {
+            free(block.m_data);
+            block.m_data = NULL;
+        }
+        memcpy(m_rawJSON, buffer, length);
+        actualCRC = CCrc32::GetInstance()->Crc32(reinterpret_cast<unsigned char*>(m_rawJSON), textLength);
+    }
+    free(buffer);
+    if (actualCRC != crc) {
+        if (m_rawJSON != NULL) {
+            delete[] m_rawJSON;
+            m_rawJSON = NULL;
+        }
+        if (m_root != NULL) {
+            delete m_root;
+            m_root = NULL;
+        }
         return 1;
     }
-
-    wchar_t* wide = new wchar_t[textLength + 1];
-    if (wide == NULL) {
-        free(block.m_data);
-        return 1;
-    }
-    memcpy(wide, static_cast<const wchar_t*>(block.m_data) + keyLength, textLength * sizeof(wchar_t));
-    wide[textLength] = 0;
-    free(block.m_data);
-    size_t bytes = wcstombs(NULL, wide, 0);
-    if (bytes == (size_t)-1) {
-        delete[] wide;
-        return 1;
-    }
-    char* json = new char[bytes + 1];
-    if (json == NULL) {
-        delete[] wide;
-        return 1;
-    }
-    wcstombs(json, wide, bytes + 1);
-    if (CCrc32::GetInstance()->Crc32(reinterpret_cast<unsigned char*>(json), bytes) != crc) {
-        delete[] wide;
-        delete[] json;
-        return 1;
-    }
-    CObjectMapValue* root = CNGSJSONParser::decodeValue(CStrWChar(wide));
-    delete[] wide;
-    if (root == NULL) {
-        delete[] json;
-        return 1;
-    }
-
-    delete m_root;
-    delete[] m_rawJSON;
-    m_root = root;
-    m_rawJSON = json;
-    m_lastAccessTime = savedTime;
-    m_field68 = version;
-    m_field6c = 0;
-    return 0;
+    m_root = CNGSJSONParser::decodeValue(CStrWChar(m_rawJSON));
+    return stream.m_error;
 }
 
 unsigned char CNGSJSONData::LoadFromServer(bool forceDownload)
@@ -302,16 +298,17 @@ unsigned char CNGSJSONData::LoadFromServer(bool forceDownload)
 unsigned char CNGSJSONData::LoadFromServer(const CStrWChar& carrier, const CStrWChar& gameId,
                                           const CStrWChar& platform, bool forceDownload)
 {
-    CStrWChar path(m_overrideName);
-    if (gameId.GetLength() != 0) {
+    CStrWChar path;
+    path.Concatenate(m_overrideName.GetWCharPtr());
+    if (gameId.GetWCharPtr() != NULL && gameId.GetLength() > 0) {
         path.Concatenate("/");
         path.Concatenate(gameId.GetWCharPtr());
     }
-    if (platform.GetLength() != 0) {
+    if (platform.GetWCharPtr() != NULL && platform.GetLength() > 0) {
         path.Concatenate("/");
         path.Concatenate(platform.GetWCharPtr());
     }
-    if (carrier.GetLength() != 0) {
+    if (carrier.GetWCharPtr() != NULL && carrier.GetLength() > 0) {
         path.Concatenate("/");
         path.Concatenate(carrier.GetWCharPtr());
     }
@@ -336,13 +333,10 @@ unsigned char CNGSJSONData::LoadFromServer(const CStrWChar& path, bool forceDown
     return m_busy;
 }
 
-unsigned long long CNGSJSONData::getCurrentTime()
+time_t CNGSJSONData::getCurrentTime()
 {
     CNGSSession* session = CNGS::GetInstance()->GetLocalUser()->m_session;
-    unsigned long long now = 0;
-    if (session != NULL) {
-        now = session->getNetworkCurrentTimeSeconds();
-    }
+    time_t now = session->getNetworkCurrentTimeSeconds();
     if (now == 0) {
         now = time(NULL);
     }
@@ -395,12 +389,22 @@ unsigned char CNGSJSONData::SaveToDisk(_CNGSJSONSaveData* saveData)
     stream.WriteUInt32(saveData->m_crc);
     stream.WriteInt32(saveData->m_paddingSize);
     CRandGen* random = CRandGen::GetInstance();
-    unsigned int paddingWords = saveData->m_paddingSize / 4;
-    for (index = 0; index < paddingWords; index++) {
-        stream.WriteInt32(random->GetRand(0x7fff));
+    unsigned int padding = saveData->m_paddingSize;
+    unsigned int currentPadding = padding;
+    if (padding / 4 != 0) {
+        for (index = 0; index < padding / 4; index++) {
+            stream.WriteInt32(random->GetRand(0x7fff));
+        }
+        currentPadding = saveData->m_paddingSize;
     }
-    for (index = 0; index < saveData->m_paddingSize - paddingWords * 4; index++) {
-        stream.WriteUInt8(0);
+    unsigned int alignedPadding = padding & ~3u;
+    // Once the byte tail starts, it writes its first byte before rechecking the size.
+    if (currentPadding != alignedPadding) {
+        index = 0;
+        do {
+            stream.WriteUInt8(0);
+            index++;
+        } while (index < saveData->m_paddingSize - alignedPadding);
     }
     stream.Write((const unsigned char*)saveData->m_data, saveData->m_length - 1);
     unsigned char written = CFileUtil::WriteApplicationDataFile(m_saveFileName.GetWCharPtr(), buffer, saveData->m_totalSize);

@@ -12,12 +12,14 @@
 CFriendListWindow::CFriendListWindow() : Window(false), m_row(0), m_friends(NULL)
 {
     Window* buttons = new Window(false);
+    buttons->m_debugFrame = true;
     AddToFront(buttons, 0, 0);
     buttons->SetPercentWidth(30, 0, 0);
-    buttons->AddToFront(CreateMissionButton("IDB_INVITE_FRIEND", ResString("IDS_FRIENDS_INVITE_BUTTON"),
-        INVITE_FRIENDS), 0, 0);
-    buttons->AddToFront(CreateMissionButton("IDB_ASSASINS_GUILD", ResString("IDS_COOP_MISSION"),
-        SHOW_COOP), 0, 1);
+    Window* invite = CreateMissionButton("IDB_INVITE_FRIEND", ResString("IDS_FRIENDS_INVITE_BUTTON"),
+        INVITE_FRIENDS);
+    buttons->AddToFront(invite, 0, 0);
+    Window* coop = CreateMissionButton("IDB_ASSASINS_GUILD", ResString("IDS_COOP_MISSION"), SHOW_COOP);
+    buttons->AddToFront(coop, 0, 1);
 
     Window* friends = new Window(false);
     friends->AddToFront(CreateFriendsWindow());
@@ -30,7 +32,7 @@ Window* CFriendListWindow::CreateMissionButton(const char* image, const XString&
     Window* group = new Window(false);
     CImageButton* button = new CImageButton();
     button->AddImage(image, 0, 0);
-    button->m_command = command;
+    button->SetCommandParameters(command, 0, 0, 0);
     group->AddToFront(button, 0, 0);
 
     Window* label = new Window(false);
@@ -49,6 +51,7 @@ Window* CFriendListWindow::CreateFriendsWindow()
     m_friends = new Window(false);
     m_friends->SetPercentWidth(100, 0, 0);
     m_friends->SetHeightByContent(0, 0);
+    m_friends->SetLayoutType(LAYOUT_NONE);
 
     ScrollingContainer* scroll = new ScrollingContainer();
     scroll->SetLayoutType(LAYOUT_NONE);

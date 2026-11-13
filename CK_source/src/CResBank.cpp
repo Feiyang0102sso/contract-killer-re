@@ -4,6 +4,8 @@
 #include "CDH_ResourceManager.h"
 #include "CStdUtil_Cocoa.h"
 
+extern "C" unsigned int __udivsi3(unsigned int dividend, unsigned int divisor);
+
 CResBank::CResBank()
 {
     m_keyIndex = 0;
@@ -21,9 +23,10 @@ void CResBank::removeAllKeysets()
 {
     for (int index = 0; index < m_keysets.size(); index++) {
         const TKeyset& entry = m_keysets[index];
-        if (entry.m_ownedData != NULL) {
+        void* ownedData = entry.m_ownedData;
+        if (ownedData != NULL) {
             delete entry.m_object;
-            free(entry.m_ownedData);
+            free(ownedData);
         } else if (entry.m_object != NULL) {
             ((App*)WindowApp::m_instance)->m_resourceManager->releaseResource(entry.m_resourceName);
         }
@@ -42,35 +45,42 @@ int CResBank::GetState()
 
 unsigned int CResBank::GetProgressPercent()
 {
-    if (m_state == Loading && m_totalCount != 0) {
-        return m_loadedCount * 100 / m_totalCount;
+    if (m_state == Loading) {
+        // The original uses the ARM runtime helper even for an empty keyset.
+        return __udivsi3(m_loadedCount * 100, m_totalCount);
     }
     return 100;
 }
 
-void CResBank::HandleUpdate(int elapsed)
+void CResBank::HandleUpdate(int)
 {
+    if (m_keysets.size() < 1) {
+        return;
+    }
     unsigned int start = CStdUtil_Cocoa::GetUpTimeMS();
+    // The original keeps this limit until the next frame, even if the keyset changes.
+    unsigned int keyCount = m_keysets[0].m_object->m_count;
     while (m_state == Loading && CStdUtil_Cocoa::GetUpTimeMS() - start < 100) {
-        if (m_keysets.size() == 0) {
-            m_state = Loaded;
-            return;
-        }
-        if (m_keyIndex >= m_keysets[0].m_object->m_count) {
-            startNextKeyset();
-        } else if (!loadNextResource()) {
+        if (loadNextResource() == true) {
+            if (m_keyIndex >= keyCount) {
+                startNextKeyset();
+                if (m_keysets.size() < 1) {
+                    m_state = Loaded;
+                    return;
+                }
+            }
+        } else {
             m_state = Failed;
+            return;
         }
     }
 }
 
 bool CResBank::loadNextResource()
 {
-    const char* name = m_keysets[0].m_object->GetKey(m_keyIndex++);
-    if (name == NULL) {
-        return false;
-    }
+    CKeysetResource* keyset = m_keysets[0].m_object;
     CDH_ResourceManager* resources = ((App*)WindowApp::m_instance)->m_resourceManager;
+    const char* name = keyset->GetKey(m_keyIndex++);
     if (resources->getResourceData(name, false) == NULL) {
         return false;
     }
@@ -89,15 +99,13 @@ void CResBank::startNextKeyset()
 
 void CResBank::addKeyset(const char* name)
 {
+    TKeyset entry;
+    entry.m_resourceName = name;
+    entry.m_ownedData = NULL;
     CDH_ResourceManager* resources = ((App*)WindowApp::m_instance)->m_resourceManager;
-    CKeysetResource* keyset = (CKeysetResource*)resources->getResourceData(name, false);
-    if (keyset == NULL) {
-        m_state = Failed;
-        return;
-    }
-    TKeyset entry = { name, keyset, NULL };
+    entry.m_object = (CKeysetResource*)resources->getResourceData(name, false);
     m_keysets.addElement(entry);
-    m_totalCount += keyset->m_count;
+    m_totalCount += entry.m_object->m_count;
     if (m_state == Idle) {
         m_state = Loading;
     }

@@ -5,15 +5,15 @@
 
                                                                            
 
-static const float FIXED_ONE = 65536.0f;              // 1.0 in 16.16 fixed point
-
 // resource types accepted by Color_Palette::Load
 static const unsigned int PALETTE_TYPE_PNG = 0x40546f85;   // PNG chunks: PLTE (+ optional tRNS)
 static const unsigned int PALETTE_TYPE_RAW = 0x40547da2;   // raw table of 32-bit colors
 
 const Color_X8R8G8B8_t Color_X8R8G8B8_t::Magenta = { 0xffff00ff };
 const Color_A8R8G8B8_t Color_A8R8G8B8_t::Black = { 0xff000000 };
-Color_ARGB_fixed Color_ARGB_fixed::White = { 0x10000, 0x10000, 0x10000, 0x10000 };
+const Color_A8B8G8R8_t Color_A8B8G8R8_t::Black = { 0xff000000 };
+const Color_ARGB_fixed Color_ARGB_fixed::Black = { 0x10000, 0, 0, 0 };
+const Color_ARGB_fixed Color_ARGB_fixed::White = { 0x10000, 0x10000, 0x10000, 0x10000 };
 
 // Packed pixel layouts, fields listed from the least significant bit up.
 struct Pixel_B5G6R5 {
@@ -40,14 +40,6 @@ struct Pixel_R6G6B6 {
     unsigned int b : 6;
     unsigned int g : 6;
     unsigned int r : 6;
-};
-
-/** Four float channels, 1.0 = full intensity (ColorFormat_ARGB_Float). */
-struct Color_ARGB_float {
-    float a;
-    float r;
-    float g;
-    float b;
 };
 
 /** 8-bit channel -> 16.16 fixed point (0xff -> 0xffff). */
@@ -95,7 +87,6 @@ void Color_ARGB_fixed::Make(ColorFormat format, const void* pixel)
 {
     const unsigned char* bytes = (const unsigned char*)pixel;
     const int* fixedChannels = (const int*)pixel;
-    const Color_ARGB_float* floatChannels = (const Color_ARGB_float*)pixel;
     const Pixel_R6G6B6* pixel666 = (const Pixel_R6G6B6*)pixel;
     Pixel_B5G6R5 pixel565;
     Pixel_R5G5B5A1 pixel5551;
@@ -195,17 +186,6 @@ void Color_ARGB_fixed::Make(ColorFormat format, const void* pixel)
         red = fixedChannels[1];
         green = fixedChannels[2];
         blue = fixedChannels[3];
-        a = alpha;
-        r = red;
-        g = green;
-        b = blue;
-        break;
-
-    case ColorFormat_ARGB_Float:
-        alpha = (int)(floatChannels->a * FIXED_ONE);
-        red = (int)(floatChannels->r * FIXED_ONE);
-        green = (int)(floatChannels->g * FIXED_ONE);
-        blue = (int)(floatChannels->b * FIXED_ONE);
         a = alpha;
         r = red;
         g = green;

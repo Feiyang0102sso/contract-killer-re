@@ -77,7 +77,6 @@ private:
     void SendCompletionMessage(int friendId);
     void CheckDelayedReward(int friendId);
     void GiveReward(const SChallengeReward* reward) const;
-    bool CallScript(const char* name) const;
     bool DoOverride(COverrideManager& overrides, const XString& name);
     bool DoOverrideItemReward(SChallengeReward* reward, COverrideManager& overrides, const XString& name);
     bool DoOverrideSoftReward(SChallengeReward* reward, COverrideManager& overrides, const XString& name);

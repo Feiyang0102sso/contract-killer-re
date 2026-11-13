@@ -61,14 +61,19 @@ void CBurnExecutor::Tick(int elapsed)
     if (m_expired || m_bodyPhase != Loop) {
         return;
     }
-    m_elapsed += elapsed;
-    m_damageElapsed += elapsed;
-    if (m_duration < m_elapsed) {
+    int totalElapsed = m_elapsed + elapsed;
+    m_elapsed = totalElapsed;
+    int damageElapsed = m_damageElapsed + elapsed;
+    m_damageElapsed = damageElapsed;
+    if (totalElapsed > m_duration) {
         m_expired = true;
     }
-    if (m_damageElapsed >= 1000 && m_mind != NULL) {
-        float damage = static_cast<float>(m_damage) / m_duration * m_damageElapsed;
-        m_damageElapsed %= 1000;
+    if (damageElapsed >= 1000) {
+        if (m_mind == NULL) {
+            return;
+        }
+        float damage = static_cast<float>(m_damage) / m_duration * damageElapsed;
+        m_damageElapsed = damageElapsed % 1000;
         CUnit* unit = m_mind->GetUnit();
         if (unit != NULL) {
             int amount = static_cast<int>(damage);
@@ -88,13 +93,20 @@ void CBurnExecutor::TickFireFX()
     }
     App* app = static_cast<App*>(WindowApp::m_instance);
     int time = app->m_helper->m_swerveGame->m_missionElapsedMs;
-    if (m_fireAnimation->isAnimationComplete(time) && !m_expired) {
+    if (m_fireAnimation->isAnimationComplete(time) == 1 && !m_expired) {
         if (m_firePhase == End) {
             return;
         }
-        m_fireAnimation->setCurrentController(time, 1, false);
-        if (m_firePhase == Start) {
+        switch (m_firePhase) {
+        case Start:
+            m_fireAnimation->setCurrentController(time, 1, false);
             m_firePhase = Loop;
+            break;
+        case Loop:
+            m_fireAnimation->setCurrentController(time, 1, false);
+            break;
+        default:
+            break;
         }
     }
     m_fireAnimation->animate(time);
@@ -102,23 +114,27 @@ void CBurnExecutor::TickFireFX()
 
 void CBurnExecutor::OnAnimationComplete(EPersonAnimType, const char* name)
 {
-    if (!IsAnimationTheSame(name)) {
+    if (IsAnimationTheSame(name) != 1) {
         return;
     }
     StopActiveAnimation();
-    if (m_bodyPhase == End) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        app->m_soundManager->Stop(FireSound);
-        Finish(EXECUTOR_RESULT_STUN_OVER);
-    } else {
-        CUnitBody* body = m_mind->GetUnit()->GetBody();
-        if (m_bodyPhase == Loop && m_expired) {
-            m_activeAnimation = body->StartAnimation(BurnEnd, false);
+    switch (m_bodyPhase) {
+    case Start:
+        m_activeAnimation = m_mind->GetUnit()->GetBody()->StartAnimation(BurnLoop, false);
+        m_bodyPhase = Loop;
+        break;
+    case Loop:
+        if (m_expired) {
+            m_activeAnimation = m_mind->GetUnit()->GetBody()->StartAnimation(BurnEnd, false);
             m_bodyPhase = End;
         } else {
-            m_activeAnimation = body->StartAnimation(BurnLoop, false);
-            m_bodyPhase = Loop;
+            m_activeAnimation = m_mind->GetUnit()->GetBody()->StartAnimation(BurnLoop, false);
         }
+        break;
+    case End:
+        static_cast<App*>(WindowApp::m_instance)->m_soundManager->Stop(FireSound);
+        Finish(EXECUTOR_RESULT_STUN_OVER);
+        break;
     }
 }
 
@@ -141,14 +157,22 @@ void CBurnExecutor::OnStart()
 
 void CBurnExecutor::CreateFireFX()
 {
-    m_model = m_mind->GetUnit()->GetBody()->m_model;
-    SwerveHelper::Object3D effect = App::LoadObject3D("BIN_M3G_EFFECT_FIRE_SYSTEM");
-    if (m_model == NULL || effect == NULL) {
+    if (m_mind == NULL) {
         return;
     }
+    {
+        SwerveHelper::Group model = m_mind->GetUnit()->GetBody()->m_model;
+        static_cast<QueryInterface&>(m_model) = model.m_interface;
+    }
+    SwerveHelper::Object3D effect = App::LoadObject3D("BIN_M3G_EFFECT_FIRE_SYSTEM");
     SwerveHelper::Group mount(m_model.find(DGHelper::getSwerveID("dummy_guyTransform")));
-    if (mount != NULL) {
-        m_fireRoot = SwerveHelper::Node(effect.find(SwerveHelper::Id("fx_fire_rootTransform")));
+    if (mount == NULL) {
+        return;
+    }
+    SwerveHelper::Object3D fireObject = effect.find(SwerveHelper::Id("fx_fire_rootTransform"));
+    IQueryInterface* fireInterface = fireObject.m_interface;
+    if (fireInterface != NULL) {
+        m_fireRoot = SwerveHelper::Node(fireObject);
         if (m_fireRoot != NULL) {
             SwerveHelper::Node parent = m_fireRoot.getParent();
             mount.addChild(m_fireRoot);
@@ -157,6 +181,8 @@ void CBurnExecutor::CreateFireFX()
             m_fireAnimation->addController(XString("cyckle_burn"));
             m_fireAnimation->addController(XString("end_burn"));
         }
+        fireObject.m_interface = NULL;
+        fireInterface->Release();
     }
 }
 

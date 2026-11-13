@@ -11,9 +11,10 @@
 #include "CSocialGiftsManager.h"
 #include "SScreenAdaptingConstant.h"
 
+static const SScreenAdaptingConstant ARRANGED_WINDOW_HEIGHT(220, 440, 550);
+
 namespace {
 const int SelectGift = -0x5bc88ffe;
-const SScreenAdaptingConstant s_arrangedWindowHeight(220, 440, 550);
 
 CSocialGiftManager* GetGiftManager()
 {
@@ -42,31 +43,26 @@ void CGiftsWindow::GetGifts(Vector<const SGift*>& gifts)
 
 void CGiftsWindow::CreateUserInterface(const Vector<const SGift*>& gifts)
 {
-    int width = WindowApp::m_instance->m_screenWidth - 12 * App::Scale();
-    int height = s_arrangedWindowHeight();
-    CAutoArrangedWindow* page = new CAutoArrangedWindow(width, height);
+    CAutoArrangedWindow* page = new CAutoArrangedWindow(WindowApp::m_instance->m_screenWidth, ARRANGED_WINDOW_HEIGHT());
     CScrollWindow* scroll = new CScrollWindow(true);
     scroll->Add(page);
-    CSocialGiftManager* manager = GetGiftManager();
-    bool energyEnabled = CBH_Player::GetInstance()->IsEnegyEnabled();
-    int catalogIndex = 0;
     for (int index = 0; index < gifts.size(); ++index) {
-        const SGift* gift = gifts[index];
-        // The wire ID is the XML position, including entries hidden from the gift browser.
-        while (manager->GetGift(catalogIndex) != gift) {
-            ++catalogIndex;
-        }
-        CItem* item = gift->GetItem();
-        if (item == NULL || (!energyEnabled && item->getType() == 4)) {
-            continue;
-        }
-        Window* button = CreateGiftButton(catalogIndex);
-        if (!page->Add(button)) {
-            page = new CAutoArrangedWindow(width, height);
-            scroll->Add(page);
-            if (!page->Add(button)) {
-                delete button;
+        if (!CBH_Player::GetInstance()->IsEnegyEnabled()) {
+            const SGift* gift = gifts[index];
+            if (gift == NULL || gift->m_itemManager == NULL) {
+                continue;
             }
+            CItem* item = gift->GetItem();
+            if (item == NULL || item->getType() == 4) {
+                continue;
+            }
+        }
+        // CK uses the filtered row index to look up the catalog entry.
+        Window* button = CreateGiftButton(index);
+        if (!page->Add(button)) {
+            page = new CAutoArrangedWindow(WindowApp::m_instance->m_screenWidth, ARRANGED_WINDOW_HEIGHT());
+            scroll->Add(page);
+            page->Add(button);
         }
     }
     AddToFront(scroll);
@@ -79,26 +75,18 @@ Window* CGiftsWindow::CreateGiftButton(int catalogIndex)
     cell->SetHeightByContent(0, 0);
     cell->SetWidthByContent(0, 0);
     CImageButton* button = new CImageButton();
-    ICRenderSurface* image = item->getShopImage();
-    if (image != NULL) {
-        button->AddImage(image, 0, 0);
-    } else if (item->getShopImageResId() != NULL) {
-        button->AddImage(item->getShopImageResId(), 0, 0);
-    } else {
-        button->SetSize(90 * App::Scale(), 24 * App::Scale());
-        button->SetText(item->GetName(), ALIGN_HCENTER | ALIGN_VCENTER, NULL, 0, 0);
-    }
+    button->AddImage(item->getShopImage(), 0, 0);
     button->m_command = SelectGift;
     button->m_commandParameter1 = catalogIndex;
+    button->m_commandParameter2 = 0;
+    button->m_commandParameter3 = 0;
     cell->SetSize(button->m_width, button->m_height);
     cell->AddToFront(button, 0, 0);
 
-    if (image != NULL || item->getShopImageResId() != NULL) {
-        TextWindow* name = new TextWindow(item->GetName(), CFontMgr::GetInstance()->GetFont(15));
-        name->SetDesiredWidth(button->m_width);
-        name->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-        cell->AddToFront(name, 0, 1);
-    }
+    TextWindow* name = new TextWindow(item->GetName(), CFontMgr::GetInstance()->GetFont(15));
+    name->SetDesiredWidth(button->m_width);
+    name->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+    cell->AddToFront(name, 0, 1);
     cell->HandleUpdate(false);
     return cell;
 }

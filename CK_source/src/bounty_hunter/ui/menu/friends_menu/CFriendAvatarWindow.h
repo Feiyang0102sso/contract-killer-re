@@ -8,6 +8,7 @@
 #include "WindowBase.h"
 #include "CStrWChar.h"
 
+class CNGSRemoteUser;
 class CWaitWindow;
 class ImageWindow;
 
@@ -23,13 +24,12 @@ public:
 
 private:
     void Init(CStrWChar friendId);
-    void StopWaiting();
 
     unsigned int m_pictureSize;           // 0xa4
     bool m_loading;                       // 0xa8
     bool m_loaded;                        // 0xa9
     bool m_showBorder;                    // 0xaa
-    ICRenderSurface* m_downloadedPicture;  // 0xac owned by this window
+    CNGSRemoteUser* m_remoteUser;         // 0xac temporary, cleared in Init
     ImageWindow* m_picture;               // 0xb0 borrows the surface
     ImageWindow* m_border;                // 0xb4
     CWaitWindow* m_spinner;                // 0xb8

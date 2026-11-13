@@ -29,13 +29,13 @@ public:
     void SetCurrentItemToSlot();
 
 private:
-    void CreateChoiseScrolling();
+    Window* CreateChoiseScrolling();
     void AddItems(CScrollWindow* chooser, const Vector<CDH_Weapon*>& weapons);
     Window* CreateStatsButton();
     Window* CreatePlayerStatsWindow();
     void UpdatePlayerStats();
     void HandleStatsButtonPressed();
-    void CreateItemButtons();
+    Window* CreateItemButtons();
     CEquipItemButton* CreateSilencerButton();
     CEquipItemButton* CreateHitechVisorButton();
     CEquipItemButton* CreateCyberScope();
@@ -43,7 +43,6 @@ private:
     void UpdateSilencerButton();
     void UpdateHitechVisorButton();
     void UpdateCyberScopeButton();
-    void ShowMiscItemDetails(int itemId);
     void HandleBulletButtonPressed(const CAmmo* ammo);
     void HandleSilencerButtonPressed();
     void HandleHitechVisorButtonPressed();

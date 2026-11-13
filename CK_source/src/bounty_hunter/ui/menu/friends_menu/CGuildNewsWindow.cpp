@@ -13,38 +13,33 @@
 #include "CNotificationHandler.h"
 #include "CObjectMapValue.h"
 #include "CPublicData1.h"
+#include "ICSystemFont.h"
+#include "SScreenAdaptingConstant.h"
 #include "ServiceWindows.h"
 
 namespace {
 const int AcceptGuildInvite = 0x7d371742;
 const int IgnoreGuildInvite = 0x0d611fcc;
-const long long GuildInvite = 1005;
 const long long GuildInviteAccepted = 1006;
 const long long GuildInviteDeclined = 1007;
 const unsigned int GuildResponseDurationSeconds = 604800;
-
-StretchImageButton* CreateButton(const char* caption, int command, Window* owner)
-{
-    StretchImageButton* button = new StretchImageButton(Window::ResString(caption),
-        "IDB_HUD_TRANSPARENT_BLACK_LEFT", "IDB_HUD_TRANSPARENT_BLACK_TILE", "IDB_HUD_TRANSPARENT_BLACK_RIGHT");
-    button->SetAlign(Window::ALIGN_HCENTER | Window::ALIGN_VCENTER);
-    button->m_command = command;
-    button->m_commandParameter1 = reinterpret_cast<int>(owner);
-    return button;
-}
 }
 
 CGuildInviteNewsWindow::CGuildInviteNewsWindow(const STargettedMessage* message)
-    : Window(false), m_senderId(message->m_senderId), m_sender(NULL), m_message(message), m_messageId(-1)
+    : Window(false), m_sender(NULL), m_messageId(-1)
 {
+    // The original leaves the ID unset when the pending envelope is missing.
+    m_senderId = message->m_senderId;
+    m_message = message;
     CNGSLocalUser* local = CNGS::GetInstance()->GetLocalUser();
     m_sender = local->m_remoteUserLists[0]->findRemoteUserByID(m_senderId);
-    CNGSFromServerMessageQ* queue = local->m_messageQueue;
+    CNGSFromServerMessageQ* queue = CNGS::GetInstance()->GetLocalUser()->m_messageQueue;
     TCVector<long long> ids;
-    queue->GetAllMessagesByUserAndType(ids, m_senderId, GuildInvite, CNGSFromServerMessage::CNGS_MSG_SUBTYPE_ANY);
+    queue->GetAllMessagesByUserAndType(ids, 0, 0, CNGSFromServerMessage::CNGS_MSG_SUBTYPE_ANY);
     for (int index = 0; index < ids.Size(); ++index) {
         CNGSFromServerMessage* pending = queue->GetMessageById(ids[index]);
-        if (pending != NULL && pending->GetMessageText() == message->m_text) {
+        if (pending != NULL && pending->m_senderId == message->m_senderId
+            && pending->GetMessageText() == message->m_text) {
             m_messageId = static_cast<int>(pending->m_messageId);
         }
     }
@@ -54,48 +49,60 @@ CGuildInviteNewsWindow::CGuildInviteNewsWindow(const STargettedMessage* message)
 void CGuildInviteNewsWindow::CreateUserInterface()
 {
     SetHeightByContent(0, 0);
-    XString text = m_message->m_text.GetWCharPtr();
+    XString nickname;
     if (m_sender != NULL) {
-        CStrWChar nickname = m_sender->GetNickName();
-        XString format = ResString("IDS_YOU_ARE_INVITED_INTO_GUILD");
-        text = XString::Format(format.c_str(), nickname.GetWCharPtr());
+        nickname = m_sender->GetNickName().GetWCharPtr();
     }
+    XString text = XString::Format(ResString("IDS_YOU_ARE_INVITED_INTO_GUILD").c_str(), nickname.c_str());
     TextWindow* label = new TextWindow(text, CFontMgr::GetInstance()->GetFont(15));
     label->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    label->SetHeightByContent(0, 0);
+    ICSystemFont* font = ICSystemFont::CreateInstance();
+    font->Initialize(SScreenAdaptingConstant(12, 25)(), NULL, 1);
+    label->SetFont(font);
     AddToFront(label, 0, 0);
-    if (m_sender != NULL) {
-        label->SetPercentWidth(60, 0, 0);
-        AddToFront(CreateButton("IDS_DIALOG_BUTTON_ACCEPT", AcceptGuildInvite, this), 1, 0);
-        AddToFront(CreateButton("IDS_DIALOG_BUTTON_IGNORE", IgnoreGuildInvite, this), 2, 0);
-    }
+
+    StretchImageButton* accept = new StretchImageButton(ResString("IDS_DIALOG_BUTTON_ACCEPT"),
+        "IDB_HUD_TRANSPARENT_BLACK_LEFT", "IDB_HUD_TRANSPARENT_BLACK_TILE", "IDB_HUD_TRANSPARENT_BLACK_RIGHT");
+    accept->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+    accept->SetCommandParameters(AcceptGuildInvite, 0, 0, 0);
+    AddToFront(accept, 1, 0);
+    StretchImageButton* ignore = new StretchImageButton(ResString("IDS_DIALOG_BUTTON_IGNORE"),
+        "IDB_HUD_TRANSPARENT_BLACK_LEFT", "IDB_HUD_TRANSPARENT_BLACK_TILE", "IDB_HUD_TRANSPARENT_BLACK_RIGHT");
+    ignore->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+    ignore->SetCommandParameters(IgnoreGuildInvite, 0, 0, 0);
+    AddToFront(ignore, 2, 0);
 }
 
 void CGuildInviteNewsWindow::OnCommand(Event& event)
 {
-    if ((event.m_id != AcceptGuildInvite && event.m_id != IgnoreGuildInvite)
-        || event.m_param1 != reinterpret_cast<int>(this)) {
-        return;
-    }
-    CNGSLocalUser* local = CNGS::GetInstance()->GetLocalUser();
-    CNGSRemoteUser* sender = local->m_remoteUserLists[0]->findRemoteUserByID(m_senderId);
-    if (sender == NULL) {
-        event.Clear();
-        return;
-    }
-    App* app = static_cast<App*>(WindowApp::m_instance);
     if (event.m_id == AcceptGuildInvite) {
-        CObjectMapString response(CStrWChar("gia"));
-        sender->SendMessage(&response, GuildResponseDurationSeconds, GuildInviteAccepted, false, NULL);
-        app->m_publicData->addGuildFriend(m_senderId);
-        CGameAnalytics::logAssassinsInviteAccepted(m_senderId);
+        CNGSRemoteUserList* friends = CNGS::GetInstance()->GetLocalUser()->m_remoteUserLists[0];
+        for (int index = 0; index < friends->m_users.Size(); ++index) {
+            CNGSRemoteUser* user = friends->m_users[index];
+            if (user->GetClientID() == m_senderId) {
+                CObjectMapString response(CStrWChar("gia"));
+                user->SendMessage(&response, GuildResponseDurationSeconds, GuildInviteAccepted, false, NULL);
+                static_cast<App*>(WindowApp::m_instance)->m_publicData->addGuildFriend(m_senderId);
+                CNGS::GetInstance()->GetLocalUser()->m_notificationHandler->RemoveGameSpecificMessage(m_messageId);
+                WindowApp::HandleTunnelCommand(4, 0, 0, 0);
+                CGameAnalytics::logAssassinsInviteAccepted(m_senderId);
+            }
+        }
+    } else if (event.m_id == IgnoreGuildInvite) {
+        CNGSRemoteUserList* friends = CNGS::GetInstance()->GetLocalUser()->m_remoteUserLists[0];
+        for (int index = 0; index < friends->m_users.Size(); ++index) {
+            CNGSRemoteUser* user = friends->m_users[index];
+            if (user->GetClientID() == m_senderId) {
+                CObjectMapString response(CStrWChar("gid"));
+                user->SendMessage(&response, GuildResponseDurationSeconds, GuildInviteDeclined, false, NULL);
+                CNGS::GetInstance()->GetLocalUser()->m_notificationHandler->RemoveGameSpecificMessage(m_messageId);
+                CGameAnalytics::logAssassinsInviteDeclined(m_senderId);
+            }
+        }
     } else {
-        CObjectMapString response(CStrWChar("gid"));
-        sender->SendMessage(&response, GuildResponseDurationSeconds, GuildInviteDeclined, false, NULL);
-        CGameAnalytics::logAssassinsInviteDeclined(m_senderId);
+        return;
     }
-    local->m_notificationHandler->RemoveGameSpecificMessage(m_messageId);
-    app->m_newsFeedManager->RemoveMessage(m_message);
+    static_cast<App*>(WindowApp::m_instance)->m_newsFeedManager->RemoveMessage(m_message);
     Close();
     event.Clear();
 }

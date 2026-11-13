@@ -29,10 +29,12 @@ void CDH_RadioButtonWidget::Init(bool selected, XString label, int font)
     m_image->SetDesiredWidth(ImageWidth(m_off.GetSurface()));
     m_image->SetDesiredHeight(ImageHeight(m_off.GetSurface()));
     m_image->SetAlign(ALIGN_LEFT | ALIGN_VCENTER);
-    content->AddToFront(m_image, 1, 0);
+    m_image->SetCellPos(1, 0, 1, 1);
+    content->AddToFront(m_image);
     TextWindow* text = new TextWindow(label, CFontMgr::GetInstance()->GetFont(font));
     text->SetAlign(ALIGN_LEFT | ALIGN_VCENTER);
-    content->AddToFront(text, 0, 0);
+    text->SetCellPos(0, 0, 1, 1);
+    content->AddToFront(text);
     SetValue(selected);
     AddToFront(content);
 }

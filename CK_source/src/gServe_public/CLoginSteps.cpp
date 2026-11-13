@@ -6,6 +6,7 @@
 #include "App.h"
 #include "AppSettings.h"
 #include "CFileData1.h"
+#include "CGameAnalytics.h"
 #include "CGServeHandler.h"
 #include "CNGS.h"
 #include "CNGSLocalUser.h"
@@ -23,42 +24,10 @@ static AdBannerMarginsY s_adBannerMarginsY;
 #include "CSaveManager.h"
 
 namespace {
-const unsigned int OverrideStepId = 0xd538bed3;
-
 App* CurrentApp()
 {
     return static_cast<App*>(WindowApp::m_instance);
 }
-
-void HandleSocialLoginEvent(eLoginFlowEvent event, int network)
-{
-    switch (event) {
-    case LoginFlowFail:
-        CNGS::GetInstance()->GetLocalUser()->Logout(network);
-        CurrentApp()->m_gserveHandler->ShowSocialNetworkConnectionErrorDialog();
-        break;
-    case LoginFlowServerConnectionError:
-    case LoginFlowNetworkConnectionError:
-        CurrentApp()->m_gserveHandler->ShowSocialNetworkConnectionErrorDialog();
-        break;
-    case LoginFlowAccountConflict:
-        CurrentApp()->m_gserveHandler->ShowSocialNetworkAccountsConflictDialogs();
-        break;
-    case LoginFlowSuccess:
-    case LoginFlowCancel:
-        if (CNGSLoginFlow::GetInstance()->m_activeNetwork == network) {
-            CNGSLoginFlow::GetInstance()->NextStep();
-        }
-        break;
-    default:
-        break;
-    }
-}
-}
-
-// The base constructors (CNGSLoginFlow.h) set id, name, network and timeout.
-DeviceOnlineCheckStep::DeviceOnlineCheckStep()
-{
 }
 
 void DeviceOnlineCheckStep::Excute()
@@ -70,44 +39,36 @@ void DeviceOnlineCheckStep::OnEvent(eLoginFlowEvent, const char*)
 {
 }
 
-VersionCheckStep::VersionCheckStep()
-{
-}
-
 void VersionCheckStep::OnEvent(eLoginFlowEvent event, const char*)
 {
+    if (event == LoginFlowVersionInvalid) {
+        WindowApp::HandleTunnelCommand(0x6458fa9c, 0, 0, 0);
+        return;
+    }
     if (event == LoginFlowVersionSuccess) {
         CNGSLoginFlow::GetInstance()->NextStep();
-    } else if (event == LoginFlowVersionInvalid) {
-        WindowApp::HandleTunnelCommand(0x6458fa9c, 0, 0, 0);
-    } else {
-        CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
-        if (CNGS_Platform::GetInstance()->isGameCenterAvailable() &&
-            user->GetSocialNetworkIdentity(SOCIAL_INTERFACE_GAME_CENTER).GetLength() > 0) {
-            CurrentApp()->m_gserveHandler->ShowSocialNetworkConnectionErrorDialog();
-        } else if (user->GetSocialNetworkIdentity(SOCIAL_INTERFACE_FACEBOOK).GetLength() > 0) {
-            CurrentApp()->m_gserveHandler->ShowSocialNetworkConnectionErrorDialog();
-        } else {
-            CNGSLoginFlow::GetInstance()->NextStep();
-        }
+        return;
     }
-}
 
-FacebookLoginStep::FacebookLoginStep(bool force)
-    : CNGSLoginStep_SocialNetwork(SOCIAL_INTERFACE_FACEBOOK), m_force(force)
-{
+    CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
+    bool hasIdentity = (CNGS_Platform::GetInstance()->isGameCenterAvailable() &&
+                        user->GetSocialNetworkIdentity(SOCIAL_INTERFACE_GAME_CENTER).GetLength() > 0) ||
+                       user->GetSocialNetworkIdentity(SOCIAL_INTERFACE_FACEBOOK).GetLength() > 0;
+    if (hasIdentity) {
+        CurrentApp()->m_gserveHandler->ShowSocialNetworkConnectionErrorDialog();
+    } else {
+        CNGSLoginFlow::GetInstance()->NextStep();
+    }
 }
 
 void FacebookLoginStep::Prepare()
 {
-    App* app = CurrentApp();
     CNGSLoginFlow::GetInstance()->m_activeNetwork = SOCIAL_INTERFACE_FACEBOOK;
-    CNotificationHandler* handler = app->m_notificationHandler;
     CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
-    if (app->m_gserveHandler->m_pendingSwitchNetwork == SOCIAL_INTERFACE_FACEBOOK) {
-        app->m_gserveHandler->m_pendingSwitchNetwork = 0;
+    if (CurrentApp()->m_gserveHandler->m_pendingSwitchNetwork == SOCIAL_INTERFACE_FACEBOOK) {
+        CurrentApp()->m_gserveHandler->m_pendingSwitchNetwork = 0;
     } else if (user->GetSocialNetworkIdentity(SOCIAL_INTERFACE_FACEBOOK).GetLength() == 0 ||
-               (handler != NULL && handler->m_loginState == 2)) {
+               user->m_notificationHandler->m_loginState == 2) {
         if (CurrentApp()->m_gserveHandler->NeedToShowFacebookLogin()) {
             CurrentApp()->m_gserveHandler->ShowFacebookLoginDialog();
             return;
@@ -122,51 +83,95 @@ void FacebookLoginStep::Prepare()
 
 void FacebookLoginStep::Excute()
 {
-    App* app = CurrentApp();
-    CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
-    CNotificationHandler* handler = app->m_notificationHandler;
-    if (user->isAuthenticated(m_snType) || (handler != NULL && handler->m_loginState == 2) ||
-        (!m_force && !CurrentApp()->m_gserveHandler->NeedToShowFacebookLogin() && !CurrentApp()->m_gserveHandler->NeedToShowLoginRequired())) {
+    if (CNGS::GetInstance()->GetLocalUser()->isAuthenticated(m_snType)) {
         CNGSLoginFlow::GetInstance()->NextStep();
         return;
     }
-    if (handler != NULL) {
-        handler->m_loginState = 3;
+
+    CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
+    if (user->m_notificationHandler != NULL && user->m_notificationHandler->m_loginState == 2) {
+        CNGSLoginFlow::GetInstance()->NextStep();
+        return;
     }
-    app->m_field398 = SOCIAL_INTERFACE_FACEBOOK;
-    user->Login(m_snType);
-    app->m_settings->SetFBReminderEnabled(true);
-    app->m_settings->Save();
+
+    if (CurrentApp()->m_gserveHandler->NeedToShowFacebookLogin() ||
+        CurrentApp()->m_gserveHandler->NeedToShowLoginRequired() || m_force) {
+        user = CNGS::GetInstance()->GetLocalUser();
+        if (user->m_notificationHandler != NULL) {
+            user->m_notificationHandler->m_loginState = 3;
+        }
+        CurrentApp()->m_field398 = SOCIAL_INTERFACE_FACEBOOK;
+        CNGS::GetInstance()->GetLocalUser()->Login(m_snType);
+        CurrentApp()->m_settings->SetFBReminderEnabled(true);
+        CurrentApp()->m_settings->Save();
+    } else {
+        CNGSLoginFlow::GetInstance()->NextStep();
+    }
 }
 
 void FacebookLoginStep::OnEvent(eLoginFlowEvent event, const char*)
 {
-    App* app = CurrentApp();
-    app->m_field398 = -1;
-    if (app->m_notificationHandler != NULL) {
-        app->m_notificationHandler->m_loginState = 0;
-    }
-    HandleSocialLoginEvent(event, m_snType);
-}
+    CurrentApp()->m_field398 = -1;
+    CNGS::GetInstance()->GetLocalUser()->m_notificationHandler->m_loginState = 0;
 
-GameCenterLoginStep::GameCenterLoginStep() : CNGSLoginStep_SocialNetwork(SOCIAL_INTERFACE_GAME_CENTER)
-{
+    if (event == LoginFlowServerConnectionError || event == LoginFlowNetworkConnectionError) {
+        CurrentApp()->m_gserveHandler->ShowSocialNetworkConnectionErrorDialog();
+        return;
+    }
+    if (event <= LoginFlowVersionInvalid) {
+        if (event == LoginFlowFail) {
+            CNGS::GetInstance()->GetLocalUser()->Logout(m_snType);
+            CurrentApp()->m_gserveHandler->ShowSocialNetworkConnectionErrorDialog();
+            return;
+        }
+    } else {
+        if (event == LoginFlowSessionInvalid || event == LoginFlowPrimaryUserChanged) {
+            return;
+        }
+        if (event == LoginFlowAccountConflict) {
+            CurrentApp()->m_gserveHandler->ShowSocialNetworkAccountsConflictDialogs();
+            return;
+        }
+    }
+    if (event == LoginFlowSuccess || event == LoginFlowCancel) {
+        if (CNGSLoginFlow::GetInstance()->m_activeNetwork == m_snType) {
+            CNGSLoginFlow::GetInstance()->NextStep();
+        }
+    }
 }
 
 void GameCenterLoginStep::Prepare()
 {
-    CNGSLoginFlow* flow = CNGSLoginFlow::GetInstance();
-    flow->m_activeNetwork = SOCIAL_INTERFACE_GAME_CENTER;
-    flow->ExcuteStep(-1);
+    CNGSLoginFlow::GetInstance()->m_activeNetwork = SOCIAL_INTERFACE_GAME_CENTER;
+    CNGSLoginFlow::GetInstance()->ExcuteStep(-1);
 }
 
 void GameCenterLoginStep::OnEvent(eLoginFlowEvent event, const char*)
 {
-    HandleSocialLoginEvent(event, m_snType);
-}
-
-LoadFriendsListStep::LoadFriendsListStep(int network) : CNGSLoginStep_LoadFriendsList(network)
-{
+    if (event == LoginFlowServerConnectionError || event == LoginFlowNetworkConnectionError) {
+        CurrentApp()->m_gserveHandler->ShowSocialNetworkConnectionErrorDialog();
+        return;
+    }
+    if (event <= LoginFlowVersionInvalid) {
+        if (event == LoginFlowFail) {
+            CNGS::GetInstance()->GetLocalUser()->Logout(m_snType);
+            CurrentApp()->m_gserveHandler->ShowSocialNetworkConnectionErrorDialog();
+            return;
+        }
+    } else {
+        if (event == LoginFlowSessionInvalid || event == LoginFlowPrimaryUserChanged) {
+            return;
+        }
+        if (event == LoginFlowAccountConflict) {
+            CurrentApp()->m_gserveHandler->ShowSocialNetworkAccountsConflictDialogs();
+            return;
+        }
+    }
+    if (event == LoginFlowSuccess || event == LoginFlowCancel) {
+        if (CNGSLoginFlow::GetInstance()->m_activeNetwork == m_snType) {
+            CNGSLoginFlow::GetInstance()->NextStep();
+        }
+    }
 }
 
 void LoadFriendsListStep::OnEvent(eLoginFlowEvent event, const char*)
@@ -174,12 +179,13 @@ void LoadFriendsListStep::OnEvent(eLoginFlowEvent event, const char*)
     if (event == LoginFlowServerConnectionError || event == LoginFlowNetworkConnectionError) {
         CurrentApp()->m_gserveHandler->ShowSocialNetworkConnectionErrorDialog();
     } else if (event == LoginFlowSuccess) {
+        if (m_snType == SOCIAL_INTERFACE_FACEBOOK) {
+            CGameAnalytics::logGservFbImported();
+        } else if (m_snType == SOCIAL_INTERFACE_GAME_CENTER) {
+            CGameAnalytics::logGservGcImported();
+        }
         CNGSLoginFlow::GetInstance()->NextStep();
     }
-}
-
-LoadPrivateGameDataStep::LoadPrivateGameDataStep()
-{
 }
 
 void LoadPrivateGameDataStep::Excute()
@@ -191,64 +197,50 @@ void LoadPrivateGameDataStep::OnEvent(eLoginFlowEvent, const char*)
 {
 }
 
-LoadGameDataStep::LoadGameDataStep()
-{
-}
-
 void LoadGameDataStep::Excute()
 {
-    App* app = CurrentApp();
     TCVector<int> collections;
-    app->m_profileManager->getAllRegisteredCollections(collections);
-    if (!app->m_profileManager->load(collections)) {
-        app->m_field3a1 = true;
+    CProfileManager* profiles = CurrentApp()->m_profileManager;
+    profiles->getAllRegisteredCollections(collections);
+    if (!profiles->load(collections)) {
+        CurrentApp()->m_field3a1 = true;
         CNGSLoginFlow::GetInstance()->NextStep();
     }
 }
 
 void LoadGameDataStep::OnEvent(eLoginFlowEvent event, const char*)
 {
-    App* app = CurrentApp();
     if (event == LoginFlowSuccess) {
-        CFileData1* file = app->m_fileData;
+        CFileData1* file = CurrentApp()->m_fileData;
         if (file != NULL && file->m_size > 0) {
             unsigned char* data = new unsigned char[file->m_size];
             memcpy(data, file->m_data, file->m_size);
-            app->m_saveManager->SetData(data, file->m_size);
+            CurrentApp()->m_saveManager->SetData(data, file->m_size);
             delete[] data;
         }
-        app->m_field3a1 = true;
+        CurrentApp()->m_field3a1 = true;
         CNGSLoginFlow::GetInstance()->NextStep();
     } else if (event == LoginFlowServerConnectionError || event == LoginFlowNetworkConnectionError) {
-        if (app->m_socialConnectDialog != NULL) {
-            app->m_socialConnectDialog->Close();
-            app->m_socialConnectDialog = NULL;
+        if (CurrentApp()->m_socialConnectDialog != NULL) {
+            CurrentApp()->m_socialConnectDialog->Close();
+            CurrentApp()->m_socialConnectDialog = NULL;
         }
         CurrentApp()->m_gserveHandler->ShowSocialNetworkConnectionErrorDialog();
     }
 }
 
-InitIncentiveOffersStep::InitIncentiveOffersStep()
-{
-}
-
 void InitIncentiveOffersStep::Excute()
 {
-    COfferManager* offers = COfferManager::GetInstance();
-    if (!offers->isInitialized()) {
-        offers->initializeGluOffers();
-    } else {
+    if (COfferManager::GetInstance()->isInitialized()) {
         CNGSLoginFlow::GetInstance()->NextStep();
+    } else {
+        COfferManager::GetInstance()->initializeGluOffers();
     }
 }
 
 void InitIncentiveOffersStep::OnEvent(eLoginFlowEvent, const char*)
 {
     CNGSLoginFlow::GetInstance()->NextStep();
-}
-
-GameReloadStep::GameReloadStep()
-{
 }
 
 void GameReloadStep::Excute()
@@ -260,17 +252,11 @@ void GameReloadStep::OnEvent(eLoginFlowEvent, const char*)
 {
 }
 
-CheckOverrideDataStep::CheckOverrideDataStep()
-{
-    m_classId = OverrideStepId;
-}
-
 void CheckOverrideDataStep::Excute()
 {
-    App* app = CurrentApp();
-    if (app->m_networkAvailability->IsAvailable()) {
-        app->m_overrideManager->checkUpdates();
-        if (app->m_overrideManager->IsBusy()) {
+    if (CurrentApp()->m_networkAvailability->IsAvailable()) {
+        CurrentApp()->m_overrideManager->checkUpdates();
+        if (CurrentApp()->m_overrideManager->IsBusy()) {
             return;
         }
     }

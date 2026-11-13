@@ -223,55 +223,6 @@ int CNGSLocalUser::extractClientIdFromFriendTimestamp(CNGSAttribute& attribute)
     return clientId;
 }
 
-void CNGSLocalUser::HandleValidateFriendListFromServerResponse(CObjectMap* response, CNGSLocalUserFunctor* functor)
-{
-    CNGS* ngs = CNGS::GetInstance();
-    int network = functor->m_network;
-    int requestedCount = functor->m_context;
-    if (WasErrorInResponse(response, functor, "HandleValidateFriendListFromServerResponse") == 0) {
-        CObjectMapArray* list = (CObjectMapArray*)response->getDataAt(CStrWChar(NGS_LIST_TOKEN), CStrWChar(L" "));
-        if (list != NULL && list->getType() == CObjectMapValue::TYPE_ARRAY) {
-            int count = list->m_values.Size();
-            CNGSUtil::DebugLog("Total Friends = %i", count);
-            for (int index = 0; index < count; index++) {
-                CNGSUserCredentials credentials((CObjectMapObject*)list->m_values[index], true);
-                CNGSRemoteUser* user = ngs->GetFactory()->getRemoteUserByCredentials(credentials);
-                if (user != NULL) {
-                    if (user->isValid()) {
-                        user->AddSocialNetworkType(network);
-                        if (credentials.hasValidAvatar()) {
-                            m_remoteUserLists[0]->addRemoteUserIfNotAlreadyInList(user);
-                            user->SetIsFriendOfLocalUser(1);
-                        }
-                        m_remoteUserLists[1]->addRemoteUserIfNotAlreadyInList(user);
-                    } else {
-                        delete user;
-                    }
-                }
-            }
-        }
-
-        // wait for the answers of all search requests of this network
-        CNGSSocialInterface* social = CNGS_Platform::GetInstance()->getSocialInterface(network);
-        social->m_reserved24 -= requestedCount;
-        if (social->m_reserved24 != 0) {
-            CompleteReadRequestOutstanding();
-            return;
-        }
-        friendLastMsgCheck(NULL);
-        m_remoteUserLists[1]->SetIsValid(1);
-        m_remoteUserLists[0]->SetIsValid(1);
-        // "<network friends>/<friends>/<friends with avatar>" (only logged in debug builds)
-        wchar_t text[16];
-        ICStdUtil::SWPrintF(text, L"%d/%d/%d", CNGS_Platform::GetInstance()->getSocialInterface(network)->getFriendsCount(),
-                            m_remoteUserLists[1]->m_users.Size(), m_remoteUserLists[0]->m_users.Size());
-        CNGSHandleFriendListUpdate(1, 1, network, 0);
-    } else {
-        CNGSHandleFriendListUpdate(0, 1, network, 0);
-    }
-    CompleteReadRequestOutstanding();
-}
-
 unsigned char CNGSLocalUser::HandleGameSpecificMessage(long long messageId, const CStrWChar& text, long long value)
 {
     return 1;
@@ -329,31 +280,6 @@ void CNGSLocalUser::CNGSHandleUserLogin(int result, int network, const wchar_t* 
         CNGSLoginFlow::GetInstance()->OnEvent(LoginFlowServerConnectionError, "CNGSHandleUserLogin");
     }
     m_notificationHandler->HandleUserLogin(result, network, message);
-}
-
-unsigned int CNGSLocalUser::AddUserAttribute(int network)
-{
-    AddReadRequestOutstanding();
-    CNGSSocialInterface* social = CNGS_Platform::GetInstance()->getSocialInterface(network);
-    const char* aliasName = social->getUserAliasAttributeName(network);
-    CStrWChar alias = social->getPlayerAlias();
-
-    CObjectMapObject* message = new CObjectMapObject();
-    InsertHeaderIntoMessageObject(message, "update attribute", 0);
-    CObjectMapObject* user = new CObjectMapObject();
-    user->addEntry(CStrWChar(NGS_ID_TOKEN), new CObjectMapInt(GetClientID()));
-    message->addEntry(CStrWChar(NGS_USER_TOKEN), user);
-
-    CObjectMapObject* attribute = new CObjectMapObject();
-    attribute->addEntry(CStrWChar(NGS_TYPE_TOKEN), new CObjectMapInt(2));
-    attribute->addEntry(CStrWChar(NGS_ATTRIBUTENAME_TOKEN), new CObjectMapString(CStrWChar(aliasName)));
-    attribute->addEntry(CStrWChar(NGS_STRINGVALUE_TOKEN), new CObjectMapString(alias));
-    CObjectMapArray* attributes = new CObjectMapArray();
-    attributes->addEntry(attribute);
-    message->addEntry(CStrWChar(NGS_USERATTRIBUTES_TOKEN), attributes);
-
-    return SendMessageObjectToServer(message, "resources/user/attributes/",
-                                     new CNGSLocalUserFunctor(this, network, &CNGSLocalUser::HandleAddUserAttributeResponse, 0));
 }
 
 void CNGSLocalUser::CNGSHandleUserLogout(unsigned char success, int network)
@@ -662,10 +588,10 @@ unsigned int CNGSLocalUser::ValidateUser(int network, unsigned char force)
 
 void CNGSLocalUser::HandleValidateUserResponse(CObjectMap* response, CNGSLocalUserFunctor* functor)
 {
-    bool validated = false;
-    bool sessionFailed = false;
-    bool nickNameChanged = false;
-    bool otherUser = false;
+    unsigned char validated = 0;
+    unsigned char sessionFailed = 0;
+    unsigned char nickNameChanged = 0;
+    unsigned char otherUser = 0;
     if (GetErrorCodeInResponse(response) != 1001 &&
         WasErrorInResponse(response, functor, "HandleValidateUserResponse") == 0) {
         CNGSUtil::DebugLog("Receive HandleValidateUserResponse successfully");
@@ -674,10 +600,10 @@ void CNGSLocalUser::HandleValidateUserResponse(CObjectMap* response, CNGSLocalUs
         CNGSSessionConfig previousConfig = m_session->m_config;
         CNGSSessionConfig config(root);
         if (m_session->init(config) < 0) {
-            sessionFailed = true;
+            sessionFailed = 1;
         } else {
             if (!m_session->doesSessionMatch(previousConfig)) {
-                CStrWChar sessionFile(L"Session.dat");
+                CStrWChar sessionFile(CNGSSession::LocalFileName);
                 CStrWChar sessionKey(L"xxx");
                 config.writeToFile(sessionFile, sessionKey, false);
             }
@@ -693,12 +619,12 @@ void CNGSLocalUser::HandleValidateUserResponse(CObjectMap* response, CNGSLocalUs
                         // keep our nickname and push it to the server when the server had another one
                         CStrWChar nickName = GetNickName();
                         UpdateCredentials(credentials);
-                        if (!(GetNickName() == nickName)) {
-                            nickNameChanged = true;
+                        if (!(nickName == GetNickName())) {
+                            nickNameChanged = 1;
                             SetNickName(nickName);
                         }
                     } else {
-                        otherUser = true;
+                        otherUser = 1;
                     }
                 }
             } else if (users->getType() == CObjectMapValue::TYPE_OBJECT) {
@@ -706,12 +632,12 @@ void CNGSLocalUser::HandleValidateUserResponse(CObjectMap* response, CNGSLocalUs
                 if (GetClientID() < 1 || GetClientID() == credentials.m_userId) {
                     CStrWChar nickName = GetNickName();
                     UpdateCredentials(credentials);
-                    if (!(GetNickName() == nickName)) {
-                        nickNameChanged = true;
+                    if (!(nickName == GetNickName())) {
+                        nickNameChanged = 1;
                         SetNickName(nickName);
                     }
                 } else {
-                    otherUser = true;
+                    otherUser = 1;
                 }
             }
             CNGSLocalUserNotifyFunctor* notify =
@@ -719,7 +645,7 @@ void CNGSLocalUser::HandleValidateUserResponse(CObjectMap* response, CNGSLocalUs
             if (m_session->SyncAllFromServer(notify)) {
                 AddReadRequestOutstanding();
             }
-            validated = true;
+            validated = 1;
         }
     }
 
@@ -932,9 +858,8 @@ unsigned char CNGSLocalUser::ValidateFriendListFromServer(int network)
 
         CObjectMapArray* attributes = new CObjectMapArray();
         int count = CNGS_Platform::GetInstance()->getSocialInterface(network)->getFriendsCount();
-        int batchCount;
-        for (batchCount = 0; batchCount < FRIEND_SEARCH_BATCH && start + batchCount < count; batchCount++) {
-            CStrWChar friendId = CNGS_Platform::GetInstance()->getSocialInterface(network)->getFriendIDAtIndex(start + batchCount);
+        for (int batchIndex = 0; batchIndex < FRIEND_SEARCH_BATCH && start + batchIndex < count; batchIndex++) {
+            CStrWChar friendId = CNGS_Platform::GetInstance()->getSocialInterface(network)->getFriendIDAtIndex(start + batchIndex);
             CObjectMapObject* attribute = new CObjectMapObject();
             attribute->addEntry(CStrWChar(NGS_ATTRIBUTENAME_TOKEN), new CObjectMapString(CStrWChar(idName)));
             attribute->addEntry(CStrWChar(NGS_STRINGVALUE_TOKEN), new CObjectMapString(friendId));
@@ -942,6 +867,14 @@ unsigned char CNGSLocalUser::ValidateFriendListFromServer(int network)
         }
         message->addEntry(CStrWChar(NGS_USERATTRIBUTES_TOKEN), attributes);
 
+        int countedThrough = count;
+        if (countedThrough < start) {
+            countedThrough = start;
+        }
+        int batchCount = countedThrough - start;
+        if (batchCount > FRIEND_SEARCH_BATCH) {
+            batchCount = FRIEND_SEARCH_BATCH;
+        }
         CNGSLocalUserFunctor* functor =
             new CNGSLocalUserFunctor(this, network, &CNGSLocalUser::HandleValidateFriendListFromServerResponse, batchCount);
         if (SendMessageObjectToServer(message, "resources/user/search/", functor) > 0) {
@@ -949,6 +882,82 @@ unsigned char CNGSLocalUser::ValidateFriendListFromServer(int network)
         }
     }
     return 0;
+}
+
+// Body emitted after ValidateFriendListFromServer so that "list" and L"%d/%d/%d" land where the original
+// __TEXT,__const has them (the original still places this function 18th in __text).
+void CNGSLocalUser::HandleValidateFriendListFromServerResponse(CObjectMap* response, CNGSLocalUserFunctor* functor)
+{
+    CNGS* ngs = CNGS::GetInstance();
+    int network = functor->m_network;
+    int requestedCount = functor->m_context;
+    if (WasErrorInResponse(response, functor, "HandleValidateFriendListFromServerResponse") == 0) {
+        CObjectMapArray* list = (CObjectMapArray*)response->getDataAt(CStrWChar(NGS_LIST_TOKEN), CStrWChar(L" "));
+        if (list != NULL && list->getType() == CObjectMapValue::TYPE_ARRAY) {
+            int count = list->m_values.Size();
+            CNGSUtil::DebugLog("Total Friends = %i", count);
+            for (int index = 0; index < count; index++) {
+                CNGSUserCredentials credentials((CObjectMapObject*)list->m_values[index], true);
+                CNGSRemoteUser* user = ngs->GetFactory()->getRemoteUserByCredentials(credentials);
+                if (user != NULL) {
+                    if (user->isValid()) {
+                        user->AddSocialNetworkType(network);
+                        if (credentials.hasValidAvatar()) {
+                            m_remoteUserLists[0]->addRemoteUserIfNotAlreadyInList(user);
+                            user->SetIsFriendOfLocalUser(1);
+                        }
+                        m_remoteUserLists[1]->addRemoteUserIfNotAlreadyInList(user);
+                    } else {
+                        delete user;
+                    }
+                }
+            }
+        }
+
+        // wait for the answers of all search requests of this network
+        CNGSSocialInterface* social = CNGS_Platform::GetInstance()->getSocialInterface(network);
+        social->m_reserved24 -= requestedCount;
+        if (social->m_reserved24 != 0) {
+            CompleteReadRequestOutstanding();
+            return;
+        }
+        friendLastMsgCheck(NULL);
+        m_remoteUserLists[1]->SetIsValid(1);
+        m_remoteUserLists[0]->SetIsValid(1);
+        // "<network friends>/<friends>/<friends with avatar>" (only logged in debug builds)
+        wchar_t text[16];
+        ICStdUtil::SWPrintF(text, L"%d/%d/%d", CNGS_Platform::GetInstance()->getSocialInterface(network)->getFriendsCount(),
+                            m_remoteUserLists[1]->m_users.Size(), m_remoteUserLists[0]->m_users.Size());
+        CNGSHandleFriendListUpdate(1, 1, network, 0);
+    } else {
+        CNGSHandleFriendListUpdate(0, 1, network, 0);
+    }
+    CompleteReadRequestOutstanding();
+}
+
+unsigned int CNGSLocalUser::AddUserAttribute(int network)
+{
+    AddReadRequestOutstanding();
+    CNGSSocialInterface* social = CNGS_Platform::GetInstance()->getSocialInterface(network);
+    const char* aliasName = social->getUserAliasAttributeName(network);
+    CStrWChar alias = social->getPlayerAlias();
+
+    CObjectMapObject* message = new CObjectMapObject();
+    InsertHeaderIntoMessageObject(message, "update attribute", 0);
+    CObjectMapObject* user = new CObjectMapObject();
+    user->addEntry(CStrWChar(NGS_ID_TOKEN), new CObjectMapInt(GetClientID()));
+    message->addEntry(CStrWChar(NGS_USER_TOKEN), user);
+
+    CObjectMapObject* attribute = new CObjectMapObject();
+    attribute->addEntry(CStrWChar(NGS_TYPE_TOKEN), new CObjectMapInt(2));
+    attribute->addEntry(CStrWChar(NGS_ATTRIBUTENAME_TOKEN), new CObjectMapString(CStrWChar(aliasName)));
+    attribute->addEntry(CStrWChar(NGS_STRINGVALUE_TOKEN), new CObjectMapString(alias));
+    CObjectMapArray* attributes = new CObjectMapArray();
+    attributes->addEntry(attribute);
+    message->addEntry(CStrWChar(NGS_USERATTRIBUTES_TOKEN), attributes);
+
+    return SendMessageObjectToServer(message, "resources/user/attributes/",
+                                     new CNGSLocalUserFunctor(this, network, &CNGSLocalUser::HandleAddUserAttributeResponse, 0));
 }
 
 void CNGSLocalUser::HandleAddUserAttributeResponse(CObjectMap* response, CNGSLocalUserFunctor* functor)

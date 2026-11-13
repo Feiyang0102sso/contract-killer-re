@@ -13,14 +13,6 @@ CNGSAttribute::CNGSAttribute(CStrWChar& name, unsigned char value, int collectio
     m_object.addEntry(CStrWChar(NGS_INTEGER_VALUE_TOKEN), new CObjectMapInt(value));
 }
 
-void CNGSAttribute::init(CStrWChar& name, eDataType type, int collectionType)
-{
-    m_object.addEntry(CStrWChar(NGS_NAME_TOKEN), new CObjectMapString(name));
-    m_object.addEntry(CStrWChar(NGS_TYPE_TOKEN), new CObjectMapInt(type));
-    m_object.addEntry(CStrWChar(NGS_COLLECTION_TOKEN), new CObjectMapInt(collectionType));
-    m_lastUpdatedInMS = 0;
-}
-
 CNGSAttribute::CNGSAttribute(CStrWChar& name, unsigned short value, int collectionType)
 {
     init(name, DATA_TYPE_UINT16, collectionType);
@@ -82,14 +74,25 @@ CNGSAttribute::CNGSAttribute(CStrWChar& name, unsigned char* data, int size, int
     m_object.addEntry(CStrWChar(NGS_STRING_VALUE_TOKEN), new CObjectMapString(value));
 }
 
-CStrWChar CNGSAttribute::getName()
+// init is defined after the string constructors and getDataType before getName: clang-211 lays out
+// the token constants in the order the function bodies are emitted, and the original __TEXT,__const
+// reads intValue, stringValue, collectiontype, "type", "name" (getName/getDataType swap places in __text).
+void CNGSAttribute::init(CStrWChar& name, eDataType type, int collectionType)
 {
-    return ((CObjectMapString*)m_object.getEntry(CStrWChar("name")))->m_value;
+    m_object.addEntry(CStrWChar(NGS_NAME_TOKEN), new CObjectMapString(name));
+    m_object.addEntry(CStrWChar(NGS_TYPE_TOKEN), new CObjectMapInt(type));
+    m_object.addEntry(CStrWChar(NGS_COLLECTION_TOKEN), new CObjectMapInt(collectionType));
+    m_lastUpdatedInMS = 0;
 }
 
 int CNGSAttribute::getDataType()
 {
     return (int)((CObjectMapInt*)m_object.getEntry(CStrWChar("type")))->m_value;
+}
+
+CStrWChar CNGSAttribute::getName()
+{
+    return ((CObjectMapString*)m_object.getEntry(CStrWChar("name")))->m_value;
 }
 
 long long CNGSAttribute::getLastUpdatedInMS()

@@ -8,7 +8,6 @@
 #include "CDH_Weapon.h"
 #include "CSwerveGame.h"
 #include "DGHelper.h"
-#include "Fixed.h"
 #include "GamePlayHUD.h"
 #include "dgCamera.h"
 #include "ICResourceManager.h"
@@ -50,11 +49,12 @@ void DGScopeCursor::onFire()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     CDH_Weapon* weapon = app->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon();
-    CBH_Player* player = CBH_Player::GetInstance();
-    if (weapon != NULL && player->IsNeedHide() && !player->IsInProgress()
-        && weapon->IsReadyForShot() && weapon->m_ammo > 0) {
-        app->m_helper->m_swerveGame->Shot(GetAimX(), GetAimY());
-        app->m_helper->m_swerveGame->m_hud->Shot();
+    if (weapon != NULL && CBH_Player::GetInstance()->IsNeedHide() && !CBH_Player::GetInstance()->IsInProgress()
+        && weapon->IsReadyForShot()
+        && static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()->m_ammo > 0) {
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_hud->Shot();
+        DGHelper* helper = static_cast<App*>(WindowApp::m_instance)->m_helper;
+        helper->m_swerveGame->Shot(helper->m_screenWidth / 2, helper->m_screenHeight / 2);
         m_fired = true;
     }
 }
@@ -62,19 +62,14 @@ void DGScopeCursor::onFire()
 void DGScopeCursor::onPointerMove(int, int, int deltaX, int deltaY)
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
-    bool acceleration = app->m_settings->IsAccelerationEnabled();
-    if (!acceleration) {
+    if (!app->m_settings->IsAccelerationEnabled()) {
         m_moved = true;
     }
     if (m_motionDelayMs < 0) {
         setTargetAndTime(m_targetX + deltaX, m_targetY + deltaY, 1);
-        DGHelper* helper = app->m_helper;
+        DGHelper* helper = static_cast<App*>(WindowApp::m_instance)->m_helper;
         float moveX = static_cast<float>(deltaX);
         float moveY = static_cast<float>(deltaY);
-        if (acceleration) {
-            moveX = Fixed::toFloat(deltaX);
-            moveY = Fixed::toFloat(deltaY);
-        }
         helper->m_swerveGame->m_camera->SetTargetPoint(0.5f + moveX / helper->m_screenWidth,
                                                      0.5f + moveY / helper->m_screenHeight);
     }
@@ -121,8 +116,18 @@ void DGScopeCursor::UpdateImpl(int elapsedMs)
     App* app = static_cast<App*>(WindowApp::m_instance);
     CSwerveGame* game = app->m_helper->m_swerveGame;
     float progress = game->m_hud->GetZoomSliderProgress();
-    m_fov = m_narrowFov + (m_wideFov - m_narrowFov) * progress;
-    game->m_camera->SetFOV(m_fov);
+    float wideFov = m_wideFov;
+    float narrowFov = m_narrowFov;
+    float zoomFov = narrowFov + (wideFov - narrowFov) * progress;
+    float fov = narrowFov;
+    if (!(zoomFov < narrowFov)) {
+        if (zoomFov > wideFov) {
+            zoomFov = wideFov;
+        }
+        fov = zoomFov;
+    }
+    m_fov = fov;
+    static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_camera->SetFOV(m_fov);
 }
 
 void DGScopeCursor::CreateResources()
@@ -160,13 +165,32 @@ void DGScopeCursor::InitFovValues()
 void DGScopeCursor::InitImpl()
 {
     CreateResources();
+    float previousFov = m_fov;
     InitFovValues();
     App* app = static_cast<App*>(WindowApp::m_instance);
     DGHelper* helper = app->m_helper;
-    DGCamera* camera = helper->m_swerveGame->m_camera;
-    camera->SetViewPortWidthAndHeight(257.0f / helper->m_screenWidth, 257.0f / helper->m_screenHeight);
-    camera->SetWanderngByActiveWeapon();
-    camera->SetFOV(m_fov);
+    float screenWidth = static_cast<float>(helper->m_screenWidth);
+    float screenHeight = static_cast<float>(helper->m_screenHeight);
+    helper->m_swerveGame->m_camera->SetViewPortWidthAndHeight(257.0f / screenWidth, 257.0f / screenHeight);
+    int positionX = m_positionX;
+    if (positionX >= 0) {
+        positionX >>= 12;
+    } else {
+        positionX = -((-positionX) >> 12);
+    }
+    float targetX = static_cast<float>(positionX) / screenWidth;
+    int positionY = m_positionY;
+    if (positionY >= 0) {
+        positionY >>= 12;
+    } else {
+        positionY = -((-positionY) >> 12);
+    }
+    float targetY = static_cast<float>(positionY) / screenHeight;
+    static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_camera->SetTargetPoint(targetX, targetY);
+    static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_camera->SetFOV(m_fov);
+    static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_camera->SetWanderngByActiveWeapon();
+    m_fov = previousFov;
+    static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_camera->SetFOV(previousFov);
 }
 
 void DGScopeCursor::DeInitImpl()

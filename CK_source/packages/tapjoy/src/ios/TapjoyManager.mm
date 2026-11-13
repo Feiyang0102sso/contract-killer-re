@@ -73,17 +73,15 @@ static const int kAdRetryTime = 15000;
         }
 
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(getFeaturedApp:) name:TJC_FEATURED_APP_RESPONSE_NOTIFICATION object:nil];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(featuredAppRequestFailed:) name:TJC_FEATURED_APP_RESPONSE_NOTIFICATION_ERROR object:nil];
+        // the original registers no handler for TJC_FEATURED_APP_RESPONSE_NOTIFICATION_ERROR
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(getUpdatePoints:) name:TJC_TAP_POINTS_RESPONSE_NOTIFICATION object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(getSpentPoints:) name:TJC_SPEND_TAP_POINTS_RESPONSE_NOTIFICATION object:nil];
 
         // display ad banner: created hidden on top of the key window's root view
         [TapjoyConnect getDisplayAdWithDelegate:self];
         m_adView = [[TapjoyConnect getDisplayAdView] retain];
-        NSArray* views = [[[UIApplication sharedApplication] keyWindow] subviews];
-        if ([views count] != 0 && m_adView != nil) {
-            [[views objectAtIndex:0] addSubview:m_adView];
-        }
+        // the original adds the banner to the first subview without checking the view count (kept)
+        [[[[[UIApplication sharedApplication] keyWindow] subviews] objectAtIndex:0] addSubview:m_adView];
         m_showBanner = 0;
         m_adState = AdState_Check;
         [m_adView setHidden:YES];
@@ -365,13 +363,6 @@ static const int kAdRetryTime = 15000;
 - (void)tjcWebViewOpen
 {
     m_tapjoyOpen = 1;
-}
-
-- (void)featuredAppRequestFailed:(NSNotification*)notification
-{
-    delete TapjoyInterface::m_pFeaturedAppInfo;
-    TapjoyInterface::m_pFeaturedAppInfo = NULL;
-    TapjoyInterface::m_FeaturedAppQueryInProgress = false;
 }
 
 - (void)tjcWebViewClosed:(NSNotification*)notification

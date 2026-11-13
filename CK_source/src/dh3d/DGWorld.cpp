@@ -2,6 +2,7 @@
 #include "DGWorld.h"
 
 #include "App.h"
+#include "CDH_Cheats.h"
 #include "CSwerve.h"
 #include "CSwerveGame.h"
 #include "CStdUtil_Cocoa.h"
@@ -32,18 +33,9 @@ void DGWorld::loadHitEffects()
     World dust = App::LoadObject3D("BIN_M3G_HIT_EFFECT_DUST");
     World water = App::LoadObject3D("BIN_M3G_HIT_EFFECT_WATER");
     World blast = App::LoadObject3D("BIN_M3G_HIT_EFFECT_BLAST");
-    if (ground != NULL) {
-        m_effectNodes[EFFECT_GROUND] = Node(ground.find(SwerveHelper::Id("rootTransform")));
-    }
-    if (dust != NULL) {
-        m_effectNodes[EFFECT_DUST] = Node(dust.find(SwerveHelper::Id("dummy_dustTransform")));
-    }
-    if (water != NULL) {
-        m_effectNodes[EFFECT_WATER] = Node(water.find(SwerveHelper::Id("rootTransform")));
-    }
-    if (blast != NULL) {
-        m_effectNodes[EFFECT_BLAST] = Node(blast.find(SwerveHelper::Id("dummy_blastTransform")));
-    }
+    m_effectNodes[EFFECT_GROUND] = Node(ground.find(SwerveHelper::Id("rootTransform")));
+    m_effectNodes[EFFECT_DUST] = Node(dust.find(SwerveHelper::Id("dummy_dustTransform")));
+    m_effectNodes[EFFECT_WATER] = Node(water.find(SwerveHelper::Id("rootTransform")));
     m_effectDurations[EFFECT_GROUND] = 0x683;
     m_effectDurations[EFFECT_DUST] = 600;
     m_effectDurations[EFFECT_WATER] = 0x683;
@@ -72,23 +64,34 @@ void DGWorld::update()
     int row = (int)camera->m_field0c + VISIBILITY_ANGLE_OFFSET;
     int rowStart = m_nodeCount * row;
     for (int index = 0; index < m_nodeCount; ++index) {
-        m_nodes[index].setRenderingEnable(m_visibility[rowStart + index] & 1);
+        bool visible = false;
+        if (m_visibility[rowStart + index] & 1) {
+            visible = CDH_Cheats::CHEAT_SHOW_TREES;
+        }
+        m_nodes[index].setRenderingEnable(visible);
     }
 }
 
 void DGWorld::shot(int x, int y)
 {
-    if (m_world == NULL || m_rayIntersection == NULL || m_effectNodes[EFFECT_DUST] == NULL) {
-        return;
-    }
     Camera camera = m_world.getActiveCamera();
-    if (camera == NULL) {
-        return;
-    }
     WindowApp* app = WindowApp::m_instance;
-    float relativeX = static_cast<float>(x) / app->m_screenWidth;
-    float relativeY = static_cast<float>(y) / app->m_screenHeight;
-    if (!m_world.pick(-1, relativeX, relativeY, camera, m_rayIntersection)) {
+    IQueryInterface* cameraHandle = camera.m_interface;
+    IQueryInterface* intersection = m_rayIntersection.m_interface;
+    int width = app->m_screenWidth;
+    int height = app->m_screenHeight;
+    QueryInterface::AddReference(intersection);
+    float relativeX = static_cast<float>(x) / width;
+    float relativeY = static_cast<float>(y) / height;
+    unsigned char hit;
+    typedef int (*Pick)(IQueryInterface*, int, float, float, IQueryInterface*, IQueryInterface*, unsigned char*);
+    CKMethod<Pick>(m_world.m_interface, 0xcc)(m_world.m_interface, -1, relativeX, relativeY,
+                                             cameraHandle, intersection, &hit);
+    unsigned char picked = hit;
+    if (intersection != NULL) {
+        intersection->Release();
+    }
+    if (picked == 0) {
         return;
     }
     float distance = m_rayIntersection.getDistance();
@@ -96,17 +99,23 @@ void DGWorld::shot(int x, int y)
         return;
     }
     m_rayIntersection.getRay(m_pickRay);
+    SwerveHelper::Transform transform = SwerveHelper::NewTransform();
+    transform.setIdentity();
     vec3 origin(m_pickRay[0], m_pickRay[1], m_pickRay[2]);
     vec3 direction(m_pickRay[3], m_pickRay[4], m_pickRay[5]);
     vec3 position = origin + direction * distance;
-    SwerveHelper::Transform transform = SwerveHelper::NewTransform();
-    transform.setIdentity();
     transform.postTranslate(&position.m_x);
-    float rotation[4] = {-MathLib::ArcTan(direction.m_y, direction.m_x), 0.0f, 0.0f, 1.0f};
+    float rotation[4] = {-MathLib::ArcTan(-m_pickRay[3], -m_pickRay[4]), 0.0f, 0.0f, 1.0f};
     transform.postRotate(rotation);
 
+    Node parent = m_rayIntersection.getIntersected().getParent();
+    parent.getUserID();
+    int surfaceType = -1;
+    static_cast<App*>(WindowApp::m_instance)->m_helper->getUserParameter(parent, "surfaceType", &surfaceType);
+
     // The CK shot path selects dust even when the picked mesh has a surfaceType parameter.
-    EffectInstance effect = { EFFECT_DUST, transform, 0 };
+    surfaceType = EFFECT_DUST;
+    EffectInstance effect = { surfaceType, transform, 0 };
     m_effects.addElement(effect);
 }
 
@@ -126,21 +135,6 @@ void DGWorld::paintHitEffects(Graphics3D& graphics)
             graphics.render(node, effect.m_transform);
         }
     }
-}
-
-void DGWorld::AddBlast(const vec3& position, const vec3& normal, float scale)
-{
-    if (m_effectNodes[EFFECT_BLAST] == NULL) {
-        return;
-    }
-    vec3 center = position + normal * 0.1f;
-    SwerveHelper::Transform transform = SwerveHelper::NewTransform();
-    transform.setIdentity();
-    transform.postTranslate(&center.m_x);
-    float dimensions[3] = {scale, scale, scale};
-    transform.postScale(dimensions);
-    EffectInstance effect = { EFFECT_BLAST, transform, 0 };
-    m_effects.addElement(effect);
 }
 
 typedef char AssertDGWorldSize[sizeof(DGWorld) == 0x70 ? 1 : -1];

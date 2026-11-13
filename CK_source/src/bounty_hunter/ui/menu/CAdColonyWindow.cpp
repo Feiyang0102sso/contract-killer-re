@@ -61,16 +61,6 @@ CAdColonyWindow::CAdColonyWindow(bool featuredInstall)
     static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(dialog);
 }
 
-void CAdColonyWindow::Shutdown()
-{
-    AdColony_Facade::cancelVideoCallback(this);
-    if (m_playing) {
-        AppSettings* settings = static_cast<App*>(WindowApp::m_instance)->m_settings;
-        settings->SetMusicEnabled(m_musicEnabled);
-        settings->SetSoundEnabled(m_soundEnabled);
-    }
-}
-
 void CAdColonyWindow::OnVideoEnded(bool completed, const char*)
 {
     if (!m_playing) {

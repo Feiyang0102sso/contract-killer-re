@@ -50,45 +50,57 @@ int CTextParser::Parse()
 {
     m_numLines = 0;
     m_lines.Clear();
-    if (m_font != NULL && m_text != NULL && m_width >= 1) {
-        int fitCount = 0;
-        int index = 0;
-        int length = wcslen(m_text);
+    if (m_font == NULL || m_text == NULL || m_width < 1) {
+        return 0;
+    }
+
+    int fitCount = 0;
+    int length = wcslen(m_text);
+    int index = 0;
+    for (;;) {
+        int lineStart = index;
+        unsigned int entry = (unsigned int)index << 16;
         int emptyLines = 0;
-        while (index < length) {
-            int tokenType = m_font->GetTokenType(m_text[index]);
+        for (;;) {
+            if (lineStart >= length) {
+                return 0;
+            }
+            int tokenType = m_font->GetTokenType(m_text[lineStart]);
             if (tokenType == CFont::TokenType_End) {
+                return 0;
+            }
+            if (tokenType != CFont::TokenType_NewLine) {
                 break;
             }
-            if (tokenType == CFont::TokenType_NewLine) {
-                // count the line feeds; the empty lines are added before the next text
-                emptyLines++;
-                index++;
-            } else {
-                while (emptyLines > 0) {
-                    int emptyLine = (index & 0xff) << 16;
-                    m_lines.Add(emptyLine);
-                    m_numLines++;
-                    emptyLines--;
-                }
-                int width = m_font->MeasureTextWidth(m_text + index, length - index, m_width, &fitCount);
-                fitCount = ParseLine(index, fitCount, width);
-                if (fitCount < 1) {
-                    break;
-                }
-                int line = (index << 16) | (fitCount & 0xffff);
-                m_lines.Add(line);
-                index += fitCount;
-                m_numLines++;
-                // a space or line feed ending the line is consumed with it
-                tokenType = m_font->GetTokenType(m_text[index]);
-                if (tokenType == CFont::TokenType_Space || tokenType == CFont::TokenType_NewLine) {
-                    index++;
-                }
+            lineStart++;
+            entry += 0x10000;
+            emptyLines++;
+        }
+
+        while (emptyLines > 0) {
+            int result = m_lines.Add(entry & 0xff0000);
+            if (result != 0) {
+                return result;
             }
+            m_numLines++;
+            emptyLines--;
+        }
+        int width = m_font->MeasureTextWidth(m_text + lineStart, length - lineStart, m_width, &fitCount);
+        fitCount = ParseLine(lineStart, fitCount, width);
+        if (fitCount < 1) {
+            return 0;
+        }
+        int result = m_lines.Add(entry | (fitCount & 0xffff));
+        if (result != 0) {
+            return result;
+        }
+        m_numLines++;
+        index = lineStart + fitCount;
+        int tokenType = m_font->GetTokenType(m_text[index]);
+        if (tokenType == CFont::TokenType_Space || tokenType == CFont::TokenType_NewLine) {
+            index++;
         }
     }
-    return 0;
 }
 
 int CTextParser::ParseLine(int start, int count, int measuredWidth)

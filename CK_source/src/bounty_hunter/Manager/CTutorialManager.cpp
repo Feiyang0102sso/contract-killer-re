@@ -366,7 +366,7 @@ bool CTutorialManager::IsShopCloseBlink()
     }
 }
 
-bool CTutorialManager::IsNetworkCloseBlink()
+int CTutorialManager::IsNetworkCloseBlink()
 {
     return TutorialStep() == BackToMap;
 }
@@ -376,7 +376,7 @@ bool CTutorialManager::IsWeaponChoiceCloseBlink()
     return TutorialStep() == BackToMap;
 }
 
-bool CTutorialManager::IsWeaponChoicePressBlink()
+int CTutorialManager::IsWeaponChoicePressBlink()
 {
     return (unsigned int)(TutorialStep() - OpenWeaponChoice) < 2;
 }
@@ -386,12 +386,12 @@ bool CTutorialManager::IsAvatarChoiceCloseBlink()
     return TutorialStep() == OpenWeaponChoice;
 }
 
-bool CTutorialManager::IsAvatarChoicePressBlink()
+int CTutorialManager::IsAvatarChoicePressBlink()
 {
     return TutorialStep() == CustomizeAvatar;
 }
 
-bool CTutorialManager::IsMissionInformantBlink(int)
+int CTutorialManager::IsMissionInformantBlink(int)
 {
     return TutorialStep() == FirstMap;
 }
@@ -409,12 +409,12 @@ bool CTutorialManager::IsMapShopBlink()
     return false;
 }
 
-bool CTutorialManager::IsMapNetworkBlink()
+int CTutorialManager::IsMapNetworkBlink()
 {
     return TutorialStep() == GoHome;
 }
 
-bool CTutorialManager::IsAmmoBlink(int)
+int CTutorialManager::IsAmmoBlink(int)
 {
     return TutorialStep() == BuyBullets;
 }

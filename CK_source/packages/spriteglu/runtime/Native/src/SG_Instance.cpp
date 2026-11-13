@@ -21,7 +21,6 @@ SG_Instance::SG_Instance()
 {
     m_unused40 = 0;
     m_surfaceCount = 0;
-    m_paletteCount = 0;
     m_tintCount = 0;
     m_tints = NULL;
     m_imagespriteCount = 0;
@@ -43,16 +42,11 @@ SG_Instance::~SG_Instance()
 
 void SG_Instance::Destroy()
 {
-    if (m_archetypes != NULL) {
-        DumpAllImages();
-        DumpAllArchetypes();
+    if (m_archetypes == NULL) {
+        return;
     }
-    delete m_queue.m_spritesToLoad;
-    m_queue.m_spritesToLoad = NULL;
-    m_queue.m_state = ResourceQueue::State_Idle;
-    m_queue.m_archetypes.Clear();
-    m_queue.m_characters.Clear();
-    m_queue.m_scales.Clear();
+    DumpAllImages();
+    DumpAllArchetypes();
     if (m_archetypes != NULL) {
         delete[] m_archetypes;
         m_archetypes = NULL;
@@ -65,25 +59,18 @@ void SG_Instance::Destroy()
         delete[] m_tints;
         m_tints = NULL;
     }
-    if (m_paletteCount != 0) {
-        ICResourceManager* manager = ICResourceManager::GetInstance();
-        ICResourceManager::CConsecutiveResourceIdItr* iterator =
-            manager->CreateAndInitConsecutiveResourceIdItr(m_paletteName, m_paletteCount);
-        if (iterator != NULL) {
-            for (int palette = 0; palette < m_paletteCount; palette++) {
-                const char* name = iterator->GetName();
-                if (name != NULL) {
-                    manager->ReleaseResource(name);
-                }
-                (*iterator)++;
-            }
-            delete iterator;
-        }
-        m_paletteCount = 0;
-    }
     if (m_imagesprites != NULL) {
         delete[] m_imagesprites;
         m_imagesprites = NULL;
+    }
+    if (m_paletteCount != 0) {
+        ICResourceManager::CConsecutiveResourceIdItr* iterator =
+            ICResourceManager::GetInstance()->CreateAndInitConsecutiveResourceIdItr(m_paletteName, m_paletteCount);
+        for (int palette = 0; palette < m_paletteCount; palette++) {
+            ICResourceManager::GetInstance()->ReleaseResource(iterator->GetName());
+            (*iterator)++;
+        }
+        delete iterator;
     }
     if (m_spriteStates != NULL) {
         delete[] m_spriteStates;
@@ -106,6 +93,7 @@ void SG_Instance::Init(char* name)
         return;
     }
 
+    ICResourceManager* manager = ICResourceManager::GetInstance();
     // resource names: "<NAME>_SPRITEGLU__..." or "SPRITEGLU__...", upper case
     CStrChar prefix;
     prefix.ReleaseMemory();
@@ -116,47 +104,28 @@ void SG_Instance::Init(char* name)
         prefix.Concatenate(NAMED_PREFIX_SUFFIX);
     }
     for (char* character = prefix.m_string; *character != 0; character++) {
-        *character = toupper((unsigned char)*character);
+        *character = toupper(*character);
     }
     m_globalResource = prefix + "BINARY_GLOBAL";
     m_globalName = m_globalResource.m_string;
     m_archetypeResource = prefix + "BINARY_ARCHETYPE_000";
     m_archetypeName = m_archetypeResource.m_string;
+    m_paletteResource = prefix + "PALETTE_00000";
+    m_paletteName = m_paletteResource.m_string;
     m_surfaceResource = prefix + "SURFACE_00000";
     m_surfaceName = m_surfaceResource.m_string;
 
-    m_paletteResource = prefix + "PALETTE_00000";
-    m_paletteName = m_paletteResource.m_string;
-
     DataInputStream stream(m_globalName);
-    if (stream.m_error) {
-        return;
-    }
-    unsigned char paletteCount = stream.ReadUInt8();
-    if (paletteCount != 0) {
-        ICResourceManager* manager = ICResourceManager::GetInstance();
+    m_paletteCount = stream.ReadUInt8();
+    if (m_paletteCount != 0) {
         ICResourceManager::CConsecutiveResourceIdItr* iterator =
-            manager->CreateAndInitConsecutiveResourceIdItr(m_paletteName, paletteCount);
-        if (iterator == NULL) {
-            return;
-        }
-        for (; m_paletteCount < paletteCount; m_paletteCount++) {
+            manager->CreateAndInitConsecutiveResourceIdItr(m_paletteName, m_paletteCount);
+        for (int paletteIndex = 0; paletteIndex < m_paletteCount; paletteIndex++) {
             CResource* palette = NULL;
-            const char* name = iterator->GetName();
-            if (name == NULL) {
-                break;
-            }
-            manager->CreateResource(name, &palette);
-            if (palette == NULL) {
-                break;
-            }
+            manager->CreateResource(iterator->GetName(), &palette);
             (*iterator)++;
         }
         delete iterator;
-        if (m_paletteCount != paletteCount) {
-            Destroy();
-            return;
-        }
     }
 
     m_surfaceCount = stream.ReadUInt16();
@@ -174,11 +143,6 @@ void SG_Instance::Init(char* name)
         m_spriteStates = new unsigned short[m_imagespriteCount * SPRITE_STATES_PER_SPRITE];
         for (unsigned short sprite = 0; sprite < m_imagespriteCount; sprite++) {
             m_imagesprites[sprite].Load(stream);
-            if (m_imagesprites[sprite].m_tint >= m_tintCount ||
-                m_imagesprites[sprite].m_transform >= SPRITE_STATES_PER_SPRITE) {
-                Destroy();
-                return;
-            }
             for (unsigned short state = 0; state < SPRITE_STATES_PER_SPRITE; state++) {
                 m_spriteStates[sprite * SPRITE_STATES_PER_SPRITE + state] = 0;
             }
@@ -204,10 +168,6 @@ void SG_Instance::Init(char* name)
 
     // archetypes are loaded on demand
     m_archetypeCount = stream.ReadUInt8();
-    if (stream.m_error) {
-        Destroy();
-        return;
-    }
     m_archetypes = new SG_Archetype*[m_archetypeCount];
     memset(m_archetypes, 0, m_archetypeCount * sizeof(SG_Archetype*));
 
@@ -291,7 +251,9 @@ unsigned char ResourceQueue::LoadQueued(unsigned int timeBudget, unsigned char& 
         int character;
         archetypes.Remove(archetypes.Size() - 1, archetype);
         characters.Remove(characters.Size() - 1, character);
-        scaleLists.RemoveAt(scaleLists.Size() - 1);
+        // The original removes the last list by copying its empty tail, then decreasing the size.
+        scaleLists.CopyInto(&scaleLists[scaleLists.Size() - 1], 0, scaleLists.Size());
+        scaleLists.m_size--;
         if (!m_owner->LoadArchetypeCharacter(archetype, character, scales)) {
             result = 0;
             finished = 0;
@@ -323,11 +285,10 @@ void SG_Instance::QueueArchetypeCharacter(int archetype, int character)
 void SG_Instance::QueueArchetypeCharacter(int archetype, int character, unsigned short* scales,
                                           unsigned short scaleCount)
 {
-    if (m_archetypes == NULL || archetype < 0 || archetype >= m_archetypeCount ||
-        character < 0 || character > 255 || IsLoadedArchetypeCharacter(archetype, character)) {
-        return;
+    SG_Archetype* loaded = m_archetypes[(unsigned char)archetype];
+    if (loaded == NULL || !loaded->m_characters[character].m_loaded) {
+        m_queue.QueueArchetypeCharacter(archetype, character, scales, scaleCount);
     }
-    m_queue.QueueArchetypeCharacter(archetype, character, scales, scaleCount);
 }
 
 unsigned char ResourceQueue::QueueArchetypeCharacter(unsigned char archetype, unsigned char character,
@@ -362,10 +323,6 @@ unsigned char ResourceQueue::QueueArchetypeCharacter(unsigned char archetype, un
 
 void SG_Instance::DumpArchetypeCharacter(int archetype, int character)
 {
-    if (m_archetypes == NULL || archetype < 0 || archetype >= m_archetypeCount ||
-        character < 0 || character > 255) {
-        return;
-    }
     unsigned char archetypeIndex = archetype;
     SG_Archetype* loaded = m_archetypes[archetypeIndex];
     if (loaded == NULL) {
@@ -386,9 +343,6 @@ void SG_Instance::DumpArchetypeCharacter(int archetype, int character)
 unsigned char SG_Instance::DumpCharacter(unsigned char archetype, unsigned char character)
 {
     SG_Archetype* loaded = m_archetypes[archetype];
-    if (loaded == NULL || character >= loaded->m_characterCount) {
-        return 0;
-    }
     SG_Character& dumped = loaded->m_characters[character];
     if (!dumped.m_loaded) {
         return 0;
@@ -399,11 +353,9 @@ unsigned char SG_Instance::DumpCharacter(unsigned char archetype, unsigned char 
             SG_Imagesprite& imagesprite = GetImagesprite(sprite);
             SG_Image& image = m_tints[imagesprite.m_tint];
             unsigned char transform = imagesprite.m_transform;
-            unsigned short& uses = m_spriteStates[sprite * SPRITE_STATES_PER_SPRITE + transform];
-            uses--;
-            if (uses == 0) {
-                m_queue.m_spritesToLoad->SetMember(sprite, 0);
-                if (image.IsTransformLoaded(transform)) {
+            if (image.IsTransformLoaded(transform)) {
+                m_spriteStates[sprite * SPRITE_STATES_PER_SPRITE + transform]--;
+                if (m_spriteStates[sprite * SPRITE_STATES_PER_SPRITE + transform] == 0) {
                     image.DumpTransform(transform);
                 }
             }
@@ -478,7 +430,7 @@ unsigned char SG_Instance::IsCollisionSprite(int sprite)
 unsigned char SG_Instance::LoadArchetypeCharacter(unsigned char archetype, unsigned char character,
                                                   TCVector<unsigned short> scales)
 {
-    if (!LoadArchetype(archetype) || character >= m_archetypes[archetype]->m_characterCount) {
+    if (!LoadArchetype(archetype)) {
         return 0;
     }
     LoadCharacter(archetype, character, scales);
@@ -487,38 +439,27 @@ unsigned char SG_Instance::LoadArchetypeCharacter(unsigned char archetype, unsig
 
 unsigned char SG_Instance::LoadArchetype(unsigned char archetype)
 {
-    if (m_archetypes == NULL || archetype >= m_archetypeCount) {
-        return 0;
-    }
     if (m_archetypes[archetype] != NULL) {
         return 1;
     }
+    m_archetypes[archetype] = new SG_Archetype();
+    SG_Archetype* loaded = m_archetypes[archetype];
     // archetype resources follow each other after the first one
-    ICResourceManager* manager = (ICResourceManager*)CApplet::m_pApp->m_resourceManager;
+    ICResourceManager* manager = ICResourceManager::GetInstance();
     ICResourceManager::CConsecutiveResourceIdItr* iterator =
         manager->CreateAndInitConsecutiveResourceIdItr(m_archetypeName, m_archetypeCount);
-    if (iterator == NULL) {
-        return 0;
-    }
     const char* name =
         iterator->Seek(ICResourceManager::CConsecutiveResourceIdItr::SeekFrom_Current, archetype).GetName();
-    unsigned char result = 0;
-    if (name != NULL) {
-        DataInputStream stream(name);
-        if (!stream.m_error) {
-            SG_Archetype* loaded = new SG_Archetype();
-            if (loaded->LoadLayers(stream) && loaded->LoadAnimations(stream) &&
-                loaded->LoadCharacters(stream, m_imagespriteCount)) {
-                m_archetypes[archetype] = loaded;
-                result = 1;
-            } else {
-                delete loaded;
-            }
-            stream.Close();
-        }
-    }
+    DataInputStream stream(name);
     delete iterator;
-    return result;
+    if (stream.m_error) {
+        return 0;
+    }
+    loaded->LoadLayers(stream);
+    loaded->LoadAnimations(stream);
+    loaded->LoadCharacters(stream, m_imagespriteCount);
+    stream.Close();
+    return 1;
 }
 
 void SG_Instance::LoadCharacter(unsigned char archetype, unsigned char character, TCVector<unsigned short> scales)
@@ -620,16 +561,11 @@ void SG_Instance::drawAccumulate(int x, int y, unsigned int width, unsigned int 
         info.m_flip = 0;
         unsigned char scaled = 0;
         SG_Image& tint = m_tints[imagesprite.m_tint];
-        if (tint.LoadTransformRequiresRawImage(transform)) {
-            return;
-        }
         tint.GetSrcImageAndRenderInfo(transform, image, info, scalePercent, scaled);
-        if (image != NULL) {
-            if (scaled) {
-                scale = FIXED_ONE;
-            }
-            m_graphics.DrawRegion(image, info, x, y, scale, NULL, width, height, rotation, scaleX, scaleY);
+        if (scaled) {
+            scale = FIXED_ONE;
         }
+        m_graphics.DrawRegion(image, info, x, y, scale, NULL, width, height, rotation, scaleX, scaleY);
     } else {
         SG_Rectsprite& rectsprite = m_rectsprites[sprite - m_imagespriteCount];
         if (rectsprite.m_color == -1) {
@@ -693,18 +629,10 @@ void SG_Instance::boundsAccumulate(int x, int y, int width, int height, int rota
     if (scaleX != FIXED_ONE || scaleY != FIXED_ONE || rotation != 0) {
         translateRect(x, y, width, height, rotation, scaleX, scaleY);
     }
-    if (m_boundsMinX > x) {
-        m_boundsMinX = x;
-    }
-    if (m_boundsMaxX < x + width) {
-        m_boundsMaxX = x + width;
-    }
-    if (m_boundsMinY > y) {
-        m_boundsMinY = y;
-    }
-    if (m_boundsMaxY < y + height) {
-        m_boundsMaxY = y + height;
-    }
+    m_boundsMinX = x < m_boundsMinX ? x : m_boundsMinX;
+    m_boundsMaxX = x + width > m_boundsMaxX ? x + width : m_boundsMaxX;
+    m_boundsMinY = y < m_boundsMinY ? y : m_boundsMinY;
+    m_boundsMaxY = y + height > m_boundsMaxY ? y + height : m_boundsMaxY;
 }
 
 void SG_Instance::boundsResolve(CRectangle& bounds, SG_Presenter& presenter)
@@ -772,28 +700,18 @@ unsigned char ResourceQueue::LoadQueuedSprites(unsigned int timeBudget, unsigned
             unsigned char transform = imagesprite.m_transform;
             SG_SrcImage* source = NULL;
             if (image.LoadTransformRequiresRawImage(transform)) {
-                ICResourceManager* manager = ICResourceManager::GetInstance();
-                ICResourceManager::CConsecutiveResourceIdItr* iterator =
-                    manager->CreateAndInitConsecutiveResourceIdItr(m_owner->m_surfaceName, m_owner->m_tintCount * 2);
-                CResource* resource = NULL;
-                if (iterator != NULL) {
-                    int index = imagesprite.m_tint * 2 + (transform > 3);
-                    const char* name =
-                        iterator->Seek(ICResourceManager::CConsecutiveResourceIdItr::SeekFrom_Current,
-                                       index).GetName();
-                    if (name != NULL) {
-                        manager->CreateResource(name, &resource);
-                    }
-                    delete iterator;
-                }
-                if (resource == NULL) {
-                    finished = 0;
-                    m_spriteLoadTimeMs += CStdUtil_Cocoa::GetUpTimeMS() - start;
-                    return 1;
-                }
                 source = new SG_SrcImage();
-                source->SetSurface((ICRenderSurface*)resource->GetData(), resource->m_name);
                 m_progress.m_loaded++;
+                ICResourceManager::CConsecutiveResourceIdItr* iterator =
+                    ICResourceManager::GetInstance()->CreateAndInitConsecutiveResourceIdItr(m_owner->m_surfaceName,
+                                                                                            m_owner->m_tintCount * 2);
+                int index = (imagesprite.m_tint << 1) | (transform > 3);
+                const char* name =
+                    iterator->Seek(ICResourceManager::CConsecutiveResourceIdItr::SeekFrom_Current, index).GetName();
+                delete iterator;
+                CResource* resource = NULL;
+                ICResourceManager::GetInstance()->CreateResource(name, &resource);
+                source->SetSurface((ICRenderSurface*)resource->GetData(), name);
             }
             if (!image.LoadTransform(transform, source)) {
                 m_progress.m_alreadyLoaded++;

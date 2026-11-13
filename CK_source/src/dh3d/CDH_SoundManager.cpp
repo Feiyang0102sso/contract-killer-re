@@ -86,7 +86,7 @@ void CDH_SoundManager::RemoveFromPlayingSounds(const char* name)
     }
 }
 
-bool CDH_SoundManager::IsPaused(const char* name)
+unsigned char CDH_SoundManager::IsPaused(const char* name)
 {
     SSound* sound = GetFromPlayingSounds(name, 0);
     if (sound != NULL) {
@@ -107,15 +107,12 @@ CDH_SoundManager::SSound* CDH_SoundManager::GetFromPlayingSounds(const char* nam
 
 void CDH_SoundManager::PlayRandomSound(const char* keySet, bool exclusive)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_KeySet* keys = static_cast<CDH_KeySet*>(app->m_resourceManager->getResourceData(keySet, false));
-    if (keys != NULL) {
-        if (keys->m_count != 0) {
-            int index = CRandGen::GetInstance()->GetRandRange(0, keys->m_count - 1);
-            Play(keys->GetKey(index), false, false, exclusive);
-        }
-        app->m_resourceManager->releaseResource(keySet);
-    }
+    CDH_KeySet* keys = static_cast<CDH_KeySet*>(
+        static_cast<App*>(WindowApp::m_instance)->m_resourceManager->getResourceData(keySet, false));
+    CRandGen* random = CRandGen::GetInstance();
+    int index = random->GetRandRange(0, keys->m_count - 1);
+    Play(keys->GetKey(index), false, false, exclusive);
+    static_cast<App*>(WindowApp::m_instance)->m_resourceManager->releaseResource(keySet);
 }
 
 void CDH_SoundManager::PlaySound(const char* name, bool loop, bool exclusive)
@@ -139,61 +136,47 @@ void CDH_SoundManager::PrecacheSound(const char* name)
 
 CDH_SoundManager::SSound* CDH_SoundManager::PrecacheAndGetSound(const char* name)
 {
-    if (name == NULL) {
-        return NULL;
+    // A keyset owns its strings; the original cache uses the caller's pointer as the key.
+    SSound** cached = m_sounds.Get(HashTableKey<const char*>(name));
+    SSound* sound;
+    if (cached == NULL) {
+        sound = CreateSound(name);
+        cached = &sound;
+        m_sounds.Add(HashTableKey<const char*>(name), *cached);
     }
-    // A keyset owns its strings. Use the sound resource's stable name as the cache key.
-    CResource* resource = NULL;
-    CApplet::m_pApp->m_resourceManager->GetResource(name, &resource);
-    if (resource != NULL) {
-        SSound** cached = m_sounds.Get(HashTableKey<const char*>(resource->m_name));
-        if (cached != NULL) {
-            return *cached;
-        }
-    }
-    SSound* sound = CreateSound(name);
-    if (sound != NULL) {
-        m_sounds.Add(HashTableKey<const char*>(sound->m_name), sound);
-    }
-    return sound;
+    return *cached;
 }
 
 void CDH_SoundManager::PrecacheKeyset(const char* keySet)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_KeySet* keys = static_cast<CDH_KeySet*>(app->m_resourceManager->getResourceData(keySet, false));
+    CDH_KeySet* keys = static_cast<CDH_KeySet*>(
+        static_cast<App*>(WindowApp::m_instance)->m_resourceManager->getResourceData(keySet, false));
     if (keys != NULL) {
-        unsigned int count = keys->m_count;
-        for (unsigned int index = 0; index < count; ++index) {
+        int count = keys->m_count;
+        for (int index = 0; index < count; ++index) {
             PrecacheAndGetSound(keys->GetKey(index));
         }
-        app->m_resourceManager->releaseResource(keySet);
+        static_cast<App*>(WindowApp::m_instance)->m_resourceManager->releaseResource(keySet);
     }
 }
 
 CDH_SoundManager::SSound* CDH_SoundManager::CreateSound(const char* name)
 {
-    CResource* resource = NULL;
-    CResourceManager* resources = CApplet::m_pApp->m_resourceManager;
-    if (name == NULL) {
-        return NULL;
-    }
-    resources->CreateResource(name, &resource);
-    if (resource == NULL) {
-        return NULL;
-    }
     SSound* sound = new SSound;
-    sound->m_name = resource->m_name;
+    sound->m_name = NULL;
+    CResource* resource = NULL;
+    CApplet::m_pApp->m_resourceManager->CreateResource(name, &resource);
+    CMedia* media = static_cast<CMedia*>(resource->GetData());
+    sound->m_name = name;
     sound->m_eventId = 0;
-    sound->m_media = static_cast<CMedia*>(resource->GetData());
-    sound->m_music = false;
+    sound->m_media = media;
     return sound;
 }
 
 void CDH_SoundManager::Play(const char* name, bool loop, bool music, bool exclusive)
 {
     ICMediaPlayer* player = ICMediaPlayer::GetInstance();
-    if (name == NULL || !player->GetSoundEnabled()) {
+    if (!player->GetSoundEnabled()) {
         return;
     }
     AppSettings* settings = static_cast<App*>(WindowApp::m_instance)->m_settings;
@@ -208,12 +191,10 @@ void CDH_SoundManager::Play(const char* name, bool loop, bool music, bool exclus
         return;
     }
     SSound* sound = PrecacheAndGetSound(name);
-    if (sound != NULL) {
-        sound->m_music = music;
-        sound->m_eventId = ICMediaPlayer::GetInstance()->Play(sound->m_media, loop, 0);
-        if (m_playing.indexOf(sound) == -1) {
-            m_playing.addElement(sound);
-        }
+    sound->m_music = music;
+    sound->m_eventId = ICMediaPlayer::GetInstance()->Play(sound->m_media, loop, 0);
+    if (m_playing.indexOf(sound) == -1) {
+        m_playing.addElement(sound);
     }
 }
 

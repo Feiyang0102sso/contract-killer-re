@@ -24,9 +24,6 @@ public:
     /** Make the window the render target of the device (both the HAL and its GLES device). */
     virtual void Bind();
 
-    unsigned char InitializeFrameBuffer();
-    void DestroyFrameBuffer();
-
     void* m_context;                                // 0x30 EAGLContext the surface presents with
     unsigned int m_framebuffer;                     // 0x34
     unsigned int m_colorRenderbuffer;               // 0x38 backed by the layer

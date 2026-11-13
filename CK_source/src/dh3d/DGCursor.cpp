@@ -86,23 +86,22 @@ void DGCursor::Hide()
 
 void DGCursor::PointerPressed(int x, int y)
 {
-    if (m_visible) {
+    if (m_visible && !static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->IsIntroTime()) {
         onPointerPressed(x, y);
     }
 }
 
 void DGCursor::PointerReleased()
 {
-    if (m_visible) {
+    if (m_visible && !static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->IsIntroTime()) {
         onPointerReleased();
     }
 }
 
 void DGCursor::Fire()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CSwerveGame* game = app->m_helper->m_swerveGame;
-    if (!game->m_player->IsInHide() && !game->IsIntroTime() && m_visible) {
+    if (!static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_player->IsInHide()
+        && !static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->IsIntroTime() && m_visible) {
         onFire();
     }
 }

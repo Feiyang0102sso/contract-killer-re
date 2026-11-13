@@ -27,6 +27,7 @@
 #include "CMath.h"
 #include "CFontMgr.h"
 #include "CImageButton.h"
+#include "CSwerve.h"
 #include "DGHelper.h"
 #include "dgCamera.h"
 #include "ICRenderSurface.h"
@@ -497,31 +498,39 @@ void GamePlayHUD::CleanWeaponImage()
 void GamePlayHUD::UpdateHUDsVisibility()
 {
     if (m_pauseButton != NULL) {
-        if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
-            m_pauseButton->SetFlags(FLAG_VISIBLE);
+        const bool visible = static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f;
+        const int visibleFlag = FLAG_VISIBLE;
+        if (visible) {
+            m_pauseButton->SetFlags(visibleFlag);
         } else {
-            m_pauseButton->ClearFlags(FLAG_VISIBLE);
+            m_pauseButton->ClearFlags(visibleFlag);
         }
     }
     if (m_healthBar != NULL) {
-        if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
-            m_healthBar->SetFlags(FLAG_VISIBLE);
+        const bool visible = static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f;
+        const int visibleFlag = FLAG_VISIBLE;
+        if (visible) {
+            m_healthBar->SetFlags(visibleFlag);
         } else {
-            m_healthBar->ClearFlags(FLAG_VISIBLE);
+            m_healthBar->ClearFlags(visibleFlag);
         }
     }
     if (m_armorBar != NULL) {
-        if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
-            m_armorBar->SetFlags(FLAG_VISIBLE);
+        const bool visible = static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f;
+        const int visibleFlag = FLAG_VISIBLE;
+        if (visible) {
+            m_armorBar->SetFlags(visibleFlag);
         } else {
-            m_armorBar->ClearFlags(FLAG_VISIBLE);
+            m_armorBar->ClearFlags(visibleFlag);
         }
     }
     if (m_missionTimer != NULL) {
-        if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
-            m_missionTimer->SetFlags(FLAG_VISIBLE);
+        const bool visible = static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f;
+        const int visibleFlag = FLAG_VISIBLE;
+        if (visible) {
+            m_missionTimer->SetFlags(visibleFlag);
         } else {
-            m_missionTimer->ClearFlags(FLAG_VISIBLE);
+            m_missionTimer->ClearFlags(visibleFlag);
         }
     }
     if (m_multiplierBar != NULL) {
@@ -532,17 +541,21 @@ void GamePlayHUD::UpdateHUDsVisibility()
         }
     }
     if (m_ingameShop != NULL) {
-        if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
-            m_ingameShop->SetFlags(FLAG_VISIBLE);
+        const bool visible = static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f;
+        const int visibleFlag = FLAG_VISIBLE;
+        if (visible) {
+            m_ingameShop->SetFlags(visibleFlag);
         } else {
-            m_ingameShop->ClearFlags(FLAG_VISIBLE);
+            m_ingameShop->ClearFlags(visibleFlag);
         }
     }
     if (m_experienceHud != NULL) {
-        if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
-            m_experienceHud->SetFlags(FLAG_VISIBLE);
+        const bool visible = static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f;
+        const int visibleFlag = FLAG_VISIBLE;
+        if (visible) {
+            m_experienceHud->SetFlags(visibleFlag);
         } else {
-            m_experienceHud->ClearFlags(FLAG_VISIBLE);
+            m_experienceHud->ClearFlags(visibleFlag);
         }
     }
 }
@@ -888,11 +901,16 @@ void GamePlayHUD::DrawSteadyButton()
     unsigned int width;
     unsigned int height;
     m_steadyOn->GetWidthAndHeight(width, height);
-    CRectangle& bounds = m_steadyArea.m_bounds;
-    unsigned int fill = width * m_steadyRemainingMs / m_steadyLimitMs;
+    unsigned int imageWidth = width;
+    int left = m_steadyArea.m_bounds.m_x;
+    int top = m_steadyArea.m_bounds.m_y;
+    int boundsHeight = m_steadyArea.m_bounds.m_height;
+    int boundsWidth = m_steadyArea.m_bounds.m_width;
+    unsigned int fill = imageWidth * m_steadyRemainingMs / m_steadyLimitMs;
+    unsigned int imageHeight = height;
     ICGraphics2d* graphics = ICGraphics2d::GetInstance();
-    int x = bounds.m_x - (width >> 1) + (bounds.m_width >> 1);
-    int y = bounds.m_y - (height >> 1) + (bounds.m_height >> 1);
+    int x = left - (imageWidth >> 1) + (boundsWidth >> 1);
+    int y = top - (imageHeight >> 1) + (boundsHeight >> 1);
     CRectangle clip = graphics->GetClip();
     graphics->SetClip(width + x - fill, y, fill, height);
     static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(m_steadyOn, x, y, 1.0f, 0, 0, 0.0f, 0);
@@ -1078,8 +1096,12 @@ void GamePlayHUD::WoundingWindow::StartEffect(float angle)
 {
     if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
         m_remainingMs = 667;
-        SwerveHelper::Transform rotation = SwerveHelper::NewTransform();
-        const float angleAxis[4] = { angle, 0.0f, 0.0f, 1.0f };
+        SwerveHelper::Transform rotation(CSwerve::GetInstance()->m_swerve);
+        float angleAxis[4];
+        angleAxis[0] = angle;
+        angleAxis[1] = 0.0f;
+        angleAxis[2] = 0.0f;
+        angleAxis[3] = 1.0f;
         rotation.postRotate(angleAxis);
         m_arrow.setTransform(rotation);
     }
@@ -1331,19 +1353,25 @@ int GamePlayHUD::PointerPressed(int x, int y, int pointer)
         CSwerveGame::m_pInstance->AddStunTimerMS(10000);
         return 5;
     }
-    if (m_reloadTouchArea.checkCollision(x, y)) {
-        CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
-        if (weapon != NULL) {
-            const CAmmo* ammo = weapon->GetActiveAmmo();
-            if (ammo != NULL && CBH_Player::GetInstance()->GetAvailableAmmo(ammo, true) != 0xfffffff) {
-                int clip = weapon->m_ammo;
-                int available = CBH_Player::GetInstance()->GetAvailableAmmo(weapon->GetActiveAmmo(), true);
-                int clipSize = weapon->m_clipSize;
-                if (weapon->IsReadyForUse() && !weapon->IsReloading() && clip < available && clip < clipSize) {
+    if (!m_reloadTouchArea.checkCollision(x, y)) {
+        return -1;
+    }
+    if (CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()) {
+        const CAmmo* ammo = weapon->GetActiveAmmo();
+        if (ammo != NULL && CBH_Player::GetInstance()->GetAvailableAmmo(ammo, true) != 0xfffffff) {
+            int clip = weapon->m_ammo;
+            CBH_Player* player = CBH_Player::GetInstance();
+            int available = player->GetAvailableAmmo(weapon->GetActiveAmmo(), true);
+            int clipSize = weapon->m_clipSize;
+            if (weapon->IsReadyForUse()) {
+                if (weapon->IsReloading()) {
+                    return 1;
+                }
+                if (clip < available && clip < clipSize) {
                     weapon->CheckForReload(true);
                 }
-                return 1;
             }
+            return 1;
         }
     }
     return -1;
@@ -1459,10 +1487,11 @@ void GamePlayHUD::SetDockCoverButtonVisibility(bool hide)
 {
     if (m_coverButton != NULL) {
         // the original only toggles visibility
-        if (hide) {
-            m_coverButton->ClearFlags(FLAG_VISIBLE);
+        const unsigned int visibleFlag = FLAG_VISIBLE;
+        if (!hide) {
+            m_coverButton->SetFlags(visibleFlag);
         } else {
-            m_coverButton->SetFlags(FLAG_VISIBLE);
+            m_coverButton->ClearFlags(visibleFlag);
         }
     }
 }
@@ -1499,11 +1528,12 @@ int GamePlayHUD::GetActiveWeaponIndex()
 void GamePlayHUD::SetEnabled(bool enabled)
 {
     m_inputEnabled = enabled;
+    const unsigned int enabledFlag = FLAG_ENABLED;
     if (enabled) {
-        SetFlags(FLAG_ENABLED);
+        SetFlags(enabledFlag);
         SetFlags(FLAG_EVENTS_TO_CHILDREN);
     } else {
-        ClearFlags(FLAG_ENABLED);
+        ClearFlags(enabledFlag);
         ClearFlags(FLAG_EVENTS_TO_CHILDREN);
     }
 }

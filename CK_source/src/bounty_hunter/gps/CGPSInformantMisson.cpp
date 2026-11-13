@@ -39,9 +39,10 @@ void CGPSMissionInformant::ParseInfo(TiXmlNode* node)
     XString image = CXmlHelper::GetAttributeValue(node, "image");
     m_cameraImage = CXmlHelper::GetAttributeValue(node, "imageCamera");
     SetImage(XString::AnsiString(image.c_str()));
-    SetPos(CXmlHelper::GetAttributeValue(node, "posX").ToInt(),
-           CXmlHelper::GetAttributeValue(node, "posY").ToInt());
-    m_startText = CXmlHelper::GetAttributeValueOptional(node, "start_text");
+    int x = CXmlHelper::GetAttributeValue(node, "posX").ToInt();
+    int y = CXmlHelper::GetAttributeValue(node, "posY").ToInt();
+    SetPos(x, y);
+    m_startText = CXmlHelper::GetAttributeValue(node, "start_text");
 }
 
 void CGPSMissionInformant::SetListener(IGPSMissionInformantListener* listener)
@@ -88,7 +89,8 @@ void CGPSMissionInformant::SetBlinking(bool blinking)
 void CGPSMissionInformant::Update(long)
 {
     if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
-        SetBlinking(static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsMissionInformantBlink(m_id));
+        bool enabled = static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsMissionInformantBlink(m_id) == 1;
+        SetBlinking(enabled);
     }
 }
 

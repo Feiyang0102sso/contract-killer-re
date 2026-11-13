@@ -25,19 +25,13 @@ void CDailyDealManager::ParseConfig()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     char* config = app->InitResMap()->loadText(XString(L"res/common/configs/daily_deal.xml"));
-    if (config == NULL) {
-        return;
-    }
     TiXmlDocument document;
     document.Parse(config);
     delete[] config;
-    TiXmlElement* list = document.FirstChildElement("daily_deals");
-    if (list == NULL) {
-        return;
-    }
+    TiXmlNode* list = document.FirstChild("daily_deals");
     for (TiXmlElement* element = list->FirstChildElement("deal"); element != NULL;
          element = element->NextSiblingElement("deal")) {
-        SDailyDeal* deal = new SDailyDeal;
+        SDailyDeal* deal = new SDailyDeal();
         deal->m_itemType = CXmlHelper::GetAttributeValue(element, "itemType");
         deal->m_itemId = CXmlHelper::GetAttributeValue(element, "itemId").ToInt();
         deal->m_priceCredits = CXmlHelper::GetAttributeValue(element, "newPrice").ToInt();

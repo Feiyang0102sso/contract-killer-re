@@ -22,36 +22,48 @@
 CGPSBounty::CGPSBounty(CGPSHauntCamera* camera, int type, const CGPSInstantInformant* informant)
     : CGPSHuntingItem(camera), m_bountyType(type), m_messageType(BountyMessageDefault)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    const CFactionType* faction = app->InitFactionTypeManager()->GetRandomFaction();
-    if (faction == NULL) {
-        return;
-    }
+    const CFactionType* faction = static_cast<App*>(WindowApp::m_instance)->InitFactionTypeManager()->GetRandomFaction();
     const XString& boss = faction->GetBoss();
-    m_boss = app->InitPersonTypeManager()->GetType(boss);
-    if (m_boss == NULL) {
+    m_boss = static_cast<App*>(WindowApp::m_instance)->InitPersonTypeManager()->GetType(boss);
+    m_bossIsMan = m_boss->m_visualCharacter->m_isMan;
+
+    bool noCamera;
+    if (informant != NULL) {
+        if (!informant->HasSpecialSquad()) {
+            m_squadName = boss;
+        } else {
+            m_squadName = informant->GetSquadName();
+        }
+        noCamera = camera == NULL;
+        unsigned char gated = informant->IsWeaponGated();
+        m_weaponGated = gated;
+        if (camera != NULL && gated == 1) {
+            int weapon;
+            if (CRandGen::GetInstance()->GetRandRange(0, 1) != 0) {
+                weapon = camera->GetGatedWeaponID();
+            } else {
+                weapon = -1;
+            }
+            m_gatedWeapon = weapon;
+        }
+    } else {
+        m_squadName = boss;
+        noCamera = camera == NULL;
+        m_weaponGated = false;
+    }
+
+    if (m_boss == NULL || m_boss->m_visualCharacter == NULL) {
         return;
     }
-    m_squadName = boss;
-    if (m_boss->m_visualCharacter != NULL) {
-        m_bossIsMan = m_boss->m_visualCharacter->m_isMan;
-    }
-    if (m_boss->m_nationality != NULL) {
-        m_bossName = m_boss->m_nationality->GetRandomFullName(m_bossIsMan);
-    }
-    if (informant != NULL) {
-        if (informant->HasSpecialSquad()) {
-            m_squadName = informant->GetSquadName().Trim(true, true);
-        }
-        m_weaponGated = informant->IsWeaponGated();
-        if (m_weaponGated && camera != NULL && CRandGen::GetInstance()->GetRandRange(0, 1) != 0) {
-            m_gatedWeapon = camera->GetGatedWeaponID();
-        }
-    }
+    m_bossName = m_boss->m_nationality->GetRandomFullName(m_boss->m_visualCharacter->m_isMan);
+    m_messageType = BountyMessageDefault;
     if (m_weaponGated) {
         m_messageType = BountyMessageWeaponGated;
-    } else if (camera != NULL && camera->m_durationMs > 0) {
+    } else if (!noCamera && camera->m_durationMs >= 1) {
         m_messageType = BountyMessageMoving;
+    }
+    if (m_randomWeapon != -1) {
+        m_messageType = BountyMessageRandomWeapon;
     }
     SetInfoFromBountyType(informant);
 }
@@ -65,11 +77,9 @@ CGPSBounty::CGPSBounty(CGPSHauntCamera* camera, TiXmlElement* element)
 
 void CGPSBounty::SetInfoFromBountyType(const CGPSInstantInformant* informant)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    const CBountyManager::SBountyGeneralInfo* info = app->m_bountyManager->GetInfo(m_bountyType);
-    if (info == NULL) {
-        return;
-    }
+    int level = CBH_Player::GetInstance()->GetLevel();
+    const CBountyManager::SBountyGeneralInfo* info =
+        static_cast<App*>(WindowApp::m_instance)->m_bountyManager->GetInfo(m_bountyType);
     m_alertSeconds = info->m_alertSeconds;
     m_escapeSeconds = info->m_escapeSeconds;
     m_warTimer = true;
@@ -80,119 +90,137 @@ void CGPSBounty::SetInfoFromBountyType(const CGPSInstantInformant* informant)
     m_silentKill = info->m_silentKill;
     m_minWeaponRange = info->m_minWeaponRange;
     m_energyCost = info->m_energy;
-    int level = CBH_Player::GetInstance()->GetLevel();
-    m_civilianCount = app->InitProgressSystem()->GetCivilianCount(level);
+    CProgressSystem* progress = static_cast<App*>(WindowApp::m_instance)->InitProgressSystem();
+    m_civilianCount = progress->GetCivilianCount(CBH_Player::GetInstance()->GetLevel());
+    m_experienceReward = info->m_xp;
     m_moneyPenalty = info->m_moneyPenalty;
     m_experiencePenalty = info->m_xpPenalty;
-    ConfigReader& config = app->m_helper->m_config;
-    float moneyPerLevel = config.GetFloatValueByToken("BOUNTY_MONEY_REWARD_COEFF", true);
-    m_moneyReward = static_cast<int>(info->m_money + info->m_money * moneyPerLevel * (level - 1));
-    m_experienceReward = info->m_xp + config.GetIntegerValueByToken("ADD_MISSION_XP", true) * (level - 1);
+    int baseMoney = info->m_money;
+    float moneyPerLevel = static_cast<App*>(WindowApp::m_instance)->m_helper->m_config.GetFloatValueByToken(
+        "BOUNTY_MONEY_REWARD_COEFF", true);
+    m_moneyReward = static_cast<int>(baseMoney + baseMoney * moneyPerLevel * (level - 1));
+    int xpPerLevel = static_cast<App*>(WindowApp::m_instance)->m_helper->m_config.GetIntegerValueByToken(
+        "ADD_MISSION_XP", true);
+    m_experienceReward += xpPerLevel * (level - 1);
     if (informant != NULL) {
-        m_moneyReward = static_cast<int>(m_moneyReward * informant->GetMoneyMultiplier());
-        m_experienceReward = static_cast<int>(m_experienceReward * informant->GetXpMultiplier());
+        float xpMultiplier = informant->GetXpMultiplier();
+        m_experienceReward = static_cast<int>(m_experienceReward * xpMultiplier);
+        float moneyMultiplier = informant->GetMoneyMultiplier();
+        m_moneyReward = static_cast<int>(m_moneyReward * moneyMultiplier);
     }
-    const CSquadType* squad = app->InitSquadTypeManager()->GetType(m_squadName);
-    if (squad != NULL && squad->m_field18 > 1.0f) {
-        m_moneyReward *= 2;
+    const CSquadType* squad = static_cast<App*>(WindowApp::m_instance)->InitSquadTypeManager()->GetType(m_squadName);
+    if (squad->m_field18 > 1.0f) {
         m_experienceReward *= 2;
+        m_moneyReward *= 2;
     }
 }
 
 void CGPSBounty::Load(TiXmlElement* element)
 {
     CGPSHuntingItem::Load(element);
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    m_boss = app->InitPersonTypeManager()->GetType(CXmlHelper::GetAttributeValue(element, "bossName"));
-    if (m_boss != NULL && m_boss->m_visualCharacter != NULL) {
-        m_bossIsMan = m_boss->m_visualCharacter->m_isMan;
-    }
+    XString bossName = CXmlHelper::GetAttributeValue(element, "bossName");
+    m_boss = static_cast<App*>(WindowApp::m_instance)->InitPersonTypeManager()->GetType(bossName);
+    m_bossIsMan = m_boss->m_visualCharacter->m_isMan;
     m_bountyType = CXmlHelper::GetAttributeValue(element, "bountyType").ToInt();
-    m_messageType = static_cast<EBoutnyMessageType>(
-        CXmlHelper::GetIntAttributeValueOrUseDefault(element, "bountyMessageType", 0));
+    int messageType = CXmlHelper::GetAttributeValueOrUseDefault(element, "bountyMessageType", XString("0")).ToInt();
+    m_messageType = static_cast<EBoutnyMessageType>(messageType);
 }
 
 TiXmlElement* CGPSBounty::Save(TiXmlElement* parent)
 {
     TiXmlElement* element = CGPSHuntingItem::Save(parent);
-    if (m_boss != NULL) {
-        element->SetAttribute("bossName", XString::AnsiString(m_boss->m_name.c_str()));
-    }
+    element->SetAttribute("bossName", XString::AnsiString(m_boss->m_name.c_str()));
     element->SetAttribute("bountyType", m_bountyType);
     element->SetAttribute("itemType", 1);
     element->SetAttribute("bountyMessageType", m_messageType);
     return element;
 }
 
-const CBountyManager::SMessage* CGPSBounty::GetMessage() const
+XString CGPSBounty::GetObjectiveTitle() const
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    return app->m_bountyManager->GetRandomMessageWithSeed(m_bountyType, XString(), m_seed, m_messageType);
+    const CBountyManager::SMessage* message = static_cast<App*>(WindowApp::m_instance)->m_bountyManager
+        ->GetRandomMessageWithSeed(m_bountyType, XString(""), m_seed, m_messageType);
+    const XString& title = message->m_title;
+    if (m_weaponGated) {
+        if (m_gatedWeapon >= 1) {
+            if (m_camera != NULL) {
+                CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(m_gatedWeapon);
+                if (weapon != NULL) {
+                    return title.Replace(L"[Weapon]", CDH_Weapon::GetWeaponCategoryName(weapon->m_category).c_str(), true);
+                }
+            }
+        } else if (m_camera != NULL) {
+            return title.Replace(L"[Weapon]", m_camera->m_gatedWeaponCategory.Upper().c_str(), true);
+        }
+    } else if (m_camera != NULL && m_messageType == BountyMessageMoving) {
+        XString vehicle = Window::ResString(XString::AnsiString(m_camera->m_vehicle.c_str()));
+        return title.Replace(L"[Vehicle]", vehicle.c_str(), true);
+    }
+    return title;
 }
 
-XString CGPSBounty::ReplaceMissionTerms(XString text, bool title) const
+XString CGPSBounty::GetObjectiveGoal() const
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (m_weaponGated && m_camera != NULL) {
-        if (m_gatedWeapon < 1) {
+    const CBountyManager::SMessage* message = static_cast<App*>(WindowApp::m_instance)->m_bountyManager
+        ->GetRandomMessageWithSeed(m_bountyType, XString(""), m_seed, m_messageType);
+    XString goal = ParametrizeText(message->m_goal);
+    if (m_weaponGated) {
+        if (m_gatedWeapon >= 1) {
+            if (m_camera != NULL) {
+                CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(m_gatedWeapon);
+                if (weapon != NULL) {
+                    return goal.Replace(L"[Weapon]", weapon->GetName().c_str(), true);
+                }
+            }
+        } else if (m_camera != NULL) {
+            return goal.Replace(L"[Weapon]", m_camera->m_gatedWeaponCategory.Upper().c_str(), true);
+        }
+    } else if (m_camera != NULL && m_messageType == BountyMessageMoving) {
+        XString vehicle = Window::ResString(XString::AnsiString(m_camera->m_vehicle.c_str()));
+        return goal.Replace(L"[Vehicle]", vehicle.c_str(), true);
+    }
+    return goal;
+}
+
+XString CGPSBounty::GetBountyMessage() const
+{
+    const CBountyManager::SMessage* message = static_cast<App*>(WindowApp::m_instance)->m_bountyManager
+        ->GetRandomMessageWithSeed(m_bountyType, XString(""), m_seed, m_messageType);
+    XString text = ParametrizeText(message->m_text);
+    if (m_weaponGated) {
+        if (m_gatedWeapon >= 1) {
+            if (m_camera != NULL) {
+                CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(m_gatedWeapon);
+                if (weapon != NULL) {
+                    return text.Replace(L"[Weapon]", weapon->GetName().c_str(), true);
+                }
+            }
+        } else if (m_camera != NULL) {
             return text.Replace(L"[Weapon]", m_camera->m_gatedWeaponCategory.Upper().c_str(), true);
         }
-        CDH_Weapon* weapon = app->InitWeaponManager()->GetWeaponById(m_gatedWeapon);
-        if (weapon != NULL) {
-            if (title) {
-                return text.Replace(L"[Weapon]", CDH_Weapon::GetWeaponCategoryName(weapon->m_category).c_str(), true);
-            }
-            return text.Replace(L"[Weapon]", weapon->GetName().c_str(), true);
+    } else {
+        if (m_camera != NULL && m_messageType == BountyMessageMoving) {
+            XString vehicle = Window::ResString(XString::AnsiString(m_camera->m_vehicle.c_str()));
+            return text.Replace(L"[Vehicle]", vehicle.c_str(), true);
         }
-    } else if (m_messageType == BountyMessageMoving && m_camera != NULL) {
-        XString name = Window::ResString(XString::AnsiString(m_camera->m_vehicle.c_str()));
-        return text.Replace(L"[Vehicle]", name.c_str(), true);
-    } else if (!title && m_randomWeapon >= 0) {
-        CDH_Weapon* weapon = app->InitWeaponManager()->GetWeaponById(m_randomWeapon);
-        if (weapon != NULL) {
+        if (m_randomWeapon != -1) {
+            CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(m_randomWeapon);
             return text.Replace(L"[Weapon]", weapon->GetName().c_str(), true);
         }
     }
     return text;
 }
 
-XString CGPSBounty::GetObjectiveTitle() const
-{
-    const CBountyManager::SMessage* message = GetMessage();
-    if (message != NULL) {
-        return ReplaceMissionTerms(message->m_title, true);
-    }
-    return XString();
-}
-
-XString CGPSBounty::GetObjectiveGoal() const
-{
-    const CBountyManager::SMessage* message = GetMessage();
-    if (message != NULL) {
-        return ReplaceMissionTerms(ParametrizeText(message->m_goal), false);
-    }
-    return XString();
-}
-
-XString CGPSBounty::GetBountyMessage() const
-{
-    const CBountyManager::SMessage* message = GetMessage();
-    if (message != NULL) {
-        return ReplaceMissionTerms(ParametrizeText(message->m_text), false);
-    }
-    return XString();
-}
-
 float CGPSBounty::GenerateDiffRandomizer() const
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    const CBountyManager::SBountyGeneralInfo* info = app->m_bountyManager->GetInfo(m_bountyType);
-    if (info == NULL) {
-        return 0.0f;
-    }
-    int low = static_cast<int>(info->m_difficultyMin * 1000.0f);
-    int high = static_cast<int>(info->m_difficultyMax * 1000.0f);
-    return CRandGen::GetInstance()->GetRandRange(low, high) * 0.001f;
+    CBountyManager::SBountyGeneralInfo info =
+        *static_cast<App*>(WindowApp::m_instance)->m_bountyManager->GetInfo(m_bountyType);
+    float minimum = info.m_difficultyMin;
+    float maximum = info.m_difficultyMax;
+    CRandGen* random = CRandGen::GetInstance();
+    unsigned int difficulty = random->GetRandRange(
+        static_cast<int>(minimum * 1000.0f), static_cast<unsigned int>(maximum * 1000.0f));
+    return difficulty * 0.001f;
 }
 
 XString CGPSBounty::GetScriptName(CGPSHauntCamera* camera) const

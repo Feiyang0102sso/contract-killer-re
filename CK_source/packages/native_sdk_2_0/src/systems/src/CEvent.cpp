@@ -44,22 +44,25 @@ void CEvent::OnExecute()
         return;
     }
     CRegistry* eventSystem = (CRegistry*)element->m_object;
-    CSystemElement* eventElement;
-    if (!eventSystem->Query(0, m_eventId, &eventElement)) {
+    if (!eventSystem->Query(0, m_eventId, &element)) {
         return;
     }
 
     CEventCore* core = CEventCore::GetInstance();
     const unsigned char alreadyDispatching = core->m_isDispatching;
     core->m_isDispatching = 1;
-    CRegistry* listeners = (CRegistry*)eventElement->m_object;
+    CRegistry* listeners = (CRegistry*)element->m_object;
     if (m_param != 0) {
         // only the listener registered under m_param
         if (listeners->Query(0, m_param, &element)) {
             CEventListener* listener = (CEventListener*)element->m_object;
             if (listener->m_callback(*this, listener)) {
-                m_wasHandled = 1;
-                m_wasEverHandled = 1;
+                if (m_wasHandled == 0) {
+                    m_wasHandled = 1;
+                }
+                if (m_wasEverHandled == 0) {
+                    m_wasEverHandled = 1;
+                }
             }
         }
     } else {
@@ -67,8 +70,12 @@ void CEvent::OnExecute()
         for (CRegistryItr itr(*listeners); !itr.IsDone(); itr++) {
             CEventListener* listener = (CEventListener*)(*itr).m_object;
             if (listener != NULL && listener->m_callback(*this, listener)) {
-                m_wasHandled = 1;
-                m_wasEverHandled = 1;
+                if (m_wasHandled == 0) {
+                    m_wasHandled = 1;
+                }
+                if (m_wasEverHandled == 0) {
+                    m_wasEverHandled = 1;
+                }
             }
         }
     }

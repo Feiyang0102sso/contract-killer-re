@@ -184,7 +184,7 @@ void CNGSJSONParser::encodeValue(CWStringBuffer& buffer, const CObjectMapValue* 
                 buffer.append(L", ");
             }
             buffer.append(L'"');
-            // the name goes through a temporary copy
+            // the name goes through a temporary copy and is written without escaping
             buffer.append(CStrWChar(object->m_keys[index]).m_string);
             buffer.append(L"\": ");
             encodeValue(buffer, object->m_values[index]);
@@ -284,35 +284,35 @@ CObjectMapValue* CNGSJSONParser::decodeValue(const CStrWChar& json)
     // name of the next object member, set by a string token in an object
     CStrWChar key;
     // b147: written '{' first; the compiled chain then tests '[' first like the original
-    if (tokenList[0].m_string[0] == L'{') {
+    // The original tokenizer can succeed without producing a first token.
+    switch (tokenList[0].m_string[0]) {
+    case L'{':
         root = new CObjectMapObject();
-    } else if (tokenList[0].m_string[0] == L'[') {
+        break;
+    case L'[':
         root = new CObjectMapArray();
-    } else {
+        break;
+    default:
         return root;
     }
 
     CObjectMapValue* current = root;
     int index = 1;
     do {
-        const CStrWChar& token = tokenList[index];
-        wchar_t first = token.m_string[0];
-        CObjectMapValue* next = current;
+        wchar_t first = tokenList[index].m_string[0];
 
-        if (first == L'{' || first == L'[') {
+        switch (first) {
+        case L'{':
+        case L'[': {
             // nested container
             int keyLength = key.m_length;
             int type = current->getType();
             CObjectMapValue* child;
             if (keyLength == 0) {
                 if (type != CObjectMapValue::TYPE_ARRAY) {
-                    if (root != NULL) {
-                        delete root;
-                        root = NULL;
-                    }
-                    break;
+                    goto invalid;
                 }
-                if (token.m_string[0] == L'{') {
+                if (tokenList[index].m_string[0] == L'{') {
                     CObjectMapObject* object = new CObjectMapObject();
                     object->m_parent = current;
                     child = object;
@@ -324,13 +324,9 @@ CObjectMapValue* CNGSJSONParser::decodeValue(const CStrWChar& json)
                 ((CObjectMapArray*)current)->addEntry(child);
             } else {
                 if (type != CObjectMapValue::TYPE_OBJECT) {
-                    if (root != NULL) {
-                        delete root;
-                        root = NULL;
-                    }
-                    break;
+                    goto invalid;
                 }
-                if (token.m_string[0] == L'{') {
+                if (tokenList[index].m_string[0] == L'{') {
                     CObjectMapObject* object = new CObjectMapObject();
                     object->m_parent = current;
                     child = object;
@@ -339,98 +335,106 @@ CObjectMapValue* CNGSJSONParser::decodeValue(const CStrWChar& json)
                     array->m_parent = current;
                     child = array;
                 }
-                ((CObjectMapObject*)current)->addEntry(stripQuotes(key), child);
+                {
+                    CStrWChar memberName = stripQuotes(key);
+                    ((CObjectMapObject*)current)->addEntry(memberName, child);
+                }
                 key = "";
             }
-            next = child;
-        } else if (first == L'}') {
+            current = child;
+            break;
+        }
+        case L'}':
             if (current->getType() != CObjectMapValue::TYPE_OBJECT) {
-                if (root != NULL) {
-                    delete root;
-                    root = NULL;
-                }
-                break;
+                goto invalid;
             }
-            next = ((CObjectMapObject*)current)->m_parent;
-        } else if (first == L']') {
+            current = ((CObjectMapObject*)current)->m_parent;
+            break;
+        case L']':
             if (current->getType() != CObjectMapValue::TYPE_ARRAY) {
-                if (root != NULL) {
-                    delete root;
-                    root = NULL;
-                }
-                break;
+                goto invalid;
             }
-            next = ((CObjectMapArray*)current)->m_parent;
-        } else if (first == L',' || first == L':') {
+            current = ((CObjectMapArray*)current)->m_parent;
+            break;
+        case L',':
+        case L':':
             // separators carry no information
-        } else if (first == L'"') {
+            break;
+        case L'"':
             if (current->getType() == CObjectMapValue::TYPE_ARRAY) {
-                CStrWChar text = stripQuotes(token);
+                CStrWChar text = stripQuotes(tokenList[index]);
                 ((CObjectMapArray*)current)->addEntry(new CObjectMapString(decodeString(text)));
             } else if (key.m_length != 0) {
-                CStrWChar text = stripQuotes(token);
-                ((CObjectMapObject*)current)->addEntry(stripQuotes(key), new CObjectMapString(decodeString(text)));
+                CStrWChar text = stripQuotes(tokenList[index]);
+                {
+                    CStrWChar memberName = stripQuotes(key);
+                    ((CObjectMapObject*)current)->addEntry(memberName, new CObjectMapString(decodeString(text)));
+                }
                 key = "";
             } else {
                 // first string in an object member: the name
-                key = token;
+                key = tokenList[index];
                 continue;
             }
-        } else if (first == L'-' || isOneOf(first, numbers, 10)) {
-            if (current->getType() == CObjectMapValue::TYPE_ARRAY) {
-                ((CObjectMapArray*)current)->addEntry(new CObjectMapInt(decodeInteger(token)));
-            } else if (key.m_length != 0) {
-                ((CObjectMapObject*)current)->addEntry(stripQuotes(key), new CObjectMapInt(decodeInteger(token)));
-                key = "";
-            } else {
-                if (root != NULL) {
-                    delete root;
-                    root = NULL;
+            break;
+        default:
+            if (!isOneOf(first, numbers, 10)) {
+                if (tokenList[index] == L"true" || tokenList[index] == L"false") {
+                    unsigned char boolValue = (tokenList[index] == L"true");
+                    if (current->getType() == CObjectMapValue::TYPE_ARRAY) {
+                        ((CObjectMapArray*)current)->addEntry(new CObjectMapBool(boolValue));
+                    } else if (key.m_length != 0) {
+                        {
+                            CStrWChar memberName = stripQuotes(key);
+                            ((CObjectMapObject*)current)->addEntry(memberName, new CObjectMapBool(boolValue));
+                        }
+                        key = "";
+                    } else {
+                        goto invalid;
+                    }
+                } else if (tokenList[index] == L"null") {
+                    if (current->getType() == CObjectMapValue::TYPE_ARRAY) {
+                        ((CObjectMapArray*)current)->addEntry(new CObjectMapNull());
+                    } else if (key.m_length != 0) {
+                        {
+                            CStrWChar memberName = stripQuotes(key);
+                            ((CObjectMapObject*)current)->addEntry(memberName, new CObjectMapNull());
+                        }
+                        key = "";
+                    } else {
+                        goto invalid;
+                    }
+                } else {
+                    goto invalid;
                 }
                 break;
             }
-        } else if (token == L"true" || token == L"false") {
-            unsigned char boolValue = (token == L"true");
+            // Fall through for digits.
+        case L'-':
             if (current->getType() == CObjectMapValue::TYPE_ARRAY) {
-                ((CObjectMapArray*)current)->addEntry(new CObjectMapBool(boolValue));
+                ((CObjectMapArray*)current)->addEntry(new CObjectMapInt(decodeInteger(tokenList[index])));
             } else if (key.m_length != 0) {
-                ((CObjectMapObject*)current)->addEntry(stripQuotes(key), new CObjectMapBool(boolValue));
+                {
+                    CStrWChar memberName = stripQuotes(key);
+                    ((CObjectMapObject*)current)->addEntry(memberName, new CObjectMapInt(decodeInteger(tokenList[index])));
+                }
                 key = "";
             } else {
-                if (root != NULL) {
-                    delete root;
-                    root = NULL;
-                }
-                break;
-            }
-        } else if (token == L"null") {
-            if (current->getType() == CObjectMapValue::TYPE_ARRAY) {
-                ((CObjectMapArray*)current)->addEntry(new CObjectMapNull());
-            } else if (key.m_length != 0) {
-                ((CObjectMapObject*)current)->addEntry(stripQuotes(key), new CObjectMapNull());
-                key = "";
-            } else {
-                if (root != NULL) {
-                    delete root;
-                    root = NULL;
-                }
-                break;
-            }
-        } else {
-            if (root != NULL) {
-                delete root;
-                root = NULL;
+                goto invalid;
             }
             break;
         }
 
         // closing the outermost container ends the document
-        current = next;
         if (current == NULL) {
             break;
         }
     } while (++index < tokenList.Size());
     return root;
+
+invalid:
+    delete root;
+    return NULL;
 }
 
 int CNGSJSONParser::tokenize(TCVector<CStrWChar>& tokenList, CStrWChar json)
@@ -501,7 +505,7 @@ int CNGSJSONParser::tokenize(TCVector<CStrWChar>& tokenList, CStrWChar json)
         position++;
     } while (position < json.m_length);
 
-    // every bracket must be closed
+    // every bracket must be closed. The original does not flush a pending token at EOF.
     if (valid && brackets.Size() > 0) {
         valid = 0;
     }

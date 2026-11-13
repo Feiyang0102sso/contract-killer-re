@@ -14,10 +14,8 @@ CSquadTypeManager::CSquadTypeManager() : m_squads(8)
     delete[] text;
     for (TiXmlNode* node = document.FirstChild("squad"); node != NULL; node = node->NextSibling("squad")) {
         CSquadType* squad = new CSquadType(node);
-        CSquadType** previous = m_squads.Get(squad->m_name);
-        if (previous != NULL) {
-            delete *previous;
-        }
+        // The original leaves a replaced squad allocated.
+        m_squads.Get(squad->m_name);
         m_squads.Set(squad->m_name, squad);
     }
 }

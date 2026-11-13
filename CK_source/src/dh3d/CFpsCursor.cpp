@@ -8,6 +8,7 @@
 #include "CFont.h"
 #include "CFontMgr.h"
 #include "CSwerveGame.h"
+#include "CUtility.h"
 #include "DGHelper.h"
 #include "Fixed.h"
 #include "SG_Presenter.h"
@@ -21,7 +22,7 @@ CFPSCursor::CFPSCursor()
     m_aimX = app->m_helper->m_screenWidth / 2;
     m_aimY = app->m_helper->m_screenHeight / 2;
     m_cross = new SG_Presenter(9, 0);
-    m_cross->SetSGInstance(app->m_sgInstance);
+    m_cross->SetSGInstance(static_cast<App*>(WindowApp::m_instance)->m_sgInstance);
     m_cross->SetAnimation(0, true);
 }
 
@@ -66,8 +67,12 @@ void CFPSCursor::HandleShot()
     if (weapon == NULL) {
         return;
     }
-    if (weapon->IsReadyForShot() && weapon->m_ammo > 0) {
-        app->m_helper->m_swerveGame->Shot(GetAimX(), GetAimY());
+    if (weapon->IsReadyForShot()
+        && static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()->m_ammo > 0) {
+        CSwerveGame* game = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame;
+        int aimX = GetAimX();
+        int aimY = GetAimY();
+        game->Shot(aimX, aimY);
         m_cross->SetAnimation(1, false);
         m_shotAnimation = true;
     }
@@ -115,7 +120,11 @@ void CFPSCursor::onPointerPressed(int x, int y)
 void CFPSCursor::onPointerReleased()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
-    m_shotRequested = !app->m_settings->IsFireButtonEnabled() && m_pressed && !m_moved;
+    bool shotRequested = true;
+    if (app->m_settings->IsFireButtonEnabled() || !m_pressed || m_moved) {
+        shotRequested = false;
+    }
+    m_shotRequested = shotRequested;
     m_pressed = false;
     m_moved = false;
 }
@@ -144,10 +153,13 @@ void CFPSCursor::DrawReloadingMessage()
     }
     CFont* font = CFontMgr::GetInstance()->GetFont(1);
     if (font != NULL) {
-        XString text = Window::ResString("IDS_RELOADING");
-        int width = font->MeasureTextWidth(text.c_str(), -1, -1, NULL);
-        font->PaintText(text.c_str(), text.Length(), GetAimX() - width / 2,
-                        GetAimY() - font->GetFontHeight() / 2, -1, -1);
+        CStrWChar text = CUtility::GetString("IDS_RELOADING");
+        int aimX = GetAimX();
+        int aimY = GetAimY();
+        const wchar_t* textBuffer = text.GetWCharPtr();
+        int textLength = text.GetLength();
+        font->PaintText(textBuffer, textLength, aimX - font->MeasureTextWidth(textBuffer, -1, -1, NULL) / 2,
+                        aimY - font->GetFontHeight() / 2, -1, -1);
     }
 }
 
@@ -155,8 +167,7 @@ void CFPSCursor::UpdateImpl(int)
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     if (m_shotRequested && !app->m_settings->IsFireButtonEnabled()) {
-        CBH_Player* player = CBH_Player::GetInstance();
-        if (player->IsNeedHide() && !player->IsInProgress()) {
+        if (CBH_Player::GetInstance()->IsNeedHide() && !CBH_Player::GetInstance()->IsInProgress()) {
             HandleShot();
         } else {
             m_shotRequested = false;
@@ -166,12 +177,13 @@ void CFPSCursor::UpdateImpl(int)
         m_cross->SetAnimation(0, true);
         m_shotAnimation = false;
     }
-    m_cross->Update(app->m_updateFrameTime);
+    m_cross->Update(static_cast<App*>(WindowApp::m_instance)->m_updateFrameTime);
 }
 
 void CFPSCursor::InitImpl()
 {
-    onWeaponSwitch();
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    app->m_helper->m_swerveGame->m_camera->SetWanderngByActiveWeapon();
 }
 
 void CFPSCursor::DeInitImpl()

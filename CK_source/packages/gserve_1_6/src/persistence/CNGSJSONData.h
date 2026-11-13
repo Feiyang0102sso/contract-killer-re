@@ -61,7 +61,7 @@ public:
     unsigned char LoadFromServer(const CStrWChar& carrier, const CStrWChar& gameId,
                                  const CStrWChar& platform, bool forceDownload);
     unsigned char LoadFromServer(const CStrWChar& path, bool forceDownload);
-    unsigned long long getCurrentTime();
+    time_t getCurrentTime();
     /** Obfuscate m_rawJSON and write it to m_saveFileName. */
     unsigned char SaveToDisk();
     unsigned char SaveToDisk(_CNGSJSONSaveData* saveData);

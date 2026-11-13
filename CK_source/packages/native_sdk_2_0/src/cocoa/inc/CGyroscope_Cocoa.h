@@ -3,8 +3,6 @@
 #ifndef CGYROSCOPE_COCOA_H
 #define CGYROSCOPE_COCOA_H
 
-#include "CVector3d.h"
-
 #ifdef __OBJC__
 @class CMMotionManager;
 #else
@@ -34,8 +32,18 @@ public:
         return m_motionManager != NULL;
     }
 
-    /** Last sampled attitude: pitch, roll, yaw in 16.16 fixed point radians (stored as float). */
-    const CVector3d& GetAttitude() const
+    struct FixedAttitude {
+        FixedAttitude() : pitch(0), roll(0), yaw(0) {}
+        // The Objective-C++ constructor has a cleanup for this member.
+        ~FixedAttitude() {}
+
+        int pitch;
+        int roll;
+        int yaw;
+    };
+
+    /** Last sampled attitude: pitch, roll, yaw in 16.16 fixed point radians. */
+    const FixedAttitude& GetAttitude() const
     {
         return m_attitude;
     }
@@ -43,7 +51,7 @@ public:
 private:
     int m_lastSampleTime;                           // 0x04 GetUpTimeMS() of the last sample
     unsigned int m_frequency;                       // 0x08 samples per second
-    CVector3d m_attitude; // 0x0c pitch, roll, yaw
+    FixedAttitude m_attitude;                        // 0x0c pitch, roll, yaw
     CMMotionManager* m_motionManager;               // 0x18 nil without a gyroscope
 };
 

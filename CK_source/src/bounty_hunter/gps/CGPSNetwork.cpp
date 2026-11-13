@@ -40,7 +40,8 @@ void CGPSNetwork::SetBlinking(bool enabled)
 void CGPSNetwork::Update(long)
 {
     if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
-        SetBlinking(static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsMapNetworkBlink());
+        bool enabled = static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsMapNetworkBlink() == 1;
+        SetBlinking(enabled);
     }
 }
 

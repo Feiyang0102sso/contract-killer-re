@@ -57,14 +57,6 @@ void CMovementExecutor::OnReceiveDamage()
     }
 }
 
-void CMovementExecutor::OnCancel()
-{
-    StopActiveAnimation();
-    if (m_path.m_body != NULL) {
-        m_path.m_body->m_speed = 0.0f;
-    }
-}
-
 const wchar_t* CMovementExecutor::GetName() const
 {
     return L"CMovementExecutor";

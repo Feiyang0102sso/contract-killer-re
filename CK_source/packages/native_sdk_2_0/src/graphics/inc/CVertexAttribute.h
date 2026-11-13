@@ -10,10 +10,9 @@ public:
         int m_field0;           // 0x00
         int m_field4;           // 0x04
         int m_type;             // 0x08 0 ends the list
-        unsigned char m_fieldC; // 0x0c
+        signed char m_fieldC;   // 0x0c
         signed char m_stride;   // 0x0d bytes per vertex (first entry)
-        unsigned char m_fieldE; // 0x0e
-        unsigned char m_fieldF; // 0x0f
+        short m_fieldE;         // 0x0e
     };
 };
 

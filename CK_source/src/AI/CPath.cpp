@@ -5,9 +5,6 @@
 #include "CUnitBody.h"
 #include "QuickSort.h"
 
-#include <math.h>
-#include <string.h>
-
 void CPath::Render(CAuxRender* render)
 {
     if (render != NULL) {
@@ -30,10 +27,22 @@ void CPath::SSmoothPoint::CalcAngleCoef()
 }
 
 CPath::CPath()
-    : m_pointCount(0), m_smoothCount(0), m_speed(0.0f), m_field3c0c(0),
-      m_field3c10(true), m_moving(true), m_body(NULL), m_cellCount(0), m_targetPoint(-1)
 {
-    memset(m_smoothPoints, 0, sizeof(m_smoothPoints));
+    m_pointCount = 0;
+    for (int index = 0; index < 256; ++index) {
+        m_smoothPoints[index].m_next = NULL;
+        m_smoothPoints[index].m_point = NULL;
+        m_smoothPoints[index].m_previous = NULL;
+        m_smoothPoints[index].m_angle = 0.0f;
+    }
+    m_smoothCount = 0;
+    m_speed = 0.0f;
+    m_field3c0c = 0;
+    m_field3c10 = true;
+    m_moving = true;
+    m_body = NULL;
+    m_cellCount = 0;
+    m_targetPoint = -1;
 }
 
 void CPath::SetBody(CUnitBody* body)
@@ -52,25 +61,31 @@ void CPath::Tick(int elapsed)
 
 void CPath::HandleMovement(int)
 {
-    if (m_body == NULL || m_pointCount < 1 || m_speed <= 0.0f) {
-        return;
-    }
-    if (m_field3c10) {
-        m_field3c0c = m_pointCount - 1;
-        m_field3c10 = false;
-    }
-    MakeStep();
-    if (m_field3c0c == 0) {
-        m_moving = false;
-        m_body->m_pointId = m_targetPoint;
-        m_body->SetExactlyToPoint();
-        m_body->OnPathComplete();
-        return;
-    }
-    if (DidBodyReachNextPoint()) {
-        int cell = m_points[--m_field3c0c].m_cellId;
-        if (cell != -1) {
-            m_body->m_cellId = cell;
+    if (m_body != NULL && m_pointCount > 0 && m_speed > 0.0f) {
+        int waypoint;
+        if (m_field3c10) {
+            waypoint = m_pointCount - 1;
+            m_field3c0c = waypoint;
+            m_field3c10 = false;
+        } else {
+            waypoint = m_field3c0c;
+        }
+        MakeStep();
+        if (waypoint == 0) {
+            m_moving = false;
+            if (m_body != NULL) {
+                m_body->m_pointId = m_targetPoint;
+                m_body->SetExactlyToPoint();
+                m_body->OnPathComplete();
+            }
+        } else if (DidBodyReachNextPoint()) {
+            int previousWaypoint = m_field3c0c--;
+            if (previousWaypoint > 0) {
+                int cell = m_points[previousWaypoint - 1].m_cellId;
+                if (cell != -1) {
+                    m_body->m_cellId = cell;
+                }
+            }
         }
     }
 }
@@ -86,12 +101,9 @@ void CPath::MakeStep()
 bool CPath::DidBodyReachNextPoint()
 {
     vec3 offset = m_points[m_field3c0c - 1].m_position - m_body->m_position;
-    float distanceSq = offset.LengthSqr();
-    if (distanceSq == 0.0f) {
-        return true;
-    }
-    float planarDistance = sqrtf(offset.m_x * offset.m_x + offset.m_y * offset.m_y);
-    return distanceSq < 0.5f * planarDistance;
+    float planarDistanceSq = offset.m_x * offset.m_x + offset.m_y * offset.m_y;
+    float distanceSq = planarDistanceSq + offset.m_z * offset.m_z;
+    return MathLib::InvSqrt(distanceSq) * distanceSq < 0.5f;
 }
 
 void CPath::Clear()
@@ -124,12 +136,13 @@ bool CPath::AddWayPoint(const vec3& position, int cellId)
     if (m_pointCount >= 256) {
         return false;
     }
-    WayPoint& point = m_points[m_pointCount++];
-    point.m_position = position;
+    m_points[m_pointCount].m_position = position;
+    WayPoint& point = m_points[m_pointCount];
     point.m_left = vec3();
     point.m_right = vec3();
     point.m_cellId = cellId;
     point.m_smoothed = false;
+    m_pointCount++;
     return true;
 }
 
@@ -138,12 +151,13 @@ bool CPath::AddGateWayPoint(const vec3& position, int cellId, const vec3& left, 
     if (m_pointCount >= 256) {
         return false;
     }
-    WayPoint& point = m_points[m_pointCount++];
-    point.m_position = position;
+    m_points[m_pointCount].m_position = position;
+    WayPoint& point = m_points[m_pointCount];
+    point.m_cellId = cellId;
     point.m_left = left;
     point.m_right = right;
-    point.m_cellId = cellId;
     point.m_smoothed = false;
+    m_pointCount++;
     return true;
 }
 
@@ -154,37 +168,45 @@ bool CPath::SmoothPoint(SSmoothPoint* entry)
     }
     WayPoint* point = entry->m_point;
     vec3 oldPosition = point->m_position;
-    vec3 through = entry->m_next->m_position - entry->m_previous->m_position;
-    vec3 normal(-through.m_y, through.m_x, 0.0f);
+    const vec3& next = entry->m_next->m_position;
+    vec3 through = next - entry->m_previous->m_position;
+    vec3 normal(vec3(0.0f, 0.0f, 1.0f).Cross(through));
     vec3 gate = point->m_left - point->m_right;
     float denominator = normal.Dot(gate);
     if (denominator == 0.0f) {
         return false;
     }
-    float fraction = normal.Dot(entry->m_next->m_position - point->m_left) / denominator;
+    float fraction = normal.Dot(next - point->m_left) / denominator;
     vec3 intersection = point->m_left + gate * fraction;
-    if (fraction > -1.0f && fraction < 0.0f) {
+    // Use the two oriented areas in the horizontal plane to test the gate bounds.
+    float leftArea = (point->m_left - next).Cross(intersection - next).m_z;
+    float rightArea = (point->m_right - next).Cross(intersection - next).m_z;
+    if (leftArea * rightArea < 0.0f) {
         point->m_position = intersection;
-    } else if ((intersection - point->m_right).LengthSqr() <= (intersection - point->m_left).LengthSqr()) {
-        point->m_position = point->m_right;
     } else {
-        point->m_position = point->m_left;
+        const float leftDistance = (point->m_left - intersection).LengthSqr();
+        const float rightDistance = (point->m_right - intersection).LengthSqr();
+        if (leftDistance < rightDistance) {
+            point->m_position = point->m_left;
+        } else {
+            point->m_position = point->m_right;
+        }
     }
-    point->m_smoothed = true;
-    return !CGameAIMap::IsPositionTheSame(oldPosition, point->m_position);
+    entry->m_point->m_smoothed = true;
+    return !CGameAIMap::IsPositionTheSame(oldPosition, entry->m_point->m_position);
 }
 
 void CPath::CreateSmoothInfo()
 {
-    m_smoothCount = 0;
-    if (m_pointCount >= 256) {
-        return;
-    }
-    for (int index = 1; index < m_pointCount - 1; ++index) {
-        SSmoothPoint& entry = m_smoothPoints[m_smoothCount++];
-        entry.m_next = &m_points[index - 1];
-        entry.m_point = &m_points[index];
-        entry.m_previous = &m_points[index + 1];
+    if (m_pointCount < 256) {
+        int end = m_pointCount - 1;
+        m_smoothCount = 0;
+        for (int index = 1; index < end && m_smoothCount < 256; ++index) {
+            m_smoothPoints[m_smoothCount].m_next = &m_points[index - 1];
+            m_smoothPoints[m_smoothCount].m_point = &m_points[index];
+            m_smoothPoints[m_smoothCount].m_previous = &m_points[index + 1];
+            m_smoothCount++;
+        }
     }
 }
 

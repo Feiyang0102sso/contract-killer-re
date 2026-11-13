@@ -49,17 +49,17 @@ void SetSizesByContent(Window* window, int flags)
 
 FillerBar::FillerBar()
 {
-    m_frame[TopLeft].Create("SUR_HUD_PROGRESSBAR_LEFT");
-    m_frame[Top].Create("SUR_HUD_PROGRESSBAR");
-    m_frame[TopRight].Create("SUR_HUD_PROGRESSBAR_RIGHT");
+    m_topLeftFrame.Create("SUR_HUD_PROGRESSBAR_LEFT");
+    m_topFrame.Create("SUR_HUD_PROGRESSBAR");
+    m_topRightFrame.Create("SUR_HUD_PROGRESSBAR_RIGHT");
     int rightWidth;
     int leftWidth;
     int height;
-    GetImageSize(m_frame[TopRight].GetSurface(), rightWidth, height);
-    GetImageSize(m_frame[TopLeft].GetSurface(), leftWidth, height);
+    GetImageSize(m_topRightFrame.GetSurface(), rightWidth, height);
+    GetImageSize(m_topLeftFrame.GetSurface(), leftWidth, height);
     SetInsetSpacing(0, rightWidth, 0, leftWidth);
     int width;
-    GetImageSize(m_frame[Top].GetSurface(), width, height);
+    GetImageSize(m_topFrame.GetSurface(), width, height);
     AddToFront(new SpacerWindow(width, height));
     SetDesiredHeight(height);
 }

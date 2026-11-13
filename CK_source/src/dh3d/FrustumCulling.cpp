@@ -17,17 +17,25 @@ bool FrustumCulling::CheckVisibility(const CullSphere& sphere) const
 {
     Transform transform(CSwerve::GetInstance()->m_swerve);
     CSwerveGame* game = ((App*)WindowApp::m_instance)->m_helper->m_swerveGame;
-    game->m_world.getTransformTo(m_camera, transform);
+    {
+        // Swerve writes the connection result, which the caller does not use.
+        bool connected;
+        Transform targetTransform(transform);
+        IQueryInterface* world = game->m_world.m_interface;
+        typedef int (*GetTransformTo)(IQueryInterface*, INodeInterface*, ITransformInterface*, bool*);
+        CKMethod<GetTransformTo>(world, 0xa4)(world, m_camera.node(), targetTransform.transformInterface(), &connected);
+    }
     float point[4];
     point[0] = sphere.m_center.x + sphere.m_offset.x;
     point[1] = sphere.m_center.y + sphere.m_offset.y;
     point[2] = sphere.m_center.z + sphere.m_offset.z;
     point[3] = 1.0f;
     transform.transform(4, point);
+    const vec3 cameraPoint(point[0], point[1], point[2]);
     for (int index = 0; index < PLANE_COUNT; index++) {
         const Plane& plane = m_planes[index];
-        float distance = plane.m_normal.m_x * point[0] + plane.m_normal.m_y * point[1] +
-                         plane.m_normal.m_z * point[2] - plane.m_distance;
+        float distance = plane.m_normal.m_x * cameraPoint.m_x + plane.m_normal.m_y * cameraPoint.m_y +
+                         plane.m_normal.m_z * cameraPoint.m_z - plane.m_distance;
         if (distance < -sphere.GetRadius()) {
             return false;
         }
@@ -104,29 +112,6 @@ void FrustumCulling::UpdatePlanes()
     }
 }
 
-bool FrustumCulling::FindMeshRecursively(Group group,
-                                         Mesh& mesh)
-{
-    if (group.m_interface == NULL) {
-        return false;
-    }
-    for (int index = 0; index < group.getChildCount(); index++) {
-        Mesh child = group.getChild(index);
-        bool found;
-        if (child.m_interface != NULL) {
-            mesh = child;
-            found = true;
-        } else {
-            Group subGroup = group.getChild(index);
-            found = FindMeshRecursively(subGroup, mesh);
-        }
-        if (found == true) {
-            return true;
-        }
-    }
-    return false;
-}
-
 void FrustumCulling::GetBoundingSphere(Group group, swvVector3D& center,
                                        float& radius)
 {
@@ -134,13 +119,23 @@ void FrustumCulling::GetBoundingSphere(Group group, swvVector3D& center,
     center.x = 0;
     center.y = 0;
     center.z = 0;
-    Mesh firstMesh;
-    if (FindMeshRecursively(group, firstMesh) == true) {
-        Node parent = firstMesh.getParent();
-        group = Group(parent);
-    }
     if (group.m_interface == NULL) {
         return;
+    }
+    // Prefer the root's own meshes. If it has none, inspect only its first child group.
+    bool hasMesh = false;
+    for (int index = 0; index < group.getChildCount(); index++) {
+        Mesh child = group.getChild(index);
+        if (child.m_interface != NULL) {
+            hasMesh = true;
+            break;
+        }
+    }
+    if (!hasMesh) {
+        Group firstChild = group.getChild(0);
+        if (firstChild.m_interface != NULL) {
+            group = firstChild;
+        }
     }
     float maxX = -BOX_START;
     float minX = BOX_START;
@@ -158,7 +153,14 @@ void FrustumCulling::GetBoundingSphere(Group group, swvVector3D& center,
             Transform transform(CSwerve::GetInstance()->m_swerve);
             float* vertices = new float[vertexCount * 4];
             transform.transform((IVertexArrayInterface*)positions.m_interface, vertexCount * 4, vertices, true);
-            mesh.getTransformTo(group, transform);
+            {
+                bool connected;
+                Group targetGroup(group);
+                Transform targetTransform(transform);
+                typedef int (*GetTransformTo)(IQueryInterface*, INodeInterface*, ITransformInterface*, bool*);
+                CKMethod<GetTransformTo>(mesh.m_interface, 0xa4)(mesh.m_interface, targetGroup.node(),
+                                                               targetTransform.transformInterface(), &connected);
+            }
             float* vertex = vertices;
             for (int vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++) {
                 vertex[0] = vertex[0] * scaleBias[0] + scaleBias[1];

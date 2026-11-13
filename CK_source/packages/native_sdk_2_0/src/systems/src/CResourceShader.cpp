@@ -47,36 +47,36 @@ unsigned int CResourceShader::CreateInternal(unsigned int handle, const char* na
                                           unsigned char copyName)
 {
     m_handle = handle;
-    unsigned int result = CreateResult_Failed;
-    unsigned char success = 0;
-    if (mimeType == 0xd65e722e || mimeType == 0x2c435e5a || mimeType == 0x2c435e5c) {
-        ICGraphics::Abstraction abstraction = ICGraphics::Abstraction_Hardware;
-        if (mimeType == 0xd65e722e) {
-            abstraction = ICGraphics::Abstraction_Software;
-        }
-        m_shader = ICShader::CreateInstance(abstraction);
-        success = m_shader != NULL;
-        result = CreateResult_Failed;
-        if (m_shader != NULL) {
-            result = CreateResult_Created;
-            if (stream != NULL) {
-                // ?: kept on purpose: the original selects the result instead of branching
-                result = m_shader->Load(*stream, mimeType) ? CreateResult_Loaded : CreateResult_Failed;
-                success = result != CreateResult_Failed;
+    ICGraphics::Abstraction abstraction;
+    unsigned char result;
+    if (mimeType == 0x2c435e5c || mimeType == 0x2c435e5a) {
+        abstraction = ICGraphics::Abstraction_Hardware;
+    } else if (mimeType == 0xd65e722e) {
+        abstraction = ICGraphics::Abstraction_Software;
+    } else {
+        goto failed;
+    }
+
+    m_shader = ICShader::CreateInstance(abstraction);
+    result = CreateResult_Failed;
+    if (m_shader != NULL) {
+        result = CreateResult_Created;
+        if (stream != NULL) {
+            // ?: kept on purpose: the original selects the result instead of branching
+            result = m_shader->Load(*stream, mimeType) ? CreateResult_Loaded : CreateResult_Failed;
+            if (result == CreateResult_Failed) {
+                goto failed;
             }
         }
     }
-    if (success) {
-        if (name != NULL) {
-            SetName(name, copyName);
-        }
-        m_isCreated = 1;
-    } else {
-        // unknown shader type or load failure
-        Destroy();
-        result = CreateResult_Failed;
-    }
+    SetName(name, copyName);
+    m_isCreated = 1;
     return result;
+
+failed:
+    // Unknown shader type or load failure.
+    Destroy();
+    return CreateResult_Failed;
 }
 
        

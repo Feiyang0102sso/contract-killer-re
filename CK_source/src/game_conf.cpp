@@ -1,6 +1,8 @@
 // game_conf.cpp - CK 1.5.2 bitmap-font resources in game index order.
 #include "CFontMgr.h"
 
+extern const wchar_t GAME_RES_FILE[] = L"BountyHunter.big";
+
 const GameFontInfo kTableGameFontInfo[CFontMgr::FontCount] = {
     {"BIN_FONT_HEAD", "SUR_FONT_HEAD"},
     {"BIN_FONT_TEXT", "SUR_FONT_TEXT"},

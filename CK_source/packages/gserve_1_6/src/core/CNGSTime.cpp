@@ -59,35 +59,47 @@ unsigned char CNGSTime::resetNetworkTime()
 
 void CNGSTime::handleResponseNetworkTime(CObjectMap* response, CNGSTimeFunctor* functor)
 {
+    CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
     if (response != NULL) {
         CStrWChar errorText = CNGSUtil::GetMessageDataString(response, CStrWChar(NGS_ERROR_CODE_TOKEN), CStrWChar(","));
         int errorCode = 0;
         if (errorText.GetLength() != 0) {
-            errorCode = wcstol(errorText.GetWCharPtr(), NULL, 10);
+            char narrowText[128];
+            const wchar_t* text = errorText.GetWCharPtr();
+            size_t limit = wcslen(text);
+            // Oversized or unconvertible text is not a successful response.
+            errorCode = -1;
+            if (limit < sizeof(narrowText)) {
+                size_t length = wcstombs(narrowText, text, limit + 1);
+                if (length != (size_t)-1 && length <= limit) {
+                    narrowText[length] = '\0';
+                    errorCode = atoi(narrowText);
+                }
+            }
         }
-        CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
         if (errorCode == SERVER_ERROR_VERSION_INVALID) {
             m_serverTimeMs = 0;
             m_currentTimeMs = 0;
             user->SetIsValid(0);
             user->CNGSHandleVersionCheck(0, "handleResponseNetworkTime");
             CNGS::GetInstance()->SetNetworkConnectionState(NETWORK_VERSION_INVALID, "handleResponseNetworkTime");
-        } else if (errorCode == 0 && functor != NULL && !functor->m_versionCheck) {
-            m_serverTimeMs = 0;
-            m_currentTimeMs = 0;
-            CObjectMapValue* time = response->getDataAt(CStrWChar(NGS_LIST_TOKEN), CStrWChar(L" "));
-            if (time != NULL && time->getType() == CObjectMapValue::TYPE_INT) {
-                m_serverTimeMs = ((CObjectMapInt*)time)->m_value;
-                m_currentTimeMs = m_serverTimeMs;
+        } else if (errorCode == 0) {
+            if (functor->m_versionCheck == 0) {
+                m_serverTimeMs = 0;
+                m_currentTimeMs = 0;
+                CObjectMapValue* time = response->getDataAt(CStrWChar(NGS_LIST_TOKEN), CStrWChar(L" "));
+                if (time != NULL && time->getType() == CObjectMapValue::TYPE_INT) {
+                    m_serverTimeMs = ((CObjectMapInt*)time)->m_value;
+                    m_currentTimeMs = m_serverTimeMs;
+                }
+            } else {
+                user->CNGSHandleVersionCheck(1, "handleResponseNetworkTime");
             }
-        } else if (errorCode == 0 && functor != NULL) {
-            user->CNGSHandleVersionCheck(1, "handleResponseNetworkTime");
         }
     } else {
         // no reply: the connection is lost (unless the request was cancelled)
         m_serverTimeMs = 0;
         m_currentTimeMs = 0;
-        CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
         if (functor == NULL || functor->m_status != CNGSServerRequestFunctor::STATUS_CANCELLED) {
             if (user->isValid()) {
                 if (CNGS::GetInstance()->GetNetworkConnectionState() != NETWORK_CONNECTION_ERROR) {

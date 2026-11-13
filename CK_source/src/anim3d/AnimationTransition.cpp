@@ -19,9 +19,8 @@ void AnimationTransition::shutDownAllAnims()
 {
     for (int index = 0; index < m_descriptors.size(); ++index) {
         AnimationInstance* instance = m_descriptors[index].m_instance;
+        // The owning actor tears down its animation list before destroying this transition.
         if (instance != NULL) {
-            instance->setWeight(0.0f);
-            instance->stop();
             delete instance;
         }
     }
@@ -38,17 +37,17 @@ void AnimationTransition::updateWeights(int elapsed)
     for (int index = 0; index < m_descriptors.size(); ++index) {
         AnimationDescriptor& descriptor = m_descriptors[index];
         float change = elapsed * descriptor.m_fadeSpeed;
-        if (descriptor.m_state == FadeIn) {
-            descriptor.m_weight += change;
-            if (descriptor.m_weight >= 1.0f) {
-                descriptor.m_weight = 1.0f;
-                descriptor.m_state = Playing;
-            }
-        } else if (descriptor.m_state == FadeOut) {
+        if (descriptor.m_state == FadeOut) {
             descriptor.m_weight -= change;
             if (descriptor.m_weight <= 0.0f) {
                 descriptor.m_weight = 0.0f;
                 descriptor.m_state = Finished;
+            }
+        } else if (descriptor.m_state == FadeIn) {
+            descriptor.m_weight += change;
+            if (descriptor.m_weight >= 1.0f) {
+                descriptor.m_weight = 1.0f;
+                descriptor.m_state = Playing;
             }
         }
         if (descriptor.m_instance != NULL) {
@@ -57,21 +56,23 @@ void AnimationTransition::updateWeights(int elapsed)
     }
 
     int remaining = m_descriptors.size();
-    int index = 0;
-    while (index < remaining) {
+    for (int index = 0; index < remaining; ++index) {
         AnimationDescriptor& descriptor = m_descriptors[index];
         if (descriptor.m_state != Finished) {
-            ++index;
             continue;
         }
         if (descriptor.m_instance != NULL) {
             descriptor.m_instance->stop();
-            delete descriptor.m_instance;
+            if (m_descriptors[index].m_instance != NULL) {
+                delete m_descriptors[index].m_instance;
+                m_descriptors[index].m_instance = NULL;
+            }
+        }
+        if (remaining >= 2) {
+            m_descriptors[index] = m_descriptors[remaining - 1];
         }
         --remaining;
-        if (index != remaining) {
-            descriptor = m_descriptors[remaining];
-        }
+        --index;
     }
     m_descriptors.setSize(remaining);
 }
@@ -82,12 +83,10 @@ void AnimationTransition::startAnimation(AnimationImpl* animation, float weight,
     if (animation == NULL) {
         return;
     }
-    float fadeSpeed = 1.0f / fadeTime;
     AnimationDescriptor* existing = getAnimDesc(DGHelper::getSwerveID(animation->getName()));
     if (existing != NULL) {
         existing->m_state = FadeIn;
-        existing->m_fadeSpeed = fadeSpeed;
-        existing->m_looped = looped;
+        existing->m_fadeSpeed = 1.0f / fadeTime;
         if (existing->m_instance != NULL) {
             existing->m_instance->setTime(0.0f);
             existing->m_instance->setSpeed(speed);
@@ -102,12 +101,10 @@ void AnimationTransition::startAnimation(AnimationImpl* animation, float weight,
     instance->setSpeed(speed);
     instance->setLooped(looped);
     if (startTime != 0.0f) {
-        int duration = static_cast<int>(animation->getDuration());
-        if (duration > 0) {
-            instance->setTime(static_cast<float>(static_cast<int>(startTime) % duration));
-        }
+        int duration = static_cast<int>(instance->m_animation->getDuration());
+        instance->setTime(static_cast<float>(static_cast<int>(startTime) % duration));
     }
-    AnimationDescriptor descriptor = {looped, fadeSpeed, 0.0f, FadeIn, instance};
+    AnimationDescriptor descriptor = {looped, 1.0f / fadeTime, 0.0f, FadeIn, instance};
     m_descriptors.addElement(descriptor);
 }
 
@@ -115,9 +112,9 @@ AnimationTransition::AnimationDescriptor* AnimationTransition::getAnimDesc(int i
 {
     for (int index = 0; index < m_descriptors.size(); ++index) {
         AnimationDescriptor& descriptor = m_descriptors.m_items[index];
-        if (descriptor.m_instance != NULL &&
-            DGHelper::getSwerveID(descriptor.m_instance->m_animation->getName()) == id) {
-            return &descriptor;
+        const char* name = descriptor.m_instance->m_animation->getName();
+        if (DGHelper::getSwerveID(name) == id) {
+            return &m_descriptors.m_items[index];
         }
     }
     return NULL;
@@ -125,16 +122,17 @@ AnimationTransition::AnimationDescriptor* AnimationTransition::getAnimDesc(int i
 
 void AnimationTransition::eventListener(const AnimationEvent& event, AnimationInstance* instance)
 {
-    if (m_listener == NULL) {
-        return;
-    }
+    const AnimationDescriptor* found = NULL;
     for (int index = 0; index < m_descriptors.size(); ++index) {
-        AnimationDescriptor& descriptor = m_descriptors[index];
+        const AnimationDescriptor& descriptor = m_descriptors[index];
         if (descriptor.m_instance == instance) {
-            if (!descriptor.m_looped || (event.m_id != AnimationEvent::EVENT_END && event.m_id != AnimationEvent::EVENT_START)) {
-                m_listener->eventListener(event, instance);
-            }
-            return;
+            found = &descriptor;
+            break;
+        }
+    }
+    if (!found->m_looped || (event.m_id != AnimationEvent::EVENT_END && event.m_id != AnimationEvent::EVENT_START)) {
+        if (m_listener != NULL) {
+            m_listener->eventListener(event, instance);
         }
     }
 }

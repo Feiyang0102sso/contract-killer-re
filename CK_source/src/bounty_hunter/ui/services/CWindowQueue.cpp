@@ -8,11 +8,13 @@ CWindowQueue::CWindowQueue() : Window(false), m_active(NULL), m_first(NULL), m_l
 
 CWindowQueue::~CWindowQueue()
 {
-    while (m_first != NULL) {
-        Entry* entry = m_first;
-        m_first = entry->next;
-        delete entry->window;
+    Entry* entry = m_first;
+    while (entry != NULL) {
+        Entry* next = entry->next;
+        // The original frees only the queue entries.
         delete entry;
+        m_first = next;
+        entry = next;
     }
 }
 

@@ -12,13 +12,15 @@
 #include "CUnit.h"
 #include "CUtility.h"
 #include "DGHelper.h"
+#include "ICStdUtil.h"
+#include "ICSystemFont.h"
 #include "SScreenAdaptingConstant.h"
 #include "ServiceWindows.h"
 
 typedef char CKUnitInfoWindowSize[sizeof(CUnitInfoScreen) == 0x160 ? 1 : -1];
 
 namespace {
-TextWindow* AddInfoLine(Window* content, const XString& text, CFont* font, int row)
+inline __attribute__((always_inline)) TextWindow* AddInfoLine(Window* content, const XString& text, CFont* font, int row)
 {
     TextWindow* line = new TextWindow(text, font);
     line->SetAlign(Window::ALIGN_HCENTER | Window::ALIGN_VCENTER);
@@ -31,9 +33,8 @@ CUnitInfoScreen::CUnitInfoScreen(CSwerveGame* game, CUnit* unit, float distance,
                                  float identificationRange, bool tagged, int startingDamage, bool revealTarget)
     : Window(false), m_hpBar(NULL), m_distance(distance), m_identificationRange(identificationRange),
       m_startingDamage(startingDamage), m_maxHp(0), m_hp(0), m_game(game), m_openedAt(0), m_state(0),
-      m_tagged(tagged), m_civilian(false), m_revealTarget(revealTarget), m_duration(0), m_guid(-1)
+      m_tagged(tagged), m_civilian(false), m_duration(0), m_guid(-1)
 {
-    ClearAndSetFlags(FLAG_FOCUSABLE | FLAG_ENABLED, 0);
     if (unit == NULL) {
         return;
     }
@@ -47,9 +48,11 @@ CUnitInfoScreen::CUnitInfoScreen(CSwerveGame* game, CUnit* unit, float distance,
         m_title = CUtility::GetString("IDS_GAME_PLAY_KILLED").GetWCharPtr();
     }
     m_name = unit->m_name;
+    m_distanceText = XString("");
     switch (unit->m_type) {
     case UnitCivilian:
         m_type = CUtility::GetString("IDS_GAME_PLAY_CIVILIAN").GetWCharPtr();
+        m_distanceText = XString("");
         m_name = XString("");
         m_civilian = true;
         break;
@@ -62,6 +65,7 @@ CUnitInfoScreen::CUnitInfoScreen(CSwerveGame* game, CUnit* unit, float distance,
     }
     m_maxHp = unit->m_maxHp;
     m_hp = unit->m_hp + m_startingDamage;
+    m_revealTarget = revealTarget;
 }
 
 void CUnitInfoScreen::Init()
@@ -73,40 +77,60 @@ void CUnitInfoScreen::Init()
 
 void CUnitInfoScreen::CreateContent()
 {
-    CUnit* unit = m_game->GetUnitByGUID(m_guid);
+    if (CSwerveGame::m_pInstance == NULL) {
+        return;
+    }
+    CUnit* unit = CSwerveGame::m_pInstance->GetUnitByGUID(m_guid);
     if (unit == NULL) {
         return;
     }
+
     Window* content = new Window(false);
     content->SetPercentWidth(40, 0, 0);
     content->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    content->SetHeightByContent(0, 0);
     m_fade.Init(content, EasyLib::LINEAR);
     m_fade.SetFullTime(0.5f);
     m_fade.SetOpacity(0.0f, 0.8f);
 
-    CFontMgr* fonts = CFontMgr::GetInstance();
-    CFont* heading = fonts->GetFont(16);
-    CFont* font = fonts->GetFont(17);
-    CFont* civilian = fonts->GetFont(18);
-    if (m_tagged && m_distance > m_identificationRange) {
-        AddInfoLine(content, ResString("IDS_GAME_PLAY_UNKNOWN"), font, 0);
-        m_distanceText = ResString("IDS_GAME_PLAY_DISTANCE") + L" " + ResString("IDS_GAME_PLAY_DISTANCE_TOO_FAR");
-        AddInfoLine(content, m_distanceText, font, 1);
-        AddToFront(content);
-        return;
-    }
+    CFont* heading = CFontMgr::GetInstance()->GetFont(16);
+    CFont* font = CFontMgr::GetInstance()->GetFont(17);
+    CFont* civilian = CFontMgr::GetInstance()->GetFont(18);
 
     int row = 0;
-    if (!m_tagged) {
+    if (m_tagged) {
+        if (m_distance > m_identificationRange) {
+            XString unknown(CUtility::GetString("IDS_GAME_PLAY_UNKNOWN").GetWCharPtr());
+            AddInfoLine(content, unknown, font, 0);
+            XString distance(CUtility::GetString("IDS_GAME_PLAY_DISTANCE").GetWCharPtr());
+            XString tooFar(CUtility::GetString("IDS_GAME_PLAY_DISTANCE_TOO_FAR").GetWCharPtr());
+            wchar_t text[1000];
+            ICStdUtil::SWPrintF(text, L"%s %s", distance.c_str(), tooFar.c_str());
+            XString rangeText(text);
+            AddInfoLine(content, rangeText, font, 1);
+            content->SetHeightByContent(0, 0);
+            AddToFront(content);
+            return;
+        }
+    } else {
         CFont* titleFont = font;
-        if (unit->m_tranquillized) {
+        if (unit != NULL && unit->m_tranquillized) {
             m_title = ResString("IDS_GAME_PLAY_TRANQUILIZED");
             titleFont = civilian;
         }
-        AddInfoLine(content, m_title, titleFont, row++);
+        TextWindow* title = new TextWindow(m_title.c_str(), titleFont);
+        title->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+        content->AddToFront(title, 0, 0);
+        row = 1;
     }
-    TextWindow* name = AddInfoLine(content, m_name, font, row++);
+
+    CFont* nameFont = font;
+    if (m_revealTarget) {
+        ICSystemFont* systemFont = ICSystemFont::CreateInstance();
+        const SScreenAdaptingConstant nameSize(15, 30);
+        systemFont->Initialize(nameSize(), NULL, 1);
+        nameFont = systemFont;
+    }
+    TextWindow* name = AddInfoLine(content, m_name, nameFont, row);
     if (m_revealTarget) {
         const SScreenAdaptingConstant nameHeight(25, 40);
         name->SetDesiredHeight(nameHeight());
@@ -115,40 +139,44 @@ void CUnitInfoScreen::CreateContent()
     if (m_civilian) {
         typeFont = civilian;
     }
-    AddInfoLine(content, m_type, typeFont, row++);
+    AddInfoLine(content, m_type, typeFont, row + 1);
+    row += 2;
 
     if (!m_tagged) {
-        XString reward = XString::Format(L"+%d", unit->m_field1f0);
+        wchar_t text[10];
+        ICStdUtil::SWPrintF(text, L"+%d", unit->m_field1f0);
+        XString reward(text);
         LabelWithIcon* xp = new LabelWithIcon("IDB_HUD_ICON_EXP", reward, true, font, 0);
-        xp->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
         Window* xpRow = new Window(false);
+        xp->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+        xpRow->AddToFront(xp);
         xpRow->SetHeightByContent(0, 0);
         xpRow->SetWidthByContent(0, 0);
         xpRow->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-        xpRow->AddToFront(xp);
         content->AddToFront(xpRow, 0, row);
-        content->SetWidthByContent(0, 0);
-        AddToFront(content);
-        return;
-    }
-
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_Weapon* weapon = app->m_helper->GetGameData()->GetActiveWeapon();
-    if (weapon != NULL) {
-        XString distance = ResString("IDS_GAME_PLAY_DISTANCE");
+    } else {
+        XString distance(CUtility::GetString("IDS_GAME_PLAY_DISTANCE").GetWCharPtr());
+        XString measure(CUtility::GetString("IDS_GAME_PLAY_MEASURE").GetWCharPtr());
+        XString outOfRange(CUtility::GetString("IDS_GAME_PLAY_DISTANCE_OUT_OF_RANGE").GetWCharPtr());
         float distanceInFeet = m_distance * 3.28f;
-        if (distanceInFeet <= weapon->effectiveRange()) {
-            XString measure = ResString("IDS_GAME_PLAY_MEASURE");
-            m_distanceText = XString::Format(L"%ls: %d %ls", distance.c_str(),
-                                             static_cast<int>(distanceInFeet), measure.c_str());
-        } else {
-            XString outOfRange = ResString("IDS_GAME_PLAY_DISTANCE_OUT_OF_RANGE");
-            m_distanceText = XString::Format(L"%ls : %ls", distance.c_str(), outOfRange.c_str());
+        CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
+        if (weapon == NULL) {
+            return;
         }
-        content->AddToFront(new TextWindow(m_distanceText, font), 0, row++);
+
+        wchar_t text[1000];
+        float currentDistanceInFeet = m_distance * 3.28f;
+        if (!(currentDistanceInFeet > weapon->effectiveRange())) {
+            ICStdUtil::SWPrintF(text, L"%s: %d %s", distance.c_str(),
+                               static_cast<int>(distanceInFeet), measure.c_str());
+        } else {
+            ICStdUtil::SWPrintF(text, L"%s : %s", distance.c_str(), outOfRange.c_str());
+        }
+        XString rangeText(text);
+        content->AddToFront(new TextWindow(rangeText, font), 0, row);
 
         int width = 100;
-        if (App::IsVGA() || App::IsXGA() || App::IsWVGA()) {
+        if (App::IsVGA() || App::IsXGA() || App::IsWVGA() == 1) {
             width = 200;
         }
         m_hpBar = new CAnimatedProgressBar(width, "IDB_HUD_PROGRESSBAR_NPC_DARK_RED",
@@ -156,45 +184,45 @@ void CUnitInfoScreen::CreateContent()
                                            "IDB_HUD_PROGRESSBAR_NPC", "IDB_HUD_PROGRESSBAR_NPC_PINK");
         m_hpBar->SetMaxValue(m_maxHp);
         m_hpBar->SetCurrValue(m_hp);
+        m_hpBar->SetMaxValue(m_maxHp);
         m_hpBar->m_drawText = false;
-        m_hpBar->ClearAndSetFlags(FLAG_FOCUSABLE | FLAG_ENABLED, 0);
-        content->AddToFront(m_hpBar, 0, row);
+        content->AddToFront(m_hpBar, 0, row + 1);
     }
     content->SetWidthByContent(0, 0);
+    content->SetHeightByContent(0, 0);
     AddToFront(content);
 }
 
 void CUnitInfoScreen::Update()
 {
-    Window::Update();
-    if (m_state != 2) {
+    if (m_state != 2 || CSwerveGame::m_pInstance == NULL) {
         return;
     }
+    CUnit* unit = CSwerveGame::m_pInstance->GetUnitByGUID(m_guid);
+    if (unit == NULL) {
+        return;
+    }
+
+    unsigned int now = CStdUtil_Cocoa::GetUpTimeMS();
     unsigned int duration = m_duration;
+    unsigned int openedAt = m_openedAt;
     if (duration == 0) {
         duration = 3000;
         if (m_tagged) {
             duration = 1500;
         }
     }
-    if (CStdUtil_Cocoa::GetUpTimeMS() - m_openedAt > duration) {
-        if (m_game->m_unitInfo == this) {
-            m_game->OnUnitInfoScreenClosed();
-        }
+    if (now - openedAt > duration) {
+        ReverseEasy(FLAG_CLOSE_AFTER_EASY);
         m_state = 3;
-        Close();
-        return;
     }
-    CUnit* unit = m_game->GetUnitByGUID(m_guid);
-    if (m_tagged && unit != NULL && m_hpBar != NULL) {
-        if (m_hp != unit->m_hp) {
-            m_hp = unit->m_hp;
-            m_hpBar->SetCurrValueWithAnimation(m_hp);
-            m_hpBar->SetMaxValue(unit->m_maxHp);
-        }
-        if (m_hpBar->m_deltaPercent == 0.0f && (unit->m_dead || unit->m_tranquillized)) {
-            m_game->ShowUnitKillScreen(unit);
-        }
+    if (m_tagged && m_hp != unit->m_hp) {
+        m_hp = unit->m_hp;
+        m_hpBar->SetCurrValueWithAnimation(m_hp);
+        m_hpBar->SetMaxValue(unit->m_maxHp);
+    }
+    if (m_tagged && m_hpBar->m_deltaPercent == 0.0f && (unit->m_dead || unit->m_tranquillized)) {
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->ShowUnitKillScreen(unit);
     }
 }
 

@@ -20,20 +20,16 @@ CFileData1::~CFileData1()
 
 void CFileData1::setData(const unsigned char* data, int size)
 {
-    if (data == NULL || size <= 0) {
-        resetData();
+    m_size = size;
+    if (m_data == data) {
         return;
     }
-    if (m_data != data) {
-        unsigned char* copy = new unsigned char[size];
-        if (copy == NULL) {
-            return;
-        }
-        memcpy(copy, data, size);
+    if (m_data != NULL) {
         delete[] m_data;
-        m_data = copy;
+        m_data = NULL;
     }
-    m_size = size;
+    m_data = new unsigned char[m_size];
+    memcpy(m_data, data, m_size);
 }
 
 unsigned char CFileData1::compareData(const CSaveRestoreInterface* other)
@@ -52,8 +48,10 @@ unsigned char CFileData1::copyData(const CSaveRestoreInterface* other)
 
 void CFileData1::resetData()
 {
-    delete[] m_data;
-    m_data = NULL;
+    if (m_data != NULL) {
+        delete[] m_data;
+        m_data = NULL;
+    }
     m_size = 0;
 }
 
@@ -66,9 +64,11 @@ void CFileData1::getData(TCVector<CNGSAttribute*>& attributes)
 void CFileData1::setData(const CHash* attributes)
 {
     resetData();
-    CStrChar name = getTokenNameFor("DATA");
     void* attribute = NULL;
-    if (attributes->Find(CStringToKey(name.GetCharPtr(), 0), &attribute)) {
+    CStrChar name = getTokenNameFor("DATA");
+    unsigned int key = CStringToKey(name.GetCharPtr(), 0);
+    int found = attributes->Find(key, &attribute);
+    if (found != 0) {
         m_data = static_cast<CNGSAttribute*>(attribute)->getVal_base64(m_size);
     } else {
         dataNotFound();

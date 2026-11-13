@@ -21,7 +21,9 @@ void CImageButton::AddImage(ICRenderSurface* surface, int x, int y)
         SetSize(Window::ImageWidth(surface), m_height + m_extraHeight);
     }
     if (m_height < Window::ImageHeight(surface)) {
-        SetSize(m_width, m_extraHeight + Window::ImageHeight(surface));
+        int width = m_width;
+        int height = Window::ImageHeight(surface);
+        SetSize(width, m_extraHeight + height);
     }
     AddToFront(image);
     m_imageWindow = image;

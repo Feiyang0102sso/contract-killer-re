@@ -14,12 +14,14 @@ public:
     static const wchar_t* RESMAP_FILENAME;
     /** Separator of the two names of a line. */
     static const char* SEPARATOR;
+    /** End of a record in the original map file. */
+    static const char* RESMAP_NEWLINE_SEQ;
 
     ResMap();
     ~ResMap();
     /** Read and parse RESMAP_FILENAME. */
     void init();
-    /** Parse `size` bytes of map text (lines end with \r\n, \n or \r). */
+    /** Parse `size` bytes of map text (lines end with \n). */
     void parseMapData(const char* data, unsigned int size);
     /** Parse one "<id>=<file>" line of `length` characters. */
     void parseMapStr(const char* line, unsigned int length);
@@ -30,8 +32,6 @@ public:
     XString getFilename(const char* name) const;
     /** Resource id of file `fileName` (NULL when unknown or empty). */
     const char* getResourceID(const XString& fileName) const;
-    /** Whole file `path` as a new zero terminated buffer (NULL when it cannot be opened). */
-    char* getDataFromFile(const XString& path) const;
     /** Whole text resource as a new zero terminated buffer (caller delete[]s it). */
     char* loadText(const XString& name) const;
 

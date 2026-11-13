@@ -65,36 +65,84 @@ void CPrivateData1::getData(TCVector<CNGSAttribute*>& attributes)
     CStrWChar fireButton = getwTokenNameFor(TOKENS[6]);
     CStrWChar notification = getwTokenNameFor(TOKENS[7]);
 
-    attributes.Add(new CNGSAttribute(softCurrency, m_softCurrency, m_collectionType));
-    attributes.Add(new CNGSAttribute(hardCurrency, m_hardCurrency, m_collectionType));
-    attributes.Add(new CNGSAttribute(experience, m_experience, m_collectionType));
-    attributes.Add(new CNGSAttribute(conflictStatus, m_conflictStatus, m_collectionType));
-    attributes.Add(new CNGSAttribute(sound, m_soundSetting, m_collectionType));
-    attributes.Add(new CNGSAttribute(music, m_musicSetting, m_collectionType));
-    attributes.Add(new CNGSAttribute(fireButton, m_fireBtnSetting, m_collectionType));
-    attributes.Add(new CNGSAttribute(notification, m_notificationSetting, m_collectionType));
+    CNGSAttribute* softCurrencyAttribute = new CNGSAttribute(softCurrency, m_softCurrency, m_collectionType);
+    CNGSAttribute* hardCurrencyAttribute = new CNGSAttribute(hardCurrency, m_hardCurrency, m_collectionType);
+    CNGSAttribute* experienceAttribute = new CNGSAttribute(experience, m_experience, m_collectionType);
+    CNGSAttribute* conflictAttribute = new CNGSAttribute(conflictStatus, m_conflictStatus, m_collectionType);
+    CNGSAttribute* soundAttribute = new CNGSAttribute(sound, m_soundSetting, m_collectionType);
+    CNGSAttribute* musicAttribute = new CNGSAttribute(music, m_musicSetting, m_collectionType);
+    CNGSAttribute* fireButtonAttribute = new CNGSAttribute(fireButton, m_fireBtnSetting, m_collectionType);
+    CNGSAttribute* notificationAttribute = new CNGSAttribute(notification, m_notificationSetting, m_collectionType);
+    attributes.Add(softCurrencyAttribute);
+    attributes.Add(hardCurrencyAttribute);
+    attributes.Add(experienceAttribute);
+    attributes.Add(conflictAttribute);
+    attributes.Add(soundAttribute);
+    attributes.Add(musicAttribute);
+    attributes.Add(fireButtonAttribute);
+    attributes.Add(notificationAttribute);
 }
 
 void CPrivateData1::setData(const CHash* attributes)
 {
     resetData();
-    unsigned long long* counters[] = { &m_softCurrency, &m_hardCurrency, &m_experience };
-    unsigned char* switches[] = { &m_soundSetting, &m_musicSetting, &m_fireBtnSetting, &m_notificationSetting };
-    for (int index = 0; index < 8; index++) {
-        CStrChar name = getTokenNameFor(TOKENS[index]);
-        void* value = NULL;
-        if (!attributes->Find(CStringToKey(name.GetCharPtr(), 0), &value)) {
-            dataNotFound();
-            continue;
-        }
-        CNGSAttribute* attribute = static_cast<CNGSAttribute*>(value);
-        if (index < 3) {
-            *counters[index] = attribute->getVal_uint64();
-        } else if (index == 3) {
-            m_conflictStatus = attribute->getVal_int32();
-        } else {
-            *switches[index - 4] = attribute->getVal_uint8();
-        }
+    CNGSAttribute* softCurrency = NULL;
+    CNGSAttribute* hardCurrency = NULL;
+    CNGSAttribute* experience = NULL;
+    CNGSAttribute* conflictStatus = NULL;
+    CNGSAttribute* sound = NULL;
+    CNGSAttribute* music = NULL;
+    CNGSAttribute* fireButton = NULL;
+    CNGSAttribute* notification = NULL;
+
+    CStrChar softCurrencyName = getTokenNameFor(TOKENS[0]);
+    CStrChar hardCurrencyName = getTokenNameFor(TOKENS[1]);
+    CStrChar experienceName = getTokenNameFor(TOKENS[2]);
+    CStrChar conflictStatusName = getTokenNameFor(TOKENS[3]);
+    CStrChar soundName = getTokenNameFor(TOKENS[4]);
+    CStrChar musicName = getTokenNameFor(TOKENS[5]);
+    CStrChar fireButtonName = getTokenNameFor(TOKENS[6]);
+    CStrChar notificationName = getTokenNameFor(TOKENS[7]);
+
+    if (attributes->Find(CStringToKey(softCurrencyName.GetCharPtr(), 0), (void**)&softCurrency)) {
+        m_softCurrency = softCurrency->getVal_uint64();
+    } else {
+        dataNotFound();
+    }
+    if (attributes->Find(CStringToKey(hardCurrencyName.GetCharPtr(), 0), (void**)&hardCurrency)) {
+        m_hardCurrency = hardCurrency->getVal_uint64();
+    } else {
+        dataNotFound();
+    }
+    if (attributes->Find(CStringToKey(experienceName.GetCharPtr(), 0), (void**)&experience)) {
+        m_experience = experience->getVal_uint64();
+    } else {
+        dataNotFound();
+    }
+    if (attributes->Find(CStringToKey(conflictStatusName.GetCharPtr(), 0), (void**)&conflictStatus)) {
+        m_conflictStatus = conflictStatus->getVal_int32();
+    } else {
+        dataNotFound();
+    }
+    if (attributes->Find(CStringToKey(soundName.GetCharPtr(), 0), (void**)&sound)) {
+        m_soundSetting = sound->getVal_uint8();
+    } else {
+        dataNotFound();
+    }
+    if (attributes->Find(CStringToKey(musicName.GetCharPtr(), 0), (void**)&music)) {
+        m_musicSetting = music->getVal_uint8();
+    } else {
+        dataNotFound();
+    }
+    if (attributes->Find(CStringToKey(fireButtonName.GetCharPtr(), 0), (void**)&fireButton)) {
+        m_fireBtnSetting = fireButton->getVal_uint8();
+    } else {
+        dataNotFound();
+    }
+    if (attributes->Find(CStringToKey(notificationName.GetCharPtr(), 0), (void**)&notification)) {
+        m_notificationSetting = notification->getVal_uint8();
+    } else {
+        dataNotFound();
     }
 }
 

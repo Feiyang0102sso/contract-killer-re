@@ -53,7 +53,7 @@
 - (UIColor*) fullScreenToolBarColor;
 - (UIBarStyle) fullScreenToolBarStyle;
 - (BOOL) locationServicesEnabled;
-- (CLLocation*) locationObject;
+- (CLLocation*) currentLocation;      // name from the original protocol metadata
 - (void) fullScreenWebViewActivated;
 - (void) fullScreenWebViewClosed;
 - (void) getAdSucceeded;

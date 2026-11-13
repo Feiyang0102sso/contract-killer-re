@@ -22,34 +22,37 @@ CProgressSystem::CProgressSystem()
     ResMap* resources = static_cast<App*>(WindowApp::m_instance)->InitResMap();
     char* text = resources->loadText(XString(L"res/common/configs/progress.xml"));
     TiXmlDocument document;
+    document.Parse(text, NULL, TIXML_ENCODING_UNKNOWN);
     if (text != NULL) {
-        document.Parse(text, NULL, TIXML_ENCODING_UNKNOWN);
         free(text);
-        ParseLevels(document.FirstChild("progress"));
     }
+    ParseLevels(document.FirstChild("progress"));
     m_field10 = 0.5f;
 }
 
 void CProgressSystem::ParseLevels(TiXmlNode* root)
 {
-    if (root == NULL) {
-        return;
-    }
     const int count = CXmlHelper::GetAttributeValue(root, "level_count").ToInt();
     m_levels.ensureCapacity(count);
-    const SLevelInfo defaults = { 0, 0, 0, 0.0f };
-    for (int index = 0; index < count; ++index) {
+    // The shipped table supplies dmgCoeff for every level.
+    SLevelInfo defaults;
+    defaults.m_xpThreshold = 0;
+    defaults.m_maxEnergy = 0;
+    defaults.m_civilianCount = 0;
+    for (int remaining = count; remaining > 0; --remaining) {
         m_levels.addElement(defaults);
     }
     for (TiXmlNode* node = root->FirstChild("level"); node != NULL; node = node->NextSibling("level")) {
         const int index = CXmlHelper::GetAttributeValue(node, "num").ToInt();
-        SLevelInfo level;
-        level.m_xpThreshold = CXmlHelper::GetAttributeValue(node, "xp").ToInt();
-        level.m_maxEnergy = CXmlHelper::GetAttributeValue(node, "energy").ToInt();
-        level.m_civilianCount = CXmlHelper::GetAttributeValue(node, "civilianCount").ToInt();
-        level.m_damageCoefficient = CXmlHelper::GetAttributeValue(node, "dmgCoeff").ToFloat();
+        int xp = CXmlHelper::GetAttributeValue(node, "xp").ToInt();
+        int energy = CXmlHelper::GetAttributeValue(node, "energy").ToInt();
+        int civilians = CXmlHelper::GetAttributeValue(node, "civilianCount").ToInt();
+        float damageCoefficient = CXmlHelper::GetAttributeValue(node, "dmgCoeff").ToFloat();
         if (index >= 0 && index < count) {
-            m_levels[index] = level;
+            m_levels[index].m_xpThreshold = xp;
+            m_levels[index].m_maxEnergy = energy;
+            m_levels[index].m_civilianCount = civilians;
+            m_levels[index].m_damageCoefficient = damageCoefficient;
         }
     }
 }
@@ -69,10 +72,11 @@ int CProgressSystem::GetMaxXPForLevel(int level) const
 
 int CProgressSystem::GetMaxXP() const
 {
-    if (m_levels.size() > 0) {
-        return GetMaxXPForLevel(GetMaxLevel());
+    int level = m_levels.size();
+    if (level > 0) {
+        --level;
     }
-    return 0;
+    return GetMaxXPForLevel(level);
 }
 
 int CProgressSystem::GetMaxEnergyForLevel(int level) const
@@ -112,12 +116,12 @@ float CProgressSystem::GetRandValue() const
 
 float CProgressSystem::GetLevelCoef(bool allowAlternate) const
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    const char* token = "LEVEL_COEF_01";
-    if (allowAlternate && CBH_Player::GetInstance()->GetLevel() >= 6) {
-        token = "LEVEL_COEF_02";
+    int level = CBH_Player::GetInstance()->GetLevel();
+    ConfigReader& config = static_cast<App*>(WindowApp::m_instance)->m_helper->m_config;
+    if (level >= 6 && allowAlternate == 1) {
+        return config.GetFloatValueByToken("LEVEL_COEF_02", true);
     }
-    return app->m_helper->m_config.GetFloatValueByToken(token, true);
+    return config.GetFloatValueByToken("LEVEL_COEF_01", true);
 }
 
 float CProgressSystem::GetDmgCoeff() const
@@ -128,30 +132,33 @@ float CProgressSystem::GetDmgCoeff() const
 
 float CProgressSystem::GetLevelForkFormulaCoef(bool allowAlternate) const
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    float coefficient = GetLevelCoef(allowAlternate) * 2.0f;
-    int range = app->m_helper->m_config.GetIntegerValueByToken("RND_RANGE", true);
+    float coefficient = GetLevelCoef(allowAlternate);
+    int range = static_cast<App*>(WindowApp::m_instance)->m_helper->m_config.GetIntegerValueByToken("RND_RANGE", true);
     int level = CBH_Player::GetInstance()->GetLevel();
     int minimum = level - range;
-    if (minimum < 1) {
-        minimum = 1;
-    }
     int maximum = level + range;
     if (maximum > GetMaxLevel()) {
         maximum = GetMaxLevel();
     }
-    float lower = 1.0f + coefficient * (minimum - 1);
-    float upper = 1.0f + coefficient * (maximum - 1);
-    return lower + GetRandValue() * (upper - lower);
+    float minimumOffset = minimum - 1;
+    if (minimum < 1) {
+        minimumOffset = 0.0f;
+    }
+    coefficient += coefficient;
+    float lower = coefficient * minimumOffset + 1.0f;
+    float upper = coefficient * (maximum - 1) + 1.0f;
+    float random = GetRandValue();
+    return lower + random * (upper - lower);
 }
 
 int CProgressSystem::CalcXpForKilledUnit(CUnit* unit)
 {
-    if (unit == NULL || unit->m_body.m_type == NULL) {
+    if (unit == NULL) {
         return 0;
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    return static_cast<int>(unit->m_body.m_type->m_baseXp * app->InitProgressSystem()->GetLevelForkFormulaCoef(false));
+    int baseXp = unit->m_body.m_type->m_baseXp;
+    CProgressSystem* progress = static_cast<App*>(WindowApp::m_instance)->InitProgressSystem();
+    return static_cast<int>(baseXp * progress->GetLevelForkFormulaCoef(false));
 }
 
 int CProgressSystem::GetTaggingTimeMS()
@@ -185,30 +192,18 @@ void CProgressSystem::RegisterGameEvent(EGameEvent event, int experience, int he
 
 void CProgressSystem::AddXPForUnit(int experience, bool headshot)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CSwerveGame* game = app->m_helper->m_swerveGame;
-    int multiplier = 1;
-    if (game != NULL) {
-        multiplier = game->m_multiplier;
-    }
-    if (headshot) {
-        multiplier *= 2;
-    }
+    int multiplier = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_multiplier << headshot;
     if (multiplier > 1) {
         WindowApp::HandleTunnelCommand(-0x53245bd8, multiplier, 0, 0);
     }
     // CK queries the trick-shot multiplier here and uses the mission multiplier for the actual award.
-    app->m_trickShotManager->GetMultiplier();
-    CDH_Weapon* weapon = app->m_helper->GetGameData()->GetActiveWeapon();
-    int total = experience * multiplier;
-    if (weapon != NULL) {
-        total += weapon->m_bonusXp;
-    }
-    CBH_Player* player = CBH_Player::GetInstance();
-    int previousLevel = player->GetLevel();
-    player->AddXp(total, GAIN_SOURCE_ENEMY);
-    if (player->GetLevel() > previousLevel) {
+    static_cast<App*>(WindowApp::m_instance)->m_trickShotManager->GetMultiplier();
+    CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
+    int total = experience * multiplier + weapon->m_bonusXp;
+    int previousLevel = CBH_Player::GetInstance()->GetLevel();
+    CBH_Player::GetInstance()->AddXp(total, GAIN_SOURCE_ENEMY);
+    if (CBH_Player::GetInstance()->GetLevel() - previousLevel > 0) {
         WindowApp::HandleTunnelCommand(0x6aa69fd2, 0, 0, 0);
     }
-    app->m_huntingInfo->OnReceivedXP(total);
+    static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->OnReceivedXP(total);
 }

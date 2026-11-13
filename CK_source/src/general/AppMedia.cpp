@@ -24,7 +24,10 @@ void AppMedia::SoundChannel::Update()
         ICMediaPlayer* player = ICMediaPlayer::GetInstance();
         if (m_eventId == 0) {
             if (m_startTime <= WindowApp::m_instance->m_timeSeconds) {
-                CMedia* data = static_cast<CMedia*>(m_media.m_resource->GetData());
+                CMedia* data = NULL;
+                if (m_media.m_resource != NULL) {
+                    data = static_cast<CMedia*>(m_media.m_resource->GetData());
+                }
                 m_eventId = player->Play(data, m_loop, 0);
             }
         } else if (!player->IsPlaying(m_eventId)) {
@@ -124,12 +127,11 @@ void AppMedia::Resume()
 void AppMedia::Update()
 {
     UpdateMediaPlayerSettings();
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    AppSettings* settings = app->m_settings;
+    AppSettings* settings = static_cast<App*>(WindowApp::m_instance)->m_settings;
     bool music = m_activated && settings->IsMusicEnabled();
     bool sound = m_activated && settings->IsSoundEnabled();
     bool vibration = m_activated && settings->IsVibrationEnabled();
-    float now = app->m_timeSeconds;
+    float now = WindowApp::m_instance->m_timeSeconds;
 
     for (int index = 0; index < CHANNEL_MULTIPLE; ++index) {
         bool enabled = sound;
@@ -218,17 +220,17 @@ void AppMedia::Stop(ESoundChannel channel)
 void AppMedia::Play(ESoundChannel channel, const MediaRes& media, float delay,
                     ESoundLoopType loop, EStartType start)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
+    AppSettings* settings = static_cast<App*>(WindowApp::m_instance)->m_settings;
     if (channel == CHANNEL_MUSIC) {
-        if (!m_activated || !app->m_settings->IsMusicEnabled()) {
+        if (!m_activated || !settings->IsMusicEnabled()) {
             m_music = media;
             return;
         }
-    } else if (!m_activated || !app->m_settings->IsSoundEnabled()) {
+    } else if (!m_activated || !settings->IsSoundEnabled()) {
         return;
     }
 
-    float when = app->m_timeSeconds + delay;
+    float when = WindowApp::m_instance->m_timeSeconds + delay;
     if (channel >= CHANNEL_MULTIPLE) {
         for (int index = 0; index < m_effects.size(); ++index) {
             SoundChannel& effect = m_effects[index];
@@ -251,10 +253,7 @@ void AppMedia::Play(ESoundChannel channel, const MediaRes& media, float delay,
             return;
         }
         if (media.m_resource != NULL) {
-            SoundChannel effect;
-            effect.m_owner = this;
-            effect.m_media = media;
-            effect.m_startTime = when;
+            SoundChannel effect(this, media, when);
             m_effects.addElement(effect);
         }
         return;
@@ -263,11 +262,12 @@ void AppMedia::Play(ESoundChannel channel, const MediaRes& media, float delay,
     SoundChannel& effect = m_channels[channel];
     if (effect.m_media.m_resource != NULL) {
         if (start == START_IF_DIFFERENT) {
+            void* previousData = effect.m_media.m_resource->GetData();
             void* data = NULL;
             if (media.m_resource != NULL) {
                 data = media.m_resource->GetData();
             }
-            if (effect.m_media.m_resource->GetData() != data) {
+            if (previousData != data) {
                 effect.Stop();
             }
         } else if (start != START_IF_IDLE) {

@@ -1,22 +1,36 @@
 #include "CArmorManager.h"
 
+#include "App.h"
 #include "CArmor.h"
-#include "CXmlHelper.h"
+#include "ResMap.h"
+#include "tinyxml.h"
 
 CArmorManager::CArmorManager()
 {
-    TiXmlDocument config = CXmlHelper::Parse(L"res/common/configs/armors.xml");
-    for (const TiXmlElement* element = config.FirstChildElement("armor"); element != NULL;
-         element = element->NextSiblingElement("armor")) {
+    ResMap* resources = static_cast<App*>(WindowApp::m_instance)->InitResMap();
+    char* text = resources->loadText(XString(L"res/common/configs/armors.xml"));
+    TiXmlDocument config;
+    config.Parse(text, NULL, TIXML_ENCODING_UNKNOWN);
+    if (text != NULL) {
+        free(text);
+    }
+    const TiXmlElement* element = static_cast<const TiXmlDocument&>(config).FirstChild("armor")->ToElement();
+    do {
         CArmor* item = new CArmor();
         item->init(*element);
         m_items.addElement(item);
-    }
+        element = element->NextSiblingElement("armor");
+    } while (element != NULL);
 }
 
 CArmorManager::~CArmorManager()
 {
-    SAFE_DELETE_VECTOR(m_items);
+    for (int index = 0; index < m_items.size(); ++index) {
+        if (m_items.m_items[index] != NULL) {
+            delete m_items.m_items[index];
+            m_items.m_items[index] = NULL;
+        }
+    }
 }
 
 void CArmorManager::loadResources()

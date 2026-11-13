@@ -15,7 +15,7 @@ public:
     bool IsChallengeActive(int id);
     int GetCurrentChallengeDay();
     int GetChallengesFinishTime();
-    static int GetTimeSec();
+    int GetTimeSec();
     void Save();
     friend class CChallengesWindow;  // original window calls CheckChallengesFinishByTime
 

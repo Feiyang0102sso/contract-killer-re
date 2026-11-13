@@ -21,14 +21,16 @@ CHelpScreen::CHelpScreen()
 
     char build[100];
     ICStdUtil::SPrintF(build, "\n\n\n\n\n\n$Name: BOUNTY_20120817-131937 $\n%s %s", "Aug 17 2012", "13:59:08");
-    XString about = XString::Format(ResString("IDS_HELP_TEXT_ABOUT").c_str(), XString("1").ToInt(), XString("5").ToInt(),
-                                    XString("2").ToInt());
+    int major = XString("1").ToInt();
+    int minor = XString("5").ToInt();
+    int patch = XString("2").ToInt();
+    XString about = XString::Format(ResString("IDS_HELP_TEXT_ABOUT").c_str(), major, minor, patch);
     about.Append(XString(build));
     about.Append(L"\n" + ResString("IDS_GLU_ID"));
-    if (CNGS::GetInstance()->GetLocalUser()->GetClientID() == -1) {
-        about.Append(ResString("IDS_GLU_ID_UNAVAILABLE"));
-    } else {
+    if (CNGS::GetInstance()->GetLocalUser()->GetClientID() != -1) {
         about.Append(XString::Format(L"%d", CNGS::GetInstance()->GetLocalUser()->GetClientID()));
+    } else {
+        about.Append(ResString("IDS_GLU_ID_UNAVAILABLE"));
     }
     // The unlocked about page also lists the service ids and urls of this build.
     m_about = about + L"\n";
@@ -38,9 +40,9 @@ CHelpScreen::CHelpScreen()
     m_about.Append(L"\nFlurry ID:" + XString("1GQE9DWB9DP459DYZHE1"));
     m_about.Append(L"\nPlayheaven public: " + XString("f51d2107e4174736b33bcbd699da7648"));
     m_about.Append(L"\nPlayheaven secret: " + XString("82cf3f2f8c2443d3bbdb649cee5987a1"));
-    m_about.Append(L"\n");
+    m_about.Append(L"\n", wcslen(L"\n") * sizeof(wchar_t));
     m_about.Append(XString("Tapjoy ID:") + XString("9b0a75e0-3a11-432a-8c24-414e30f69b35"));
-    m_about.Append(L"\n");
+    m_about.Append(L"\n", wcslen(L"\n") * sizeof(wchar_t));
     if (IOSInterface::isDeviceTablet() == true) {
         m_about.Append(XString("AC_APPID:") + XString("app4ddb6c2ec6a37"));
     } else {

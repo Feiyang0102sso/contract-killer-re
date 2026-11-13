@@ -39,32 +39,27 @@ void SwerveHelper::CopyAnimationTracks_r(Object3D& source, const Object3D& targe
     int trackCount = source.getAnimationTrackCount();
     for (int trackIndex = 0; trackIndex < trackCount; trackIndex++) {
         AnimationTrack track = source.getAnimationTrack(trackIndex);
-        if (track.m_interface != NULL) {
-            AnimationController controller = track.getController();
-            if (controller.m_interface != NULL) {
-                int controllerId = controller.getUserID();
-                if (controllerId != 0) {
-                    AnimationTrack trackCopy(track.duplicate());
-                    if (trackCopy == NULL) {
-                        continue;
-                    }
-                    // The target is const, so add the track through a temporary handle.
-                    Object3D(target).addAnimationTrack(trackCopy);
-                    int index = controllerIds.indexOf(controllerId);
-                    if (index == -1) {
-                        AnimationController controllerCopy(controller.duplicate());
-                        if (controllerCopy == NULL) {
-                            Object3D(target).removeAnimationTrack(trackCopy);
-                            continue;
-                        }
-                        controllerIds.addElement(controllerId);
-                        controllerCopy.setUserID(userIdOffset + controllerId);
-                        trackCopy.setController(controllerCopy);
-                        controllers.addElement(controllerCopy);
-                    } else {
-                        trackCopy.setController(controllers.elementAt(index));
-                    }
-                }
+        if (track.m_interface == NULL) {
+            continue;
+        }
+        AnimationController controller = track.getController();
+        if (controller.m_interface == NULL) {
+            continue;
+        }
+        int controllerId = controller.getUserID();
+        if (controllerId != 0) {
+            AnimationTrack trackCopy(track.duplicate());
+            // The target is const, so add the track through a temporary handle.
+            Object3D(target).addAnimationTrack(trackCopy);
+            int index = controllerIds.indexOf(controllerId);
+            if (index == -1) {
+                controllerIds.addElement(controllerId);
+                AnimationController controllerCopy(controller.duplicate());
+                controllerCopy.setUserID(userIdOffset + controllerId);
+                trackCopy.setController(controllerCopy);
+                controllers.addElement(controllerCopy);
+            } else {
+                trackCopy.setController(controllers.elementAt(index));
             }
         }
     }
@@ -78,9 +73,6 @@ void SwerveHelper::CopyAnimationTracks_r(Object3D& source, const Object3D& targe
     int childCount = sourceGroup.getChildCount();
     for (int childIndex = 0; childIndex < childCount; childIndex++) {
         Node sourceChild = sourceGroup.getChild(childIndex);
-        if (sourceChild == NULL) {
-            continue;
-        }
         int childId = sourceChild.getUserID();
         Node targetChild;
         if (childId != 0) {
@@ -134,7 +126,7 @@ SwerveHelper::Object3D SwerveHelper::FindChild(Group group, int userID)
     int childCount = group.getChildCount();
     for (int index = 0; index < childCount; index++) {
         Object3D child = group.getChild(index);
-        if (child != NULL && child.getUserID() == userID) {
+        if (child.getUserID() == userID) {
             return child;
         }
     }
@@ -147,7 +139,7 @@ void SwerveHelper::SeparateAnimationAppearances_r(Object3D object)
         return;
     }
 
-    // every submesh gets its own copy of its appearance and of its first two textures
+    // every submesh gets its own appearance and copies of the textures before the first empty slot
     Mesh mesh(object);
     if (mesh.m_interface != NULL) {
         int submeshCount = mesh.getSubmeshCount();
@@ -161,9 +153,6 @@ void SwerveHelper::SeparateAnimationAppearances_r(Object3D object)
             Texture2D texture = appearance.getTexture(0);
             while (texture.m_interface != NULL) {
                 appearance.setTexture(textureIndex, Texture2D(texture.duplicate()));
-                if (textureIndex == 1) {
-                    break;
-                }
                 textureIndex++;
                 texture = appearance.getTexture(textureIndex);
             }
@@ -224,9 +213,6 @@ void SwerveHelper::CopyAnimationsTracks(Group source, const Group& target, int u
 
 SwerveHelper::Group SwerveHelper::FullObjectDuplicate(Group group, int userIdOffset)
 {
-    if (group == NULL) {
-        return Group();
-    }
     Group copy(group.duplicate());
     CopyAnimationsTracks(group, copy, userIdOffset);
     return copy;
@@ -267,15 +253,50 @@ bool SwerveHelper::PickWithAngle(Group& group, Camera& camera,
                                  RayIntersection intersection)
 {
     // Original: no handle checks, the transform result is ignored and the rotation always applied.
-    Transform transform = NewTransform();
-    camera.getTransformTo(group, transform);
-    float rotation[4] = {angle, axisX, axisY, axisZ};
+    unsigned char hit;
+    float origin[3];
+    float direction[3];
+    float rotation[4];
+    Transform transform(CSwerve::GetInstance()->m_swerve);
+    {
+        bool transformed;
+        Transform cameraTransform(transform);
+        typedef int (*GetTransformTo)(IQueryInterface*, INodeInterface*, ITransformInterface*, bool*);
+        CKMethod<GetTransformTo>(camera.m_interface, 0xa4)(camera.m_interface, group.node(),
+                                                           cameraTransform.transformInterface(), &transformed);
+    }
+    rotation[0] = angle;
+    rotation[1] = axisX;
+    rotation[2] = axisY;
+    rotation[3] = axisZ;
     transform.postRotate(rotation);
     float matrix[16];
     transform.get(matrix);
-    float origin[3] = {matrix[3], matrix[7], matrix[11]};
-    float direction[3] = {-matrix[2], -matrix[6], -matrix[10]};
-    return group.pick(-1, origin, direction, intersection) != 0;
+    float directionX = matrix[2];
+    float originX = matrix[3];
+    float directionY = matrix[6];
+    float originY = matrix[7];
+    float directionZ = matrix[10];
+    float originZ = matrix[11];
+    RayIntersection result(intersection);
+    float reversedZ = -directionZ;
+    float reversedY = -directionY;
+    float reversedX = -directionX;
+    origin[0] = originX;
+    origin[1] = originY;
+    origin[2] = originZ;
+    direction[0] = reversedX;
+    direction[1] = reversedY;
+    direction[2] = reversedZ;
+    IQueryInterface* pickResult = result.m_interface;
+    QueryInterface::AddReference(pickResult);
+    typedef int (*RayPick)(IQueryInterface*, int, const float*, const float*, IQueryInterface*, unsigned char*);
+    CKMethod<RayPick>(group.m_interface, 0xc8)(group.m_interface, -1, origin, direction, pickResult, &hit);
+    unsigned char picked = hit;
+    if (pickResult != NULL) {
+        pickResult->Release();
+    }
+    return picked != 0;
 }
 
 SwerveHelper::Transform SwerveHelper::NewTransform()
@@ -286,55 +307,58 @@ SwerveHelper::Transform SwerveHelper::NewTransform()
 void SwerveHelper::DrawToArray(unsigned char** pixels, int* width, int* height,
                                ICRenderSurface* target, const XString& text, CFont* font)
 {
-    *pixels = NULL;
-    *width = 0;
-    *height = 0;
     ICRenderSurface* previous = ICGraphics::GetInstance()->GetTargetSurface();
-    if (previous == NULL) {
-        return;
-    }
     target->Bind();
     unsigned int targetWidth = 0;
     unsigned int targetHeight = 0;
     target->GetWidthAndHeight(targetWidth, targetHeight);
-    ICGraphics2d* graphics = ICGraphics2d::GetInstance();
-    graphics->RenderBegin(1);
-    graphics->Scale(0x10000, 0x10000);
+    ICGraphics2d::GetInstance()->RenderBegin(1);
+    ICGraphics2d::GetInstance()->Scale(0x10000, 0x10000);
     CDrawUtil::Fill(0, 0, targetWidth, targetHeight, 0xffff00ffu, ICGraphics2d::Primitive_Rectangles);
     font->PaintText(text.c_str(), -1, 0, 0, -1, -1);
-    graphics->RenderEnd();
+    ICGraphics2d::GetInstance()->RenderEnd();
     target->UpdateTextureWithTarget();
 
-    unsigned char* buffer = NULL;
-    int pitch = 0;
+    unsigned char* buffer;
+    int pitch;
     target->Lock(&buffer, pitch, ICRenderSurface::LockType_ReadWrite, NULL);
     int glyphWidth = font->MeasureTextWidth(text.c_str(), -1, -1, NULL);
     int glyphHeight = font->GetFontHeight();
-    if (buffer != NULL && glyphWidth > 0 && glyphHeight > 0 &&
-        static_cast<unsigned int>(glyphWidth) <= targetWidth && static_cast<unsigned int>(glyphHeight) <= targetHeight) {
-        unsigned char* image = new unsigned char[glyphWidth * glyphHeight * 4];
-        unsigned char* destination = image;
-        // OpenGL reads bottom-to-top, while Sprite3D consumes top-to-bottom rows.
-        // The surface lock exposes that order through its signed pitch.
-        for (int row = 0; row < glyphHeight; ++row) {
-            const unsigned char* source = buffer + row * pitch;
-            for (int column = 0; column < glyphWidth; ++column) {
-                unsigned int color;
-                memcpy(&color, source, sizeof(color));
-                if ((color & 0xff00ff) == 0xff00ff) {
-                    color = 0;
+    unsigned char* image = new unsigned char[glyphWidth * glyphHeight * 4];
+    // OpenGL reads bottom-to-top, while Sprite3D consumes top-to-bottom rows.
+    // The surface lock exposes that order through its signed pitch.
+    unsigned char* rowDestination = image + 1;
+    for (int row = 0; row < glyphHeight; ++row) {
+        if (glyphWidth > 0) {
+            unsigned char* destination = rowDestination;
+            const unsigned int* source = reinterpret_cast<const unsigned int*>(buffer + row * pitch);
+            int columns = glyphWidth;
+            do {
+                unsigned char alpha;
+                if ((*source & 0xff00ff) == 0xff00ff) {
+                    destination[1] = 0;
+                    destination[0] = 0;
+                    destination[-1] = 0;
+                    alpha = 0;
+                } else {
+                    destination[1] = static_cast<unsigned char>(*source >> 16);
+                    destination[0] = static_cast<unsigned char>(*source >> 8);
+                    destination[-1] = static_cast<unsigned char>(*source);
+                    alpha = reinterpret_cast<const unsigned char*>(source)[3];
                 }
-                memcpy(destination, &color, sizeof(color));
-                source += sizeof(color);
-                destination += sizeof(color);
-            }
+                destination[2] = alpha;
+                ++source;
+                destination += 4;
+                --columns;
+            } while (columns != 0);
+            rowDestination += glyphWidth * 4;
         }
-        *pixels = image;
-        *width = glyphWidth;
-        *height = glyphHeight;
     }
     target->Unlock();
     previous->Bind();
+    *pixels = image;
+    *width = glyphWidth;
+    *height = glyphHeight;
 }
 
 SwerveHelper::Node SwerveHelper::CreateSprite(const unsigned char* pixels, int width, int height)
@@ -395,34 +419,43 @@ CompositingMode SwerveHelper::NewCompositingMode()
 
 SwerveHelper::Object3D SwerveHelper::LoadObject3D(const wchar_t* fileName, int index)
 {
+    Object3D model;
     CStrWChar path;
     CFileUtil::GetApplicationPathForFile(path, fileName);
-    ICFileMgr* files = ICFileMgr::GetInstance();
-    ICFile* file = files->Open(path.m_string, ICFileMgr::AccessRead);
-    if (file == NULL) {
-        return Object3D();
-    }
-    file->Seek(0, ICFile::SeekEnd);
-    const unsigned int size = file->Tell();
-    file->Seek(0, ICFile::SeekSet);
-    unsigned char* data = static_cast<unsigned char*>(malloc(size));
-    IObject3D* model = NULL;
-    if (data != NULL && file->Read(data, size) == size) {
-        ISwerve* runtime = CSwerve::GetInstance()->m_swerve;
-        ILoader* loader = NULL;
-        if (runtime->m_functions->CreateObject(0xe, reinterpret_cast<void**>(&loader)) == 0) {
-            if (loader->m_functions->Load(loader, size, data, 0) == 0) {
-                int count = 0;
-                if (loader->m_functions->GetObjectCount(loader, &count) == 0 && index >= 0 && index < count) {
-                    loader->m_functions->GetObject(loader, index, &model);
+    ICFile* file = ICFileMgr::GetInstance()->Open(path.m_string, ICFileMgr::AccessRead);
+    if (file != NULL) {
+        file->Seek(0, ICFile::SeekEnd);
+        unsigned int size = file->Tell();
+        file->Seek(0, ICFile::SeekSet);
+        unsigned char* data = static_cast<unsigned char*>(malloc(size));
+        if (data != NULL) {
+            if (file->Read(data, size) == size) {
+                ISwerve* runtime = CSwerve::GetInstance()->m_swerve;
+                ILoader* loader = NULL;
+                runtime->m_functions->CreateObject(0xe, reinterpret_cast<void**>(&loader));
+                // The original uses the loader and its outputs without testing its status codes.
+                loader->m_functions->Load(loader, size, data, 0);
+                if (index >= 0) {
+                    int count;
+                    loader->m_functions->GetObjectCount(loader, &count);
+                    if (index < count) {
+                        IObject3D* object = NULL;
+                        loader->m_functions->GetObject(loader, index, &object);
+                        model.QueryInterface::operator=(reinterpret_cast<IQueryInterface*>(object));
+                        if (object != NULL) {
+                            reinterpret_cast<IQueryInterface*>(object)->Release();
+                        }
+                    }
+                }
+                if (loader != NULL) {
+                    loader->m_functions->Release(loader);
                 }
             }
-            loader->m_functions->Release(loader);
+            free(data);
         }
+        ICFileMgr::GetInstance()->Close(file);
     }
-    free(data);
-    files->Close(file);
-    return Object3D(reinterpret_cast<IQueryInterface*>(model));
+    return model;
 }
 
 SwerveAnimations::Animation::~Animation()

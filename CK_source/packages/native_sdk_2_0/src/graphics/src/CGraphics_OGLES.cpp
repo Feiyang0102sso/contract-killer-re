@@ -15,7 +15,6 @@ CGraphics_OGLES::CGraphics_OGLES()
     m_eaglMinor = 0;
     m_fielda8 = 0;
     m_fieldac = 0;
-    m_contextReady = false;
     memset(&m_description, 0, sizeof(m_description));
 }
 
@@ -76,7 +75,41 @@ void CGraphics_OGLES::SetClearColor(int alpha, int red, int green, int blue)
 
 void CGraphics_OGLES::SetClearColor(const Color_ARGB_fixed& color)
 {
-    SetClearColor(color.a, color.r, color.g, color.b);
+    m_clearColor = color;
+
+    unsigned int alpha = 0;
+    int alphaChannel = m_clearColor.a >> 8;
+    if (alphaChannel >= 0) {
+        alpha = 0xff000000u;
+        if (alphaChannel <= 255) {
+            alpha = (m_clearColor.a & 0xff00u) << 16;
+        }
+    }
+    unsigned int red = 0;
+    int redChannel = m_clearColor.r >> 8;
+    if (redChannel >= 0) {
+        red = 0xff0000u;
+        if (redChannel <= 255) {
+            red = (m_clearColor.r & 0xff00u) << 8;
+        }
+    }
+    unsigned int green = 0;
+    int greenChannel = m_clearColor.g >> 8;
+    if (greenChannel >= 0) {
+        green = m_clearColor.g & 0xff00u;
+        if (greenChannel > 255) {
+            green = 0xff00u;
+        }
+    }
+    unsigned int blue = 0;
+    int blueChannel = m_clearColor.b >> 8;
+    if (blueChannel >= 0) {
+        blue = blueChannel & 0xffu;
+        if (blueChannel > 255) {
+            blue = 0xffu;
+        }
+    }
+    m_packedColor = blue | red | alpha | green;
 }
 
 void CGraphics_OGLES::SetClearColor(unsigned int color)
@@ -153,41 +186,37 @@ void CGraphics_OGLES::SetWidthAndHeightMappedViewportAndOrthoProjection(CRenderS
     unsigned int width;
     unsigned int height;
     surface.GetWidthAndHeight(width, height);
-    ICCore::eDeviceOrientation orientation = ICCore::DeviceOrientation_Portrait;
     if ((surface.m_flags & ICRenderSurface::Flag_Targetable) && CApplet::m_pCore->m_deviceOrientationSet) {
-        orientation = CApplet::m_pCore->m_deviceOrientation;
+        const int farPlane = 0x7fff0000;
+        switch (CApplet::m_pCore->m_deviceOrientation) {
+        case ICCore::DeviceOrientation_Portrait:
+            break;
+        case ICCore::DeviceOrientation_LandscapeRight:
+            glViewport(0, 0, height, width);
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            glOrthox(0, 0u - (height << 16), 0, width << 16, 0, farPlane);
+            glRotatex(90 << 16, 0, 0, 0x10000);
+            return;
+        case ICCore::DeviceOrientation_PortraitUpsideDown:
+            glViewport(0, 0, width, height);
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            glOrthox(width << 16, 0, 0, height << 16, 0, farPlane);
+            return;
+        case ICCore::DeviceOrientation_LandscapeLeft:
+            glViewport(0, 0, height, width);
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            glOrthox(height << 16, 0, 0u - (width << 16), 0, 0, farPlane);
+            glRotatex(-90 * 65536, 0, 0, 0x10000);
+            return;
+        default:
+            return;
+        }
     }
-    const int fixedWidth = width << 16;
-    const int fixedHeight = height << 16;
-    const int farPlane = 0x7fff0000;
-    switch (orientation) {
-    case ICCore::DeviceOrientation_Portrait:
-        glViewport(0, 0, width, height);
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrthox(0, fixedWidth, fixedHeight, 0, 0, farPlane);
-        break;
-    case ICCore::DeviceOrientation_LandscapeRight:
-        glViewport(0, 0, height, width);
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrthox(0, -fixedHeight, 0, fixedWidth, 0, farPlane);
-        glRotatex(90 << 16, 0, 0, 0x10000);
-        break;
-    case ICCore::DeviceOrientation_PortraitUpsideDown:
-        glViewport(0, 0, width, height);
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrthox(fixedWidth, 0, 0, fixedHeight, 0, farPlane);
-        break;
-    case ICCore::DeviceOrientation_LandscapeLeft:
-        glViewport(0, 0, height, width);
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrthox(fixedHeight, 0, -fixedWidth, 0, 0, farPlane);
-        glRotatex(-90 * 65536, 0, 0, 0x10000);
-        break;
-    default:
-        break;
-    }
+    glViewport(0, 0, width, height);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrthox(0, width << 16, height << 16, 0, 0, 0x7fff0000);
 }

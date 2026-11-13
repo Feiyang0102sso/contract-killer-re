@@ -11,6 +11,12 @@
 #include "CFont.h"
 #include "CFontMgr.h"
 #include "CGameAnalytics.h"
+#include "CNGS.h"
+#include "CNGSLocalUser.h"
+#include "CNGSRemoteUser.h"
+#include "CNGSRemoteUserList.h"
+#include "CNGSSocialInterface.h"
+#include "CNGS_Platform.h"
 #include "CGPSMission.h"
 #include "CGPSSubContract.h"
 #include "CRandGen.h"
@@ -90,48 +96,61 @@ void CGPSHauntCamera::ParseInfo(TiXmlNode* node)
 void CGPSHauntCamera::ParseWeaponGatedInfo(TiXmlNode* node)
 {
     m_gatedWeaponCategory = CXmlHelper::GetAttributeValueOrUseDefault(node, "weaponGatedCategory", XString("handgun"));
-    Vector<XString> tokens;
-    CXmlHelper::GetAttributeValueOrUseDefault(node, "gatedWeaponID", XString("-1")).Split(tokens, L",");
-    m_gatedWeapons.ensureCapacity(tokens.size());
-    for (int index = 0; index < tokens.size(); ++index) {
-        XString value = tokens[index].Trim(true, true);
-        if (value.Length() != 0) {
-            m_gatedWeapons.addElement(value.ToInt());
+    XString gatedIds = CXmlHelper::GetAttributeValueOrUseDefault(node, "gatedWeaponID", XString("-1"));
+    Vector<XString> gatedTokens;
+    gatedIds.Split(gatedTokens, L",");
+    int gatedCount = gatedTokens.size();
+    if (gatedCount > 0) {
+        m_gatedWeapons.ensureCapacity(gatedCount);
+        for (int index = 0; index < gatedCount; ++index) {
+            XString value = gatedTokens[index].Trim(true, true);
+            if (value.ByteSize() != 0) {
+                m_gatedWeapons.addElement(value.ToInt());
+            }
         }
     }
-    tokens.removeAllElements();
-    CXmlHelper::GetAttributeValueOptional(node, "randomWeapons").Split(tokens, L",");
-    for (int index = 0; index < tokens.size(); ++index) {
-        XString value = tokens[index].Trim(true, true);
-        if (value.Length() != 0) {
+
+    XString randomIds = CXmlHelper::GetAttributeValueOrUseDefault(node, "randomWeapons", XString(""));
+    Vector<XString> randomTokens;
+    randomIds.Split(randomTokens, L",");
+    for (int index = 0; index < randomTokens.size(); ++index) {
+        XString value = randomTokens[index].Trim(true, true);
+        if (value.ByteSize() != 0) {
             m_randomWeapons.addElement(value.ToInt());
         }
     }
     if (m_randomWeapons.size() == 0) {
-        const int defaults[] = {37, 42, 35, 34, 25, 16};
-        for (unsigned int index = 0; index < sizeof(defaults) / sizeof(defaults[0]); ++index) {
-            m_randomWeapons.addElement(defaults[index]);
-        }
+        m_randomWeapons.addElement(37);
+        m_randomWeapons.addElement(42);
+        m_randomWeapons.addElement(35);
+        m_randomWeapons.addElement(34);
+        m_randomWeapons.addElement(25);
+        m_randomWeapons.addElement(16);
     }
 }
 
 int CGPSHauntCamera::GetGatedWeaponID() const
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    int level = CBH_Player::GetInstance()->GetLevel();
-    Vector<int> candidates;
-    candidates.ensureCapacity(m_gatedWeapons.size());
-    for (int index = 0; index < m_gatedWeapons.size(); ++index) {
-        int id = m_gatedWeapons[index];
-        CDH_Weapon* weapon = app->InitWeaponManager()->GetWeaponById(id);
-        if (weapon != NULL && weapon->m_unlockLevel <= level) {
-            candidates.addElement(id);
-        }
-    }
-    if (candidates.size() == 0) {
+    int count = m_gatedWeapons.size();
+    if (count < 1) {
         return -1;
     }
-    if (candidates.size() == 1) {
+    Vector<int> candidates;
+    candidates.ensureCapacity(count);
+    for (int index = 0; index < count; ++index) {
+        int id = m_gatedWeapons[index];
+        CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(id);
+        if (weapon != NULL) {
+            int unlockLevel = weapon->m_unlockLevel;
+            if (unlockLevel <= CBH_Player::GetInstance()->GetLevel()) {
+                candidates.addElement(id);
+            }
+        }
+    }
+    if (candidates.size() < 1) {
+        return -1;
+    }
+    if (candidates.size() < 2) {
         return candidates[0];
     }
     int index = CRandGen::GetInstance()->GetRandRange(0, candidates.size() - 1);
@@ -221,9 +240,7 @@ void CGPSHauntCamera::SetMissionOnCamera(int missionId, CGPSMissionInformant* in
         XString::Format(L"%02d-%03d-%02d", CBH_Player::GetInstance()->GetLevel(), m_item->GetAAId(), m_id), source);
 }
 
-// Original 0x128ecc. Not restored yet: when the bounty is neither weapon gated nor silent, the
-// original picks (1 in 4) a random Facebook friend who does not play the game as the target
-// (SetTargetFBUser + CGameAnalytics::logRandomFriendTargetSet).
+// Original 0x128ecc.
 void CGPSHauntCamera::SetBountyOnCamera(CGPSInstantInformant* informant, bool replace, bool temporary)
 {
     int bountyType = informant->GetRandomBountyType();
@@ -243,24 +260,61 @@ void CGPSHauntCamera::SetBountyOnCamera(CGPSInstantInformant* informant, bool re
         }
         bounty = new CGPSBounty(this, bountyType, informant);
         m_item = bounty;
-        if (!bounty->m_weaponGated && m_durationMs < 1 && CRandGen::GetInstance()->GetRandRange(0, 99) < 15) {
-            // a random weapon the player does not own yet
-            Vector<int> candidates;
-            for (int index = 0; index < m_randomWeapons.size(); ++index) {
-                int id = m_randomWeapons[index];
-                CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(id);
-                if (weapon != NULL && !weapon->isAvailable()) {
-                    candidates.addElement(id);
+        if (bounty != NULL && !bounty->m_weaponGated) {
+            if (m_durationMs < 1 &&
+                static_cast<unsigned int>(CRandGen::GetInstance()->GetRandRange(0, 99)) < 15) {
+                // Draw without replacement until an unowned weapon ID is found.
+                Vector<CDH_Weapon*> available;
+                static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetAvailableWeapons(available);
+                Vector<int> candidates(m_randomWeapons);
+                while (candidates.size() != 0) {
+                    int index = CRandGen::GetInstance()->GetRand(candidates.size());
+                    int id = candidates[index];
+                    candidates.removeElementAt(index);
+                    int ownedIndex = 0;
+                    for (; ownedIndex < available.size(); ++ownedIndex) {
+                        if (available[ownedIndex]->GetId() == id) {
+                            break;
+                        }
+                    }
+                    if (ownedIndex >= available.size() && id != -1) {
+                        bounty->m_randomWeapon = id;
+                        bounty->m_messageType = BountyMessageRandomWeapon;
+                        bounty->m_bossFirst = false;
+                        bounty->m_bossWins = false;
+                        bounty->m_tranquillize = false;
+                        bounty->m_bossSpawnsLast = false;
+                        bounty->m_silentKill = false;
+                        break;
+                    }
                 }
             }
-            if (candidates.size() > 0) {
-                bounty->m_randomWeapon = candidates[CRandGen::GetInstance()->GetRand(candidates.size())];
-                bounty->m_messageType = BountyMessageRandomWeapon;
-                bounty->m_bossFirst = false;
-                bounty->m_bossWins = false;
-                bounty->m_tranquillize = false;
-                bounty->m_bossSpawnsLast = false;
-                bounty->m_silentKill = false;
+        }
+        if (bounty != NULL && !bounty->m_weaponGated && !bounty->m_silentKill &&
+            CRandGen::GetInstance()->GetRandRange(0, 3) == 1) {
+            Vector<int> nonPlayers;
+            CNGSSocialInterface* facebook = CNGS_Platform::GetInstance()->getSocialInterface(SOCIAL_INTERFACE_FACEBOOK);
+            CNGSRemoteUserList* players = CNGS::GetInstance()->GetLocalUser()->m_remoteUserLists[0];
+            for (int index = 0; index < facebook->getFriendsCount(); ++index) {
+                CStrWChar friendName = facebook->getFriendNameFromSortedListAtIndex(index);
+                CStrWChar friendId = facebook->getFriendIDFromSortedListAtIndex(index);
+                int playerIndex = 0;
+                for (; playerIndex < players->m_users.Size(); ++playerIndex) {
+                    CNGSRemoteUser* player = players->m_users[playerIndex];
+                    if (player->IsFromSocialNetwork(SOCIAL_INTERFACE_FACEBOOK) &&
+                        friendId == player->GetIDForSocialNetwork(SOCIAL_NETWORK_FACEBOOK)) {
+                        break;
+                    }
+                }
+                if (playerIndex >= players->m_users.Size()) {
+                    nonPlayers.addElement(index);
+                }
+            }
+            if (nonPlayers.size() > 0) {
+                int index = CRandGen::GetInstance()->GetRandRange(0, nonPlayers.size() - 1);
+                CStrWChar friendId = facebook->getFriendIDFromSortedListAtIndex(nonPlayers[index]);
+                bounty->SetTargetFBUser(friendId);
+                CGameAnalytics::logRandomFriendTargetSet(XString(friendId.GetWCharPtr()), bountyType);
             }
         }
     }
@@ -275,8 +329,9 @@ void CGPSHauntCamera::SetBountyOnCamera(CGPSInstantInformant* informant, bool re
         UpdateState();
         StartNextSubContract();
     }
-    CGameAnalytics::logMissionReceived(
-        XString::Format(L"%02d-%03d-%02d", CBH_Player::GetInstance()->GetLevel(), bounty->GetAAId(), m_id), source);
+    int level = CBH_Player::GetInstance()->GetLevel();
+    int bountyId = static_cast<CGPSHuntingItem*>(bounty)->GetAAId();
+    CGameAnalytics::logMissionReceived(XString::Format(L"%02d-%03d-%02d", level, bountyId, m_id), source);
 }
 
 void CGPSHauntCamera::SetGatedMissionOnCamera(CGPSInstantInformant* informant, int missionId, bool)
@@ -292,36 +347,46 @@ void CGPSHauntCamera::SetTargettingMissionOnCamera(CGPSInstantInformant* informa
 {
     SetBountyOnCamera(informant, false, temporary);
     CGPSHuntingItem** slot;
-    if (temporary == true) {
-        slot = &m_temporaryItem;
-        if (m_temporaryItem->SetTargetFriendId(friendId) != true) {
-            if (*slot != NULL) {
-                delete *slot;
-                *slot = NULL;
-            }
-            return;
-        }
-        m_tempTargettingMission = true;
-    } else {
-        slot = &m_item;
-        if (m_item->SetTargetFriendId(friendId) != true) {
-            if (*slot != NULL) {
-                delete *slot;
-                *slot = NULL;
-            }
-            return;
-        }
-        m_targettingMission = true;
+    CGPSHuntingItem* item;
+    if (temporary != true) {
+        goto targetPermanentItem;
     }
-    (*slot)->m_revenge = revenge;
-    CBountyManager::SBountyGeneralInfo info =
-        *static_cast<App*>(WindowApp::m_instance)->m_bountyManager->GetInfo(static_cast<CGPSBounty*>(*slot)->m_bountyType);
-    XString name = info.m_name;
-    if (revenge) {
-        CGameAnalytics::logFriendTargetRevenge(friendId, name);
-    } else {
-        CGameAnalytics::logFriendTargetMission(friendId, name);
+    slot = &m_temporaryItem;
+    if (m_temporaryItem->SetTargetFriendId(friendId) != true) {
+        goto discardItem;
     }
+    m_tempTargettingMission = true;
+    item = m_temporaryItem;
+
+logTarget:
+    item->m_revenge = revenge;
+    {
+        CBountyManager::SBountyGeneralInfo info =
+            *static_cast<App*>(WindowApp::m_instance)->m_bountyManager->GetInfo(static_cast<CGPSBounty*>(*slot)->m_bountyType);
+        XString name = info.m_name;
+        if (revenge) {
+            CGameAnalytics::logFriendTargetRevenge(friendId, name);
+        } else {
+            CGameAnalytics::logFriendTargetMission(friendId, name);
+        }
+    }
+    return;
+
+discardItem:
+    if (*slot != NULL) {
+        delete *slot;
+        *slot = NULL;
+    }
+    return;
+
+targetPermanentItem:
+    slot = &m_item;
+    if (m_item->SetTargetFriendId(friendId) != true) {
+        goto discardItem;
+    }
+    m_targettingMission = true;
+    item = m_item;
+    goto logTarget;
 }
 
 void CGPSHauntCamera::OnCameraBountyComplete()
@@ -384,11 +449,12 @@ void CGPSHauntCamera::StartNextSubContract()
     }
     if (m_spawnedSubContracts < static_cast<unsigned int>(static_cast<App*>(WindowApp::m_instance)->m_subContractManager->m_contracts.size())) {
         m_subContract = new CGPSSubContract(this, m_spawnedSubContracts);
-        int appearSeconds = static_cast<App*>(WindowApp::m_instance)->m_subContractManager->m_contracts[m_spawnedSubContracts].m_appearSeconds;
-        int availableSeconds = static_cast<App*>(WindowApp::m_instance)->m_subContractManager->m_contracts[m_spawnedSubContracts].m_availableSeconds;
+        const SSubContractInfo& info = static_cast<App*>(WindowApp::m_instance)->m_subContractManager->m_contracts[m_spawnedSubContracts];
+        int appearSeconds = info.m_appearSeconds;
+        int availableSeconds = info.m_availableSeconds;
+        float rewardFactor = info.m_rewardFactor;
         unsigned int activates = App::GetTime() + appearSeconds;
-        m_subContract->Init(activates, activates + availableSeconds,
-                            static_cast<App*>(WindowApp::m_instance)->m_subContractManager->m_contracts[m_spawnedSubContracts].m_rewardFactor);
+        m_subContract->Init(activates, activates + availableSeconds, rewardFactor);
         m_listener->PlaceSubContract(m_subContract, static_cast<App*>(WindowApp::m_instance)->m_subContractManager->m_appearRadius);
         ++m_spawnedSubContracts;
     }

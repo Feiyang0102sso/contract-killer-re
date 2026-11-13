@@ -48,7 +48,6 @@ private:
     void ShowFacebookIncentiveWindow(unsigned int offer);
     void ShowFacebookInviteFriendsWindow();
     void HandleFacebookInvitation(CIncentivizedWindow* picker);
-    void CloseInviteWait();
     void ShowSelectGiftRecipient();
     void HandleGiftSending(CIncentivizedWindow* picker);
     int GetNonPlayingFriendsCount();

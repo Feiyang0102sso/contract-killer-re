@@ -57,8 +57,7 @@ void CGameScene::OnPause()
 
 void CGameScene::OnCreateState(Window** window, int state)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_helper->m_gamePlayManager.m_gameType = (game_type_t)1;
+    static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.m_gameType = (game_type_t)1;
     Window* created = NULL;
     switch (state) {
     case Loading: {
@@ -71,69 +70,79 @@ void CGameScene::OnCreateState(Window** window, int state)
         created = new CGameScreen();
         break;
     case Pause:
-        app->m_timeScale = 0.0f;
+        static_cast<App*>(WindowApp::m_instance)->m_timeScale = 0.0f;
         created = new CDH_PauseScreen(false, false);
         break;
-    case PauseWithSoundOff:
-        app->m_soundManager->StopAll();
+    case PauseWithSoundOff: {
+        static_cast<App*>(WindowApp::m_instance)->m_soundManager->StopAll();
         ICMediaPlayer::GetInstance()->Stop(0);
         ICMediaPlayer::GetInstance()->StopVibrate(0);
-        app->m_timeScale = 0.0f;
-        bool allowQuit = app->m_helper->GetGameType() == 1 && !static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial();
-        created = new CDH_PauseScreen(true, allowQuit);
+        static_cast<App*>(WindowApp::m_instance)->m_timeScale = 0.0f;
+        game_type_t gameType = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameType();
+        bool inTutorial = static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial();
+        created = new CDH_PauseScreen(true, (gameType == 1) & !inTutorial);
         break;
+    }
     }
     *window = created;
 }
 
 void CGameScene::OnStateInterrupt(int state, Window* window)
 {
-    int result = window->GetInterrupt();
-    App* app = static_cast<App*>(WindowApp::m_instance);
     switch (state) {
     case Loading:
-        if (result == 1) {
+        if (window->GetInterrupt() == 1) {
             ChangeState(Game, STATE_REPLACE);
-        } else {
-            ChangeState(PauseWithSoundOff, STATE_PUSH);
+            return;
         }
         break;
-    case Game:
+    case Game: {
+        int result = window->GetInterrupt();
+        if (result == 3) {
+            break;
+        }
+        if (result == 2) {
+            ChangeState(Pause, STATE_PUSH);
+            return;
+        }
         if (result == 1) {
             SetInterrupt(1);
-        } else if (result == 2) {
-            ChangeState(Pause, STATE_PUSH);
-        } else if (result == 3) {
-            ChangeState(PauseWithSoundOff, STATE_PUSH);
         }
-        break;
-    case Pause:
+        return;
+    }
+    case Pause: {
+        int result = window->GetInterrupt();
         if (result == 1) {
             SetInterrupt(2);
         } else if (result == 2) {
             PopState();
         }
-        app->m_timeScale = 1.0f;
-        break;
-    case PauseWithSoundOff:
-        if (result == CDH_PauseScreen::ConfirmMissionExit) {
-            app->m_timeScale = 1.0f;
-            PopState();
-            app->m_helper->m_swerveGame->ShowReturnToGpsConfirmation();
-        } else if (result == 1) {
-            app->m_timeScale = 1.0f;
-            if (static_cast<CDH_PauseScreen*>(window)->m_quitMission) {
-                PopState();
-                app->m_helper->m_swerveGame->FinishGameWithResult(BountyResultPending, true);
-            } else {
-                SetInterrupt(2);
-            }
-        } else if (result == 2) {
-            app->m_timeScale = 1.0f;
-            PopState();
-        }
-        break;
+        static_cast<App*>(WindowApp::m_instance)->m_timeScale = 1.0f;
+        return;
     }
+    case PauseWithSoundOff: {
+        int result = window->GetInterrupt();
+        if (result != 1) {
+            if (result == 2) {
+                static_cast<App*>(WindowApp::m_instance)->m_timeScale = 1.0f;
+                PopState();
+            }
+            return;
+        }
+        static_cast<App*>(WindowApp::m_instance)->m_timeScale = 1.0f;
+        if (static_cast<CDH_PauseScreen*>(window)->m_quitMission) {
+            PopState();
+            static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->FinishGameWithResult(
+                BountyResultPending, true);
+        } else {
+            SetInterrupt(2);
+        }
+        return;
+    }
+    default:
+        return;
+    }
+    ChangeState(PauseWithSoundOff, STATE_PUSH);
 }
 
 void CGameScene::AtExitGGN(void*)

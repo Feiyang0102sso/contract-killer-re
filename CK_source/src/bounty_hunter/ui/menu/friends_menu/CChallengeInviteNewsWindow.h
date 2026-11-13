@@ -16,6 +16,9 @@ private:
     int m_senderId;
     CNGSRemoteUser* m_sender;
     const SMissionInviteMessage* m_message;
+    int m_fieldB0;  // original allocation includes an unused final word
 };
+
+typedef char ChallengeInviteNewsWindowSizeCheck[sizeof(CChallengeInviteNewsWindow) == 0xb4 ? 1 : -1];
 
 #endif

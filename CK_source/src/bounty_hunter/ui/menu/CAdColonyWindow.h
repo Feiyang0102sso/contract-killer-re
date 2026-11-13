@@ -10,7 +10,7 @@ class CAdColonyWindow : public Window, public AdColony_Facade::IVideoEndedCallba
 public:
     explicit CAdColonyWindow(bool featuredInstall);
     virtual ~CAdColonyWindow() {}
-    virtual void Shutdown();
+    // no Shutdown override: the original vtable keeps Window::Shutdown (the video delegate is never cancelled)
     virtual void OnCommand(Event& event);
     virtual void Update();
     virtual void OnVideoEnded(bool completed, const char* zoneId);

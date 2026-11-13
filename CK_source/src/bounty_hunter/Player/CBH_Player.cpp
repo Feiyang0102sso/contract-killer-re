@@ -20,6 +20,11 @@
 #include "CFactionTypeManager.h"
 #include "CFriendGatedMissionManager.h"
 #include "CGameAnalytics.h"
+#include "CNGS.h"
+#include "CNGSLocalUser.h"
+#include "CNGSRemoteUser.h"
+#include "CNGSRemoteUserList.h"
+#include "CNGSSession.h"
 #include "CHuntingInfo.h"
 #include "CMissionManager.h"
 #include "COverrideManager.h"
@@ -36,15 +41,6 @@
 typedef char CBH_Player_ARMv7_Size[(sizeof(CBH_Player) == 0x28c) ? 1 : -1];
 
 namespace {
-    int ReadInt(const TiXmlElement* element, const char* name, int defaultValue = 0)
-    {
-        const char* value = element->Attribute(name);
-        if (value != NULL) {
-            return XString(value).ToInt();
-        }
-        return defaultValue;
-    }
-
     int Nonnegative(int value)
     {
         if (value < 0) {
@@ -53,16 +49,6 @@ namespace {
         return value;
     }
 
-    int& AmmoCount(HashTable<HashTableKey<const CAmmo*>, int>& counts, const CAmmo* ammo)
-    {
-        const HashTableKey<const CAmmo*> key(ammo);
-        int* value = counts.Get(key);
-        if (value == NULL) {
-            counts.Add(key, 0);
-            value = counts.Get(key);
-        }
-        return *value;
-    }
 }
 
 CBH_Player* CBH_Player::GetInstance()
@@ -153,7 +139,6 @@ CBH_Player::CBH_Player()
     m_playerName = m_playerName.Upper();
     m_challengeStats = new CChallengeStats();
     Init();
-    m_energyRemainingSeconds = m_energyRestoreSeconds;
 }
 
 void CBH_Player::Init()
@@ -195,69 +180,65 @@ void CBH_Player::InitFactionAttitude()
 
 void CBH_Player::Load()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (app->m_saveManager == NULL) {
-        return;
-    }
-    TiXmlElement* root = app->m_saveManager->GetRootElement();
+    TiXmlElement* root = static_cast<App*>(WindowApp::m_instance)->m_saveManager->GetRootElement();
     TiXmlElement* player = root->FirstChildElement("player");
-    if (player == NULL) {
+    if (player != NULL) {
+        m_newPlayer = false;
+        m_newMissionVersion = false;
+        LoadStats(player);
+        LoadMissionInfo(player);
+        LoadAmmo(player);
+        LoadAvatar(player);
+        LoadTjPoints(player);
+        LoadFriendGiftLasDay(player);
+        m_gameStats.Load(player);
+        m_challengeStats->Load(player);
+        static_cast<App*>(WindowApp::m_instance)->InitAchievementManager()->Load(player);
+    } else {
         SetPlayerStartParams();
-        return;
-    }
-    m_newPlayer = false;
-    m_newMissionVersion = false;
-    LoadStats(player);
-    LoadMissionInfo(player);
-    LoadAmmo(player);
-    LoadAvatar(player);
-    LoadTjPoints(player);
-    LoadFriendGiftLasDay(player);
-    m_gameStats.Load(player);
-    m_challengeStats->Load(player);
-    app->InitAchievementManager()->Load(player);
-
-    const TiXmlElement* reputation = player->FirstChildElement("reputation");
-    if (reputation != NULL) {
-        for (const TiXmlElement* entry = reputation->FirstChildElement("fraction"); entry != NULL;
-             entry = entry->NextSiblingElement("fraction")) {
-            const XString name = CXmlHelper::GetAttributeValueOptional(*entry, "name");
-            m_reputation.Set(name, ReadInt(entry, "reputation"));
-        }
     }
 }
 
 void CBH_Player::Update()
 {
     const unsigned int now = CStdUtil_Cocoa::GetTimeSeconds();
-    unsigned int elapsed = 0;
-    if (m_lastEnergyUpdateTime < now) {
+    unsigned int elapsed;
+    unsigned int restoreSeconds;
+    if (now <= m_lastEnergyUpdateTime) {
+        m_lastEnergyUpdateTime = now;
+        elapsed = 0;
+        restoreSeconds = m_energyRestoreSeconds;
+    } else {
+        restoreSeconds = m_energyRestoreSeconds;
         elapsed = now - m_lastEnergyUpdateTime;
-        if (m_energyRestoreSeconds != 0 && m_energyRestoreSeconds < elapsed) {
-            AddEnergy(elapsed / m_energyRestoreSeconds, false);
+        if (elapsed > restoreSeconds) {
+            AddEnergy(elapsed / restoreSeconds, false);
             m_lastEnergyUpdateTime = now;
             Save();
+            goto updatePlayerName;
         }
-    } else {
-        m_lastEnergyUpdateTime = now;
     }
-    if (elapsed <= m_energyRestoreSeconds) {
-        m_energyRemainingSeconds = m_energyRestoreSeconds - elapsed;
-    }
+    m_energyRemainingSeconds = restoreSeconds - elapsed;
 
-    if (!m_playerNameReady) {
-        GameCenter_Facade* gameCenter = GameCenter_Facade::GetInstance();
-        if (gameCenter->isGameCenterSupported()) {
-            const int state = gameCenter->GetAuthenticationState();
-            if (state == GameCenter_Facade::RequestState_Done) {
-                CStrWChar name("player");
-                gameCenter->GetLocalPLayerName(name);
-                m_playerName = XString(name.GetWCharPtr()).Upper();
-                m_playerNameReady = true;
-            } else if ((state == 0 || state == GameCenter_Facade::RequestState_Failed) && m_authenticationStarted) {
-                m_playerName = XString(L"PLAYER");
+updatePlayerName:
+    if (!m_playerNameReady && GameCenter_Facade::GetInstance()->isGameCenterSupported()) {
+        const int state = GameCenter_Facade::GetInstance()->GetAuthenticationState();
+        switch (state) {
+        case 0:
+        case GameCenter_Facade::RequestState_Failed:
+            if (m_authenticationStarted) {
+                m_playerName = L"PLAYER";
                 m_playerNameReady = true;
             }
+            break;
+        case GameCenter_Facade::RequestState_Done: {
+            CStrWChar name("player");
+            GameCenter_Facade::GetInstance()->GetLocalPLayerName(name);
+            m_playerName = name.GetWCharPtr();
+            m_playerName = m_playerName.Upper();
+            m_playerNameReady = true;
+            break;
+        }
         }
     }
 }
@@ -281,35 +262,48 @@ void CBH_Player::AddEnergy(int amount, bool allowOverflow)
 
 bool CBH_Player::TryMakeFiveDaysBonus(bool* newDay)
 {
+    if (!m_fiveDayIncentiveBonusForbidden || static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
+        return false;
+    }
+    unsigned int now = CStdUtil_Cocoa::GetTimeSeconds();
+    if (now == 0xffffffffu) {
+        return false;
+    }
     *newDay = false;
-    if (!m_fiveDayIncentiveBonusForbidden || static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()
-        || CStdUtil_Cocoa::GetTimeSeconds() == 0xffffffffu) {
+    CNGSSession* session = CNGS::GetInstance()->GetLocalUser()->m_session;
+    bool online;
+    if (App::IsNetTimeAvailable() == 1) {
+        online = true;
+        now = session->getNetworkCurrentTimeSeconds();
+    } else {
+        online = false;
+    }
+    int currentDay = DGHelper::GetDaysFromTimestamp(now);
+    int previousDay = DGHelper::GetDaysFromTimestamp(m_lastFiveDaysBonusTime);
+    if (currentDay == previousDay) {
         return false;
     }
-
-    const bool online = App::IsNetTimeAvailable() == 1;
-    const unsigned int now = App::GetTime();
-    const int elapsedDays = DGHelper::GetDaysFromTimestamp(now)
-                          - DGHelper::GetDaysFromTimestamp(m_lastFiveDaysBonusTime);
-    *newDay = elapsedDays != 0;
-    if (!online || elapsedDays == 0) {
+    *newDay = true;
+    if (!online) {
         return false;
     }
-    if (elapsedDays < 0) {
+    int bonusDay;
+    if (currentDay - previousDay >= 2) {
+        bonusDay = 0;
+        m_activeFiveDaysBonusDay = 0;
+        m_dailyBonusesInRow = 0;
+    } else if (currentDay >= previousDay) {
+        bonusDay = m_activeFiveDaysBonusDay;
+    } else {
         m_lastFiveDaysBonusTime = now;
         Save();
         return false;
     }
-    if (elapsedDays >= 2) {
-        m_activeFiveDaysBonusDay = 0;
-        m_dailyBonusesInRow = 0;
-    }
-
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_fiveDaysBonus->GiveBonus(m_activeFiveDaysBonusDay);
+    static_cast<App*>(WindowApp::m_instance)->m_fiveDaysBonus->GiveBonus(bonusDay);
     m_lastFiveDaysBonusTime = now;
+    ++m_activeFiveDaysBonusDay;
     ++m_dailyBonusesInRow;
-    if (++m_activeFiveDaysBonusDay >= CFiveDaysBonus::DAY_COUNT) {
+    if (m_activeFiveDaysBonusDay >= CFiveDaysBonus::DAY_COUNT) {
         m_activeFiveDaysBonusDay = 0;
     }
     Save();
@@ -318,28 +312,39 @@ bool CBH_Player::TryMakeFiveDaysBonus(bool* newDay)
 
 bool CBH_Player::TryMakeFiveDaysIncentiveBonus()
 {
-    if (m_fiveDayIncentiveBonusForbidden || CStdUtil_Cocoa::GetTimeSeconds() == 0xffffffffu) {
+    if (m_fiveDayIncentiveBonusForbidden) {
         return false;
     }
-
-    const bool online = App::IsNetTimeAvailable() == 1;
-    const unsigned int now = App::GetTime();
+    unsigned int now = CStdUtil_Cocoa::GetTimeSeconds();
+    if (now == 0xffffffffu) {
+        return false;
+    }
+    CNGSSession* session = CNGS::GetInstance()->GetLocalUser()->m_session;
+    bool offline;
+    if (App::IsNetTimeAvailable() == 1) {
+        offline = false;
+        now = session->getNetworkCurrentTimeSeconds();
+    } else {
+        offline = true;
+    }
     if (m_lastFiveDaysIncentiveBonusTimestamp == 0) {
         m_lastFiveDaysIncentiveBonusTimestamp = now - 24 * 60 * 60;
     }
-    const int elapsedDays = DGHelper::GetDaysFromTimestamp(now)
-                          - DGHelper::GetDaysFromTimestamp(m_lastFiveDaysIncentiveBonusTimestamp);
-    if (!online || elapsedDays == 0) {
+    int currentDay = DGHelper::GetDaysFromTimestamp(now);
+    int previousDay = DGHelper::GetDaysFromTimestamp(m_lastFiveDaysIncentiveBonusTimestamp);
+    if (currentDay == previousDay || offline) {
         return false;
     }
-    if (elapsedDays < 0 || elapsedDays >= 2) {
+    if (currentDay - previousDay >= 2) {
+        m_fiveDayIncentiveBonusForbidden = true;
+        return false;
+    }
+    if (currentDay < previousDay) {
         m_fiveDayIncentiveBonusForbidden = true;
         Save();
         return false;
     }
-
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_fiveDaysIncentiveBonus->GiveBonus(m_activeFiveDaysIncentiveBonusDay);
+    static_cast<App*>(WindowApp::m_instance)->m_fiveDaysIncentiveBonus->GiveBonus(m_activeFiveDaysIncentiveBonusDay);
     m_receivedFiveDaysIncentiveBonus = true;
     m_lastFiveDaysIncentiveBonusTimestamp = now;
     if (++m_activeFiveDaysIncentiveBonusDay >= CFiveDaysBonus::DAY_COUNT) {
@@ -387,27 +392,23 @@ void CBH_Player::ChangeMissionVersion()
 
 void CBH_Player::Save()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CSaveManager* save = app->m_saveManager;
-    if (save == NULL || save->m_pauseSaving || save->m_pauseGServe == 1) {
+    CSaveManager* save = static_cast<App*>(WindowApp::m_instance)->m_saveManager;
+    if (save->m_pauseSaving || save->m_pauseGServe == 1) {
         return;
     }
-    TiXmlElement* player = CXmlHelper::ObtainElement(save->GetRootElement(), XString("player"));
+    TiXmlElement* root = save->GetRootElement();
+    TiXmlElement* player = CXmlHelper::ObtainElement(root, XString("player"));
     SaveStats(player);
     SaveReputation(player);
     SaveMissionInfo(player);
     SaveAmmo(player);
-    if (m_avatar != NULL) {
-        player->SetAttribute("avatar_id", m_avatar->m_id);
-    }
+    player->SetAttribute("avatar_id", m_avatar->m_id);
     SaveTjPoints(player);
     SaveFriendGiftLasDay(player);
     m_gameStats.Save(player);
+    static_cast<App*>(WindowApp::m_instance)->InitAchievementManager()->Save(player);
     m_challengeStats->Save(player);
-    if (app->m_achievementManager != NULL) {
-        app->m_achievementManager->Save(player);
-    }
-    save->SaveOnNextUpdate(false);
+    static_cast<App*>(WindowApp::m_instance)->m_saveManager->SaveOnNextUpdate(false);
 }
 
 void CBH_Player::SetAmmoForWeaponId(int id, int packs)
@@ -611,10 +612,14 @@ void CBH_Player::AddMoney(int amount, EGainSource source)
 
 int CBH_Player::GetOverride(COverrideManager& manager, const XString& group, const XString& name)
 {
-    const CStrWChar groupName(group.c_str());
-    const CStrWChar attributeName(name.c_str());
     unsigned long long value;
-    if (manager.FindIntAttribute(groupName, attributeName, &value)) {
+    unsigned char found;
+    {
+        const CStrWChar groupName(group.c_str());
+        const CStrWChar attributeName(name.c_str());
+        found = manager.FindIntAttribute(groupName, attributeName, &value);
+    }
+    if (found != 0) {
         return static_cast<int>(value);
     }
     return 0;
@@ -640,12 +645,13 @@ void CBH_Player::ResetBeforeHunting()
 
 void CBH_Player::StartCover()
 {
-    m_field23c = 1;
     if (m_field240 == 0) {
         m_field23c = 2;
+    } else {
+        m_field23c = 1;
+        m_challengeStats->RegisterPlayerTakeCover();
     }
     App* app = static_cast<App*>(WindowApp::m_instance);
-    m_challengeStats->RegisterPlayerTakeCover();
     app->m_soundManager->PlaySound("IDM_SPECIAL_DUCK", false, false);
     Save();
 }
@@ -682,50 +688,58 @@ bool CBH_Player::IsInProgress() const
 
 void CBH_Player::TryShotPlayer(CUnit* unit)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CSwerveGame* game = app->m_helper->m_swerveGame;
-    if (unit == NULL || game->m_finishing || game->IsGamePaused() || game->m_slowMode || game->IsIntroTime() || m_field39) {
+    if (unit == NULL) {
         return;
     }
+    CSwerveGame* game = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame;
+    if (game->m_slowMode || game->IsIntroTime() || m_field39) {
+        return;
+    }
+    float distance = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->GetDistanceToUnit(unit);
     const CBH_PersonType* person = unit->m_body.m_type;
     const CEnemyWeaponType* weapon = person->m_weapon;
     if (weapon == NULL) {
         return;
     }
+    int distanceInUnits = static_cast<int>(distance);
     int probability = static_cast<int>(person->m_baseAccuracy * 100.0f);
-    if (static_cast<int>(game->GetDistanceToUnit(unit)) > weapon->m_effectiveRange) {
-        float coefficient = app->m_helper->m_config.GetFloatValueByToken("ACCURACY_OUT_OF_EFFECTIVE_RANGE_DECREASE", true);
-        probability = static_cast<int>(probability * coefficient);
+    int baseDamage = weapon->m_baseDamage;
+    float coefficient = static_cast<App*>(WindowApp::m_instance)->InitProgressSystem()->GetDmgCoeff();
+    int level = GetInstance()->m_level;
+    if (distanceInUnits > weapon->m_effectiveRange) {
+        App* app = static_cast<App*>(WindowApp::m_instance);
+        float accuracyScale = app->m_helper->m_config.GetFloatValueByToken("ACCURACY_OUT_OF_EFFECTIVE_RANGE_DECREASE", true);
+        probability = static_cast<int>(probability * accuracyScale);
     }
-    if (probability > 100) {
-        probability = 100;
-    } else if (probability < 0) {
-        probability = 0;
+    int hitProbability = 0;
+    if (probability >= 0) {
+        if (probability > 100) {
+            probability = 100;
+        }
+        hitProbability = probability;
     }
-    if (!CBH_Math::GetProbabiliyOutcome(probability)) {
+    if (!CBH_Math::GetProbabiliyOutcome(hitProbability)) {
+        App* app = static_cast<App*>(WindowApp::m_instance);
         app->m_soundManager->PlaySound("IDM_CHARACTER_BULLET_CLOSE", false, false);
         return;
     }
-    if (!IsNeedHide()) {
+    if (!GetInstance()->IsNeedHide()) {
         return;
     }
-    float coefficient = app->InitProgressSystem()->GetDmgCoeff();
-    if (m_level < 1 || coefficient <= 0.0f) {
-        return;
-    }
-    int damage = static_cast<int>(static_cast<float>(weapon->m_baseDamage) / m_level / coefficient);
     m_fieldc0 = true;
     m_field280 = unit->m_guid;
+    int damage = static_cast<int>(static_cast<float>(baseDamage) / level / coefficient);
     if (m_armorDamageProof > 0) {
-        app->m_soundManager->PlaySound("IDM_ARMOR_HIT", false, false);
-        if (m_armorDamageProof >= damage) {
-            m_armorDamageProof -= damage;
-            game->PlayInjureEffect(unit, true);
+        static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlaySound("IDM_ARMOR_HIT", false, false);
+        int previousArmor = m_armorDamageProof;
+        m_armorDamageProof -= damage;
+        if (m_armorDamageProof >= 0) {
+            static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->PlayInjureEffect(unit, true);
             m_gameStats.RegisterArmorConsumeDamage(damage);
             return;
         }
-        m_gameStats.RegisterArmorConsumeDamage(m_armorDamageProof);
-        damage -= m_armorDamageProof;
+        m_gameStats.RegisterArmorConsumeDamage(previousArmor);
+        damage = -m_armorDamageProof;
         m_armorDamageProof = 0;
     }
     m_hp -= damage;
@@ -733,8 +747,8 @@ void CBH_Player::TryShotPlayer(CUnit* unit)
         m_hp = 0;
     }
     Save();
-    game->PlayInjureEffect(unit, false);
-    app->m_soundManager->PlaySound("IDM_CHARACTER_ENEMY_WOUND_MAN_01", false, false);
+    static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->PlayInjureEffect(unit, false);
+    static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlaySound("IDM_CHARACTER_ENEMY_WOUND_MAN_01", false, false);
 }
 
 bool CBH_Player::IsArmorAvailable() const
@@ -980,31 +994,29 @@ void CBH_Player::OnMissionFinished(int id)
 
 void CBH_Player::SetPlayerStartParams()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (app->m_helper != NULL) {
-        ConfigReader& config = app->m_helper->m_config;
-        m_cash = config.GetIntegerValueByToken("PLAYER_START_MONEY", true);
-        m_credits = config.GetIntegerValueByToken("PLAYER_START_CREDITS", true);
-        CDH_WeaponsManager* weapons = app->InitWeaponManager();
-        for (int index = 0; index < weapons->m_weapons.size(); ++index) {
-            CDH_Weapon* weapon = weapons->m_weapons[index];
-            weapon->FlushAllUpgrades();
-            weapon->setAvailable(false);
-        }
-        for (int index = 0; index < m_ammoCounts.m_count; ++index) {
-            *m_ammoCounts.GetAt(index, NULL) = 0;
-        }
-        const int id = config.GetIntegerValueByToken("PLAYER_START_WEAPON_1_WID", true);
-        const int packs = config.GetIntegerValueByToken("PLAYER_START_WEAPON_1_AMMO_PACKS", true);
-        CDH_Weapon* weapon = weapons->GetWeaponById(id);
-        if (weapon != NULL) {
-            weapon->setAvailable(true);
-            CDH_BasicGameData* data = app->m_helper->m_gamePlayManager.GetGameData();
-            data->SetWeapon(0, id);
-            data->SetWeapon(1, id);
-            SetAmmoForWeaponId(id, packs);
-        }
+    m_cash = static_cast<App*>(WindowApp::m_instance)->m_helper->m_config.GetIntegerValueByToken("PLAYER_START_MONEY", true);
+    m_credits = static_cast<App*>(WindowApp::m_instance)->m_helper->m_config.GetIntegerValueByToken("PLAYER_START_CREDITS", true);
+    for (CDH_Weapon* weapon = static_cast<CDH_Weapon*>(static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->firstItem());
+         weapon != NULL;
+         weapon = static_cast<CDH_Weapon*>(static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->nextItem())) {
+        weapon->FlushAllUpgrades();
+        weapon->setAvailable(false);
     }
+    for (const CAmmo* ammo = static_cast<const CAmmo*>(static_cast<App*>(WindowApp::m_instance)->InitAmmoManager()->firstItem());
+         ammo != NULL;
+         ammo = static_cast<const CAmmo*>(static_cast<App*>(WindowApp::m_instance)->InitAmmoManager()->nextItem())) {
+        m_ammoCounts.Set(HashTableKey<const CAmmo*>(ammo), 0);
+    }
+    const int id = static_cast<App*>(WindowApp::m_instance)->m_helper->m_config.GetIntegerValueByToken("PLAYER_START_WEAPON_1_WID", true);
+    const int packs = static_cast<App*>(WindowApp::m_instance)->m_helper->m_config.GetIntegerValueByToken("PLAYER_START_WEAPON_1_AMMO_PACKS", true);
+    static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(id)->setAvailable(true);
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    GamePlayManager& firstSlot = app->m_helper->m_gamePlayManager;
+    firstSlot.SetWeapon01(app->InitWeaponManager()->GetWeaponById(id)->m_id);
+    app = static_cast<App*>(WindowApp::m_instance);
+    GamePlayManager& secondSlot = app->m_helper->m_gamePlayManager;
+    secondSlot.SetWeapon02(app->InitWeaponManager()->GetWeaponById(id)->m_id);
+    SetAmmoForWeaponId(id, packs);
 }
 
 bool CBH_Player::IsMissionCompleted(int id)
@@ -1079,15 +1091,13 @@ void CBH_Player::SaveStats(TiXmlElement* element)
     element->SetAttribute("FiveDaysIncentiveBonusExpirationMessageShown", m_incentiveBonusExpirationShown);
     element->SetAttribute("last_mission_version_played", m_lastMissionVersionPlayed);
     element->SetAttribute("ultrasoundAttemptCount", m_ultrasoundAttemptCount);
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (app->m_helper != NULL) {
-        const CDH_BasicGameData* data = app->m_helper->m_gamePlayManager.GetGameData();
-        if (data->m_weaponIds[0] >= 0) {
-            element->SetAttribute("weapon_slot1", data->m_weaponIds[0]);
-        }
-        if (data->m_weaponIds[1] >= 0) {
-            element->SetAttribute("weapon_slot2", data->m_weaponIds[1]);
-        }
+    CDH_Weapon* first = static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.GetGameData()->GetWeapon01(false);
+    if (first != NULL) {
+        element->SetAttribute("weapon_slot1", first->m_id);
+    }
+    CDH_Weapon* second = static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.GetGameData()->GetWeapon02(false);
+    if (second != NULL) {
+        element->SetAttribute("weapon_slot2", second->m_id);
     }
 }
 
@@ -1128,13 +1138,15 @@ void CBH_Player::SaveAmmo(TiXmlElement* element)
     TiXmlElement* section = CXmlHelper::ObtainElement(element, XString("ammo_info"));
     section->Clear();
     for (int index = 0; index < m_ammoCounts.m_count; ++index) {
+        TiXmlElement* child = new TiXmlElement("ammo");
         HashTableKey<const CAmmo*>* key;
         m_ammoCounts.GetAt(index, &key);
         const CAmmo* ammo = key->m_value;
-        TiXmlElement* child = new TiXmlElement("ammo");
-        child->SetStringAttribute("type", XString::AnsiString(ammo->m_ammoType.c_str()));
+        XString type = ammo->m_ammoType;
+        child->SetStringAttribute("type", XString::AnsiString(type.c_str()));
         child->SetAttribute("count", GetAvailableAmmo(ammo, false));
-        section->LinkEndChild(child);
+        section->InsertEndChild(*child);
+        delete child;
     }
 }
 
@@ -1201,16 +1213,15 @@ void CBH_Player::LoadStats(TiXmlElement* element)
     m_armorId = CXmlHelper::GetAttributeValueOrUseDefault(element, "armorID", XString(L"0")).ToInt();
     m_armorDamageProof = CXmlHelper::GetAttributeValueOrUseDefault(element, "armorDamageProof", XString(L"0")).ToInt();
     m_armorDamageProofMax = CXmlHelper::GetAttributeValueOrUseDefault(element, "armorDamageProofMax", XString(L"0")).ToInt();
-    App* app = static_cast<App*>(WindowApp::m_instance);
     int firstId = CXmlHelper::GetAttributeValue(element, "weapon_slot1").ToInt();
-    CItem* first = app->InitWeaponManager()->getItemById(firstId);
+    CItem* first = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->getItemById(firstId);
     if (first != NULL) {
-        app->m_helper->m_gamePlayManager.SetWeapon01(first->m_id);
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.SetWeapon01(first->m_id);
     }
     int secondId = CXmlHelper::GetAttributeValue(element, "weapon_slot2").ToInt();
-    CItem* second = app->InitWeaponManager()->getItemById(secondId);
+    CItem* second = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->getItemById(secondId);
     if (second != NULL) {
-        app->m_helper->m_gamePlayManager.SetWeapon02(second->m_id);
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.SetWeapon02(second->m_id);
     }
     if (m_credits < 0) {
         m_credits = 0;
@@ -1250,16 +1261,14 @@ void CBH_Player::LoadMissionInfo(TiXmlElement* element)
 void CBH_Player::LoadAmmo(TiXmlElement* element)
 {
     const TiXmlElement* section = element->FirstChildElement("ammo_info");
-    if (section == NULL) {
-        return;
-    }
-    CAmmoManager* ammunition = static_cast<App*>(WindowApp::m_instance)->InitAmmoManager();
-    for (const TiXmlElement* child = section->FirstChildElement("ammo"); child != NULL;
-         child = child->NextSiblingElement("ammo")) {
-        const XString type = CXmlHelper::GetAttributeValueOptional(*child, "type");
-        const CAmmo* ammo = ammunition->GetAmmoByType(type);
-        if (ammo != NULL) {
-            AmmoCount(m_ammoCounts, ammo) = ReadInt(child, "count");
+    if (section != NULL) {
+        const TiXmlElement* child = section->FirstChildElement("ammo");
+        while (child != NULL) {
+            XString type = CXmlHelper::GetAttributeValue(child, "type");
+            int count = CXmlHelper::GetAttributeValue(child, "count").ToInt();
+            const CAmmo* ammo = static_cast<App*>(WindowApp::m_instance)->InitAmmoManager()->GetAmmoByType(type);
+            m_ammoCounts.Set(HashTableKey<const CAmmo*>(ammo), count);
+            child = child->NextSiblingElement("ammo");
         }
     }
 }
@@ -1287,21 +1296,46 @@ void CBH_Player::LoadTjPoints(TiXmlElement* element)
 
 void CBH_Player::LoadFriendGiftLasDay(TiXmlElement* element)
 {
+    if (element == NULL) {
+        return;
+    }
     const TiXmlElement* section = element->FirstChildElement("friendGiftsInfo");
-    if (section != NULL) {
-        for (const TiXmlElement* child = section->FirstChildElement("friendGift"); child != NULL;
-             child = child->NextSiblingElement("friendGift")) {
-            const int id = ReadInt(child, "socialID", -1);
-            if (id != -1) {
-                m_friendGiftDays.Set(XString(id), ReadInt(child, "lastDay"));
+    if (section == NULL) {
+        return;
+    }
+    const TiXmlElement* child = section->FirstChildElement("friendGift");
+    while (child != NULL) {
+        XString guid = CXmlHelper::GetAttributeValueOrUseDefault(child, "socialUserGUID", XString(""));
+        int day = CXmlHelper::GetAttributeValue(child, "lastDay").ToInt();
+        int id = -1;
+        if (static_cast<unsigned int>(guid.ByteSize()) >= sizeof(wchar_t)) {
+            CNGSRemoteUserList* friends = CNGS::GetInstance()->GetLocalUser()->m_remoteUserLists[0];
+            for (int index = 0; index < friends->m_users.Size(); ++index) {
+                CNGSRemoteUser* user = friends->m_users[index];
+                if (user != NULL) {
+                    XString friendGuid(user->GetIDForSocialNetwork(SOCIAL_NETWORK_FACEBOOK).GetWCharPtr());
+                    if (friendGuid == guid) {
+                        id = user->GetClientID();
+                    }
+                }
             }
+        } else {
+            id = CXmlHelper::GetAttributeValueOrUseDefault(child, "socialID", XString("-1")).ToInt();
         }
+        if (m_friendGiftDays.Get(XString(id)) == NULL && id != -1) {
+            m_friendGiftDays.Set(XString(id), day);
+        }
+        child = child->NextSiblingElement("friendGift");
     }
 }
 
 CBH_Player::~CBH_Player()
 {
-    delete m_challengeStats;
+    m_ammoCounts.Clear();
+    if (m_challengeStats != NULL) {
+        delete m_challengeStats;
+        m_challengeStats = NULL;
+    }
 }
 
 int CBH_Player::GetReputation(const XString& name)
@@ -1330,7 +1364,10 @@ void CBH_Player::GamePlayTick(int elapsed)
     m_speedTimeMS = Nonnegative(m_speedTimeMS - elapsed);
     bool speedActive = IsSpeedMode();
     CSwerveGame* game = CSwerveGame::m_pInstance;
-    bool ultrasoundActive = game != NULL && game->m_stunMs > 0;
+    bool ultrasoundActive = false;
+    if (game != NULL && game->m_stunMs >= 1) {
+        ultrasoundActive = true;
+    }
     if (m_speedModeWasActive && !speedActive) {
         static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlaySound("IDM_SLOW_END", false, false);
     }

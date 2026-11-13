@@ -16,8 +16,8 @@
 #include "ResMap.h"
 
 CLoadingGPSMap::CLoadingGPSMap(CBH_GPSMap* map)
-    : Window(false), m_map(map), m_nextTile(NULL), m_loaded(0), m_total(1), m_bar(NULL),
-      m_finished(false), m_firstUpdate(true), m_titleLoaded(false)
+    : Window(false), m_map(map), m_nextTile(NULL), m_loaded(0), m_bar(NULL),
+      m_finished(false), m_firstUpdate(true)
 {
     if (m_map != NULL) {
         m_total = m_map->m_columns * m_map->m_rows + m_map->GetPrefetchedManagerCount() + 1;
@@ -26,9 +26,9 @@ CLoadingGPSMap::CLoadingGPSMap(CBH_GPSMap* map)
 
 CLoadingGPSMap::~CLoadingGPSMap()
 {
-    if (m_titleLoaded) {
-        CResourceManager::GetInstance()->ReleaseResource("SUR_TITLE");
-    }
+    CResourceManager::GetInstance()->ReleaseResource("SUR_TITLE");
+    CBH_SurfaceManager* surfaces = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager;
+    surfaces->ReleaseSurface(XString::AnsiString(m_backgroundId.c_str()));
 }
 
 void CLoadingGPSMap::Init()
@@ -36,10 +36,9 @@ void CLoadingGPSMap::Init()
     InitXMLFile();
     InitGraphicElements();
 
-    App* app = static_cast<App*>(WindowApp::m_instance);
     CFont* font = CFontMgr::GetInstance()->GetFont(GAME_FONT_DEFAULT);
-    if (font != NULL && app->m_tipManager != NULL) {
-        CTip* tip = app->m_tipManager->GetRandomTip();
+    if (font != NULL) {
+        CTip* tip = static_cast<App*>(WindowApp::m_instance)->m_tipManager->GetRandomTip();
         if (tip != NULL) {
             WindowTransparent* panel = new WindowTransparent(false);
             panel->SetAlign(ALIGN_RIGHT | ALIGN_VCENTER);
@@ -57,34 +56,25 @@ void CLoadingGPSMap::Init()
 
 void CLoadingGPSMap::InitXMLFile()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    ResMap* resources = app->InitResMap();
-    char* xml = resources->loadText(resources->getFilename("GPS_MAP_DESCRIPTION"));
+    XString filename = static_cast<App*>(WindowApp::m_instance)->InitResMap()->getFilename("GPS_MAP_DESCRIPTION");
+    char* xml = static_cast<App*>(WindowApp::m_instance)->InitResMap()->loadText(filename);
     m_document.Parse(xml);
     delete[] xml;
 
-    const TiXmlElement* maps = m_document.FirstChildElement("maps");
-    if (maps == NULL) {
-        return;
-    }
-    const TiXmlElement* map = maps->FirstChildElement("map");
-    if (map == NULL) {
-        return;
-    }
-    m_nextTile = map->FirstChildElement("tile");
+    const TiXmlNode* maps = m_document.FirstChild("maps");
+    const TiXmlNode* map = maps->FirstChild("map");
+    m_nextTile = static_cast<const TiXmlElement*>(map->FirstChild("tile"));
 }
 
 void CLoadingGPSMap::InitGraphicElements()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (!m_titleLoaded) {
-        ICRenderSurface* title = NULL;
-        m_titleLoaded = app->m_helper->LoadImageSurface(&title, "SUR_TITLE", false);
-    }
-    m_backgroundId = app->m_helper->GetRandomBackgroundResId();
+    // The title is preloaded even though the background is a different resource.
+    ICRenderSurface* title;
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&title, "SUR_TITLE", false);
     ImageWindow* background = new ImageWindow();
-    XString::AnsiString id(m_backgroundId.c_str());
-    background->SetImageById(id);
+    m_backgroundId = static_cast<App*>(WindowApp::m_instance)->m_helper->GetRandomBackgroundResId();
+    background->SetImage(static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->CreateSurface(
+        XString::AnsiString(m_backgroundId.c_str()), true));
     background->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     AddToFront(background);
 
@@ -112,14 +102,14 @@ void CLoadingGPSMap::UpdateLoading()
         return;
     }
 
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (m_total - m_loaded < 2 && !app->m_soundManager->IsPlaying("IDM_MENU_MUSIC")) {
-        app->m_soundManager->PlayMusic("IDM_MENU_MUSIC", true, false);
+    if ((int)((unsigned int)m_total - m_loaded) < 2
+        && !static_cast<App*>(WindowApp::m_instance)->m_soundManager->IsPlaying("IDM_MENU_MUSIC")) {
+        static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlayMusic("IDM_MENU_MUSIC", true, false);
     }
     if (m_map == NULL) {
         return;
     }
-    if (m_map->LoadPrefetchedManagerResource()) {
+    if (m_map->LoadPrefetchedManagerResource() == true) {
         ++m_loaded;
         return;
     }
@@ -131,18 +121,13 @@ void CLoadingGPSMap::UpdateLoading()
     }
 
     XString path = CXmlHelper::GetAttributeValue(m_nextTile, "path");
-    ICRenderSurface* tile = NULL;
-    const char* id = app->InitResMap()->getResourceID(path);
-    if (id != NULL) {
-        // The map deletes its patches directly when it closes.
-        tile = app->m_surfaceManager->CreateSurface565(id, false);
-    }
-    if (tile != NULL) {
-        ICRenderSurface::Description description;
-        tile->GetDescription(description);
-    }
+    const char* id = static_cast<App*>(WindowApp::m_instance)->InitResMap()->getResourceID(path);
+    // The map deletes its patches directly when it closes.
+    ICRenderSurface* tile = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->CreateSurface565(id, false);
+    ICRenderSurface::Description description;
+    tile->GetDescription(description);
     m_map->AddMapPatch(tile);
-    m_nextTile = m_nextTile->NextSiblingElement("tile");
+    m_nextTile = static_cast<const TiXmlElement*>(m_nextTile->NextSibling("tile"));
     m_loaded++;
 }
 

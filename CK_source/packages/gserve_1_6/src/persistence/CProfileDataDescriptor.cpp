@@ -60,10 +60,10 @@ CStrWChar CProfileDataDescriptor::asString()
 CStrChar CProfileDataDescriptor::getBaseName()
 {
     CSaveRestoreInterface* file = getFile();
-    if (file == NULL) {
-        return CStrChar("DATADESCRIPTOR");
+    if (file != NULL) {
+        return file->getBaseName() + "DD";
     }
-    return file->getBaseName() + "DD";
+    return CStrChar("DATADESCRIPTOR");
 }
 
 void CProfileDataDescriptor::setCollectionType(int collectionType)

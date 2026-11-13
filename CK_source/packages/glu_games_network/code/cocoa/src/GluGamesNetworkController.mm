@@ -635,7 +635,8 @@ static GluGamesNetworkController* GluGamesNetworkControllerSingletonDelegate;
     return NSUIntegerMax;
 }
 
-- (oneway void) release
+// declared plain void in the original (method type "v8@0:4", not oneway)
+- (void) release
 {
 }
 

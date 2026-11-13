@@ -51,9 +51,6 @@ public:
         UpdatePlanes();
     }
 
-    /** First mesh in `group` or its descendants (depth first); true when found. */
-    static bool FindMeshRecursively(Group group,
-                                    Mesh& mesh);
     /** Center and radius of the meshes / sprites of `group` (radius -1 when there is none). */
     static void GetBoundingSphere(Group group, swvVector3D& center,
                                   float& radius);
