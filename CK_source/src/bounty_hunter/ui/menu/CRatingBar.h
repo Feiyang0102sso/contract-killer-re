@@ -24,6 +24,8 @@ private:
     ImageRes m_red;
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char RatingBarSizeCheck[sizeof(CRatingBar) == 0xd8 ? 1 : -1];
+#endif
 
 #endif

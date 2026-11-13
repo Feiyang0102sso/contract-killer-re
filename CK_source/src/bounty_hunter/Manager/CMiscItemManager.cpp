@@ -71,4 +71,6 @@ void CMiscItemManager::freeResources()
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertMiscItemManagerSize[sizeof(CMiscItemManager) == 0x18 ? 1 : -1];
+#endif

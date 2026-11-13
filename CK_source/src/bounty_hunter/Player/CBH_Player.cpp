@@ -38,7 +38,9 @@
 #include "GameCenter_Facade.h"
 #include "GamePlayHUD.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CBH_Player_ARMv7_Size[(sizeof(CBH_Player) == 0x28c) ? 1 : -1];
+#endif
 
 namespace {
     int Nonnegative(int value)

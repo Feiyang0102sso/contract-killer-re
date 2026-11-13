@@ -47,7 +47,11 @@ private:
     const CAmmo* m_ammo;
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char EquipItemButtonSizeCheck[sizeof(CEquipItemButton) == 0xe4 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char EquipAmmoButtonSizeCheck[sizeof(CEquipAmmoButton) == 0xec ? 1 : -1];
+#endif
 
 #endif

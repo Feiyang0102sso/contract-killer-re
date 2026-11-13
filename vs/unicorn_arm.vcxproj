@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{67EC55D4-5160-4284-A1D2-AD095E4F1FE2}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>unicorn_arm</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <!-- Keep the upstream source groups in this MSBuild file. -->
+    <ReadOnlyProject>true</ReadOnlyProject>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '18.0'">v145</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '17.0'">v143</PlatformToolset>
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="Win32.props" />
+  <PropertyGroup>
+    <OutDir>$(IntDir)</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;inline=__inline;__func__=__FUNCTION__;_CRT_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;__i386__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(CkUnicorn)qemu\tcg\i386;$(CkUnicorn)msvc;$(CkUnicorn)glib_compat;$(CkUnicorn)qemu;$(CkUnicorn)qemu\include;$(CkUnicorn)include;$(CkUnicorn)qemu\tcg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+    </ClCompile>
+    <Lib>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <!-- The x86 host executes just Unicorn's ARM target. This group uses the ARM symbol aliases. -->
+    <ClCompile Include="
+        $(CkUnicorn)qemu\exec.c;
+        $(CkUnicorn)qemu\exec-vary.c;
+        $(CkUnicorn)qemu\softmmu\cpus.c;
+        $(CkUnicorn)qemu\softmmu\ioport.c;
+        $(CkUnicorn)qemu\softmmu\memory.c;
+        $(CkUnicorn)qemu\softmmu\memory_mapping.c;
+        $(CkUnicorn)qemu\fpu\softfloat.c;
+        $(CkUnicorn)qemu\tcg\optimize.c;
+        $(CkUnicorn)qemu\tcg\tcg.c;
+        $(CkUnicorn)qemu\tcg\tcg-op.c;
+        $(CkUnicorn)qemu\tcg\tcg-op-gvec.c;
+        $(CkUnicorn)qemu\tcg\tcg-op-vec.c;
+        $(CkUnicorn)qemu\accel\tcg\cpu-exec.c;
+        $(CkUnicorn)qemu\accel\tcg\cpu-exec-common.c;
+        $(CkUnicorn)qemu\accel\tcg\cputlb.c;
+        $(CkUnicorn)qemu\accel\tcg\tcg-all.c;
+        $(CkUnicorn)qemu\accel\tcg\tcg-runtime.c;
+        $(CkUnicorn)qemu\accel\tcg\tcg-runtime-gvec.c;
+        $(CkUnicorn)qemu\accel\tcg\translate-all.c;
+        $(CkUnicorn)qemu\accel\tcg\translator.c;
+        $(CkUnicorn)qemu\softmmu\unicorn_vtlb.c;
+        $(CkUnicorn)qemu\target\arm\cpu.c;
+        $(CkUnicorn)qemu\target\arm\crypto_helper.c;
+        $(CkUnicorn)qemu\target\arm\debug_helper.c;
+        $(CkUnicorn)qemu\target\arm\helper.c;
+        $(CkUnicorn)qemu\target\arm\iwmmxt_helper.c;
+        $(CkUnicorn)qemu\target\arm\m_helper.c;
+        $(CkUnicorn)qemu\target\arm\neon_helper.c;
+        $(CkUnicorn)qemu\target\arm\op_helper.c;
+        $(CkUnicorn)qemu\target\arm\psci.c;
+        $(CkUnicorn)qemu\target\arm\tlb_helper.c;
+        $(CkUnicorn)qemu\target\arm\translate.c;
+        $(CkUnicorn)qemu\target\arm\vec_helper.c;
+        $(CkUnicorn)qemu\target\arm\vfp_helper.c;
+        $(CkUnicorn)qemu\target\arm\unicorn_arm.c">
+      <PreprocessorDefinitions>NEED_CPU_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(CkUnicorn)msvc\arm-softmmu;$(CkUnicorn)qemu\target\arm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>arm.h</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)arm\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="
+        $(CkUnicorn)uc.c;
+        $(CkUnicorn)qemu\softmmu\vl.c;
+        $(CkUnicorn)qemu\hw\core\cpu.c;
+        $(CkUnicorn)list.c;
+        $(CkUnicorn)glib_compat\glib_compat.c;
+        $(CkUnicorn)glib_compat\gtestutils.c;
+        $(CkUnicorn)glib_compat\garray.c;
+        $(CkUnicorn)glib_compat\gtree.c;
+        $(CkUnicorn)glib_compat\grand.c;
+        $(CkUnicorn)glib_compat\glist.c;
+        $(CkUnicorn)glib_compat\gmem.c;
+        $(CkUnicorn)glib_compat\gpattern.c;
+        $(CkUnicorn)glib_compat\gslice.c;
+        $(CkUnicorn)qemu\util\bitmap.c;
+        $(CkUnicorn)qemu\util\bitops.c;
+        $(CkUnicorn)qemu\util\crc32c.c;
+        $(CkUnicorn)qemu\util\cutils.c;
+        $(CkUnicorn)qemu\util\getauxval.c;
+        $(CkUnicorn)qemu\util\guest-random.c;
+        $(CkUnicorn)qemu\util\host-utils.c;
+        $(CkUnicorn)qemu\util\osdep.c;
+        $(CkUnicorn)qemu\util\qdist.c;
+        $(CkUnicorn)qemu\util\qemu-timer.c;
+        $(CkUnicorn)qemu\util\qemu-timer-common.c;
+        $(CkUnicorn)qemu\util\range.c;
+        $(CkUnicorn)qemu\util\qht.c;
+        $(CkUnicorn)qemu\util\pagesize.c;
+        $(CkUnicorn)qemu\util\cacheinfo.c;
+        $(CkUnicorn)qemu\crypto\aes.c;
+        $(CkUnicorn)qemu\util\oslib-win32.c;
+        $(CkUnicorn)qemu\util\qemu-thread-win32.c">
+      <PreprocessorDefinitions>UNICORN_HAS_ARM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)common\</ObjectFileName>
+    </ClCompile>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="PrepareCkToolchain" BeforeTargets="PrepareForBuild"
+          Condition="!Exists('$(CkLlvm)clang-cl.exe') or !Exists('$(CkLlvm)lld-link.exe')">
+    <Exec Command="&quot;$(CkPython)&quot; &quot;$(CkScripts)\prepare_toolchain.py&quot; --cache &quot;$(CkToolCache)&quot;" />
+  </Target>
+</Project>

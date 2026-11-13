@@ -89,6 +89,8 @@ private:
     unsigned char m_reservedF1[3];
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char HelpScreenSizeCheck[sizeof(CHelpScreen) == 0xf4 ? 1 : -1];
+#endif
 
 #endif

@@ -6,7 +6,9 @@
 #include "CXmlHelper.h"
 #include "ResMap.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CAmmo_ARMv7_Size[(sizeof(CAmmo) == 0x74) ? 1 : -1];
+#endif
 
 CAmmo::CAmmo()
     : CItem(0)

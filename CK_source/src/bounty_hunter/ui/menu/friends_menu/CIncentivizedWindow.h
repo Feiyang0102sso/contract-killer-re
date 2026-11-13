@@ -52,6 +52,8 @@ private:
     Window* m_eventReceiver;
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char IncentivizedWindowSizeCheck[sizeof(CIncentivizedWindow) == 0x18c ? 1 : -1];
+#endif
 
 #endif

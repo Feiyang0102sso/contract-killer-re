@@ -28,6 +28,8 @@ private:
     bool m_locked;        // 0x11c
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CZoomSliderControlSizeCheck[sizeof(CZoomSliderControl) == 0x120 ? 1 : -1];
+#endif
 
 #endif

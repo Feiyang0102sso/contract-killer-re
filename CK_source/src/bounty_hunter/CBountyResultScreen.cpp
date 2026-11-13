@@ -408,5 +408,9 @@ void CStampAnimWindow::Update()
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertBountyResultSize[sizeof(CBountyResultScreen) == 0x110 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertStampAnimSize[sizeof(CStampAnimWindow) == 0xb0 ? 1 : -1];
+#endif

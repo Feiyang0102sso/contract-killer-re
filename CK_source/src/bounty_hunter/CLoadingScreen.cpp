@@ -86,4 +86,6 @@ void CLoadingScreen::OnPointerPressed(Event& event)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertLoadingScreenSize[sizeof(CLoadingScreen) == 0xcc ? 1 : -1];
+#endif

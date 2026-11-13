@@ -69,4 +69,6 @@ void AddPeaceTimeScriptedExecutor(CUnitMind* mind)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertPeaceTimeScriptedSize[sizeof(CPeaceTimeScriptedExecutor) == 0x1c ? 1 : -1];
+#endif

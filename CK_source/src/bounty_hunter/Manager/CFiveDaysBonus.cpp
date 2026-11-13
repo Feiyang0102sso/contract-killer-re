@@ -13,7 +13,9 @@
 #include "CDH_WeaponsManager.h"
 #include "CBH_Player.h"
 #include "CGameAnalytics.h"
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CFiveDaysBonus_ARMv7_Size[(sizeof(CFiveDaysBonus) == 0x2c) ? 1 : -1];
+#endif
 
 CFiveDaysBonus::CFiveDaysBonus()
     : m_cash(), m_day(-1), m_chance(-1)

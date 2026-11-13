@@ -266,4 +266,6 @@ void AddUnsafeAttackExecutor(CUnitMind* mind, int camera)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertAttackExecutorSize[sizeof(CAttackSafeExecutor) == 0x20 ? 1 : -1];
+#endif

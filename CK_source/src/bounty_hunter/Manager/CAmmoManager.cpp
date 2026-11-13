@@ -9,7 +9,9 @@
 #include "ResMap.h"
 #include "tinyxml.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CAmmoManager_ARMv7_Size[(sizeof(CAmmoManager) == 0x24) ? 1 : -1];
+#endif
 
 CAmmoManager::CAmmoManager()
     : m_ammo(8)

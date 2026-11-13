@@ -450,4 +450,6 @@ bool CTutorialManager::IsShowObjective()
     return TutorialStep() != FirstMission;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertTutorialManagerSize[sizeof(CTutorialManager) == 0xa8 ? 1 : -1];
+#endif

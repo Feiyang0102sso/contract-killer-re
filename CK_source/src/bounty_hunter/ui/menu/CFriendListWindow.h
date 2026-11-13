@@ -23,6 +23,8 @@ private:
     Vector<int> m_listState;  // Reserved list storage released by the original destructor.
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char FriendListWindowSizeCheck[sizeof(CFriendListWindow) == 0xc4 ? 1 : -1];
+#endif
 
 #endif

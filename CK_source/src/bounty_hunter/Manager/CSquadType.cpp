@@ -50,4 +50,6 @@ const XString& CSquadType::GetMiniomNameByIndex(int index) const
     return m_minions[index];
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertSquadTypeSize[sizeof(CSquadType) == 0x1c ? 1 : -1];
+#endif

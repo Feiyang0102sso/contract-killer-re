@@ -237,8 +237,13 @@ SwerveHelper::Object3D SwerveHelper::Find(Object3D root, const char* name)
     if (root != NULL) {
         // CK Object3D's Find slot is 0x28 in the original Swerve vtable.
         typedef int (*FindObject)(IQueryInterface*, int, IQueryInterface**);
+#ifdef CK_PC
+        // PORT: the slot holds ARM code of the emulated engine (CKMethod of pc_port's tws.h).
+        CKMethod<FindObject>(root.m_interface, 0x28)(root.m_interface, Id(name), &found);
+#else
         FindObject find = reinterpret_cast<FindObject>((*reinterpret_cast<void***>(root.m_interface))[0x28 / 4]);
         find(root.m_interface, Id(name), &found);
+#endif
     }
     return Object3D(found);
 }

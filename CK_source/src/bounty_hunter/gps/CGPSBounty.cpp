@@ -241,4 +241,6 @@ bool CGPSBounty::IsNeedToBeDeleted() const
     return false;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGPSBountySize[sizeof(CGPSBounty) == 0x74 ? 1 : -1];
+#endif

@@ -190,4 +190,6 @@ void CFPSCursor::DeInitImpl()
 {
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertFPSCursorSize[sizeof(CFPSCursor) == 0x78 ? 1 : -1];
+#endif

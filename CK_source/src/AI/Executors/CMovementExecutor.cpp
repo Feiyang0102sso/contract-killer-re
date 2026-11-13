@@ -152,4 +152,6 @@ void AddMovementExecutorToAttackPoint(CUnitMind* mind, int from, bool safeOnly)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertMovementExecutorSize[sizeof(CMovementExecutor) == 0x4034 ? 1 : -1];
+#endif

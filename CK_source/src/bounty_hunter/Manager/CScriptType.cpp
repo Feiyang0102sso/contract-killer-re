@@ -58,4 +58,6 @@ int CScriptType::GetEldeBehaviorID(int index) const
     return -1;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertScriptTypeSize[sizeof(CScriptType) == 0x2c ? 1 : -1];
+#endif

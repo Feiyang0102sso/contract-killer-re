@@ -135,4 +135,6 @@ void CSkyBox::Render(const Graphics3D& graphics)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertSkyBoxSize[sizeof(CSkyBox) == 0xc ? 1 : -1];
+#endif

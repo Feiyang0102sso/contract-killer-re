@@ -82,4 +82,6 @@ Vector<CAmmoPack*> CAmmoPackManager::getAmmoPacksByType(const XString& type)
     return packs;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertAmmoPackManagerSize[sizeof(CAmmoPackManager) == 0x18 ? 1 : -1];
+#endif

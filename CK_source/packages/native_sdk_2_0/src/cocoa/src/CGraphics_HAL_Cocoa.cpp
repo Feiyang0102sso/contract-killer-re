@@ -1,7 +1,9 @@
 #include "CGraphics_HAL.h"
 #include "CGraphics_OGLES_Cocoa.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char GraphicsOGLESCocoaSizeCheck[sizeof(CGraphics_OGLES_Cocoa) == 0x134 ? 1 : -1];
+#endif
 
 unsigned char CGraphics_HAL::InitializeHardware(const Param* params)
 {

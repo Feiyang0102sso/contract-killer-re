@@ -175,4 +175,6 @@ CUnlockWindow::~CUnlockWindow()
     SAFE_DELETE_ARRAY_OBJS(m_zones, ZoneCount);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char UnlockWindowSizeCheck[sizeof(CUnlockWindow) == 0xbc ? 1 : -1];
+#endif

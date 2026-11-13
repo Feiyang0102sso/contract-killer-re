@@ -26,7 +26,9 @@
 #include "SScreenAdaptingConstant.h"
 #include "ServiceWindows.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char DialogWindowSizeCheck[sizeof(CDialogWindow) == 0x11c ? 1 : -1];
+#endif
 
 // Tunnel commands of the three dialog buttons.
 static const int BUTTON_COMMAND_FIRST = (int)0x9f523292;
@@ -774,4 +776,6 @@ int CDialogWindow_StrippedLayoutX()
     return STRIPPED_X();
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKTextDialogSize[sizeof(CTextDialog) == 0x120 ? 1 : -1];
+#endif

@@ -26,6 +26,8 @@ public:
     SG_Instance* m_instance;    // 0x3c
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char GPSScanSizeCheck[sizeof(CBH_GPSScan) == 0x40 ? 1 : -1];
+#endif
 
 #endif

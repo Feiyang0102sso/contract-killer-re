@@ -26,7 +26,9 @@
 /** Key of the obfuscated profile files. */
 static const wchar_t* const PROFILE_FILE_KEY = L"GgLlUu";
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char ProfileManagerSizeCheck[sizeof(CProfileManager) == 0xcc ? 1 : -1];
+#endif
 
 CProfileManager::CProfileManager(const CNGSUserCredentials* credentials)
 {

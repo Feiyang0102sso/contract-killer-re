@@ -58,4 +58,6 @@ void CDH_LoadingBarWidget::Paint(ICGraphics2d& graphics)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertLoadingBarSize[sizeof(CDH_LoadingBarWidget) == 0xcc ? 1 : -1];
+#endif

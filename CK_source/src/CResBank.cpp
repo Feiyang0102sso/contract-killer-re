@@ -47,7 +47,15 @@ unsigned int CResBank::GetProgressPercent()
 {
     if (m_state == Loading) {
         // The original uses the ARM runtime helper even for an empty keyset.
+#ifdef CK_PC
+        // PORT: x86 division traps on zero; the ARM helper returns 0 for an empty keyset.
+        if (m_totalCount == 0) {
+            return 0;
+        }
+        return m_loadedCount * 100 / m_totalCount;
+#else
         return __udivsi3(m_loadedCount * 100, m_totalCount);
+#endif
     }
     return 100;
 }
@@ -117,4 +125,6 @@ void CResBank::load(const char* name)
     addKeyset(name);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertResBankSize[sizeof(CResBank) == 0x24 ? 1 : -1];
+#endif

@@ -11,8 +11,12 @@
 #include "GameCenter_Facade.h"
 #include "ResMap.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKAchievementSize[sizeof(CAchievement) == 0x24 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKAchievementManagerSize[sizeof(CAchievementManager) == 0x28 ? 1 : -1];
+#endif
 
 CAchievementManager::CAchievementManager()
     : m_lastCheckTime(0), m_lastPostingTime(0), m_weaponAvailabilityStamp(0), m_achievements(8)

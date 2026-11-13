@@ -39,7 +39,9 @@ CVisualCharacterType* CVisualCharacterTypeManager::GetType(const XString& name) 
     return *m_types.Get(name);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertVisualTypeManagerSize[sizeof(CVisualCharacterTypeManager) == 0x10 ? 1 : -1];
+#endif
 
 void CVisualCharacterTypeManager::CleanupResources() const
 {

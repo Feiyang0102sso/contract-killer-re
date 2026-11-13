@@ -148,4 +148,6 @@ XString CGPSMission::GetObjectiveGoal() const
     return ParametrizeText(FindMission(m_missionId)->m_objectiveGoal);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGPSMissionSize[sizeof(CGPSMission) == 0x70 ? 1 : -1];
+#endif

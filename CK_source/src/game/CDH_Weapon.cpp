@@ -24,7 +24,9 @@
 #include "SwerveHelper.h"
 #include <string.h>
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CDH_Weapon_ARMv7_Size[(sizeof(CDH_Weapon) == 0x20c) ? 1 : -1];
+#endif
 
 namespace {
     App* GameApp()

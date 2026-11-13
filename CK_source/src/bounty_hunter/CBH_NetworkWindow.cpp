@@ -567,4 +567,6 @@ void CBH_NetworkWindow::OnEnterForeground()
     CBH_GPSMap::safehouseIsPainting = true;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertNetworkWindowSize[sizeof(CBH_NetworkWindow) == 0x124 ? 1 : -1];
+#endif

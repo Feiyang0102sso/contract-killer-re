@@ -172,4 +172,6 @@ bool CExplosiveObject::CanBeHandled()
     return !m_animationComplete;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertExplosiveObjectSize[sizeof(CExplosiveObject) == 0x48 ? 1 : -1];
+#endif

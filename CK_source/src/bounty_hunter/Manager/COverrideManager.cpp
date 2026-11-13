@@ -2,7 +2,9 @@
 #include "COverrideManager.h"
 
 static const char STORE_OVERRIDE_SERVER_SUBDIR[] = "override";
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char COverrideManagerSizeCheck[sizeof(COverrideManager) == 0x8c ? 1 : -1];
+#endif
 
 COverrideManager::COverrideManager()
     : m_changeMark(0)

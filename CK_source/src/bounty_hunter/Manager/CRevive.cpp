@@ -47,4 +47,6 @@ XString CRevive::GetStatsString() const
     return result;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertCReviveSize[sizeof(CRevive) == 0x60 ? 1 : -1];
+#endif

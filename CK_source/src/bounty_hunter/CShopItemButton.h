@@ -56,6 +56,8 @@ private:
     bool m_blink;
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char ShopItemButtonSizeCheck[sizeof(CShopItemButton) == 0x12c ? 1 : -1];
+#endif
 
 #endif

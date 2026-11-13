@@ -24,6 +24,8 @@ public:
     CGPSZombiesPromoListener* m_listener;   // 0x48
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char GPSZombiesPromoSizeCheck[sizeof(CGPSZombiesPromo) == 0x4c ? 1 : -1];
+#endif
 
 #endif

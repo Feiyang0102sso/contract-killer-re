@@ -32,6 +32,8 @@ private:
     ImageRes m_border;
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char MainMenuBarSizeCheck[sizeof(CBH_MainMenuBar) == 0xcc ? 1 : -1];
+#endif
 
 #endif

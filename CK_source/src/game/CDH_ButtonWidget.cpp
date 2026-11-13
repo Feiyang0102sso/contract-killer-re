@@ -126,4 +126,6 @@ void CDH_ButtonWidget::SetRect(int x, int y, int width, int height, bool force)
     Window::SetRect(x, y, width, height, force);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertButtonWidgetSize[sizeof(CDH_ButtonWidget) == 0xd0 ? 1 : -1];
+#endif

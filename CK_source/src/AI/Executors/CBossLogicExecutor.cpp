@@ -63,4 +63,6 @@ void AddBossLogicExecutor(CUnitMind* mind, bool scripted)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertBossLogicSize[sizeof(CBossLogicExecutor) == 0x14 ? 1 : -1];
+#endif

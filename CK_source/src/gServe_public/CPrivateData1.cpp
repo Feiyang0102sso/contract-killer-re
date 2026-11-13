@@ -5,7 +5,9 @@
 #include "CStringToKey.h"
 #include "ICStdUtil.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char PrivateDataSizeCheck[sizeof(CPrivateData1) == 0x44 ? 1 : -1];
+#endif
 
 static const char* const TOKENS[] = {
     "CURRENCY", "HARD_CURRENCY", "EXPERIENCE", "CONTENT_CONFLICT_STATUS",

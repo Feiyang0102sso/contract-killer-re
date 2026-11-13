@@ -179,4 +179,6 @@ CGPSHauntCamera* CGPSHaunt::GetCameraById(int id)
     return NULL;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGPSHauntSize[sizeof(CGPSHaunt) == 0x84 ? 1 : -1];
+#endif

@@ -30,4 +30,6 @@ CScriptType* CScriptManager::GetType(const XString& name) const
     return *script;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertScriptManagerSize[sizeof(CScriptManager) == 0x10 ? 1 : -1];
+#endif

@@ -15,7 +15,9 @@
 #include "DGHelper.h"
 #include "ResMap.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CProgressSystem_ARMv7_Size[(sizeof(CProgressSystem) == 0x14) ? 1 : -1];
+#endif
 
 CProgressSystem::CProgressSystem()
 {

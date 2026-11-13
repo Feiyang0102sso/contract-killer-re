@@ -24,6 +24,8 @@ private:
     ImageRes m_on;         // 0xb8
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char RadioButtonSizeCheck[sizeof(CDH_RadioButtonWidget) == 0xc0 ? 1 : -1];
+#endif
 
 #endif

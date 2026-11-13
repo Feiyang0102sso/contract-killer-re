@@ -38,7 +38,9 @@ CBH_PersonType* CBH_PersonTypeManager::GetType(const XString& name) const
     return *m_types.Get(name);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertPersonTypeManagerSize[sizeof(CBH_PersonTypeManager) == 0x10 ? 1 : -1];
+#endif
 
 bool CBH_PersonTypeManager::TypeIsExists(const XString& name) const
 {

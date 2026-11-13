@@ -52,7 +52,9 @@ static inline int CRenderSurface_OGLES_Targetable_TextureSize(short size)
     return textureSize;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char TargetableSizeCheck[sizeof(CRenderSurface_OGLES_Targetable) == 0x38 ? 1 : -1];
+#endif
 
 CRenderSurface_OGLES_Targetable::CRenderSurface_OGLES_Targetable()
 {

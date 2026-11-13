@@ -31,6 +31,8 @@ public:
     int m_elapsed;                             // 0x140
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char GPSBarSizeCheck[sizeof(CGPSBar) == 0x144 ? 1 : -1];
+#endif
 
 #endif

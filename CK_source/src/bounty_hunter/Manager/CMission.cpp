@@ -110,4 +110,6 @@ void CMission::ParseEstimatedWeapon(TiXmlNode* node)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertMissionSize[sizeof(CMission) == 0xac ? 1 : -1];
+#endif

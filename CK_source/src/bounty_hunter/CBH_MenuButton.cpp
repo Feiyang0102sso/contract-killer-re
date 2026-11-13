@@ -10,7 +10,9 @@
 #include "MathLib.h"
 #include "ICRenderSurface.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char MenuButtonSizeCheck[sizeof(CBH_MenuButton) == 0xf4 ? 1 : -1];
+#endif
 
 void CBH_MenuButton::Init()
 {

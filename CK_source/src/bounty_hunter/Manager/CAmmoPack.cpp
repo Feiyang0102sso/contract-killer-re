@@ -66,4 +66,6 @@ XString CAmmoPack::GetStatsString() const
     return m_stats;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertAmmoPackSize[sizeof(CAmmoPack) == 0x68 ? 1 : -1];
+#endif

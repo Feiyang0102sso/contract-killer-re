@@ -13,7 +13,9 @@ const EPersonAnimType HitFirst = static_cast<EPersonAnimType>(21);
 const EPersonAnimType HitSecond = static_cast<EPersonAnimType>(22);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char HitExecutorSizeCheck[sizeof(CHitExecutor) == 0x10 ? 1 : -1];
+#endif
 
 void CHitExecutor::OnAnimationComplete(EPersonAnimType, const char* name)
 {

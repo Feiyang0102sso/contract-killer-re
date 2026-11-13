@@ -3,7 +3,9 @@
 
 #include <stdarg.h>
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char MessageSizeCheck[sizeof(CMessage) == 0xc0 ? 1 : -1];
+#endif
                                                                         
 
 CMessage::CMessage(CClass* sender, unsigned int messageId, unsigned int param, int argumentCount, ...)

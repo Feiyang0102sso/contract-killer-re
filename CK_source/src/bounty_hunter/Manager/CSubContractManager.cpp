@@ -4,7 +4,9 @@
 #include "CXmlHelper.h"
 #include "ResMap.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKSubContractManagerSize[sizeof(CSubContractManager) == 0x1c ? 1 : -1];
+#endif
 
 SSubContractInfo::SSubContractInfo(const TiXmlNode& node)
 {

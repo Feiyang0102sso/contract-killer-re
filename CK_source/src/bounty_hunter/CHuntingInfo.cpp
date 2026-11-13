@@ -217,5 +217,9 @@ bool CHuntingInfo::UpdateLeaderboards()
     return true;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertAssignedDataSize[sizeof(CHuntingInfo::SAssignedData) == 0xa8 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertHuntingInfoSize[sizeof(CHuntingInfo) == 0xd8 ? 1 : -1];
+#endif

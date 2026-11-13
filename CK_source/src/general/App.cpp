@@ -116,7 +116,9 @@ int App::m_platformType = 1;
 bool App::m_bIsLoginOK = true;
 bool App::m_haveGamecenter;
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AppSizeCheck[sizeof(App) == 0x3a4 ? 1 : -1];
+#endif
 
 App::App(CNode* node)
     : m_initialized(false)

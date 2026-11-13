@@ -249,4 +249,6 @@ void CPath::Smooth()
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertPathSize[sizeof(CPath) == 0x4020 ? 1 : -1];
+#endif

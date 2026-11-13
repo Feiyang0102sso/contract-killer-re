@@ -559,4 +559,6 @@ void CVisualCharacterType::ParseGetWeaponAnimation() const
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertVisualCharacterTypeSize[sizeof(CVisualCharacterType) == 0x14c ? 1 : -1];
+#endif

@@ -15,7 +15,9 @@ typedef IndexBuffer CollisionIndexBuffer;
 typedef Transform CollisionTransform;
 typedef Appearance CollisionAppearance;
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CollisionSizeCheck[sizeof(CCollision) == 0xc0 ? 1 : -1];
+#endif
 
 CCollision::OcTreeSector::OcTreeSector(OcTreeSector* parent, const AABB& bounds,
                                       CCollision* owner, int leafThreshold)

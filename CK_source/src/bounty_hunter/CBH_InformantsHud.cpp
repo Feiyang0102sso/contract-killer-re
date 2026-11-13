@@ -9,8 +9,12 @@
 #include "CTutorialManager.h"
 #include "SScreenAdaptingConstant.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKHudBarButtonSize[sizeof(HudBarButton) == 0x100 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKInformantsHudSize[sizeof(CBH_InformantsHud) == 0xcc ? 1 : -1];
+#endif
 
 static const SScreenAdaptingConstant BUTTON_NAME_Y_OFFSET(36, 75);
 

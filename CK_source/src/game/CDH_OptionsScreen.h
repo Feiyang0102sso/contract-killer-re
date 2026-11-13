@@ -29,6 +29,8 @@ private:
     int m_reservedB0;  // tail word within the original 0xb4-byte allocation
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char OptionsScreenSizeCheck[sizeof(CDH_OptionsScreen) == 0xb4 ? 1 : -1];
+#endif
 
 #endif

@@ -181,4 +181,6 @@ void CGameScreen::OnStateInterrupt(int state, Window* window)
     ChangeState(nextState, STATE_REPLACE);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGameScreenSize[sizeof(CGameScreen) == 0xb0 ? 1 : -1];
+#endif

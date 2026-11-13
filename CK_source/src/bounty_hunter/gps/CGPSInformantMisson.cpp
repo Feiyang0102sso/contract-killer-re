@@ -118,4 +118,6 @@ void CGPSMissionInformant::Paint(ICGraphics2d& graphics, int mapX, int mapY)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGPSMissionInformantSize[sizeof(CGPSMissionInformant) == 0x74 ? 1 : -1];
+#endif

@@ -43,7 +43,9 @@ private:
     int m_inviteCooldownMs;
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char ChallengeWindowSizeCheck[sizeof(CChallengeWindow) == 0xcc ? 1 : -1];
+#endif
 
 class CChallengeTimerWindow : public TextWindow {
 public:
@@ -61,6 +63,8 @@ private:
     XString m_format;
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char ChallengeTimerWindowSizeCheck[sizeof(CChallengeTimerWindow) == 0xe0 ? 1 : -1];
+#endif
 
 #endif

@@ -7,7 +7,9 @@
 
                                                                          
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char TextureFBOSizeCheck[sizeof(CRenderSurface_OGLES_Texture_FBO) == 0x40 ? 1 : -1];
+#endif
 
 CRenderSurface_OGLES_Texture_FBO::CRenderSurface_OGLES_Texture_FBO()
 {

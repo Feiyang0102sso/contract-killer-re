@@ -102,4 +102,6 @@ void CDH_BaseScreen::OnGetFocus()
     SetFlags(FLAG_VISIBLE);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertBaseScreenSize[sizeof(CDH_BaseScreen) == 0x188 ? 1 : -1];
+#endif

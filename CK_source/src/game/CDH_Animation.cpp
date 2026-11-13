@@ -5,14 +5,25 @@
 #include "SwerveHelper.h"
 #include "WindowApp.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CDH_Animation_ARMv7_Size[(sizeof(CDH_Animation) == 0x34) ? 1 : -1];
+#endif
 
 namespace {
+#ifdef CK_PC
+    // PORT: the slots hold ARM code of the emulated engine (CKMethod of pc_port's tws.h).
+    template <class Function>
+    ck::arm::Function<std::remove_pointer_t<Function>> Method(IQueryInterface* object, unsigned int slot)
+    {
+        return CKMethod<Function>(object, slot);
+    }
+#else
     template <class Function>
     Function Method(IQueryInterface* object, unsigned int slot)
     {
         return reinterpret_cast<Function>((*reinterpret_cast<void***>(object))[slot / 4]);
     }
+#endif
 
     typedef int (*ReadInt)(IQueryInterface*, int*);
     typedef int (*ReadObject)(IQueryInterface*, IQueryInterface**);

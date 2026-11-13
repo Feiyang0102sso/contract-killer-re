@@ -25,6 +25,8 @@ private:
     Vector<int> m_items;                     // 0xbc, unused by the original UI
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char GiftRecievedNewsWindowSizeCheck[sizeof(CGiftRecievedNewsWindow) == 0xcc ? 1 : -1];
+#endif
 
 #endif

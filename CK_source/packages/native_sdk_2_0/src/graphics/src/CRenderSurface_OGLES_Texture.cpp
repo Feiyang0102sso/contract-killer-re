@@ -20,8 +20,12 @@ static const unsigned int Texture_LockSurfaceParam4 = 4;
 /** Round `dimension` up to a power of two (0 above 0x1000); defined at the end of the file. */
 static int CRenderSurface_OGLES_Texture_AdjustToPowOfTwoDimension(int dimension);
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char TextureSizeCheck[sizeof(CRenderSurface_OGLES_Texture) == 0x30 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char SurfaceDescriptionSizeCheck[sizeof(ICRenderSurface::Description) == 0x34 ? 1 : -1];
+#endif
 
 CRenderSurface_OGLES_Texture::CRenderSurface_OGLES_Texture()
 {

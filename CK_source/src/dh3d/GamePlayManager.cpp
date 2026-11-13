@@ -10,7 +10,9 @@
 #include "CSwerveGame.h"
 #include "DGHelper.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char GamePlayManager_ARMv7_Size[(sizeof(GamePlayManager) == 0xc0) ? 1 : -1];
+#endif
 
 GamePlayManager::GamePlayManager()
     : m_gameType(GAME_TYPE_QUICK)

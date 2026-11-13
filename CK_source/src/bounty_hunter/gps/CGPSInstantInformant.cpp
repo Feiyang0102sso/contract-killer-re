@@ -377,4 +377,6 @@ bool CGPSInstantInformant::BuyInfoFaster()
     return true;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertInstantInformantSize[sizeof(CGPSInstantInformant) == 0xc0 ? 1 : -1];
+#endif

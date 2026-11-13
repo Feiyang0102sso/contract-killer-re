@@ -20,6 +20,8 @@ private:
     Vector<CDH_RadioButtonWidget*> m_buttons; // 0xa8
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char RadioGroupSizeCheck[sizeof(CDH_RadioGroupWidget) == 0xb8 ? 1 : -1];
+#endif
 
 #endif

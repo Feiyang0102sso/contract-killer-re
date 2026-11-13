@@ -76,4 +76,6 @@ void CDH_CurrencyWidget::setValue(int value)
     updateData();
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertCurrencyWidgetSize[sizeof(CDH_CurrencyWidget) == 0xc0 ? 1 : -1];
+#endif

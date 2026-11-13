@@ -263,7 +263,9 @@ void CDailyDealWindow::HandleBuyButtonPressed()
     Close();
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKDailyDealWindowSize[sizeof(CDailyDealWindow) == 0x120 ? 1 : -1];
+#endif
 
 Window* CDailyDealWindow::CreatePriceCountWindow(int price, CFont* font)
 {

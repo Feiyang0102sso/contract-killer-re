@@ -79,4 +79,6 @@ void CDH_TextScreen::OnCommand(Event& event)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertTextScreenSize[sizeof(CDH_TextScreen) == 0x1a0 ? 1 : -1];
+#endif

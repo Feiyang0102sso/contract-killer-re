@@ -15,7 +15,9 @@ const EPersonAnimType BurnEnd = static_cast<EPersonAnimType>(20);
 const char* const FireSound = "IDM_ENEMY_FIRE_01";
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char BurnExecutorSizeCheck[sizeof(CBurnExecutor) == 0x34 ? 1 : -1];
+#endif
 
 void CBurnExecutor::SetDamageAndTime(int duration, int damage)
 {

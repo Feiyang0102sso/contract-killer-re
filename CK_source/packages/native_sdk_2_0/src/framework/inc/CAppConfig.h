@@ -38,12 +38,20 @@ public:
             int last = 0;
             while (graphicsParams[last++].m_key != 0) {
             }
+#ifdef CK_PC
+            // PORT: The terminator is the last entry the caller supplied.
+            m_graphicsParams = new ICGraphics::InitParam[last];
+            for (int index = 0; index < last; index++) {
+                m_graphicsParams[index] = graphicsParams[index];
+            }
+#else
             m_graphicsParams = new ICGraphics::InitParam[last + 1];
             int index = last;
             do {
                 m_graphicsParams[index] = graphicsParams[index];
                 index--;
             } while (index >= 0);
+#endif
         } else {
             m_graphicsParams = NULL;
         }

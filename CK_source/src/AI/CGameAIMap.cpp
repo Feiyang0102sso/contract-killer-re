@@ -1220,6 +1220,12 @@ bool CGameAIMap::FindPathToNearestAttackPoint(CPath* path, int from, int camera,
     return true;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGameAIMapSize[sizeof(CGameAIMap) == 0x9c ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGameAIMapCellSize[sizeof(CGameAIMap::SCellAI) == 0x7c ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGameAIMapPointSize[sizeof(CGameAIMap::SSpecialPointAI) == 0x2c ? 1 : -1];
+#endif

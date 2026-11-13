@@ -474,7 +474,15 @@ void GrenadeLauncher::Paint3D(Graphics3D& graphics)
     m_smoke->Paint3D(graphics);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertProjectileSize[sizeof(Ballistics::Projectile) == 0x30 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertBallisticsSize[sizeof(Ballistics) == 0x34 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertSmokeTrailSize[sizeof(SmokeTrail) == 0x8c ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGrenadeLauncherSize[sizeof(GrenadeLauncher) == 0x48 ? 1 : -1];
+#endif

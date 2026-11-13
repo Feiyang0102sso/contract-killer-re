@@ -150,4 +150,6 @@ void CLoadingGPSMap::OnPointerReleased(Event& event)
     event.Clear();
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertLoadingGPSMapSize[sizeof(CLoadingGPSMap) == 0x108 ? 1 : -1];
+#endif

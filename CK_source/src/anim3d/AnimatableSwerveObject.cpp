@@ -393,4 +393,6 @@ int AnimatableSwerveObject::getChannel(const Object3D& node) const
     return -1;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertAnimatableSwerveSize[sizeof(AnimatableSwerveObject) == 0x34 ? 1 : -1];
+#endif

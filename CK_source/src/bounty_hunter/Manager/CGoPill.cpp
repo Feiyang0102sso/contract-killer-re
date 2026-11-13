@@ -65,4 +65,6 @@ XString CGoPill::GetStatsString() const
     return result;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertCGoPillSize[sizeof(CGoPill) == 0x64 ? 1 : -1];
+#endif

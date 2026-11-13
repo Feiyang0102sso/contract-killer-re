@@ -689,5 +689,9 @@ int CChallenge::GetFriendId(int index)
     return -1;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKChallengeSize[sizeof(CChallenge) == 0x40 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKChallengeRewardSize[sizeof(SChallengeReward) == 0x28 ? 1 : -1];
+#endif

@@ -41,4 +41,6 @@ void CVisualObject::ReleaseModelCopy()
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertVisualObjectSize[sizeof(CVisualObject) == 0xc ? 1 : -1];
+#endif

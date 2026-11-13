@@ -535,4 +535,6 @@ vec3 DGCamera::GetViewDirection()
     return direction;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertDGCameraSize[sizeof(DGCamera) == 0x168 ? 1 : -1];
+#endif

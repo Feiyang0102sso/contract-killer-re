@@ -47,4 +47,6 @@ XString CSilencer::GetStatsString() const
     return result;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertCSilencerSize[sizeof(CSilencer) == 0x60 ? 1 : -1];
+#endif

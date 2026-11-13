@@ -40,4 +40,6 @@ XString CHitechVisor::getUIDString() const
     return XString::Format(L"misc_%d", m_id);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertHitechVisorSize[sizeof(CHitechVisor) == 0x5c ? 1 : -1];
+#endif

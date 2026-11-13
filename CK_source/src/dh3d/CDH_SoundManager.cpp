@@ -112,7 +112,11 @@ void CDH_SoundManager::PlayRandomSound(const char* keySet, bool exclusive)
     CRandGen* random = CRandGen::GetInstance();
     int index = random->GetRandRange(0, keys->m_count - 1);
     Play(keys->GetKey(index), false, false, exclusive);
+#ifndef CK_PC
+    // PORT: the sound cache keeps pointers into the key set's strings; on Windows the released key
+    // set is freed at once and the next lookup reads freed memory, so the PC build keeps it loaded.
     static_cast<App*>(WindowApp::m_instance)->m_resourceManager->releaseResource(keySet);
+#endif
 }
 
 void CDH_SoundManager::PlaySound(const char* name, bool loop, bool exclusive)
@@ -156,7 +160,10 @@ void CDH_SoundManager::PrecacheKeyset(const char* keySet)
         for (int index = 0; index < count; ++index) {
             PrecacheAndGetSound(keys->GetKey(index));
         }
+#ifndef CK_PC
+        // PORT: kept loaded on PC, see PlayRandomSound.
         static_cast<App*>(WindowApp::m_instance)->m_resourceManager->releaseResource(keySet);
+#endif
     }
 }
 

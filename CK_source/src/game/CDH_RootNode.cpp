@@ -61,4 +61,6 @@ void CDH_RootNode::OnStateInterrupt(int state, Window* window)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertRootNodeSize[sizeof(CDH_RootNode) == 0xc8 ? 1 : -1];
+#endif

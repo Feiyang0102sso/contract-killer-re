@@ -6,7 +6,9 @@
 #include "CUnit.h"
 #include "DGHelper.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char DeathExecutorSizeCheck[sizeof(CDeathExecutor) == 0x1c ? 1 : -1];
+#endif
 
 void CDeathExecutor::OnAnimationComplete(EPersonAnimType, const char* name)
 {

@@ -1166,7 +1166,9 @@ GamePlayHUD::CZoomedScopeWindow::CZoomedScopeWindow()
       m_weaponId(0), m_reservedD4(0), m_worldTime(0), m_shotTime(0), m_shooting(false),
       m_zoomEnabled(false)
 {
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
     typedef char ScopeWindowSizeCheck[sizeof(CZoomedScopeWindow) == 0xe4 ? 1 : -1];
+#endif
     CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
     if (weapon != NULL) {
         InitResources(weapon);
@@ -1244,7 +1246,9 @@ void GamePlayHUD::CZoomedScopeWindow::Paint3D(Graphics3D& graphics)
 GamePlayHUD::WoundingWindow::WoundingWindow(bool armor)
     : ViewWindow(World()), m_remainingMs(0)
 {
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
     typedef char WoundingWindowSizeCheck[sizeof(WoundingWindow) == 0xb4 ? 1 : -1];
+#endif
     if (armor) {
         m_world = World(App::LoadObject3D("BIN_ARMOR_HIT"));
     } else {
@@ -1543,4 +1547,6 @@ void GamePlayHUD::BlinkIngameShop(int duration)
     m_ingameShop->Blink(duration);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGamePlayHUDSize[sizeof(GamePlayHUD) == 0x330 ? 1 : -1];
+#endif

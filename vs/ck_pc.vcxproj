@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{D2D935C1-00A1-42C9-943B-E6CC1D91A4A6}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>ck_pc</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '18.0'">v145</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '17.0'">v143</PlatformToolset>
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="Win32.props" />
+  <Import Project="GameCompile.props" />
+  <PropertyGroup>
+    <TargetName>BountyHunter</TargetName>
+    <CkOpenALImport>$(IntDir)OpenAL32.lib</CkOpenALImport>
+    <LinkToolPath>$(CkLlvm)</LinkToolPath>
+    <LinkToolExe>lld-link.exe</LinkToolExe>
+    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <ForcedIncludeFiles>new</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <!-- A window program: no console unless DebugMode=1 opens one (Log.cpp). The entry stays wmain. -->
+      <SubSystem>Windows</SubSystem>
+      <EntryPointSymbol>wmainCRTStartup</EntryPointSymbol>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <BaseAddress>0x10000000</BaseAddress>
+      <AdditionalDependencies>$(CkSDL)\lib\x86\SDL3.lib;$(CkOpenALImport);opengl32.lib;user32.lib;gdi32.lib;winmm.lib;dbghelp.lib;mfplat.lib;mfreadwrite.lib;mfuuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/errorlimit:0 %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(CkAddressSanitizer)' == 'true'">
+    <Link>
+      <AdditionalDependencies>$(VCToolsInstallDir)lib\x86\clang_rt.asan_dynamic-i386.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/WHOLEARCHIVE:&quot;$(VCToolsInstallDir)lib\x86\clang_rt.asan_dynamic_runtime_thunk-i386.lib&quot; %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="HostSources.props" />
+  <ItemGroup>
+    <None Include="..\README.md" />
+    <None Include="..\BountyHunter.cfg" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="BountyHunter.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="ck_game.vcxproj">
+      <Project>{843D472A-4247-41B8-915E-4311D565D831}</Project>
+    </ProjectReference>
+    <ProjectReference Include="unicorn_arm.vcxproj">
+      <Project>{67EC55D4-5160-4284-A1D2-AD095E4F1FE2}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="CreateOpenALImportLibrary" BeforeTargets="Link"
+          Inputs="$(MSBuildProjectFullPath);$(CkOpenAL)\libs\Win32\OpenAL32.def" Outputs="$(CkOpenALImport)">
+    <Exec Command="&quot;$(VCToolsInstallDir)bin\Hostx64\x86\lib.exe&quot; /nologo /machine:x86 /def:&quot;$(CkOpenAL)\libs\Win32\OpenAL32.def&quot; /name:OpenAL32.dll /out:&quot;$(CkOpenALImport)&quot;" />
+  </Target>
+  <Target Name="CopyRuntimeLibraries" AfterTargets="Build">
+    <Copy SourceFiles="$(CkSDL)\lib\x86\SDL3.dll;$(CkOpenAL)\bin\Win32\soft_oal.dll"
+          DestinationFiles="$(OutDir)SDL3.dll;$(OutDir)OpenAL32.dll" SkipUnchangedFiles="true" />
+    <!-- The repository's BountyHunter.cfg is the master copy: every build puts it next to the exe. -->
+    <Copy SourceFiles="$(CkRoot)BountyHunter.cfg" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Copy Condition="'$(CkAddressSanitizer)' == 'true'"
+          SourceFiles="$(VCToolsInstallDir)bin\Hostx64\x86\clang_rt.asan_dynamic-i386.dll"
+          DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+  <!-- The ARM image of the Swerve core is assembled from swerve_core.s next to the exe. -->
+  <Target Name="BuildSwerveImage" AfterTargets="Build">
+    <Exec Command="&quot;$(CkPython)&quot; &quot;$(CkScripts)\make_swerve_image.py&quot; --output &quot;$(OutDir)swerve-arm.bin&quot;" />
+  </Target>
+</Project>

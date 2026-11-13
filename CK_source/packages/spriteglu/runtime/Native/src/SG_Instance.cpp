@@ -725,7 +725,15 @@ unsigned char ResourceQueue::LoadQueuedSprites(unsigned int timeBudget, unsigned
 }
 
 // CK ARMv7 layouts used by the resource loaders and presentation code.
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertSGInstanceSize[sizeof(SG_Instance) == 0x130 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertResourceQueueSize[sizeof(ResourceQueue) == 0x6c ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertSGTintSize[sizeof(SG_Tint) == 0x50 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertSGCharacterSize[sizeof(SG_Character) == 0x30 ? 1 : -1];
+#endif

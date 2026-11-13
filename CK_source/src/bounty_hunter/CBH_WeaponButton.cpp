@@ -247,7 +247,9 @@ void CBH_WeaponButton::Update()
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertWeaponButtonSize[sizeof(CBH_WeaponButton) == 0x124 ? 1 : -1];
+#endif
 
 void CBH_WeaponButton::Paint(ICGraphics2d& graphics)
 {

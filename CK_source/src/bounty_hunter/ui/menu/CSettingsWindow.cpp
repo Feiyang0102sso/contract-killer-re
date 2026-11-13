@@ -321,7 +321,9 @@ void CSettingsWindow::OnCommand(Event& event)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertSettingsWindowSize[sizeof(CSettingsWindow) == 0xcc ? 1 : -1];
+#endif
 
 Window* CSettingsWindow::CreateRadioGroup(CDH_RadioGroupWidget** group, const char* label, const char* onLabel,
                                           const char* offLabel, bool value)

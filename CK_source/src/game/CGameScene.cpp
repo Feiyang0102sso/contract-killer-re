@@ -166,4 +166,6 @@ bool CGameScene::IsGGNShowed()
     return m_bGGNShowed;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGameSceneSize[sizeof(CGameScene) == 0xc8 ? 1 : -1];
+#endif

@@ -37,6 +37,8 @@ public:
     int m_count;                // 0xe4
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CountNotificationSizeCheck[sizeof(CCountNotificationWindow) == 0xe8 ? 1 : -1];
+#endif
 
 #endif

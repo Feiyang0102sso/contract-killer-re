@@ -1,7 +1,9 @@
 // CGraphics2d_Lite_HAL.cpp - lifecycle and forwarding for the active CK 2D device.
 #include "CGraphics2d_Lite_HAL.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CGraphics2d_Lite_HAL_ARMv7_Size[(sizeof(CGraphics2d_Lite_HAL) == 0x18) ? 1 : -1];
+#endif
 
 CGraphics2d_Lite_HAL::CGraphics2d_Lite_HAL()
 {

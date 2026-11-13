@@ -15,7 +15,9 @@
 
 // Color depth (bits) up to which the window uses 16 bit color.
 static const int Window_MaxHighColorBits = 0x10;
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char WindowSurfaceSizeCheck[sizeof(CRenderSurface_OGLES_Window_Cocoa) == 0x50 ? 1 : -1];
+#endif
 
 CRenderSurface_OGLES_Window_Cocoa::CRenderSurface_OGLES_Window_Cocoa()
 {

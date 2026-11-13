@@ -31,7 +31,9 @@
 extern const wchar_t SAVE_FILE_NAME[] = L"savebh.dat";
 static const wchar_t TMP_FILE_NAME[] = L"savebh_tmp.dat";
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char SaveManagerSizeCheck[sizeof(CSaveManager) == 0x58 ? 1 : -1];
+#endif
 
 CSaveManager::CSaveManager()
 {

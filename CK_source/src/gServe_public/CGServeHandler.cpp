@@ -395,4 +395,6 @@ bool CGServeHandler::NeedToShowLoginRequired()
     return !CNGS::GetInstance()->GetLocalUser()->isValid();
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGServeHandlerSize[sizeof(CGServeHandler) == 0x14 ? 1 : -1];
+#endif

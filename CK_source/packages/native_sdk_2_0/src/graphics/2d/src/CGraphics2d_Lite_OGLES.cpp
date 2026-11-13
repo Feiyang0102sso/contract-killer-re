@@ -401,8 +401,12 @@ void CGraphics2d_Lite_OGLES::DisplayProgram::ExecuteSpecial(Component* component
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char DisplayProgramSize[sizeof(CGraphics2d_Lite_OGLES::DisplayProgram) == 0x54 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char GraphicsSize[sizeof(CGraphics2d_Lite_OGLES) == 0x198 ? 1 : -1];
+#endif
 
 /** Vertex attribute as written by this renderer (the 16 byte CVertexAttribute::Decl). */
 struct VertexAttribute {

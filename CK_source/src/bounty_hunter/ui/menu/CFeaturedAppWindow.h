@@ -37,7 +37,11 @@ public:
     XString m_redirectUrl;                       // 0xb4
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char FeaturedAppWindowSizeCheck[sizeof(CFeaturedAppWindow) == 0xb8 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char ScaledURLImageWindowSizeCheck[sizeof(ScaledURLImageWindow) == 0xd0 ? 1 : -1];
+#endif
 
 #endif

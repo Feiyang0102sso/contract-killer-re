@@ -33,4 +33,6 @@ int CCyberScope::getCurrentAmount()
     return CBH_Player::GetInstance()->m_cyberScopesCount;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertCCyberScopeSize[sizeof(CCyberScope) == 0x60 ? 1 : -1];
+#endif

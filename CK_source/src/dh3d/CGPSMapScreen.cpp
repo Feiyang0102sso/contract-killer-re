@@ -56,7 +56,9 @@ void CGPSMapScreen::CachedData::DeSerialize(JDataInputStream& stream)
     m_field1c = stream.readByte() != 0;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertCachedDataSize[sizeof(CGPSMapScreen::CachedData) == 0x28 ? 1 : -1];
+#endif
 
 CGPSMapScreen::CGPSMapScreen(CachedData*)
     : Window(false),
@@ -259,4 +261,6 @@ void CGPSMapScreen::OnCommand(Event& event)
     event.Clear();
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGPSMapScreenSize[sizeof(CGPSMapScreen) == 0x134 ? 1 : -1];
+#endif

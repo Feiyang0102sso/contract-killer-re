@@ -31,6 +31,8 @@ private:
     TiXmlDocument m_titleConfig;
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char FactionsWindowSizeCheck[sizeof(CFactionsWindow) == 0x138 ? 1 : -1];
+#endif
 
 #endif

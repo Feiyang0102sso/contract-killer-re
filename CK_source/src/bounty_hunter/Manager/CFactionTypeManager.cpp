@@ -57,4 +57,6 @@ void CFactionTypeManager::GetFactionTypeNames(Vector<XString*>& names)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertFactionManagerSize[sizeof(CFactionTypeManager) == 0x10 ? 1 : -1];
+#endif

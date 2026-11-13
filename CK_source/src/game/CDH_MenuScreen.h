@@ -25,6 +25,8 @@ public:
     bool m_showBack;              // 0x1b0
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char MenuScreenSizeCheck[sizeof(CDH_MenuScreen) == 0x1b4 ? 1 : -1];
+#endif
 
 #endif

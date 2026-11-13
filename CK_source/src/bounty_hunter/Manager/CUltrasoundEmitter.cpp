@@ -34,4 +34,6 @@ int CUltrasoundEmitter::getCurrentAmount()
     return CBH_Player::GetInstance()->m_ultrasoundAttemptCount;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertCUltrasoundEmitterSize[sizeof(CUltrasoundEmitter) == 0x60 ? 1 : -1];
+#endif

@@ -137,4 +137,6 @@ void DGWorld::paintHitEffects(Graphics3D& graphics)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertDGWorldSize[sizeof(DGWorld) == 0x70 ? 1 : -1];
+#endif

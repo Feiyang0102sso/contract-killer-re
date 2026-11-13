@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Platform layer, Swerve backend and runtime glue of the game executable (ck_pc,
+     BountyHunter.exe). -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\CK_source\pc_port\platform_sdl\Applet.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\platform_sdl\Audio.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\platform_sdl\Cheat.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\platform_sdl\Config.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\platform_sdl\Log.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\platform_sdl\DebugTools.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\platform_sdl\Controls.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\platform_sdl\Core.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\platform_sdl\Files.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\platform_sdl\GlesDesktop.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\platform_sdl\Graphics.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\platform_sdl\Movie.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\platform_sdl\SystemFont.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\stubs\Ads.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\stubs\GServe.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\stubs\OfflinePlatform.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\swerve_compat\ArmImports.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\swerve_compat\ArmMachine.cpp" />
+    <ClCompile Include="..\CK_source\packages\native_sdk_2_0\src\cocoa\src\NPMalloc.cpp" />
+    <ClCompile Include="..\CK_source\packages\native_sdk_2_0\src\cocoa\src\NPMem.cpp" />
+    <ClCompile Include="$(CkThirdParty)\powervr\PVRTDecompress.cpp">
+      <ObjectFileName>$(IntDir)external\</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="..\CK_source\pc_port\include\GamePrefix.h" />
+    <ClInclude Include="..\CK_source\pc_port\include\libkern\OSByteOrder.h" />
+    <ClInclude Include="..\CK_source\pc_port\include\OpenAL\al.h" />
+    <ClInclude Include="..\CK_source\pc_port\include\OpenAL\alc.h" />
+    <ClInclude Include="..\CK_source\pc_port\include\OpenGLES\ES1\gl.h" />
+    <ClInclude Include="..\CK_source\pc_port\include\OpenGLES\ES1\glext.h" />
+    <ClInclude Include="..\CK_source\pc_port\include\pthread.h" />
+    <ClInclude Include="..\CK_source\pc_port\include\strings.h" />
+    <ClInclude Include="..\CK_source\pc_port\platform_sdl\AssetPaths.h" />
+    <ClInclude Include="..\CK_source\pc_port\platform_sdl\Cheat.h" />
+    <ClInclude Include="..\CK_source\pc_port\platform_sdl\Config.h" />
+    <ClInclude Include="..\CK_source\pc_port\platform_sdl\Log.h" />
+    <ClInclude Include="..\CK_source\pc_port\platform_sdl\DebugTools.h" />
+    <ClInclude Include="..\CK_source\pc_port\platform_sdl\Host.h" />
+    <ClInclude Include="..\CK_source\pc_port\platform_sdl\KeyBindings.h" />
+    <ClInclude Include="..\CK_source\pc_port\swerve_compat\ArmBackend.h" />
+    <ClInclude Include="..\CK_source\pc_port\swerve_compat\ArmCall.h" />
+    <ClInclude Include="..\CK_source\pc_port\swerve_compat\ArmImports.h" />
+    <ClInclude Include="..\CK_source\pc_port\swerve_compat\SwerveApi.h" />
+    <ClInclude Include="..\CK_source\pc_port\swerve_compat\SwerveImage.h" />
+    <ClInclude Include="..\CK_source\pc_port\swerve_compat\SwvPort.h" />
+    <ClInclude Include="..\CK_source\pc_port\swerve_compat\twb_queryinterface.h" />
+    <ClInclude Include="..\CK_source\pc_port\swerve_compat\tws.h" />
+    <None Include="..\CK_source\pc_port\swerve_compat\ArmImportNames.inc" />
+    <None Include="..\scripts\prepare_toolchain.py" />
+    <None Include="..\scripts\make_arm_headers.py" />
+    <None Include="..\scripts\make_swerve_image.py" />
+  </ItemGroup>
+</Project>

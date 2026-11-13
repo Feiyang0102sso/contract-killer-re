@@ -84,4 +84,6 @@ void CEnemyWeaponType::ReleaseModelCopy() const
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertEnemyWeaponTypeSize[sizeof(CEnemyWeaponType) == 0x24 ? 1 : -1];
+#endif

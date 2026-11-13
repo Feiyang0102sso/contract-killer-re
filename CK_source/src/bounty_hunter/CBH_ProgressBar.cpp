@@ -350,6 +350,12 @@ void CAnimatedProgressBar::Update()
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertProgressBarSize[sizeof(CBH_ProgressBar) == 0x140 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertEnergyProgressBarSize[sizeof(CEnergyProgressBar) == 0x14c ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertAnimatedProgressBarSize[sizeof(CAnimatedProgressBar) == 0x148 ? 1 : -1];
+#endif

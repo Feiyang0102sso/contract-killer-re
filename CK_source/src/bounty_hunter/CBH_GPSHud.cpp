@@ -330,4 +330,6 @@ void CBH_GPSHud::OnStartClosing()
     m_money = NULL;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGPSHudSize[sizeof(CBH_GPSHud) == 0xd0 ? 1 : -1];
+#endif

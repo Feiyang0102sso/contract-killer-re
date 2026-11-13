@@ -279,4 +279,6 @@ int CNewsFeedManager::GetNewsByType(ENewsType type, Vector<const SMessage*>& new
     return news.size();
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertNewsFeedManagerSize[sizeof(CNewsFeedManager) == 0x14 ? 1 : -1];
+#endif

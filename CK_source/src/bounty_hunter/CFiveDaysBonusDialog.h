@@ -26,6 +26,8 @@ private:
     EBonusType m_type;
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char FiveDaysBonusDialogSizeCheck[sizeof(CFiveDaysBonusDialog) == 0x12c ? 1 : -1];
+#endif
 
 #endif

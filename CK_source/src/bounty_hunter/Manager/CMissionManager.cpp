@@ -36,4 +36,6 @@ CMission* CMissionManager::GetMissionById(int id) const
     return NULL;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertMissionManagerSize[sizeof(CMissionManager) == 0x14 ? 1 : -1];
+#endif

@@ -205,5 +205,9 @@ void CLevelUpWindow::EasyClose()
     StartEasy(params, FLAG_SHOW_AFTER_EASY);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKLevelUpWindowSize[sizeof(CLevelUpWindow) == 0x128 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKLevelUpAnimWindowSize[sizeof(CLevelUpAnimWindow) == 0xac ? 1 : -1];
+#endif

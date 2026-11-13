@@ -26,6 +26,8 @@ private:
     bool m_pauseTime;
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char IntroduceItemWindowSizeCheck[sizeof(CIntroduceItemWindow) == 0x130 ? 1 : -1];
+#endif
 
 #endif

@@ -66,4 +66,6 @@ int CGoPillManager::getItemsCount()
     return m_items.size();
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertCGoPillManagerSize[sizeof(CGoPillManager) == 0x18 ? 1 : -1];
+#endif

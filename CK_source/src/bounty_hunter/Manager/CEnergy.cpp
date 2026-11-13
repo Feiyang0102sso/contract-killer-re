@@ -29,4 +29,6 @@ XString CEnergy::getUIDString() const
     return XString::Format(L"energy_%d", m_id);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertCEnergySize[sizeof(CEnergy) == 0x60 ? 1 : -1];
+#endif

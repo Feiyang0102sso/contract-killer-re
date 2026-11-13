@@ -165,4 +165,6 @@ void CGPSItem::setSubItem(int index, const CRectangle& rect, int, int)
     m_subItems[index] = rect;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGPSItemSize[sizeof(CGPSItem) == 0x48 ? 1 : -1];
+#endif

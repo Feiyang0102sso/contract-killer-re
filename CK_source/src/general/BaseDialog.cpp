@@ -9,7 +9,9 @@
 #include "CStdUtil_Cocoa.h"
 #include "MathLib.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char ImageWindowSizeCheck[sizeof(ImageWindow) == 0xcc ? 1 : -1];
+#endif
 
 /** The larger of two values (both are evaluated once, in order). */
 static inline int MaxOf(int first, int second)

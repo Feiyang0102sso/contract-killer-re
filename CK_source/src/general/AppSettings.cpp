@@ -21,7 +21,9 @@ static const int WRITE_BUFFER_STEP = 64;
 const wchar_t AppSettings::settingsFilename[] = L"gameset.dat";
 const char AppSettings::settingsMarkStr[] = "GAMESETTINGS v1.6";
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AppSettingsSizeCheck[sizeof(AppSettings) == 0x38 ? 1 : -1];
+#endif
 
 XString AppSettings::ReadStream::ReadString()
 {

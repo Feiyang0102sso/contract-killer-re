@@ -217,4 +217,6 @@ int CChallengeManager::GetChallengesFinishTime()
     return finishTime;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKChallengeManagerSize[sizeof(CChallengeManager) == 0x24 ? 1 : -1];
+#endif

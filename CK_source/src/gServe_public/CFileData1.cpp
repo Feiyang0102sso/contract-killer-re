@@ -6,7 +6,9 @@
 #include "CStringToKey.h"
 #include "ICStdUtil.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char FileDataSizeCheck[sizeof(CFileData1) == 0x28 ? 1 : -1];
+#endif
 
 CFileData1::CFileData1()
     : CSaveRestoreInterface(1002, 1, BACKING_STORE_CONTENT_FILE), m_data(NULL), m_size(0)

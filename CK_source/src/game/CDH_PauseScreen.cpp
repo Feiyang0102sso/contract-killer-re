@@ -153,4 +153,6 @@ void CDH_PauseScreen::OnCommand(Event& event)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertPauseScreenSize[sizeof(CDH_PauseScreen) == 0xb4 ? 1 : -1];
+#endif

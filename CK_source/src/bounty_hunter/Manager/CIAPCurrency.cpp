@@ -4,7 +4,9 @@
 #include "CGameAnalytics.h"
 #include "CXmlHelper.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CIAPCurrencySizeCheck[sizeof(CIAPCurrency) == 0x6c ? 1 : -1];
+#endif
 
 CIAPCurrency::CIAPCurrency()
     : CItem(0)

@@ -12,7 +12,9 @@
 
 
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CoreCocoaSizeCheck[sizeof(CCore_Cocoa) == 0x40 ? 1 : -1];
+#endif
 
 ICCore* ICCore::CreateInstance()
 {

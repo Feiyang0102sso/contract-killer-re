@@ -79,4 +79,6 @@ void CDH_ThemeWindow::Paint(ICGraphics2d& graphics)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertThemeWindowSize[sizeof(CDH_ThemeWindow) == 0x124 ? 1 : -1];
+#endif

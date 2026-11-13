@@ -482,4 +482,6 @@ int CChallengeStats::GetMissionsWithSameWeapon(int weaponId)
     return 0;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKChallengeStatsSize[sizeof(CChallengeStats) == 0x100 ? 1 : -1];
+#endif

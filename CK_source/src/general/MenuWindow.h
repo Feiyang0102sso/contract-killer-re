@@ -27,6 +27,8 @@ public:
     };
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char MenuDialogSizeCheck[sizeof(MenuWindow::MenuDialog) == 0x17c ? 1 : -1];
+#endif
 
 #endif

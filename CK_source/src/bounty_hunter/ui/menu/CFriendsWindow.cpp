@@ -308,9 +308,15 @@ void CFriendsWindow::UpdateFriendsTab()
         }
         // Original dispatches through CNGSRemoteUser vtable slot +0x30 (deep populated), see CNGSRemoteUser.h.
         typedef unsigned char (*UserQuery)(CNGSRemoteUser*);
+#ifdef CK_PC
+        // PORT: slot +0x30 is an ARM vtable offset and empty in the original; the offline port has no
+        // remote users, so a user never counts as deep populated.
+        if (false) {
+#else
         void** vtable = *reinterpret_cast<void***>(user);
         UserQuery isDeepPopulated = reinterpret_cast<UserQuery>(vtable[0x30 / 4]);
         if (isDeepPopulated(user)) {
+#endif
             info.m_done = true;
             changed = true;
             info.m_avatarWidth = *reinterpret_cast<short*>(reinterpret_cast<char*>(user) + 0x9c);

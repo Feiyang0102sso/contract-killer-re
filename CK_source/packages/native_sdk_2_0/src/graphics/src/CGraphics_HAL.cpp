@@ -2,8 +2,12 @@
 
 #include "CGraphics_OGLES_Cocoa.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char GraphicsAbstractSizeCheck[sizeof(CGraphicsAbstract) == 0x34 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char GraphicsHALSizeCheck[sizeof(CGraphics_HAL) == 0x40 ? 1 : -1];
+#endif
 
 CGraphicsAbstract::CGraphicsAbstract()
 {

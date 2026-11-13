@@ -173,4 +173,6 @@ XString CGPSHuntingItem::ParametrizeTextWithParams(const XString& text, XString 
     return result;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGPSHuntingItemSize[sizeof(CGPSHuntingItem) == 0x6c ? 1 : -1];
+#endif

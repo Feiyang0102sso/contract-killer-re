@@ -109,4 +109,6 @@ const XString& CFactionType::GetBoss() const
     return *m_eligibleBosses[index];
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertFactionSize[sizeof(CFactionType) == 0x64 ? 1 : -1];
+#endif

@@ -37,6 +37,8 @@ private:
     const char* m_defaultImage;           // 0xcc key in the surface manager
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char FriendAvatarWindowSizeCheck[sizeof(CFriendAvatarWindow) == 0xd0 ? 1 : -1];
+#endif
 
 #endif

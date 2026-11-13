@@ -32,6 +32,8 @@ public:
     int m_elapsed;                             // 0x140
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char GPSCooperationSizeCheck[sizeof(CGPSCooperation) == 0x144 ? 1 : -1];
+#endif
 
 #endif

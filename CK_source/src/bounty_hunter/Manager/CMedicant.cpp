@@ -40,4 +40,6 @@ XString CMedicant::GetStatsString() const
 }
 
 // CMedicantManager allocates 0x64 bytes per item in the original
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertCMedicantSize[sizeof(CMedicant) == 0x64 ? 1 : -1];
+#endif

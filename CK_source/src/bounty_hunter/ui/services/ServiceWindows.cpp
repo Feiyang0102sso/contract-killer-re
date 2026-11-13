@@ -12,8 +12,12 @@
 
 const SScreenAdaptingConstant MARGIN_BARTEXT(2, 4);
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AnimatedWindowSizeCheck[sizeof(AnimatedWindow) == 0xf4 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char LabelWithIconSizeCheck[sizeof(LabelWithIcon) == 0xb0 ? 1 : -1];
+#endif
 
 ViewWindow::ViewWindow(const World& world)
     : WindowTransparent(false), m_world(world)

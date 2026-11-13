@@ -9,7 +9,9 @@
 #include "CStringToKey.h"
 #include "ICStdUtil.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char PublicDataSizeCheck[sizeof(CPublicData1) == 0x48 ? 1 : -1];
+#endif
 
 // This constructor calls the original weak instantiation out of line.
 template void Vector<int>::free_all_items();
@@ -22,7 +24,12 @@ CPublicData1::CPublicData1()
     m_successBounties = 0;
     m_guildFriendList.ReleaseMemory();
     m_guildFriendList.Concatenate(L"");
+#ifdef CK_PC
+    // PORT: the asm label above names the Darwin symbol; call the instantiation directly.
+    m_guildFriends.free_all_items();
+#else
     FreeGuildFriendItems(&m_guildFriends);
+#endif
     m_guildFriends.m_size = 0;
     m_guildFriends.m_capacity = 0;
 }

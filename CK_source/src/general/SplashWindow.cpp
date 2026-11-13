@@ -7,8 +7,12 @@
 #include "CFileUtil.h"
 #include "CDH_RootNode.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char SplashWindowSizeCheck[sizeof(SplashWindow) == 0xb8 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char GluLogoSizeCheck[sizeof(SplashWindow::GluLogo) == 0xb8 ? 1 : -1];
+#endif
 
 /** Mime key passed to the movie player. */
 static const unsigned int MOVIE_MIME_KEY = 0xf23d9ad4;

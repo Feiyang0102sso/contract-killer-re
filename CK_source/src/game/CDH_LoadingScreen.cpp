@@ -169,4 +169,6 @@ void CDH_LoadingScreen::OnCommand(Event& event)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertLoadingScreenSize[sizeof(CDH_LoadingScreen) == 0xcc ? 1 : -1];
+#endif

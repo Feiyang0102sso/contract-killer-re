@@ -18,7 +18,9 @@
 #include "MathLib.h"
 #include "ServiceWindows.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKGPSSubContractSize[sizeof(CGPSSubContract) == 0x7c ? 1 : -1];
+#endif
 
 // the original leaves the screen, activation and flight fields to Init/Update
 CGPSSubContract::CGPSSubContract(CGPSHauntCamera* camera)

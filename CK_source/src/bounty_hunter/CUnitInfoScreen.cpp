@@ -17,7 +17,9 @@
 #include "SScreenAdaptingConstant.h"
 #include "ServiceWindows.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKUnitInfoWindowSize[sizeof(CUnitInfoScreen) == 0x160 ? 1 : -1];
+#endif
 
 namespace {
 inline __attribute__((always_inline)) TextWindow* AddInfoLine(Window* content, const XString& text, CFont* font, int row)

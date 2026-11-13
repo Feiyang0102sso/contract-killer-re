@@ -14,7 +14,9 @@ const SScreenAdaptingConstant RowSpacing(5, 10);
 const SScreenAdaptingConstant ScreenBottom(10, 20);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AchievementsWindowSize[sizeof(CAchievementsWindow) == 0xdc ? 1 : -1];
+#endif
 
 CAchievementsWindow::CAchievementsWindow()
     : CBaseScreen(false, true, true, false, true, false)

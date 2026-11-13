@@ -242,5 +242,9 @@ CBountyManager::SMessage* CBountyManager::GetRandomTargettingMessage()
     return m_targetingMessages[CRandGen::GetInstance()->GetRandRange(0, m_targetingMessages.size() - 1)];
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertBountyManagerSize[sizeof(CBountyManager) == 0x20 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertBountyInfoSize[sizeof(CBountyManager::SBountyGeneralInfo) == 0xa8 ? 1 : -1];
+#endif

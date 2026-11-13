@@ -58,6 +58,8 @@ private:
     Window* m_rightArrow;
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char ScrollWindowSizeCheck[sizeof(CScrollWindow) == 0x12c ? 1 : -1];
+#endif
 
 #endif

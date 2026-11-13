@@ -8,7 +8,9 @@
 #include "ResMap.h"
 #include "tinyxml.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CIAPCurrencyManagerSizeCheck[sizeof(CIAPCurrencyManager) == 0x1c ? 1 : -1];
+#endif
 
 CIAPCurrencyManager::CIAPCurrencyManager()
     : m_retries(0)

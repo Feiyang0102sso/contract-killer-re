@@ -398,4 +398,6 @@ void CUnit::OnTakeCover()
     m_inCover = true;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertUnitSize[sizeof(CUnit) == 0x1f8 ? 1 : -1];
+#endif

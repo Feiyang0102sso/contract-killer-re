@@ -15,6 +15,8 @@ private:
     int m_displayedSeconds;  // 0xd4
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char TimerWindowSizeCheck[sizeof(CTimerWindow) == 0xd8 ? 1 : -1];
+#endif
 
 #endif

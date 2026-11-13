@@ -59,6 +59,8 @@ public:
     int m_commandParam;                 // 0x120, assigned by callers that send a payload
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char ButtonWindowSizeCheck[sizeof(ButtonWindow) == 0x124 ? 1 : -1];
+#endif
 
 #endif

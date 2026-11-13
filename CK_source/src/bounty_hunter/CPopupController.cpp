@@ -10,7 +10,9 @@
 
 const unsigned int CPopupController::POPUP_TIME_INTERVAL_MS[PositionCount] = {500, 1500, 500, 500, 7000};
 const int CPopupController::POPUP_STACK_MAX_SIZE[PositionCount] = {8, 8, 8, 8, 25};
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKPopupControllerSize[sizeof(CPopupController) == 0x10c ? 1 : -1];
+#endif
 
 CPopupController::CPopupController() : WindowTransparent(false), m_enemiesLeft(NULL)
 {

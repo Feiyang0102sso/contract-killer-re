@@ -19,6 +19,8 @@ private:
     int m_fieldB0;  // original allocation includes an unused final word
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char ChallengeInviteNewsWindowSizeCheck[sizeof(CChallengeInviteNewsWindow) == 0xb4 ? 1 : -1];
+#endif
 
 #endif

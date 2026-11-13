@@ -9,7 +9,9 @@
 #include "CXmlHelper.h"
 #include "ResMap.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CDH_WeaponsManager_ARMv7_Size[(sizeof(CDH_WeaponsManager) == 0x30) ? 1 : -1];
+#endif
 
 CDH_WeaponsManager::CDH_WeaponsManager()
     : m_maxClip(0)

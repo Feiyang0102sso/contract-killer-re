@@ -611,7 +611,9 @@ void CMainItemScreen::Paint(ICGraphics2d& graphics)
     CBaseScreen::Paint(graphics);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertMainItemScreenSize[sizeof(CMainItemScreen) == 0x120 ? 1 : -1];
+#endif
 
 void CMainItemScreen::OnEnterForeground()
 {

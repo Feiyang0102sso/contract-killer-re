@@ -171,7 +171,7 @@ int swvStrNCmp(const char* left, const char* right, size_t count)
 
 char* swvStrChr(const char* text, int character)
 {
-    return strchr(text, (char)character);
+    return const_cast<char*>(strchr(text, (char)character)); // PORT: preserve the original C return type.
 }
 
 void* swvSystemAllocate(size_t size)

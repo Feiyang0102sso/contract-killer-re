@@ -255,5 +255,9 @@ void StatItem::OnStartupEasy()
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKCareerWindowSize[sizeof(CCareerWindow) == 0xf0 ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CKCareerStatItemSize[sizeof(StatItem) == 0xac ? 1 : -1];
+#endif

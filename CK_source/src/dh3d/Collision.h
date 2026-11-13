@@ -26,6 +26,8 @@ public:
     int m_y;                       // 0x20
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CollisionSizeCheck[sizeof(Collision) == 0x24 ? 1 : -1];
+#endif
 
 #endif

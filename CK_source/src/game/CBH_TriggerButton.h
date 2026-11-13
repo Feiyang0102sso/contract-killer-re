@@ -29,6 +29,8 @@ private:
     bool m_acceptsInput;                // 0x14d
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char TriggerButtonSizeCheck[sizeof(CBH_TriggerButton) == 0x150 ? 1 : -1];
+#endif
 
 #endif

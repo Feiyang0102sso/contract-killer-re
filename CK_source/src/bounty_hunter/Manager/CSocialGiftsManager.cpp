@@ -109,5 +109,9 @@ void CSocialGiftManager::GiveGift(int index)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGiftSize[sizeof(SGift) == 0xc ? 1 : -1];
+#endif
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGiftManagerSize[sizeof(CSocialGiftManager) == 0x10 ? 1 : -1];
+#endif

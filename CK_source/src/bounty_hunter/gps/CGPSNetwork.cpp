@@ -73,4 +73,6 @@ void CGPSNetwork::Paint(ICGraphics2d& graphics, int mapX, int mapY)
     setSubItem(0, label, mapX, mapY);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertGPSNetworkSize[sizeof(CGPSNetwork) == 0x58 ? 1 : -1];
+#endif

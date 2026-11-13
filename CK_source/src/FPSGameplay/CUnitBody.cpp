@@ -1260,4 +1260,6 @@ void CUnitBody::SetAsKnown()
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertUnitBodySize[sizeof(CUnitBody) == 0x184 ? 1 : -1];
+#endif

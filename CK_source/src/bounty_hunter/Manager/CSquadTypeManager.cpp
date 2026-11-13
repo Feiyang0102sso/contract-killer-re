@@ -34,4 +34,6 @@ CSquadType* CSquadTypeManager::GetType(const XString& name) const
     return NULL;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertSquadTypeManagerSize[sizeof(CSquadTypeManager) == 0x10 ? 1 : -1];
+#endif

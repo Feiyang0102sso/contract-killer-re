@@ -272,4 +272,6 @@ void CBaseScreen::GPSFrame::Paint(ICGraphics2d& graphics)
                        NULL, 0, 0, m_width, m_height);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertBaseScreenSize[sizeof(CBaseScreen) == 0xd8 ? 1 : -1];
+#endif

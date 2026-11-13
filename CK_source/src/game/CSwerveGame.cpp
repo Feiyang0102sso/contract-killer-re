@@ -2119,6 +2119,18 @@ void CSwerveGame::HandleGameObjectShot(CDH_Weapon* weapon, float x, float y)
         if (object == NULL || !object->CanBeHandled()) {
             continue;
         }
+#ifdef CK_PC
+        // PORT: the slot offsets below are the ARM (Itanium) vtable layout; call the virtuals instead.
+        bool picked;
+        {
+            DGCamera::Camera camera = m_world.getActiveCamera();
+            picked = object->Pick(x, y, maxPickDistance, camera);
+        }
+        if (picked) {
+            int damage = weapon->damage();
+            object->ReceivedDamage(damage, 0);
+        }
+#else
         // The original resolves the method before querying the scene or the weapon.
         IQueryInterface* objectSlots = reinterpret_cast<IQueryInterface*>(object);
         PickObject pick = CKMethod<PickObject>(objectSlots, 0x18);
@@ -2132,6 +2144,7 @@ void CSwerveGame::HandleGameObjectShot(CDH_Weapon* weapon, float x, float y)
             int damage = weapon->damage();
             receiveDamage(object, damage, 0);
         }
+#endif
     }
 }
 
@@ -3196,7 +3209,9 @@ void CSwerveGame::UpdateMissionCameraTimer()
     m_hud->SetMissionTimerValue(duration - m_missionElapsedMs);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertSwerveGameSize[sizeof(CSwerveGame) == 0x4f0 ? 1 : -1];
+#endif
 
 void CSwerveGame::AddCompletedChallengesDialogs()
 {

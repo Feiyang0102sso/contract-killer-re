@@ -70,4 +70,6 @@ vec3 CSquad::GetLocalSquadPosition(CUnit* unit)
     return m_right * offset->m_x + m_forward * offset->m_y + m_position;
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertSquadSize[sizeof(CSquad) == 0x38 ? 1 : -1];
+#endif

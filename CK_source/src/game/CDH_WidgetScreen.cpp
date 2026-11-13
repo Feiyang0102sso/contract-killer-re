@@ -101,4 +101,6 @@ void CDH_WidgetScreen::Init()
     setLayoutWidget(header, Caption);
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertWidgetScreenSize[sizeof(CDH_WidgetScreen) == 0x13c ? 1 : -1];
+#endif

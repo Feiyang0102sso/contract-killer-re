@@ -12,7 +12,9 @@
 #include "CStdUtil_Cocoa.h"
 #include "CXmlHelper.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CPlayerGameStats_ARMv7_Size[(sizeof(CPlayerGameStats) == 0x114) ? 1 : -1];
+#endif
 
 CPlayerGameStats::CPlayerGameStats()
 {

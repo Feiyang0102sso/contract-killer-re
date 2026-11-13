@@ -4,7 +4,9 @@
 #include "WindowApp.h"
 #include "CFont.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char SimpleTextAreaSizeCheck[sizeof(SimpleTextArea) == 0xc8 ? 1 : -1];
+#endif
 
 SimpleTextArea::SimpleTextArea(CFont* font)
     : Window(false)

@@ -57,6 +57,8 @@ protected:
     bool m_dragging;                  // 0x104
 };
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char CSliderControlSizeCheck[sizeof(CSliderControl) == 0x108 ? 1 : -1];
+#endif
 
 #endif

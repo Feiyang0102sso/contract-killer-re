@@ -113,4 +113,6 @@ void AddPeaceTimeSquadExecutor(CUnitMind* mind)
     }
 }
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char AssertPeaceTimeSquadSize[sizeof(CPeaceTimeSquadExecutor) == 0x20 ? 1 : -1];
+#endif

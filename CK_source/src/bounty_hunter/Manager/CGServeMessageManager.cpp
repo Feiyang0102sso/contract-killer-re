@@ -4,7 +4,9 @@
 #include "CNGSSocialInterface.h"
 #include "CNGSSocialMessage.h"
 
+#ifndef CK_PC // PORT: layout check of the ARMv7 build only
 typedef char GServeMessageManagerSizeCheck[sizeof(CGServeMessageManager) == 0x1c ? 1 : -1];
+#endif
 
 CGServeMessageManager::CGServeMessageManager()
 {

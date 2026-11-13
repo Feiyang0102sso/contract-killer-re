@@ -51,13 +51,23 @@ unsigned char CGraphics_OGLES_Cocoa::Initialize(const Param* params)
     m_fielda8 = 1;
     m_fieldac = 1;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &m_textureLimits[0]);
+#ifdef CK_PC
+    // PORT: 2D tile coordinates and dimensions are signed 16-bit values.
+    if (m_textureLimits[0] > 16384) {
+        m_textureLimits[0] = 16384;
+    }
+#endif
     for (int index = 1; index < 4; index++) {
         m_textureLimits[index] = m_textureLimits[0];
     }
     InitializeIntrinsicHardwareShaderManagement();
     m_description.m_abstraction = Abstraction_Hardware;
     m_description.m_renderer = &m_version;
+#ifdef CK_PC
+    m_description.m_maxTextureSize = m_textureLimits[0];
+#else
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, (GLint*)&m_description.m_maxTextureSize);
+#endif
     unsigned int maxTexture = m_description.m_maxTextureSize;
     m_description.m_maxTextureWidth = maxTexture;
     m_description.m_maxTextureHeight = maxTexture;
