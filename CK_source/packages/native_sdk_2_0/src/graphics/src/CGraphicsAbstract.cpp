@@ -4,7 +4,7 @@
 #include "NPMalloc.h"
 #include "NPNew.h"
 #include "CVertexBuffer.h"
-#include "CGraphicsAbstract.inl"
+#include "CGraphicsAbstract_PS_AquireVtxBuffer.i"
 
 void CGraphicsAbstract::DisplayProgram::DestroyCore()
 {

@@ -1,6 +1,7 @@
-// CGraphicsAbstract.inl - shared display-program vertex buffer recording.
-#ifndef CGRAPHICSABSTRACT_INL
-#define CGRAPHICSABSTRACT_INL
+// CGraphicsAbstract_PS_AquireVtxBuffer.i - shared display-program vertex buffer recording
+// (original file name and place; CGraphics2d_Lite_OGLES.cpp includes it as ../../src/...).
+#ifndef CGRAPHICSABSTRACT_PS_AQUIREVTXBUFFER_I
+#define CGRAPHICSABSTRACT_PS_AQUIREVTXBUFFER_I
 
 #include "CGraphicsAbstract.h"
 #include "CVertexBuffer.h"

@@ -15,7 +15,7 @@
 #include "CMathFixed.h"
 #include "CRenderSurface_OGLES_Texture.h"
 #include "ICCore.h"
-#include "CGraphicsAbstract.inl"
+#include "../../src/CGraphicsAbstract_PS_AquireVtxBuffer.i"
 
 namespace {
     const int kFixedOne = 65536;

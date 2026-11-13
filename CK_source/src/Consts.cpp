@@ -1,4 +1,5 @@
-// game_conf.cpp - CK 1.5.2 bitmap-font resources in game index order.
+// Consts.cpp - CK 1.5.2 game constants: resource file name and bitmap-font table in game index order
+// (original data-only compile unit src/Consts.cpp).
 #include "CFontMgr.h"
 
 extern const wchar_t GAME_RES_FILE[] = L"BountyHunter.big";
