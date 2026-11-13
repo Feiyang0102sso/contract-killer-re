@@ -25,8 +25,7 @@ CDH_TextScreen::~CDH_TextScreen()
 
 void CDH_TextScreen::setText(const char* text)
 {
-    CStrWChar localized = CUtility::GetString(text);
-    m_text = XString(localized.GetWCharPtr());
+    m_text = XString(CUtility::GetString(text).GetWCharPtr());
 }
 
 void CDH_TextScreen::setText(const XString& text)

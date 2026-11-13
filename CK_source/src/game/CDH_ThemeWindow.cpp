@@ -11,71 +11,72 @@ CDH_ThemeWindow::~CDH_ThemeWindow()
 
 void CDH_ThemeWindow::init(bool showClose)
 {
-    const char* resources[] = {
-        "SUR_DLG_SIDE_LEFT", "SUR_DLG_SIDE_RIGHT", "SUR_DLG_SIDE_TOP", "SUR_DLG_SIDE_BOTTOM",
-        "SUR_DLG_CORNER_LEFT_TOP", "SUR_DLG_CORNER_RIGHT_TOP", "SUR_DLG_CORNER_LEFT_BOTTOM",
-        "SUR_DLG_CORNER_RIGHT_BOTTOM", "SUR_DLG_CORNER_TITLE_INNER_RIGHT", "SUR_DLG_FILLER",
-        "SUR_DLG_TITLE_LEFT", "SUR_DLG_TITLE_RIGHT", "SUR_DLG_TITLE_TOP", "SUR_BUTTON_CLOSE"
-    };
-    for (int index = 0; index < ImageCount; ++index) {
-        m_images[index].Create(resources[index]);
-    }
-    ICRenderSurface* corner = m_images[CornerLeftTop].GetSurface();
-    GetImageSize(corner, m_cornerWidth, m_cornerHeight);
-    SetInsetSpacing(6, ImageWidth(corner));
+    m_sideLeft.Create("SUR_DLG_SIDE_LEFT");
+    m_sideRight.Create("SUR_DLG_SIDE_RIGHT");
+    m_sideTop.Create("SUR_DLG_SIDE_TOP");
+    m_sideBottom.Create("SUR_DLG_SIDE_BOTTOM");
+    m_cornerLeftTop.Create("SUR_DLG_CORNER_LEFT_TOP");
+    m_cornerRightTop.Create("SUR_DLG_CORNER_RIGHT_TOP");
+    m_cornerLeftBottom.Create("SUR_DLG_CORNER_LEFT_BOTTOM");
+    m_cornerRightBottom.Create("SUR_DLG_CORNER_RIGHT_BOTTOM");
+    m_cornerTitleInnerRight.Create("SUR_DLG_CORNER_TITLE_INNER_RIGHT");
+    m_filler.Create("SUR_DLG_FILLER");
+    m_titleLeft.Create("SUR_DLG_TITLE_LEFT");
+    m_titleRight.Create("SUR_DLG_TITLE_RIGHT");
+    m_titleTop.Create("SUR_DLG_TITLE_TOP");
+    m_closeButton.Create("SUR_BUTTON_CLOSE");
+    GetImageSize(m_cornerLeftTop.GetSurface(), m_cornerWidth, m_cornerHeight);
+    SetInsetSpacing(6, ImageWidth(m_cornerLeftTop.GetSurface()));
     m_captionWidth = 0;
     m_showClose = showClose;
 }
 
 void CDH_ThemeWindow::Paint(ICGraphics2d& graphics)
 {
-    ICRenderSurface* top = m_images[SideTop].GetSurface();
-    ICRenderSurface* topLeft = m_images[CornerLeftTop].GetSurface();
-    ICRenderSurface* topRight = m_images[CornerRightTop].GetSurface();
-    int frameY = 0;
-    if (m_captionWidth != 0 || m_showClose) {
-        ICRenderSurface* titleLeft = m_images[TitleLeft].GetSurface();
-        ICRenderSurface* titleRight = m_images[TitleRight].GetSurface();
-        ICRenderSurface* titleTop = m_images[TitleTop].GetSurface();
-        frameY = ImageHeight(titleLeft);
-        int titleLeftWidth = ImageWidth(titleLeft);
-        int endX;
-        if (m_captionWidth == 0) {
-            DrawImage(graphics, topLeft, 0, frameY, ALIGN_LEFT | ALIGN_BOTTOM, 0);
-            endX = ImageWidth(topLeft);
+    if (m_captionWidth == 0 && !m_showClose) {
+        DrawBorderFillRect(graphics, m_sideLeft.GetSurface(), m_cornerLeftTop.GetSurface(),
+                           m_sideTop.GetSurface(), m_cornerRightTop.GetSurface(),
+                           m_sideRight.GetSurface(), m_cornerRightBottom.GetSurface(),
+                           m_sideBottom.GetSurface(), m_cornerLeftBottom.GetSurface(),
+                           m_filler.GetSurface(), 0, 0, m_width, m_height);
+    } else {
+        int titleHeight = ImageHeight(m_titleLeft.GetSurface());
+        int leftX;
+        if (m_captionWidth != 0) {
+            DrawImage(graphics, m_titleLeft.GetSurface(), 0, 0, ALIGN_LEFT | ALIGN_TOP, 0);
+            leftX = ImageWidth(m_titleLeft.GetSurface());
+            DrawTileImageHoriz(graphics, m_titleTop.GetSurface(), leftX, 0, m_captionWidth);
+            leftX += m_captionWidth;
+            DrawImage(graphics, m_titleRight.GetSurface(), leftX, 0, ALIGN_LEFT | ALIGN_TOP, 0);
+            leftX += ImageWidth(m_titleRight.GetSurface());
         } else {
-            DrawImage(graphics, titleLeft, 0, 0, ALIGN_LEFT | ALIGN_TOP, 0);
-            DrawTileImageHoriz(graphics, titleTop, titleLeftWidth, 0, m_captionWidth);
-            endX = titleLeftWidth + m_captionWidth;
-            DrawImage(graphics, titleRight, endX, 0, ALIGN_LEFT | ALIGN_TOP, 0);
-            endX += ImageWidth(titleRight);
+            DrawImage(graphics, m_cornerLeftTop.GetSurface(), 0, titleHeight, ALIGN_LEFT | ALIGN_BOTTOM, 0);
+            leftX = ImageWidth(m_cornerLeftTop.GetSurface());
         }
 
-        int topY = frameY - ImageHeight(top);
-        int rightX = m_width - ImageWidth(topRight);
-        int transform = 0;
+        int rightX;
         if (m_showClose) {
-            rightX = m_width - titleLeftWidth;
-            DrawImage(graphics, titleLeft, rightX, 0, ALIGN_LEFT | ALIGN_TOP, 2);
-            int closeWidth = ImageWidth(m_images[CloseButton].GetSurface());
-            rightX -= closeWidth;
-            DrawTileImageHoriz(graphics, titleTop, rightX, 0, closeWidth);
-            rightX -= titleLeftWidth;
-            topRight = titleRight;
-            topY = 0;
-            transform = 2;
+            // Mirrored title cap, close button slot, then the mirrored title end.
+            rightX = m_width - ImageWidth(m_titleLeft.GetSurface());
+            DrawImage(graphics, m_titleLeft.GetSurface(), rightX, 0, ALIGN_LEFT | ALIGN_TOP, 2);
+            rightX -= ImageWidth(m_closeButton.GetSurface());
+            DrawTileImageHoriz(graphics, m_titleTop.GetSurface(), rightX, 0, ImageWidth(m_closeButton.GetSurface()));
+            rightX -= ImageWidth(m_titleLeft.GetSurface());
+            DrawImage(graphics, m_titleRight.GetSurface(), rightX, 0, ALIGN_LEFT | ALIGN_TOP, 2);
+        } else {
+            rightX = m_width - ImageWidth(m_cornerRightTop.GetSurface());
+            DrawImage(graphics, m_cornerRightTop.GetSurface(), rightX,
+                      titleHeight - ImageHeight(m_sideTop.GetSurface()), ALIGN_LEFT | ALIGN_TOP, 0);
         }
-        DrawImage(graphics, topRight, rightX, topY, ALIGN_LEFT | ALIGN_TOP, transform);
-        DrawTileImageHoriz(graphics, top, endX, frameY - ImageHeight(top), rightX - endX);
-        topLeft = NULL;
-        top = NULL;
-        topRight = NULL;
-    }
+        DrawTileImageHoriz(graphics, m_sideTop.GetSurface(), leftX,
+                           titleHeight - ImageHeight(m_sideTop.GetSurface()), rightX - leftX);
 
-    DrawBorderFillRect(graphics, m_images[SideLeft].GetSurface(), topLeft, top, topRight,
-                       m_images[SideRight].GetSurface(), m_images[CornerRightBottom].GetSurface(),
-                       m_images[SideBottom].GetSurface(), m_images[CornerLeftBottom].GetSurface(),
-                       m_images[Filler].GetSurface(), 0, frameY, m_width, m_height - frameY);
+        // The top edge is already drawn by the title bar.
+        DrawBorderFillRect(graphics, m_sideLeft.GetSurface(), NULL, NULL, NULL,
+                           m_sideRight.GetSurface(), m_cornerRightBottom.GetSurface(),
+                           m_sideBottom.GetSurface(), m_cornerLeftBottom.GetSurface(),
+                           m_filler.GetSurface(), 0, titleHeight, m_width, m_height - titleHeight);
+    }
 }
 
 typedef char AssertThemeWindowSize[sizeof(CDH_ThemeWindow) == 0x124 ? 1 : -1];

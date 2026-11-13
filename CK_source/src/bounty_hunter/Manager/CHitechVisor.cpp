@@ -15,8 +15,11 @@ void CHitechVisor::Load()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     TiXmlElement* root = app->m_saveManager->GetRootElement();
-    const TiXmlElement* visor = root->FirstChildElement("visor");
-    m_owned = visor != NULL && CXmlHelper::GetAttributeValueOptional(*visor, "isEquiped").ToBool();
+    TiXmlElement* visor = root->FirstChildElement("visor");
+    if (visor != NULL) {
+        // Original bug: the string pointer is tested, so any saved visor node means owned.
+        m_owned = CXmlHelper::GetAttributeValueOrUseDefault(visor, "isEquiped", XString("0")).c_str() != NULL;
+    }
 }
 
 void CHitechVisor::setAvailable(bool available)

@@ -1,5 +1,7 @@
 // CRenderSurface.cpp - platform independent part of a render surface.
 #include "CRenderSurface.h"
+#include "CGraphics_HAL.h"
+#include "CGraphics_OGLES_Cocoa.h"
 #include "CInputStream.h"
 #include "CIdToObjectRouter.h"
 #include "CSharedPtr.h"
@@ -71,7 +73,10 @@ void CRenderSurface::DestroyBuffers()
 
 void CRenderSurface::Bind()
 {
-    SetAsTargetSurface();
+    // Make this surface the target in both the HAL and the device.
+    CGraphics_HAL* graphics = static_cast<CGraphics_HAL*>(ICGraphics::GetInstance());
+    graphics->m_target = this;
+    graphics->m_hardware->m_target = this;
 }
 
 void CRenderSurface::DiscardContents()
@@ -257,15 +262,6 @@ unsigned char CRenderSurface::Load(CInputStream& stream, unsigned int type,
     return initialized;
 }
 
-unsigned char CRenderSurface::SaveStateForFutureRecreation()
-{
-    return 1;
-}
-
-unsigned char CRenderSurface::Recreate()
-{
-    return 1;
-}
 
 unsigned char CRenderSurface::CreateBuffers(const RSBFormat* formats, unsigned short width, unsigned short height,
                                             void* palette, CRenderSurfaceBuffer::SourceStreamDesc* desc,

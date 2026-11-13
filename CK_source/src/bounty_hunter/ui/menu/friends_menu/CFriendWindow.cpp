@@ -113,12 +113,11 @@ void CFriendWindow::Update()
 
 void CFriendWindow::OnCommand(Event& event)
 {
-    if (event.m_id != TargetFriend || event.m_param1 != m_friendId) {
+    if (event.m_id != TargetFriend) {
         return;
     }
-    CBH_GPSMap* map = CBH_GPSMap::m_instance;
-    if (map != NULL && map->StartTargettingMission(m_friendId, false)) {
-        WindowApp::HandleTunnelCommand(CloseFriends, 0, 0, 0);
-    }
+    // the original targets the friend from the event and always closes the friends list
+    CBH_GPSMap::m_instance->StartTargettingMission(event.m_param1, false);
+    WindowApp::HandleTunnelCommand(CloseFriends, 0, 0, 0);
     event.Clear();
 }

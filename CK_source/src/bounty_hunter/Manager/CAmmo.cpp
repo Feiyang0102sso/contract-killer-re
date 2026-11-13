@@ -10,14 +10,15 @@ typedef char CAmmo_ARMv7_Size[(sizeof(CAmmo) == 0x74) ? 1 : -1];
 
 CAmmo::CAmmo()
     : CItem(0)
-    , m_owned(false)
     , m_universal(false)
 {
+    // set after the string members, as in the original
+    m_owned = false;
 }
 
 void CAmmo::init(const TiXmlElement& element)
 {
-    setPriceCredits(1);
+    setUnlockLvl(1);
     Parse(element);
 }
 

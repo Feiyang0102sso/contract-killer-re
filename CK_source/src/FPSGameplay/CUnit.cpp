@@ -16,6 +16,7 @@
 #include "CVisualCharacterType.h"
 #include "CWarriorLogicExecutor.h"
 #include "DGHelper.h"
+#include "GamePlayHUD.h"
 
 static int g_unitGUID;
 
@@ -73,20 +74,21 @@ void CUnit::InitBehaviour(bool scripted, bool squad)
 
 void CUnit::Tick(int elapsed)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CSwerveGame* game = app->m_helper->m_swerveGame;
-    if (game != NULL && game->m_slowMode && !CBH_Player::GetInstance()->IsSpeedMode()) {
+    // Original 0xd9834: dead units stop here; tranquillized or removed units tick neither body nor mind.
+    if (static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_slowMode
+        && !CBH_Player::GetInstance()->IsSpeedMode()) {
         elapsed /= 3;
     }
-    if (m_removed) {
+    if (m_dead) {
         return;
     }
-    if (m_maxHp > 0) {
-        m_healthFraction = static_cast<float>(m_hp) / m_maxHp;
-        m_wounded = m_healthFraction < 0.01f;
-    }
-    m_body.Tick(elapsed);
-    if (CanBeHandled()) {
+    if (!m_tranquillized && !m_removed) {
+        if (m_maxHp > 0) {
+            float fraction = static_cast<float>(m_hp) / static_cast<float>(m_maxHp);
+            m_healthFraction = fraction;
+            m_wounded = fraction < 0.01f;
+        }
+        m_body.Tick(elapsed);
         m_mind.Tick(elapsed);
     }
 }
@@ -167,102 +169,134 @@ void CUnit::CalcDamageAndKillingPosibility(int damage)
     CalcDamageAndKillingPosibility(damage, NULL);
 }
 
+// Original 0xd9a60. Notes: no ShowUnitInfo for tranquillizer hits; civilians die from any damage;
+// a boss headshot outside the scope enables slow motion only when the camera time is negative (as in
+// the original); m_tagged (+0x1ec) marks a unit that has been hit before.
 void CUnit::ReceivedDamage(bool suppressEffects)
 {
-    if (m_invulnerable || !CanBeHandled()) {
+    if (m_invulnerable) {
         return;
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CBH_Player* player = CBH_Player::GetInstance();
     if (m_hitWeapon != NULL && m_hitWeapon->m_tranquillizer) {
         m_mind.OnTranquillize(m_hitWeapon->m_tranquillizingHPSpeed);
-        if (!suppressEffects) {
-            app->m_helper->m_swerveGame->ShowUnitInfo(this, 0);
-        }
         return;
     }
     WindowApp::HandleTunnelCommand(-0x2e9b0c33, m_damage, 0, 0);
-    m_hp -= m_damage;
-    if (m_hp < 0 || m_type == UnitCivilian) {
+    int hp = m_hp - m_damage;
+    if (hp < 0) {
+        hp = 0;
+    }
+    m_hp = hp;
+    if (m_type == UnitCivilian) {
         m_hp = 0;
+        hp = 0;
     }
     if (m_maxHp > 0) {
-        m_healthFraction = static_cast<float>(m_hp) / m_maxHp;
-        m_wounded = m_healthFraction < 0.01f;
+        float fraction = static_cast<float>(hp) / static_cast<float>(m_maxHp);
+        m_healthFraction = fraction;
+        m_wounded = fraction < 0.01f;
     }
-
-    bool headshot = m_damageType == HitHead;
-    if (headshot) {
+    bool headshot = false;
+    if (m_damageType == HitHead) {
         WindowApp::HandleTunnelCommand(-0x1c8ca178, 0, 0, 0);
+        static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_headshots++;
         if (m_hitWeapon != NULL) {
-            player->m_gameStats.RegisterHeadshot(m_hitWeapon);
+            CBH_Player::GetInstance()->m_gameStats.RegisterHeadshot(m_hitWeapon);
+            headshot = true;
         }
-        if (m_type != UnitCivilian && m_body.IsRunning()) {
-            app->m_trickShotManager->RegisterEvent(CTrickShotManager::BullsEye);
+        if (m_type == UnitBoss) {
+            CSwerveGame* game = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame;
+            if (!game->m_hud->m_scoped
+                && static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_cameraDurationMs < 0) {
+                game->SetSlowMode(true);
+            }
         }
-        ++app->m_huntingInfo->m_headshots;
+        if (m_body.IsRunning() && m_type != UnitCivilian) {
+            static_cast<App*>(WindowApp::m_instance)->m_trickShotManager->RegisterEvent(CTrickShotManager::BullsEye);
+        }
     }
     if (m_hitWeapon != NULL) {
-        const CAmmo* ammo = m_hitWeapon->GetActiveAmmo();
-        if (ammo != NULL) {
-            if (ammo->m_ammoType == L"incendiary") {
-                m_mind.OnBurnt(7000, m_damage / 2);
-            }
-            if (ammo->m_ammoType == L"explosive") {
-                m_mind.OnHit(true);
-            }
+        if (m_hitWeapon->GetActiveAmmo()->m_ammoType == XString("incendiary")) {
+            m_mind.OnBurnt(7000, m_damage / 2);
+        }
+        if (m_hitWeapon != NULL && m_hitWeapon->GetActiveAmmo()->m_ammoType == XString("explosive")) {
+            m_mind.OnHit(true);
         }
     }
     m_mind.OnReceiveDamage();
     if (m_hitWeapon != NULL) {
-        player->m_gameStats.RegisterHit(this, m_hitWeapon);
-        if (app->m_helper->m_gamePlayManager.GetGameData()->GetWeapon01(true) == m_hitWeapon) {
-            ++app->m_huntingInfo->m_primaryHits;
-            if (m_hp == 0 && m_fatalDamage) {
-                ++app->m_huntingInfo->m_primaryKills;
-            }
+        CBH_Player::GetInstance()->m_gameStats.RegisterHit(this, m_hitWeapon);
+        CDH_Weapon* primary = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true);
+        CHuntingInfo* hunting = static_cast<App*>(WindowApp::m_instance)->m_huntingInfo;
+        if (primary == m_hitWeapon) {
+            hunting->m_primaryHits++;
         } else {
-            ++app->m_huntingInfo->m_secondaryHits;
-            if (m_hp == 0 && m_fatalDamage) {
-                ++app->m_huntingInfo->m_secondaryKills;
-            }
+            hunting->m_secondaryHits++;
         }
+    }
+    bool alive = !headshot && m_hp != 0;
+    if (m_type != UnitCivilian && !alive && !m_inCover) {
+        CBH_Player::GetInstance()->m_challengeStats->m_killsBeforePlayerCover++;
     }
     if (m_hp == 0) {
-        CSwerveGame* game = app->m_helper->m_swerveGame;
-        player->m_challengeStats->RegisterKill(this, m_hitWeapon, headshot && m_hitWeapon != NULL,
-                                               !m_inCover, static_cast<int>(game->GetDistanceToUnit(this)));
-        app->m_helper->m_swerveGame->RegisterUnitNeutralization(m_type);
-        vec3 shotOrigin(m_body.m_pickRay[0], m_body.m_pickRay[1], m_body.m_pickRay[2]);
-        m_mind.OnDeath(shotOrigin);
-        m_dead = true;
+        if (m_hitWeapon == NULL && m_type == UnitBoss) {
+            CBH_Player::GetInstance()->m_challengeStats->m_bossKillsByExplosiveObject++;
+        }
+        if (m_fatalDamage) {
+            CDH_Weapon* primary = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true);
+            CHuntingInfo* hunting = static_cast<App*>(WindowApp::m_instance)->m_huntingInfo;
+            if (primary == m_hitWeapon) {
+                hunting->m_primaryKills++;
+            } else {
+                hunting->m_secondaryKills++;
+            }
+        }
+        float distance = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->GetDistanceToUnit(this);
         if (m_type == UnitCivilian) {
-            player->m_gameStats.AddCiviliansKilled(1);
+            CBH_Player::GetInstance()->m_gameStats.AddCiviliansKilled(1);
+            CBH_Player::GetInstance()->m_challengeStats->RegisterKill(this, m_hitWeapon, headshot, !m_tagged,
+                                                                      static_cast<int>(distance));
         } else {
             if (m_type == UnitBoss) {
-                player->m_gameStats.AddTargetsKilled(1);
-            } else {
-                player->m_gameStats.AddEnemyKilled(1);
+                CBH_Player::GetInstance()->m_gameStats.AddTargetsKilled(1);
+                if (m_runningAway) {
+                    CBH_Player::GetInstance()->m_gameStats.RegisterEscapingKill();
+                }
+            } else if (m_type == UnitWarrior) {
+                CBH_Player::GetInstance()->m_gameStats.AddEnemyKilled(1);
             }
-            CProgressSystem* progress = app->InitProgressSystem();
-            progress->RegisterGameEvent(CProgressSystem::EVENT_ENEMY_KILLED,
-                                        CProgressSystem::CalcXpForKilledUnit(this), headshot);
-            player->m_gameStats.RegisterEnemyKill();
+            // weapon 36 is the minigun
+            if (static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()->GetId() == 36) {
+                CBH_Player::GetInstance()->m_gameStats.m_minigunKills++;
+            }
+            CBH_Player::GetInstance()->m_challengeStats->RegisterKill(this, m_hitWeapon, headshot, !m_tagged,
+                                                                      static_cast<int>(distance));
+            CBH_Player::GetInstance()->m_gameStats.RegisterEnemyKill();
         }
+        const CAmmo* ammo = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()
+            ->GetActiveAmmo();
+        if (ammo != NULL) {
+            if (ammo->m_ammoType == XString("incendiary")) {
+                CBH_Player::GetInstance()->m_gameStats.m_incendiaryAmmoKills++;
+            }
+            if (ammo->m_ammoType == XString("explosive")) {
+                CBH_Player::GetInstance()->m_gameStats.m_explosiveAmmoKills++;
+            }
+        }
+        int experienceBefore = static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_experienceEarned;
+        m_mind.OnDeath(static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->GetCurrentCameraPos());
+        m_field1f0 = static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_experienceEarned - experienceBefore;
     }
     if (!suppressEffects) {
-        app->m_helper->m_swerveGame->ShowUnitInfo(this, m_damage);
-        if (m_hitWeapon != NULL && m_picked && m_damage > 0) {
-            m_body.DrawHitEffect();
-        }
-    }
-    if (!suppressEffects) {
-        if (headshot) {
-            app->m_soundManager->PlaySound("IDM_HEADSHOT", false, false);
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->ShowUnitInfo(this, m_damage);
+        if (m_damageType == HitHead) {
+            static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlaySound("IDM_HEADSHOT", false, false);
         } else {
             PlayWoundingSound();
         }
+        m_body.DrawHitEffect();
     }
+    m_tagged = true;
 }
 
 void CUnit::PlayWoundingSound()

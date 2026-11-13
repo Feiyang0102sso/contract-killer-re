@@ -4,43 +4,43 @@
 #include "WindowBase.h"
 #include "CShopWindow.h"
 
-class CTutorialManager : public Window {
+class CTutorialManager : public WindowTransparent {
 public:
     CTutorialManager();
     virtual void OnCommand(Event& event);
     virtual void Update();
 
-    static bool IsPlayerInTutorial();
-    static bool IsAutoStartMission();
-    static bool IsShowShop();
+    bool IsPlayerInTutorial();
+    bool IsAutoStartMission();
+    bool IsShowShop();
     bool IsTabLocked(CShopWindow::ETab tab);
-    static bool IsShowHome();
-    static int GetCurrentShopTab();
-    static bool CanCloseShop();
-    static bool CanCloseNetwork();
-    static bool CanCloseWeaponChoice();
-    static bool CanChooseWeapon();
-    static bool IsHauntVisible(const XString& location);
-    static bool IsCameraVisible(int camera);
-    static bool IsInstantInformantVisible(int informant);
-    static bool IsMissionInformantVisible(int informant);
-    static bool IsHomeVisible();
-    static bool IsShopCloseBlink();
-    static bool IsNetworkCloseBlink();
-    static bool IsWeaponChoiceCloseBlink();
-    static bool IsWeaponChoicePressBlink();
-    static bool IsAvatarChoiceCloseBlink();
-    static bool IsAvatarChoicePressBlink();
-    static bool IsMissionInformantBlink(int informant);
+    bool IsShowHome();
+    int GetCurrentShopTab();
+    bool CanCloseShop();
+    bool CanCloseNetwork();
+    bool CanCloseWeaponChoice();
+    bool CanChooseWeapon();
+    bool IsHauntVisible(const XString& location);
+    bool IsCameraVisible(int camera);
+    bool IsInstantInformantVisible(int informant);
+    bool IsMissionInformantVisible(int informant);
+    bool IsHomeVisible();
+    bool IsShopCloseBlink();
+    bool IsNetworkCloseBlink();
+    bool IsWeaponChoiceCloseBlink();
+    bool IsWeaponChoicePressBlink();
+    bool IsAvatarChoiceCloseBlink();
+    bool IsAvatarChoicePressBlink();
+    bool IsMissionInformantBlink(int informant);
     bool IsInstantInformantBlink(int informant);
-    static bool IsMapShopBlink();
-    static bool IsMapNetworkBlink();
-    static bool IsAmmoBlink(int ammo);
+    bool IsMapShopBlink();
+    bool IsMapNetworkBlink();
+    bool IsAmmoBlink(int ammo);
     bool IsWeaponBlink(int weapon);
     bool IsWeaponButtonBlink(int button);
     bool IsTutorialInstantInformant(int informant);
-    static bool IsMenuBarBlocked();
-    static bool IsShowObjective();
+    bool IsMenuBarBlocked();
+    bool IsShowObjective();
 
     void NextTutorialStep();
     void ShowStateInitMessage();

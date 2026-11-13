@@ -7,7 +7,7 @@
 class CBH_GPSMap;
 class CDH_LoadingBarWidget;
 
-/** Loads one RGB565 map tile per update while the loading screen is visible. */
+/** Loads one item manager or one RGB565 map tile per update. */
 class CLoadingGPSMap : public Window {
 public:
     explicit CLoadingGPSMap(CBH_GPSMap* map);
@@ -33,6 +33,7 @@ private:
     CDH_LoadingBarWidget* m_bar;
     bool m_finished;
     bool m_firstUpdate;
+    bool m_titleLoaded;
 };
 
 #endif

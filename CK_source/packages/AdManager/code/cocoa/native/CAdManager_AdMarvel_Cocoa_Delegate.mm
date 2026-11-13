@@ -3,6 +3,7 @@
 
 #import "AdManager_Reachability.h"
 #import "AdMarvelRootController.h"
+#import "AppDelegate.h"
 
 #include "CApplet.h"
 #include "ICCore.h"
@@ -138,17 +139,18 @@ static const int kRetryTime = 15000;                    // ms
     unsigned int screenWidth = screenBounds.size.width;
     unsigned int screenHeight = screenBounds.size.height;
 
-    bool autoRotation = false;
-    bool landscape = false;
-    if (core->AutoRotationIsActive()) {
-        autoRotation = true;
-        if (core->AutoRotationOrientationIsEnabled(ICCore::AutoRotation_LandscapeRight) ||
-            core->AutoRotationOrientationIsEnabled(ICCore::AutoRotation_LandscapeLeft)) {
-            landscape = true;
-        }
-    } else if (orientation == ICCore::DeviceOrientation_LandscapeRight ||
-               orientation == ICCore::DeviceOrientation_LandscapeLeft) {
-        landscape = true;
+    id delegate = [[UIApplication sharedApplication] delegate];
+    UIViewController* controller = nil;
+    if ([delegate respondsToSelector:@selector(viewController)]) {
+        controller = [delegate viewController];
+    }
+    bool autoRotation = controller != nil;
+    bool landscape;
+    if (autoRotation) {
+        landscape = UIInterfaceOrientationIsLandscape([controller interfaceOrientation]);
+    } else {
+        landscape = orientation == ICCore::DeviceOrientation_LandscapeRight ||
+                    orientation == ICCore::DeviceOrientation_LandscapeLeft;
     }
 
     // Lay out in landscape terms when the screen is reported in portrait

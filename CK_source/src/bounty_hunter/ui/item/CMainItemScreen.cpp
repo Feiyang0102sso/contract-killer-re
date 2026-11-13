@@ -23,6 +23,9 @@
 #include "CShopItemInfoWindow.h"
 #include "CTutorialManager.h"
 #include "DGHelper.h"
+#include "SScreenAdaptingConstant.h"
+
+static const SScreenAdaptingConstant WEAPON_SELECT_HEIGHT(95, 205, 205);
 
 namespace {
 const int ChooseWeapon = -0x6a33e64d;
@@ -72,62 +75,71 @@ CMainItemScreen::CMainItemScreen(int type, int slot)
       m_chooser(NULL), m_itemButtons(NULL), m_silencer(NULL), m_hitechVisor(NULL), m_cyberScope(NULL),
       m_weapon(NULL), m_type(type), m_slot(slot)
 {
-    int scale = App::Scale();
-    int previewWidth = m_content->m_width * 3 / 5;
-    int upperHeight = m_content->m_height * 3 / 5;
     const char* title = "IDS_MENU_WEAPON_SLOT2";
     if (slot == 0) {
         title = "IDS_MENU_WEAPON_SLOT1";
     }
     SetTitleText(ResString(title));
-    m_weaponName = AddText(m_content, 9, 10 * scale, 5 * scale, previewWidth - 10 * scale, 21 * scale);
-    m_weaponImage = new ImageWindow();
-    m_weaponImage->SetFillType(ImageWindow::FILL_NONE);
-    m_weaponImage->SetLayoutType(LAYOUT_NONE);
-    m_weaponImage->SetRect(5 * scale, 28 * scale, previewWidth - 10 * scale, upperHeight / 2, false);
-    m_weaponImage->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    m_weaponImage->ClearFlags(FLAG_FOCUSABLE);
-    m_content->AddToFront(m_weaponImage);
-    int statsY = m_weaponImage->m_y + m_weaponImage->m_height;
-    m_stats = AddText(m_content, 8, 10 * scale, statsY, previewWidth - 14 * scale, upperHeight - statsY);
-    m_content->AddToFront(CreateStatsButton());
-    AddToFront(CreatePlayerStatsWindow());
+    Window* preview = createWeaponImage(m_weaponImage);
+    m_content->AddToFront(preview);
+    preview->SetOutsetSpacing(-GetTitleBarHeight(), 0, 0, 0);
+
+    m_equipmentPanel = new Window(false);
+    m_equipmentPanel->SetPercentHeight(65, 0, 0);
+    m_equipmentPanel->SetLayoutType(LAYOUT_SIMPLE);
+    m_equipmentPanel->SetAlign(ALIGN_TOP);
+    ImageWindow* border = new ImageWindow(ImageWindow::FILL_HORIZONTAL, ImageRes("SUR_BG_BORDER"));
+    border->SetLayoutType(LAYOUT_SIMPLE);
+    border->SetAlign(ALIGN_BOTTOM);
+    m_equipmentPanel->AddToFront(border);
+    m_content->AddToFront(m_equipmentPanel);
 
     CreateChoiseScrolling();
+    Window* namePanel = new Window(false);
+    namePanel->SetPercentHeight(55, 0, 0);
+    namePanel->SetPercentWidth(80, 0, 0);
+    namePanel->SetLayoutType(LAYOUT_SIMPLE);
+    namePanel->SetAlign(ALIGN_HCENTER | ALIGN_TOP);
+    m_weaponName = new TextWindow(CFontMgr::GetInstance()->GetFont(15));
+    m_weaponName->SetLayoutType(LAYOUT_SIMPLE);
+    m_weaponName->SetAlign(ALIGN_HCENTER | ALIGN_TOP);
+    namePanel->AddToFront(m_weaponName);
+
+    m_content->AddToFront(CreateStatsButton());
+    AddToFront(CreatePlayerStatsWindow());
+    m_content->AddToFront(namePanel);
     SetCurrentItem(GetCurrentItemInSlotId());
 }
 
 int CMainItemScreen::GetCurrentItemInSlotId()
 {
-    if (m_type != 0) {
-        return -1;
+    // the original returns 0 for other screens and does not check the weapon
+    int id = 0;
+    if (m_type == 0) {
+        int slot = m_slot;
+        id = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon(slot)->GetId();
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_Weapon* weapon = app->m_helper->GetGameData()->GetWeapon(m_slot);
-    if (weapon != NULL) {
-        return weapon->GetId();
-    }
-    return -1;
+    return id;
 }
 
 int CMainItemScreen::GetAnotherSlotItemId()
 {
-    if (m_type != 0) {
-        return -1;
+    // the original returns 0 for other screens and does not check the weapon
+    int id = 0;
+    if (m_type == 0) {
+        int slot = m_slot;
+        id = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon(1 - slot)->GetId();
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_Weapon* weapon = app->m_helper->GetGameData()->GetWeapon(1 - m_slot);
-    if (weapon != NULL) {
-        return weapon->GetId();
-    }
-    return -1;
+    return id;
 }
 
 bool CMainItemScreen::ItemAvailable(int id)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_Weapon* weapon = app->InitWeaponManager()->GetWeaponById(id);
-    return m_type == 0 && weapon != NULL && weapon->isAvailable();
+    // the original tests the screen type first and does not check the weapon
+    if (m_type != 0) {
+        return false;
+    }
+    return static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->getItemById(id)->isAvailable();
 }
 
 void CMainItemScreen::CreateChoiseScrolling()
@@ -135,11 +147,16 @@ void CMainItemScreen::CreateChoiseScrolling()
     if (m_chooser != NULL) {
         m_chooser->Close();
     }
-    int y = m_content->m_height * 3 / 5;
-    m_chooser = new CScrollWindow(true);
-    m_chooser->SetLayoutType(LAYOUT_NONE);
-    m_chooser->SetRect(0, y, m_content->m_width, m_content->m_height - y, false);
-    m_content->AddToFront(m_chooser);
+    m_chooser = new Window(false);
+    m_chooser->SetPercentHeight(100, 0, 0);
+    m_chooser->SetLayoutType(LAYOUT_SIMPLE);
+    m_chooser->SetAlign(ALIGN_BOTTOM);
+    m_chooser->m_debugFrame = true;
+
+    CScrollWindow* scroll = new CScrollWindow(true);
+    scroll->SetLayoutType(LAYOUT_SIMPLE);
+    scroll->SetAlign(ALIGN_TOP);
+    scroll->SetPercentHeight(100, 0, 0);
 
     App* app = static_cast<App*>(WindowApp::m_instance);
     Vector<CDH_Weapon*> weapons;
@@ -147,108 +164,130 @@ void CMainItemScreen::CreateChoiseScrolling()
     // Owned weapons are listed newest first.
     weapons.revert();
     app->InitWeaponManager()->GetUnavailableWeapons(weapons);
-    AddItems(m_chooser, weapons);
+    AddItems(scroll, weapons);
+
+    Window* scrollArea = new Window(false);
+    scrollArea->SetPercentHeight(40, 0, 0);
+    scrollArea->SetPercentWidth(100, 0, 0);
+    scrollArea->SetLayoutType(LAYOUT_SIMPLE);
+    scrollArea->SetAlign(ALIGN_BOTTOM);
+    scrollArea->m_debugFrame = true;
+    scrollArea->AddToFront(scroll);
+    m_chooser->AddToFront(scrollArea);
+    m_content->AddToFront(m_chooser);
 }
 
+// Original 0x131c40: owned weapons get a name label (font 15); the page is handed to the chooser after
+// every button (as in the original), and a full page starts a new one.
 void CMainItemScreen::AddItems(CScrollWindow* chooser, const Vector<CDH_Weapon*>& weapons)
 {
-    int other = GetAnotherSlotItemId();
-    int scale = App::Scale();
-    int cardWidth = chooser->m_width / 4;
-    int cardHeight = chooser->m_height - 18 * scale;
-    CAutoArrangedWindow* page = NULL;
+    CAutoArrangedWindow* page = new CAutoArrangedWindow(m_width, WEAPON_SELECT_HEIGHT());
+    page->SetPercentHeight(100, 0, 0);
+    page->SetOneLineMode(true);
     for (int index = 0; index < weapons.size(); ++index) {
         CDH_Weapon* weapon = weapons[index];
-        int id = weapon->GetId();
-        if (id == other) {
+        if (GetAnotherSlotItemId() == weapon->GetId()) {
             continue;
         }
         CBH_Button* button;
         if (weapon->isAvailable()) {
-            CBH_WeaponButton* owned = new CBH_WeaponButton(0, -1, true, false, id);
+            CBH_WeaponButton* owned = new CBH_WeaponButton(0, -1, true, false, weapon->GetId());
             owned->ShowName();
+            owned->SetLayoutType(LAYOUT_SIMPLE);
+            owned->SetAlign(ALIGN_VCENTER);
+            owned->SetPercentHeight(100, 0, 0);
+            TextWindow* name = new TextWindow(weapon->m_name, CFontMgr::GetInstance()->GetFont(15));
+            name->SetLayoutType(LAYOUT_SIMPLE);
+            name->SetAlign(ALIGN_HCENTER | ALIGN_BOTTOM);
+            owned->AddToFront(name);
             button = owned;
         } else {
-            button = new CShopButtonWeapon(weapon->GetName(), weapon->m_unlockLevel, weapon->m_pricePoints,
-                id, weapon->getShopImageResId());
+            button = new CShopButtonWeapon(weapon->m_name, weapon->m_unlockLevel, weapon->m_pricePoints,
+                weapon->GetId(), weapon->getShopImageResId());
             button->SetFlags(FLAG_CLIP_SCREEN);
         }
-        button->m_command = ChooseWeapon;
-        button->m_commandParameter1 = id;
-        button->SetRect(0, 0, cardWidth, cardHeight, false);
-        if (page != NULL && page->Add(button)) {
-            continue;
+        button->m_userData = weapon->GetId();
+        button->SetCommandParameters(ChooseWeapon, weapon->GetId(), 0, 0);
+        if (!page->Add(button)) {
+            chooser->Add(page);
+            page = new CAutoArrangedWindow(m_width, WEAPON_SELECT_HEIGHT());
+            page->SetPercentHeight(100, 0, 0);
+            page->SetOneLineMode(true);
+            page->Add(button);
         }
-        page = new CAutoArrangedWindow(chooser->m_width, chooser->m_height);
-        page->SetOneLineMode(true);
-        page->Add(button);
         chooser->Add(page);
     }
 }
 
 Window* CMainItemScreen::CreateStatsButton()
 {
+    // the original sizes and aligns neither the panel nor the button here
     Window* panel = new Window(false);
-    panel->SetLayoutType(LAYOUT_NONE);
-    int width = m_content->m_width * 13 / 100;
-    panel->SetRect(m_content->m_width - width, 0, width, 30 * App::Scale(), false);
     CImageButton* button = new CImageButton();
     button->AddImage("IDB_STATS_ICON", 0, 0);
     button->SetWidthByContent(0, 0);
     button->SetHeightByContent(0, 0);
-    button->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     button->m_command = ShowWeaponStats;
+    button->m_commandParameter1 = 0;
+    button->m_commandParameter2 = 0;
+    button->m_commandParameter3 = 0;
     panel->AddToFront(button);
     return panel;
 }
 
 Window* CMainItemScreen::CreatePlayerStatsWindow()
 {
+    // Original: level badge in cell (0,0), cash/credits bars at fixed scaled corners in cell (1,0).
     Window* panel = new Window(false);
-    panel->SetLayoutType(LAYOUT_NONE);
-    int width = m_width * 30 / 100;
-    int height = GetTitleBarHeight();
-    panel->SetRect(m_width - width, 0, width, height, false);
-    int levelWidth = width / 4;
-    ImageWindow* badge = new ImageWindow(ImageWindow::FILL_NONE, ImageRes("SUR_SCOPE_LEVEL"));
-    badge->SetLayoutType(LAYOUT_NONE);
-    badge->SetRect(0, 0, levelWidth, height, false);
-    badge->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    panel->AddToFront(badge);
-    TextWindow* level = AddText(panel, 9, 0, 0, levelWidth, height);
+    Window* levelCell = new Window(false);
+    levelCell->SetPercentWidth(25, 0, 0);
+    panel->AddToFront(levelCell, 0, 0);
+    ImageWindow* badge = new ImageWindow();
+    badge->SetFillType(ImageWindow::FILL_NONE);
+    badge->SetImage(ImageRes("SUR_SCOPE_LEVEL"));
+    levelCell->AddToFront(badge);
+    XString levelText(CBH_Player::GetInstance()->m_level);
+    TextWindow* level = new TextWindow(levelText, CFontMgr::GetInstance()->GetFont(9));
+    level->SetLayoutType(LAYOUT_SIMPLE);
     level->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
-    level->SetText(XString(CBH_Player::GetInstance()->GetLevel()));
-
-    int barWidth = width - levelWidth - 5 * App::Scale();
-    m_cash = new CBH_ProgressBar(3, barWidth, -1);
-    m_cash->SetCorner(levelWidth, 0);
+    levelCell->AddToFront(level);
+    Window* bars = new Window(false);
+    panel->AddToFront(bars, 1, 0);
+    m_cash = new CBH_ProgressBar(3, App::Scale() * 100, -1);
+    m_cash->SetCorner(App::Scale() * 50, App::Scale() * 42);
     m_cash->SetDescImage("IDB_HUD_ICON_MONEY");
     m_cash->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT | CBH_ProgressBar::HIDE_FILL;
     m_cash->SetTextAlign(TEXT_ALIGN_RIGHT);
-    panel->AddToFront(m_cash);
-
-    m_credits = new CBH_ProgressBar(3, barWidth, -1);
-    m_credits->SetCorner(levelWidth, height / 2);
+    m_cash->SetCurrValue(CBH_Player::GetInstance()->m_cash);
+    bars->AddToFront(m_cash, 0, 0);
+    m_credits = new CBH_ProgressBar(3, App::Scale() * 100, -1);
+    m_credits->SetCorner(App::Scale() * 50, App::Scale() * 62);
     m_credits->SetDescImage("IDB_HUD_ICON_CREDITS");
     m_credits->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT | CBH_ProgressBar::HIDE_FILL;
     m_credits->SetTextAlign(TEXT_ALIGN_RIGHT);
-    panel->AddToFront(m_credits);
-    UpdatePlayerStats();
+    m_credits->SetCurrValue(CBH_Player::GetInstance()->m_credits);
+    bars->AddToFront(m_credits, 0, 1);
     return panel;
 }
 
 void CMainItemScreen::UpdatePlayerStats()
 {
-    CBH_Player* player = CBH_Player::GetInstance();
-    m_cash->SetCurrValue(player->m_cash);
-    m_credits->SetCurrValue(player->m_credits);
+    // the original asks CBH_Player::GetInstance() for each value
+    m_cash->SetCurrValue(CBH_Player::GetInstance()->m_cash);
+    m_credits->SetCurrValue(CBH_Player::GetInstance()->m_credits);
 }
 
-void CMainItemScreen::HandleStatsButtonPressed()
+__attribute__((noinline)) void CMainItemScreen::HandleStatsButtonPressed()
 {
-    if (m_weapon != NULL) {
-        ShowBuyWeaponWindow(m_weapon->GetId());
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    CItem* weapon = app->InitWeaponManager()->getItemById(m_item);
+    if (weapon == NULL) {
+        return;
     }
+    CShopItemInfoWindow* details = new CShopItemInfoWindow(
+        static_cast<App*>(WindowApp::m_instance)->InitWeaponManager(), 0, m_item,
+        weapon->GetStatsString(), true, CShopItemInfoWindow::SOURCE_SHOP);
+    Window::AddModal(details);
 }
 
 void CMainItemScreen::SetCurrentItem(int id)
@@ -256,28 +295,32 @@ void CMainItemScreen::SetCurrentItem(int id)
     App* app = static_cast<App*>(WindowApp::m_instance);
     m_item = id;
     m_weapon = app->InitWeaponManager()->GetWeaponById(id);
-    XString name;
-    XString stats;
-    ICRenderSurface* image = NULL;
     if (m_weapon != NULL) {
-        name = m_weapon->GetName();
-        stats = m_weapon->GetStatsString();
-        image = m_weapon->getShopImage();
-        if (image == NULL) {
-            image = m_weapon->getMenuImage();
+        const char* imageId = m_weapon->getBigImageResId();
+        if (imageId != NULL && imageId[0] != '\0') {
+            SetImageItem(id);
+        } else {
+            imageId = m_weapon->getShopImageResId();
+            if (imageId == NULL) {
+                imageId = "";
+            }
+            m_weaponImage->SetImageById(imageId);
         }
+        SetNameItem(id);
+    } else {
+        m_weaponImage->SetImageById("");
+        m_weaponName->SetText(XString());
     }
-    m_weaponName->SetText(name);
-    m_stats->SetText(stats);
-    m_weaponImage->SetImage(image);
     CreateItemButtons();
 }
 
 void CMainItemScreen::SetCurrentItemToSlot()
 {
-    if (m_type == 0 && m_weapon != NULL && m_weapon->isAvailable()) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        app->m_helper->m_gamePlayManager.SetWeapon(m_slot, m_weapon);
+    // the original equips the selected item id into the chosen slot without further checks
+    if (m_slot == 0) {
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.SetWeapon01(m_item);
+    } else {
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.SetWeapon02(m_item);
     }
 }
 
@@ -286,60 +329,47 @@ void CMainItemScreen::CreateItemButtons()
     if (m_itemButtons != NULL) {
         m_itemButtons->Close();
     }
+    // The closing window owns the old buttons. Only keep pointers to the new row.
+    m_ammoButtons.removeAllElements();
     m_silencer = NULL;
     m_hitechVisor = NULL;
     m_cyberScope = NULL;
-    int margin = 10 * App::Scale();
-    int y = 30 * App::Scale();
-    int x = m_content->m_width * 3 / 5;
-    m_itemButtons = new ScrollingContainer();
-    m_itemButtons->SetLayoutType(LAYOUT_NONE);
-    m_itemButtons->SetRect(x + margin, y, m_content->m_width - x - 2 * margin,
-        m_content->m_height * 3 / 5 - y, false);
-    m_content->AddToFront(m_itemButtons);
-    if (m_weapon == NULL || CTutorialManager::IsMenuBarBlocked()) {
+    m_itemButtons = new Window(false);
+    m_itemButtons->SetPercentHeight(30, 0, 0);
+    m_itemButtons->SetPercentWidth(90, 0, 0);
+    m_itemButtons->SetLayoutType(LAYOUT_SIMPLE);
+    m_itemButtons->SetAlign(ALIGN_HCENTER | ALIGN_BOTTOM);
+    m_itemButtons->m_debugFrame = true;
+    m_equipmentPanel->AddToFront(m_itemButtons);
+    if (m_weapon == NULL || static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsMenuBarBlocked()) {
         return;
     }
-    y = 0;
-    int scale = App::Scale();
-    int captionHeight = CFontMgr::GetInstance()->GetFont(14)->GetFontHeight();
-    for (int index = 0; index < m_weapon->m_compatibleAmmo.size(); ++index) {
-        const CAmmo* ammo = m_weapon->m_compatibleAmmo[index];
-        CEquipAmmoButton* button = new CEquipAmmoButton(m_weapon, ammo);
-        int height = button->GetIconHeight() + captionHeight;
-        if (height < 25 * scale) {
-            height = 25 * scale;
+
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    CAmmoManager* ammoManager = app->InitAmmoManager();
+    const CAmmo* ammunition[] = {
+        m_weapon->GetDefaultAmmo(),
+        ammoManager->GetAmmoByType(XString("explosive")),
+        ammoManager->GetAmmoByType(XString("incendiary"))
+    };
+    int column = 0;
+    for (int index = 0; index < 3; ++index) {
+        const CAmmo* ammo = ammunition[index];
+        if (ammo != NULL && m_weapon->CanUseAmmo(ammo)) {
+            m_itemButtons->AddToFront(CreateButton(ammo), column++, 0);
         }
-        button->SetLayoutType(LAYOUT_NONE);
-        button->SetRect(0, y, m_itemButtons->m_width, height, false);
-        button->m_command = ChooseAmmo;
-        button->m_commandParameter1 = ammo->m_id;
-        m_itemButtons->AddToFront(button);
-        m_ammoButtons.addElement(button);
-        y += height + 2 * scale;
     }
     if (m_weapon->m_silencerAvailable && !m_weapon->m_originallySilent) {
         m_silencer = CreateSilencerButton();
+        m_itemButtons->AddToFront(m_silencer, column++, 0);
         UpdateSilencerButton();
     }
     m_hitechVisor = CreateHitechVisorButton();
-    m_cyberScope = CreateCyberScope();
+    m_itemButtons->AddToFront(m_hitechVisor, column++, 0);
     UpdateHitechVisorButton();
+    m_cyberScope = CreateCyberScope();
+    m_itemButtons->AddToFront(m_cyberScope, column, 0);
     UpdateCyberScopeButton();
-    CEquipItemButton* accessories[] = { m_silencer, m_hitechVisor, m_cyberScope };
-    for (unsigned int index = 0; index < sizeof(accessories) / sizeof(accessories[0]); ++index) {
-        CEquipItemButton* button = accessories[index];
-        if (button != NULL) {
-            int height = button->GetIconHeight() + captionHeight;
-            if (height < 25 * scale) {
-                height = 25 * scale;
-            }
-            button->SetLayoutType(LAYOUT_NONE);
-            button->SetRect(0, y, m_itemButtons->m_width, height, false);
-            m_itemButtons->AddToFront(button);
-            y += height + 2 * scale;
-        }
-    }
 }
 
 CEquipItemButton* CMainItemScreen::CreateSilencerButton()
@@ -376,20 +406,41 @@ void CMainItemScreen::UpdateAmmoButtons()
 
 void CMainItemScreen::UpdateSilencerButton()
 {
-    if (m_silencer != NULL) {
-        int count = CBH_Player::GetInstance()->m_silentShotsCount;
-        UpdateEquipButton(m_silencer, count > 0, count > 0 && m_weapon->m_silencerActive);
-        m_silencer->SetItemCount(count);
+    if (m_silencer == NULL || m_weapon == NULL || !m_weapon->m_silencerAvailable) {
+        return;
     }
+    int count = CBH_Player::GetInstance()->m_silentShotsCount;
+    if (count < 1) {
+        m_silencer->SetClickable(false);
+        m_silencer->SetAvailable(false);
+        m_silencer->SetBottomText(XString(""), NULL);
+    } else if (m_weapon->isSilent()) {
+        m_silencer->SetAvailable(true);
+        m_silencer->SetBottomText(ResString("IDS_EQUIPED"), CFontMgr::GetInstance()->GetFont(14));
+    } else {
+        m_silencer->SetAvailable(false);
+        m_silencer->SetBottomText(ResString("IDS_OWNED"), CFontMgr::GetInstance()->GetFont(13));
+    }
+    m_silencer->SetItemCount(count);
 }
 
 void CMainItemScreen::UpdateHitechVisorButton()
 {
-    if (m_hitechVisor != NULL) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        CItem* visor = app->InitMiscItemManager()->getItemById(HitechVisorItem);
-        bool owned = visor != NULL && visor->isAvailable();
-        UpdateEquipButton(m_hitechVisor, owned, owned && CBH_Player::GetInstance()->m_hitechVisorEquipped);
+    if (m_hitechVisor == NULL) {
+        return;
+    }
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    CItem* visor = app->InitMiscItemManager()->getItemById(HitechVisorItem);
+    if (visor == NULL || !visor->isAvailable()) {
+        m_hitechVisor->SetClickable(true);
+        m_hitechVisor->SetAvailable(false);
+        m_hitechVisor->SetBottomText(XString(""), NULL);
+    } else if (CBH_Player::GetInstance()->m_hitechVisorEquipped) {
+        m_hitechVisor->SetAvailable(true);
+        m_hitechVisor->SetBottomText(ResString("IDS_EQUIPED"), CFontMgr::GetInstance()->GetFont(14));
+    } else {
+        m_hitechVisor->SetAvailable(false);
+        m_hitechVisor->SetBottomText(ResString("IDS_OWNED"), CFontMgr::GetInstance()->GetFont(13));
     }
 }
 
@@ -501,7 +552,7 @@ void CMainItemScreen::OnCommand(Event& event)
         if (ItemAvailable(event.m_param1)) {
             SetCurrentItem(event.m_param1);
             WindowApp::HandleTunnelCommand(0x0df6b618, 0, 0, 0);
-        } else if (CTutorialManager::CanCloseWeaponChoice()) {
+        } else if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->CanCloseWeaponChoice()) {
             ShowBuyWeaponWindow(event.m_param1);
         }
     } else if (event.m_id == ChooseAmmo) {
@@ -527,11 +578,10 @@ void CMainItemScreen::OnCommand(Event& event)
         SetCurrentItem(event.m_param1);
         return;
     } else if (event.m_id == -0x68dfb87c || event.m_id == 0x5f523cd9) {
-        if (CTutorialManager::CanCloseWeaponChoice()) {
+        WindowApp::HandleTunnelCommand(0x6e6446f5, 0, 0, 0);
+        if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->CanCloseWeaponChoice()) {
             SetCurrentItemToSlot();
-            Close();
-        } else {
-            WindowApp::HandleTunnelCommand(0x6e6446f5, 0, 0, 0);
+            ReverseEasy(FLAG_CLOSE_AFTER_EASY);
         }
     } else {
         CBaseScreen::OnCommand(event);
@@ -543,7 +593,7 @@ void CMainItemScreen::OnCommand(Event& event)
 void CMainItemScreen::Update()
 {
     // The original calls both tutorial checks on App::m_tutorialManager (+0x2b0).
-    if (CTutorialManager::IsPlayerInTutorial() == true && CTutorialManager::IsWeaponChoiceCloseBlink() == true) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial() == true && static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsWeaponChoiceCloseBlink() == true) {
         m_back->SetBlinking(true);
     }
     CBaseScreen::Update();
@@ -551,7 +601,7 @@ void CMainItemScreen::Update()
 
 void CMainItemScreen::Paint(ICGraphics2d& graphics)
 {
-    DrawTileImageRect(graphics, m_background.GetSurface(), 0, GetTitleBarHeight(), m_width, m_height - GetTitleBarHeight());
+    DrawTileImageRect(graphics, m_background.GetSurface(), 0, 0, m_width, m_height);
     CBaseScreen::Paint(graphics);
 }
 
@@ -576,8 +626,9 @@ Window* CMainItemScreen::CreateButton(const CAmmo* ammo)
     Window* cell = new Window(false);
     cell->SetPercentHeight(100, 0, 0);
     CEquipAmmoButton* button = new CEquipAmmoButton(m_weapon, ammo);
+    const int ammoId = ammo->m_id;
     button->m_command = ChooseAmmo;
-    button->m_commandParameter1 = ammo->m_id;
+    button->m_commandParameter1 = ammoId;
     button->m_commandParameter2 = 0;
     button->m_commandParameter3 = 0;
     cell->AddToFront(button);

@@ -7,19 +7,28 @@
 #include "CDH_LoadingBarWidget.h"
 #include "CDH_SoundManager.h"
 #include "CFontMgr.h"
+#include "CResourceManager.h"
 #include "CTip.h"
 #include "CTipManager.h"
+#include "CXmlHelper.h"
 #include "DGHelper.h"
+#include "ICRenderSurface.h"
 #include "ResMap.h"
 
 CLoadingGPSMap::CLoadingGPSMap(CBH_GPSMap* map)
     : Window(false), m_map(map), m_nextTile(NULL), m_loaded(0), m_total(1), m_bar(NULL),
-      m_finished(false), m_firstUpdate(true)
+      m_finished(false), m_firstUpdate(true), m_titleLoaded(false)
 {
+    if (m_map != NULL) {
+        m_total = m_map->m_columns * m_map->m_rows + m_map->GetPrefetchedManagerCount() + 1;
+    }
 }
 
 CLoadingGPSMap::~CLoadingGPSMap()
 {
+    if (m_titleLoaded) {
+        CResourceManager::GetInstance()->ReleaseResource("SUR_TITLE");
+    }
 }
 
 void CLoadingGPSMap::Init()
@@ -35,7 +44,8 @@ void CLoadingGPSMap::Init()
             WindowTransparent* panel = new WindowTransparent(false);
             panel->SetAlign(ALIGN_RIGHT | ALIGN_VCENTER);
             panel->SetPercentWidth(50, 0, 0);
-            TextWindow* text = new TextWindow(tip->m_description, font);
+            TextWindow* text = new TextWindow();
+            text->SetText(tip->m_description, font);
             text->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
             text->SetPercentWidth(100, 0, 0);
             text->SetPercentHeight(100, 0, 0);
@@ -61,14 +71,16 @@ void CLoadingGPSMap::InitXMLFile()
     if (map == NULL) {
         return;
     }
-    m_map->SetTileLayout(*map);
     m_nextTile = map->FirstChildElement("tile");
-    m_total = m_map->m_columns * m_map->m_rows + 1;
 }
 
 void CLoadingGPSMap::InitGraphicElements()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
+    if (!m_titleLoaded) {
+        ICRenderSurface* title = NULL;
+        m_titleLoaded = app->m_helper->LoadImageSurface(&title, "SUR_TITLE", false);
+    }
     m_backgroundId = app->m_helper->GetRandomBackgroundResId();
     ImageWindow* background = new ImageWindow();
     XString::AnsiString id(m_backgroundId.c_str());
@@ -104,6 +116,13 @@ void CLoadingGPSMap::UpdateLoading()
     if (m_total - m_loaded < 2 && !app->m_soundManager->IsPlaying("IDM_MENU_MUSIC")) {
         app->m_soundManager->PlayMusic("IDM_MENU_MUSIC", true, false);
     }
+    if (m_map == NULL) {
+        return;
+    }
+    if (m_map->LoadPrefetchedManagerResource()) {
+        ++m_loaded;
+        return;
+    }
     if (m_nextTile == NULL) {
         m_finished = true;
         m_loaded++;
@@ -111,13 +130,16 @@ void CLoadingGPSMap::UpdateLoading()
         return;
     }
 
-    const char* path = m_nextTile->Attribute("path");
+    XString path = CXmlHelper::GetAttributeValue(m_nextTile, "path");
     ICRenderSurface* tile = NULL;
-    if (path != NULL) {
-        const char* id = app->InitResMap()->getResourceID(XString(path));
-        if (id != NULL) {
-            tile = app->m_surfaceManager->CreateSurface565(id, true);
-        }
+    const char* id = app->InitResMap()->getResourceID(path);
+    if (id != NULL) {
+        // The map deletes its patches directly when it closes.
+        tile = app->m_surfaceManager->CreateSurface565(id, false);
+    }
+    if (tile != NULL) {
+        ICRenderSurface::Description description;
+        tile->GetDescription(description);
     }
     m_map->AddMapPatch(tile);
     m_nextTile = m_nextTile->NextSiblingElement("tile");

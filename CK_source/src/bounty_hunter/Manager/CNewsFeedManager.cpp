@@ -46,27 +46,21 @@ void CNewsFeedManager::Clear()
     m_emptyMessage = NULL;
 }
 
-void CNewsFeedManager::AppendMessage(const SMessage* message)
+// inline: the original has this sequence written out in every Add*Message
+inline void CNewsFeedManager::AppendMessage(const SMessage* message)
 {
     // AddEmptyNewsMessage appends the placeholder. The constructor only initializes the vector.
-    int last = m_messages.size() - 1;
-    if (last >= 0 && m_messages[last]->m_type == NEWS_EMPTY) {
-        delete m_messages[last];
-        m_messages.removeElementAt(last);
+    // The original appends first, then drops the placeholder from the list (it is not deleted).
+    m_messages.addElement(message);
+    if (m_emptyMessage != NULL) {
+        RemoveMessage(m_emptyMessage);
         m_emptyMessage = NULL;
     }
-    m_messages.addElement(message);
 }
 
 void CNewsFeedManager::AddTargettedMessage(int senderId, const CStrWChar& text, bool highlighted)
 {
-    for (int index = 0; index < m_messages.size(); ++index) {
-        const SMessage* message = m_messages[index];
-        if (message->m_type == NEWS_TARGETTED && message->m_senderId == senderId
-            && message->m_highlighted == highlighted && static_cast<const STargettedMessage*>(message)->m_text == text) {
-            return;
-        }
-    }
+    // the original does not check for duplicates
     STargettedMessage* message = new STargettedMessage();
     message->m_type = NEWS_TARGETTED;
     message->m_senderId = senderId;
@@ -95,17 +89,11 @@ const SMessage* CNewsFeedManager::GetNewsAt(int index)
 
 void CNewsFeedManager::AddMissionInviteMessage(int senderId, int missionId)
 {
-    for (int index = 0; index < m_messages.size(); ++index) {
-        const SMessage* message = m_messages[index];
-        if (message->m_type == NEWS_MISSION_INVITE && message->m_senderId == senderId
-            && static_cast<const SMissionInviteMessage*>(message)->m_missionId == missionId) {
-            return;
-        }
-    }
+    // the original neither checks for duplicates nor stores the mission id
     SMissionInviteMessage* message = new SMissionInviteMessage();
     message->m_type = NEWS_MISSION_INVITE;
     message->m_senderId = senderId;
-    message->m_missionId = missionId;
+    message->m_accepted = false;
     AppendMessage(message);
 }
 
@@ -128,10 +116,11 @@ void CNewsFeedManager::AddFriendInvitedToGame(CStrWChar text)
 void CNewsFeedManager::AddGiftReceivedMessage(int senderId, int itemIndex, int messageId)
 {
     SGiftReceivedMessage* message = new SGiftReceivedMessage();
-    message->m_type = NEWS_GIFT;
-    message->m_senderId = senderId;
     message->m_messageId = messageId;
     message->m_itemIndex = itemIndex;
+    message->m_type = NEWS_GIFT;
+    message->m_senderId = senderId;
+    message->m_claimed = false;
     AppendMessage(message);
 }
 
@@ -142,22 +131,16 @@ void CNewsFeedManager::AddServerAwardMessage(const CStrWChar& text, int common, 
     message->m_type = NEWS_AWARD;
     message->m_commonCurrency = common;
     message->m_rareCurrency = rare;
-    message->m_experience = experience;
     message->m_itemIndex = itemIndex;
-    message->m_messageId = messageId;
+    message->m_experience = experience;
     message->m_text = text;
+    message->m_messageId = messageId;
     AppendMessage(message);
 }
 
 void CNewsFeedManager::AddGuildInviteMessage(int senderId, const CStrWChar& text)
 {
-    for (int index = 0; index < m_messages.size(); ++index) {
-        const SMessage* message = m_messages[index];
-        if (message->m_type == NEWS_GUILD_INVITE && message->m_senderId == senderId
-            && static_cast<const STargettedMessage*>(message)->m_text == text) {
-            return;
-        }
-    }
+    // the original does not check for duplicates
     STargettedMessage* message = new STargettedMessage();
     message->m_type = NEWS_GUILD_INVITE;
     message->m_senderId = senderId;
@@ -178,14 +161,13 @@ void CNewsFeedManager::AddGuildInviteResponseMessage(int senderId, bool accepted
 
 void CNewsFeedManager::AddChallengeInviteMessage(int senderId, int challengeId, int messageId)
 {
-    if (HasChallengeMessage(messageId)) {
-        return;
-    }
+    // the original does not check for an existing message with this id
     SMissionInviteMessage* message = new SMissionInviteMessage();
     message->m_type = NEWS_CHALLENGE_INVITE;
     message->m_senderId = senderId;
-    message->m_missionId = challengeId;
     message->m_messageId = messageId;
+    message->m_accepted = false;
+    message->m_missionId = challengeId;
     AppendMessage(message);
 }
 
@@ -204,13 +186,12 @@ void CNewsFeedManager::AddChallengeResponseMessage(int senderId, int challengeId
 void CNewsFeedManager::AddFriendCompletedChallengeMessage(int senderId, int challengeId,
                                                           const CStrWChar& text, int messageId)
 {
-    if (HasChallengeMessage(messageId)) {
-        return;
-    }
+    // the original does not check for an existing message with this id
     SMissionInviteMessage* message = new SMissionInviteMessage();
     message->m_type = NEWS_CHALLENGE_COMPLETED;
     message->m_senderId = senderId;
     message->m_missionId = challengeId;
+    message->m_accepted = false;
     message->m_messageId = messageId;
     AppendMessage(message);
 }
@@ -230,17 +211,19 @@ bool CNewsFeedManager::HasChallengeMessage(int messageId) const
 
 void CNewsFeedManager::AddEmptyNewsMessage()
 {
-    if (GetNewsCount(NEWS_EMPTY) == 0) {
-        SMessage* message = new SMessage();
-        message->m_type = NEWS_EMPTY;
-        m_emptyMessage = message;
-        m_messages.addElement(m_emptyMessage);
-    }
+    // the original does not check for an existing empty message
+    m_emptyMessage = new SMessage();
+    m_emptyMessage->m_type = NEWS_EMPTY;
+    m_messages.addElement(m_emptyMessage);
 }
 
 void CNewsFeedManager::MarkAllMessagesAsRead()
 {
-    for (int index = 0; index < m_messages.size(); index++) {
+    int count = m_messages.size();
+    if (count < 1) {
+        return;
+    }
+    for (int index = 0; index != count; ++index) {
         m_messages[index]->m_read = true;
     }
 }

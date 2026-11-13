@@ -9,7 +9,11 @@
 class CCountNotificationWindow : public Window {
 public:
     CCountNotificationWindow();
-    virtual ~CCountNotificationWindow();
+    // inline in the original: users destroying a member call D2 directly
+    virtual ~CCountNotificationWindow()
+    {
+        // The three image resources and text belong to the badge.
+    }
 
     virtual void Paint(ICGraphics2d& graphics);
 

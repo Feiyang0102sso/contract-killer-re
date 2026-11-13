@@ -12,7 +12,7 @@ class CTabWindow;
 /** Original 1.5.2 layout: CBaseScreen + tab strip and honeycomb images, size 0x104. */
 class CShopWindow : public CBaseScreen {
 public:
-    enum ETab { TAB_BANK, TAB_WEAPONS, TAB_OTHER, TAB_AMMO, TAB_COUNT };
+    enum ETab { TAB_BANK, TAB_WEAPONS, TAB_ENERGY, TAB_AMMO, TAB_OTHER, TAB_COUNT };
 
     CShopWindow();
     virtual ~CShopWindow();
@@ -36,11 +36,8 @@ public:
         IAPPurchaseCancelled = 0x5f9d3f54,
         IAPPurchaseFailed = 0x659570dc
     };
-    static void RefreshCurrencyProducts();
     static void AddCurrencyRows(Window* parent, int y, int command);
     static CIAPCurrency* FindCurrency(int catalogIndex);
-    static void ShowCurrencyDetails(CIAPCurrency* item, int buyCommand);
-    static void BuyCurrency(CIAPCurrency* item);
     static void ShowCurrencyResult(int command, CIAPCurrency* item);
 
 protected:
@@ -48,7 +45,7 @@ protected:
     ImageRes m_honeycombTop;        // 0xdc
     ImageRes m_honeycombBottom;     // 0xe4
     bool m_unknownEc;               // 0xec cleared by OnClosed / AddModal
-    int m_tabIndices[TAB_COUNT + 1]; // 0xf0 shop tab -> CTabWindow index (-1: none)
+    int m_tabIndices[TAB_COUNT]; // 0xf0 shop tab -> CTabWindow index (-1: none)
 };
 
 #endif

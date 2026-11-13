@@ -9,6 +9,7 @@
 #include "CRandGen.h"
 #include "CUnitBody.h"
 #include "DGHelper.h"
+#include "ICStdUtil.h"
 
 namespace {
 typedef ::Group Group;
@@ -23,46 +24,19 @@ typedef int (*GetIndexValues)(IQueryInterface*, int, int*);
 
 const vec3 EmptyPosition;
 
-vec3 ClosestPointOnEdge(const vec3& position, const vec3& start, const vec3& end)
+vec3 PlanarOffset(const vec3& position, const vec3& origin)
 {
-    vec3 edge = end - start;
-    float lengthSq = edge.m_x * edge.m_x + edge.m_y * edge.m_y;
-    if (lengthSq == 0.0f) {
-        return start;
-    }
-    vec3 offset = position - start;
-    float fraction = (offset.m_x * edge.m_x + offset.m_y * edge.m_y) / lengthSq;
-    if (fraction <= 0.0f) {
-        return start;
-    }
-    if (fraction >= 1.0f) {
-        return end;
-    }
-    return start + edge * fraction;
+    return vec3(position.m_x - origin.m_x, position.m_y - origin.m_y, 0.0f);
 }
 
-bool TouchesEdge(const vec3& position, const vec3& nearest, float radius)
+vec3 NormalizePlanar(const vec3& offset)
 {
-    vec3 offset = position - nearest;
-    return offset.m_x * offset.m_x + offset.m_y * offset.m_y <= radius * radius;
+    return offset * MathLib::InvSqrt(offset.LengthSqr());
 }
 
 float CrossXY(const vec3& a, const vec3& b)
 {
     return a.m_x * b.m_y - a.m_y * b.m_x;
-}
-
-bool ContainsXY(const CGameAIMap::SCellAI& cell, const vec3& position)
-{
-    const vec3& a = cell.m_vertices[0]->m_position;
-    const vec3& b = cell.m_vertices[1]->m_position;
-    const vec3& c = cell.m_vertices[2]->m_position;
-    float ab = CrossXY(b - a, position - a);
-    float bc = CrossXY(c - b, position - b);
-    float ca = CrossXY(a - c, position - c);
-    const float tolerance = 0.00001f;
-    return (ab >= -tolerance && bc >= -tolerance && ca >= -tolerance) ||
-           (ab <= tolerance && bc <= tolerance && ca <= tolerance);
 }
 
 bool ChooseOther(const Vector<int>& points, int previous, int* result)
@@ -423,51 +397,60 @@ void CGameAIMap::LoadSpecialPoint(World& world)
         if (node == NULL) {
             break;
         }
-        SSpecialPointAI point;
+        // the original appends an empty point first and fills the stored copy
+        m_specialPoints.addElement(SSpecialPointAI());
+        SSpecialPointAI& point = m_specialPoints[m_specialPoints.size() - 1];
+        float position[3];
+        node.getTranslation(position);
+        point.m_position.m_x = position[0];
+        point.m_position.m_y = position[1];
+        point.m_position.m_z = position[2];
         point.m_id = index;
-        point.m_type = 0;
-        point.m_cell = NULL;
-        point.m_occupant = NULL;
-        node.getTranslation(&point.m_position.m_x);
         DefineCameraCharacteristics(&point, node);
-        m_specialPoints.addElement(point);
     }
 }
 
+// Original 0xcde7c: the parameters are read through a 1000-byte name buffer; "ID" is read and ignored.
 void CGameAIMap::DefineCameraCharacteristics(SSpecialPointAI* point, Node& node)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    DGHelper* helper = app->m_helper;
-    int type = 0;
-    int cameraCount = 0;
-    helper->getUserParameter(node, "PointType", &type);
-    point->m_type = type;
-    if (type < 0) {
-        point->m_type = 0;
+    char name[1000];
+    int type;
+    int id;
+    int cameraCount;
+    SCameraAttitude attitude;
+    int visible;
+    int safe;
+    int startLevel;
+    ICStdUtil::SPrintF(name, "PointType");
+    static_cast<App*>(WindowApp::m_instance)->m_helper->getUserParameter(node, name, &type);
+    int pointType = type;
+    if (pointType < 0) {
+        pointType = 0;
     }
-    helper->getUserParameter(node, "SceneCameraCount", &cameraCount);
-    if (cameraCount < 1) {
-        return;
-    }
-    point->m_cameraAttitudes.ensureCapacity(cameraCount);
-    for (int camera = 0; camera < cameraCount; ++camera) {
-        char name[48];
-        int value;
-        SCameraAttitude attitude;
-        snprintf(name, sizeof(name), "cameraVisibility_%d", camera);
-        helper->getUserParameter(node, name, &value);
-        attitude.m_visible = value == 1;
-        snprintf(name, sizeof(name), "cameraSafity_%d", camera);
-        helper->getUserParameter(node, name, &value);
-        attitude.m_safe = value == 1;
-        snprintf(name, sizeof(name), "cameraSafityType_%d", camera);
-        helper->getUserParameter(node, name, &attitude.m_safetyType);
-        snprintf(name, sizeof(name), "cameraStartLevel_%d", camera);
-        helper->getUserParameter(node, name, &attitude.m_startLevel);
-        if (attitude.m_startLevel < 1) {
-            attitude.m_startLevel = 1;
+    point->m_type = pointType;
+    ICStdUtil::SPrintF(name, "ID");
+    static_cast<App*>(WindowApp::m_instance)->m_helper->getUserParameter(node, name, &id);
+    ICStdUtil::SPrintF(name, "SceneCameraCount");
+    static_cast<App*>(WindowApp::m_instance)->m_helper->getUserParameter(node, name, &cameraCount);
+    if (cameraCount > 0) {
+        point->m_cameraAttitudes.ensureCapacity(cameraCount);
+        for (int camera = 0; camera < cameraCount; ++camera) {
+            ICStdUtil::SPrintF(name, "cameraVisibility_%d", camera);
+            static_cast<App*>(WindowApp::m_instance)->m_helper->getUserParameter(node, name, &visible);
+            attitude.m_visible = visible == 1;
+            ICStdUtil::SPrintF(name, "cameraSafity_%d", camera);
+            static_cast<App*>(WindowApp::m_instance)->m_helper->getUserParameter(node, name, &safe);
+            attitude.m_safe = safe == 1;
+            ICStdUtil::SPrintF(name, "cameraSafityType_%d", camera);
+            static_cast<App*>(WindowApp::m_instance)->m_helper->getUserParameter(node, name, &attitude.m_safetyType);
+            ICStdUtil::SPrintF(name, "cameraStartLevel_%d", camera);
+            static_cast<App*>(WindowApp::m_instance)->m_helper->getUserParameter(node, name, &startLevel);
+            if (startLevel < 1) {
+                startLevel = 1;
+            }
+            attitude.m_startLevel = startLevel;
+            point->m_cameraAttitudes.addElement(attitude);
         }
-        point->m_cameraAttitudes.addElement(attitude);
     }
 }
 
@@ -476,11 +459,12 @@ vec3 CGameAIMap::PutPointToCell(const SCellAI& cell, const vec3& position) const
     const vec3& a = cell.m_vertices[0]->m_position;
     const vec3& b = cell.m_vertices[1]->m_position;
     const vec3& c = cell.m_vertices[2]->m_position;
-    vec3 normal = (b - a).Cross(c - a);
+    Plane plane(a, b, c, true);
+    const vec3& normal = plane.m_normal;
     vec3 point = position;
     if (normal.m_z != 0.0f) {
-        point.m_z = a.m_z + (normal.m_x * (a.m_x - position.m_x) +
-                             normal.m_y * (a.m_y - position.m_y)) / normal.m_z;
+        point.m_z = (normal.m_x * (a.m_x - position.m_x) +
+                     normal.m_y * (a.m_y - position.m_y)) / normal.m_z + a.m_z;
     }
     return point;
 }
@@ -601,10 +585,13 @@ void CGameAIMap::FindSpecialPoints()
 
 int CGameAIMap::GetPointIDImpl(const Vector<int>& ids) const
 {
-    if (m_specialPoints.size() == 0 || ids.size() == 0) {
-        return -1;
+    if (m_specialPoints.size() > 0) {
+        int count = ids.size();
+        if (count > 0) {
+            return ids[CRandGen::GetInstance()->GetRandRange(0, count - 1)];
+        }
     }
-    return ids[CRandGen::GetInstance()->GetRandRange(0, ids.size() - 1)];
+    return -1;
 }
 
 int CGameAIMap::GetAnyPathPointID() const
@@ -645,40 +632,55 @@ int CGameAIMap::GetHideBehaviour(int point, int camera) const
     return m_specialPoints[point].m_cameraAttitudes[camera].m_safetyType;
 }
 
+// Original 0xcc6b8: random picks, at least one per special point, and then on until one differs from
+// `previous` (an original bug: this never ends when no other point can be picked).
 bool CGameAIMap::FindAnotherPoint(int* point, int previous) const
 {
-    // Random picks until one differs from `previous`, at least once per special point.
-    bool found = false;
     int count = m_specialPoints.size();
-    if (count > 1 && previous >= 0 && previous < count) {
-        for (int attempt = 0; attempt < count || !found; ) {
-            int id = GetPointIDImpl(m_pathPoints);
-            if (id != previous) {
-                *point = id;
-                found = true;
-            }
-            attempt++;
-        }
+    if (count < 2) {
+        return false;
     }
-    return found;
+    if (previous < 0 || previous >= count) {
+        return false;
+    }
+    bool found = false;
+    int attempt = 1;
+    bool more = true;
+    while (more || !found) {
+        int id = GetPointIDImpl(m_pathPoints);
+        if (id != previous) {
+            *point = id;
+            found = true;
+        }
+        more = attempt < count;
+        attempt++;
+    }
+    return true;
 }
 
+// Original 0xcc72c: as FindAnotherPoint over the camera's attack points (no camera range check).
 bool CGameAIMap::FindAnotherAttackPoint(int camera, int* point, int previous) const
 {
-    // Same as FindAnotherPoint over the camera's attack points (camera is not range checked).
-    bool found = false;
     int count = m_specialPoints.size();
-    if (count > 1 && previous >= 0 && previous < count) {
-        int attempt = 1;
-        do {
-            int id = GetPointIDImpl(m_attackPoints[camera]);
-            if (id != previous) {
-                *point = id;
-                found = true;
-            }
-        } while (attempt++ < count || !found);
+    if (count < 2) {
+        return false;
     }
-    return found;
+    if (previous < 0 || previous >= count) {
+        return false;
+    }
+    bool found = false;
+    int attempt = 1;
+    bool more = true;
+    while (more || !found) {
+        int id = GetPointIDImpl(m_attackPoints[camera]);
+        if (id != previous) {
+            *point = id;
+            found = true;
+        }
+        more = attempt < count;
+        attempt++;
+    }
+    return true;
 }
 
 bool CGameAIMap::RegisterUnitBodyInPoint(const CUnitBody* body, int point)
@@ -705,17 +707,53 @@ void CGameAIMap::UnregisterUnitBody(const CUnitBody* body)
     }
 }
 
-bool CGameAIMap::DoesGateCollideWithBody(SGateAI* gate, CUnitBody* body, vec3* nearest) const
+bool CGameAIMap::DoesGateCollideWithBody(SGateAI* gate, CUnitBody* body, vec3* pushOut) const
 {
     if (gate == NULL || body == NULL) {
         return false;
     }
-    vec3 point = ClosestPointOnEdge(body->m_position, gate->m_start->m_position, gate->m_end->m_position);
-    if (!TouchesEdge(body->m_position, point, body->GetRadius())) {
+    const vec3& start = gate->m_start->m_position;
+    const vec3& end = gate->m_end->m_position;
+    const vec3& position = body->m_position;
+    vec3 direction = NormalizePlanar(PlanarOffset(start, end));
+    vec3 fromStart = PlanarOffset(position, start);
+    vec3 normal(-direction.m_y, direction.m_x, 0.0f);
+    if (direction.Dot(NormalizePlanar(fromStart)) < 0.0f) {
+        normal = vec3(direction.m_y, -direction.m_x, -0.0f);
+    }
+    float radius = body->GetRadius();
+    float distance = normal.Dot(fromStart);
+    if (distance > radius) {
         return false;
     }
-    if (nearest != NULL) {
-        *nearest = point;
+
+    const vec3 endpoints[] = { PlanarOffset(start, position), PlanarOffset(end, position) };
+    float penetration = radius - distance;
+    if (CrossXY(normal, endpoints[0]) * CrossXY(normal, endpoints[1]) >= 0.0f) {
+        float endpointPenetration[2] = { 0.0f, 0.0f };
+        bool touchesEndpoint = false;
+        for (int index = 0; index < 2; ++index) {
+            const vec3& endpoint = endpoints[index];
+            float lengthSquared = endpoint.LengthSqr();
+            float length = MathLib::InvSqrt(lengthSquared) * lengthSquared;
+            if (length < radius) {
+                touchesEndpoint = true;
+                float fraction = fabs(direction.Dot(endpoint)) / radius;
+                float perpendicularSquared = 1.0f - fraction * fraction;
+                float scale = MathLib::InvSqrt(perpendicularSquared) * perpendicularSquared;
+                endpointPenetration[index] = radius / scale - fabs(normal.Dot(endpoint));
+            }
+        }
+        if (!touchesEndpoint) {
+            return false;
+        }
+        penetration = endpointPenetration[1];
+        if (endpointPenetration[0] > penetration) {
+            penetration = endpointPenetration[0];
+        }
+    }
+    if (pushOut != NULL) {
+        *pushOut = normal * -penetration;
     }
     return true;
 }
@@ -725,18 +763,39 @@ bool CGameAIMap::DoesCellCollideWithBody(SCellAI* cell, CUnitBody* body) const
     if (cell == NULL || body == NULL) {
         return false;
     }
-    if (ContainsXY(*cell, body->m_position)) {
-        return true;
-    }
+    const vec3& position = body->m_position;
     for (int edge = 0; edge < 3; ++edge) {
-        const vec3& start = cell->m_vertices[edge]->m_position;
-        const vec3& end = cell->m_vertices[(edge + 1) % 3]->m_position;
-        vec3 nearest = ClosestPointOnEdge(body->m_position, start, end);
-        if (TouchesEdge(body->m_position, nearest, body->GetRadius())) {
-            return true;
+        const SGateAI* gate = cell->m_gates[edge];
+        if (gate == NULL) {
+            gate = cell->m_boundaries[edge];
+        }
+        if (gate == NULL) {
+            return false;
+        }
+        const vec3& start = gate->m_start->m_position;
+        const vec3& end = gate->m_end->m_position;
+        const vec3& opposite = cell->m_vertices[(edge + 2) % 3]->m_position;
+        vec3 direction = NormalizePlanar(PlanarOffset(start, end));
+        vec3 normal(-direction.m_y, direction.m_x, 0.0f);
+        if (CrossXY(direction, PlanarOffset(start, opposite)) < 0.0f) {
+            normal = vec3(direction.m_y, -direction.m_x, 0.0f);
+        }
+        if (normal.Dot(PlanarOffset(position, start)) > body->GetRadius()) {
+            return false;
         }
     }
-    return false;
+
+    for (int index = 0; index < 3; ++index) {
+        const vec3& vertex = cell->m_vertices[index]->m_position;
+        const vec3& next = cell->m_vertices[(index + 1) % 3]->m_position;
+        const vec3& previous = cell->m_vertices[(index + 2) % 3]->m_position;
+        vec3 bisector = NormalizePlanar(PlanarOffset(vertex, next)) + NormalizePlanar(PlanarOffset(vertex, previous));
+        bisector = NormalizePlanar(bisector);
+        if (bisector.Dot(PlanarOffset(position, vertex)) > body->GetRadius()) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void CGameAIMap::RegisterStaticCollisionImpl(SCellAI* cell, CUnitBody* body) const
@@ -751,9 +810,10 @@ void CGameAIMap::RegisterStaticCollisionImpl(SCellAI* cell, CUnitBody* body) con
     if (!DoesCellCollideWithBody(cell, body)) {
         return;
     }
+    vec3 pushOut(0.0f, 0.0f, 0.0f);
     for (int side = 0; side < 3; ++side) {
-        SGateAI* boundary = cell->m_boundaries[side];
-        if (DoesGateCollideWithBody(boundary, body, NULL)) {
+        if (cell->m_boundaries[side] != NULL && DoesGateCollideWithBody(cell->m_boundaries[side], body, &pushOut)) {
+            SGateAI* boundary = cell->m_boundaries[side];
             body->AddStaticObstacle(boundary->m_start->m_position, boundary->m_end->m_position);
         }
     }
@@ -764,7 +824,7 @@ void CGameAIMap::RegisterStaticCollisionImpl(SCellAI* cell, CUnitBody* body) con
 
 void CGameAIMap::RegisterStaticCollision(CUnitBody* body) const
 {
-    if (body->m_cellId >= 0 && body->m_cellId < m_cells.size()) {
+    if (body->m_cellId >= 0 && body->m_cellId < m_cells.size() && m_cells.m_items != NULL) {
         ++m_byPassSessionID;
         RegisterStaticCollisionImpl(&m_cells.m_items[body->m_cellId], body);
     }
@@ -784,7 +844,7 @@ void CGameAIMap::AStarInit()
     m_openCells.m_size = 0;
 }
 
-void CGameAIMap::DijkstraInit()
+__attribute__((noinline)) void CGameAIMap::DijkstraInit()
 {
     // Dijkstra marks unvisited cells with a negative cost (see GetNewWorkCell).
     int count = m_cells.size();
@@ -797,20 +857,23 @@ void CGameAIMap::DijkstraInit()
     m_openCells.m_size = 0;
 }
 
-CGameAIMap::SCellAI* CGameAIMap::GetNewWorkCell()
+__attribute__((noinline)) CGameAIMap::SCellAI* CGameAIMap::GetNewWorkCell()
 {
     SCellAI* cell = NULL;
-    if (m_openCells.m_size > 0) {
+    int count = m_openCells.m_size;
+    if (count > 0) {
         int bestIndex = 0;
         cell = m_openCells.m_data[0];
-        float bestCost = cell->m_parentCost;
-        for (int index = 1; index != m_openCells.m_size; ++index) {
-            SCellAI* candidate = m_openCells.m_data[index];
-            if (candidate->m_parentCost >= 0.0f && candidate->m_parentCost < bestCost) {
-                // Original bug: the cost is taken from the previous best cell.
-                bestCost = cell->m_parentCost;
-                bestIndex = index;
-                cell = candidate;
+        if (count > 1) {
+            float bestCost = cell->m_parentCost;
+            for (int index = 1; index != count; ++index) {
+                SCellAI* candidate = m_openCells.m_data[index];
+                if (candidate->m_parentCost >= 0.0f && candidate->m_parentCost < bestCost) {
+                    // Original bug: the cost is taken from the previous best cell.
+                    bestCost = cell->m_parentCost;
+                    bestIndex = index;
+                    cell = candidate;
+                }
             }
         }
         m_openCells.remove_at(bestIndex);
@@ -820,21 +883,27 @@ CGameAIMap::SCellAI* CGameAIMap::GetNewWorkCell()
 
 CGameAIMap::SCellAI* CGameAIMap::OpenCellListPop()
 {
-    if (m_openCells.m_size == 0) {
-        return NULL;
-    }
-    int best = 0;
-    for (int index = 1; index < m_openCells.m_size; ++index) {
-        const SCellAI* candidate = m_openCells.m_data[index];
-        const SCellAI* current = m_openCells.m_data[best];
-        if (candidate->m_distance + candidate->m_priority < current->m_distance + current->m_priority) {
-            best = index;
+    SCellAI* bestCell = NULL;
+    int count = m_openCells.m_size;
+    if (count > 0) {
+        bestCell = m_openCells.m_data[0];
+        int bestIndex = 0;
+        if (count > 1) {
+            float bestCost = bestCell->m_distance + bestCell->m_priority;
+            for (int index = 1; index != count; ++index) {
+                SCellAI* candidate = m_openCells.m_data[index];
+                float cost = candidate->m_distance + candidate->m_priority;
+                if (cost < bestCost) {
+                    bestCost = cost;
+                    bestCell = candidate;
+                    bestIndex = index;
+                }
+            }
         }
+        m_openCells.remove_at(bestIndex);
+        bestCell->m_searchState = 2;
     }
-    SCellAI* cell = m_openCells.m_data[best];
-    m_openCells.remove_at(best);
-    cell->m_searchState = 2;
-    return cell;
+    return bestCell;
 }
 
 bool CGameAIMap::DoesCellHaveAppropriatePoint(SSpecialPointAI** found, CPath* path, SCellAI* cell,
@@ -852,18 +921,16 @@ bool CGameAIMap::DoesCellHaveAppropriatePoint(SSpecialPointAI** found, CPath* pa
 
 void CGameAIMap::OpenCellListPushBack(SCellAI* cell, SCellAI* target, SCellAI* parent, float distance)
 {
+    const float lengthSquared = (target->m_center - cell->m_center).LengthSqr();
     cell->m_parentCost = distance;
     cell->m_parent = parent;
+    cell->m_searchState = 1;
+    cell->m_priority = MathLib::InvSqrt(lengthSquared) * lengthSquared;
     cell->m_distance = distance;
     if (parent != NULL) {
         cell->m_distance += parent->m_distance;
     }
-    cell->m_priority = 0.0f;
-    if (target != NULL) {
-        cell->m_priority = sqrtf((target->m_center - cell->m_center).LengthSqr());
-    }
-    if (cell->m_searchState != 1) {
-        cell->m_searchState = 1;
+    if (m_openCells.m_size < m_openCells.m_capacity) {
         m_openCells.m_data[m_openCells.m_size++] = cell;
     }
 }
@@ -881,65 +948,105 @@ bool CGameAIMap::FindPathAStarImpl(CPath* path, SCellAI* start, SSpecialPointAI*
     }
     AStarInit();
     OpenCellListPushBack(start, target, NULL, 0.0f);
-    SCellAI* cell = OpenCellListPop();
-    while (cell != NULL) {
-        if (cell == target) {
-            path->m_targetPoint = end->m_id;
-            while (cell != NULL) {
-                if (!path->AddCell(cell->m_id)) {
-                    path->Clear();
-                    return false;
-                }
-                cell = cell->m_parent;
-            }
-            return true;
-        }
+    bool found = false;
+    while (m_openCells.m_size != 0 && !found) {
+        SCellAI* cell = OpenCellListPop();
         for (int side = 0; side < 3; ++side) {
             SCellAI* next = cell->m_neighbours[side];
-            if (next != NULL && next->m_searchState != 2) {
-                float distance = cell->m_gates[side]->m_cost;
-                if (next->m_searchState == 0 || cell->m_distance + distance < next->m_distance) {
-                    OpenCellListPushBack(next, target, cell, distance);
+            if (next == NULL) {
+                continue;
+            }
+            const SGateAI* gate = cell->m_gates[side];
+            if (gate == NULL) {
+                return false;
+            }
+            float distance = gate->m_cost;
+            if (next->m_searchState == 1) {
+                if (cell->m_distance + distance < next->m_distance) {
+                    // The original replaces the incoming edge cost in the existing total.
+                    next->m_distance = next->m_distance - next->m_parentCost + distance;
+                    next->m_parentCost = distance;
+                    next->m_parent = cell;
+                }
+            } else if (next->m_searchState == 0) {
+                OpenCellListPushBack(next, target, cell, distance);
+                if (next == target) {
+                    found = true;
                 }
             }
         }
-        cell = OpenCellListPop();
     }
-    return false;
+    if (!found) {
+        return false;
+    }
+    path->m_targetPoint = end->m_id;
+    for (SCellAI* cell = target; cell != NULL; cell = cell->m_parent) {
+        if (!path->AddCell(cell->m_id)) {
+            path->Clear();
+            return false;
+        }
+    }
+    return true;
 }
 
+// Original 0xcc9ac: breadth over the open list; the first neighbour with an appropriate point ends the
+// search. The cell list is filled from the point's cell up the parent chain (AddCell overflow ignored).
 bool CGameAIMap::FindPathDijkstraImpl(CPath* path, SCellAI* start, PointCondition condition, int camera)
 {
-    path->Clear();
     if (start == NULL) {
         return false;
     }
     DijkstraInit();
-    OpenCellListPushBack(start, NULL, NULL, 0.0f);
-    SCellAI* cell = OpenCellListPop();
-    while (cell != NULL) {
-        SSpecialPointAI* point;
-        if (DoesCellHaveAppropriatePoint(&point, path, cell, condition, camera)) {
-            path->m_targetPoint = point->m_id;
-            while (cell != NULL) {
-                if (!path->AddCell(cell->m_id)) {
-                    path->Clear();
-                    return false;
-                }
-                cell = cell->m_parent;
-            }
-            return true;
+    start->m_parentCost = 0.0f;
+    path->Clear();
+    SSpecialPointAI* point;
+    if (DoesCellHaveAppropriatePoint(&point, path, start, condition, camera)) {
+        if (point == NULL) {
+            return false;
         }
+        path->m_targetPoint = point->m_id;
+        for (SCellAI* cell = point->m_cell; cell != NULL; cell = cell->m_parent) {
+            path->AddCell(cell->m_id);
+        }
+        return true;
+    }
+    SCellAI* cell = start;
+    while (cell != NULL) {
         for (int side = 0; side < 3; ++side) {
             SCellAI* next = cell->m_neighbours[side];
-            if (next != NULL && next->m_searchState != 2) {
-                float distance = cell->m_gates[side]->m_cost;
-                if (next->m_searchState == 0 || cell->m_distance + distance < next->m_distance) {
-                    OpenCellListPushBack(next, NULL, cell, distance);
+            if (next == NULL || next->m_searchState == 2) {
+                continue;
+            }
+            if (DoesCellHaveAppropriatePoint(&point, path, next, condition, camera)) {
+                next->m_parent = cell;
+                if (point == NULL) {
+                    return false;
                 }
+                path->m_targetPoint = point->m_id;
+                for (SCellAI* found = point->m_cell; found != NULL; found = found->m_parent) {
+                    path->AddCell(found->m_id);
+                }
+                return true;
+            }
+            if (next->m_searchState != 1) {
+                if (m_openCells.m_size < m_openCells.m_capacity) {
+                    m_openCells.m_data[m_openCells.m_size] = next;
+                    m_openCells.m_size++;
+                }
+                next->m_searchState = 1;
+            }
+            const SGateAI* gate = cell->m_gates[side];
+            if (gate == NULL) {
+                return false;
+            }
+            float cost = gate->m_cost + cell->m_parentCost;
+            if (cost < next->m_parentCost || next->m_parentCost < 0.0f) {
+                next->m_parentCost = cost;
+                next->m_parent = cell;
             }
         }
-        cell = OpenCellListPop();
+        cell->m_searchState = 2;
+        cell = GetNewWorkCell();
     }
     return false;
 }

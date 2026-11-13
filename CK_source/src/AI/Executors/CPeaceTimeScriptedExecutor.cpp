@@ -35,7 +35,8 @@ void CPeaceTimeScriptedExecutor::SetPeaceIdleBehaviour()
         Finish(EXECUTOR_RESULT_NO_BODY);
         return;
     }
-    AddCurrentPeaceIdleExecutor(m_mind, script->GetEldeBehaviorID(m_waypoint));
+    int behaviour = script->GetEldeBehaviorID(m_waypoint);
+    AddCurrentPeaceIdleExecutor(m_mind, behaviour);
     MakeNextStep();
 }
 

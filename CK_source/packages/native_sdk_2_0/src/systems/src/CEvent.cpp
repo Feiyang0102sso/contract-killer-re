@@ -36,75 +36,62 @@ CEvent::CEvent(CClass* sender, unsigned int eventId, unsigned int param, int int
 
 void CEvent::OnExecute()
 {
-    CEventCore* core = CEventCore::GetInstance();
-    int pendingCount = core->m_pendingRemovals.Size();
-    core->m_isDispatching = 1;
-
     CSystem* rootSystem = (CSystem*)CApplet::m_pApp->m_subsystem14;
     m_wasHandled = 0;
 
     CSystemElement* element;
-    if (rootSystem->Query(0, kEventSystemHandle, &element)) {
-        CSystem* eventSystem = (CSystem*)element->m_object;
-        CSystemElement* eventElement;
-        if (eventSystem->Query(0, m_eventId, &eventElement)) {
-            CRegistry* listeners = (CRegistry*)eventElement->m_object;
-            if (m_param != 0) {
-                // only the listener registered under m_param
-                if (listeners->Query(0, m_param, &element)) {
-                    CEventListener* listener = (CEventListener*)element->m_object;
-                    if (listener->m_callback(*this, listener)) {
-                        if (!m_wasHandled) {
-                            m_wasHandled = 1;
-                        }
-                        if (!m_wasEverHandled) {
-                            m_wasEverHandled = 1;
-                        }
-                    }
-                }
-            } else {
-                // broadcast to every listener of the event
-                for (CRegistryItr itr(*listeners); !itr.IsDone(); itr++) {
-                    CEventListener* listener = (CEventListener*)(*itr).m_object;
-                    if (listener->m_callback(*this, listener)) {
-                        if (!m_wasHandled) {
-                            m_wasHandled = 1;
-                        }
-                        if (!m_wasEverHandled) {
-                            m_wasEverHandled = 1;
-                        }
-                    }
-                }
+    if (!rootSystem->Query(0, kEventSystemHandle, &element)) {
+        return;
+    }
+    CRegistry* eventSystem = (CRegistry*)element->m_object;
+    CSystemElement* eventElement;
+    if (!eventSystem->Query(0, m_eventId, &eventElement)) {
+        return;
+    }
+
+    CEventCore* core = CEventCore::GetInstance();
+    const unsigned char alreadyDispatching = core->m_isDispatching;
+    core->m_isDispatching = 1;
+    CRegistry* listeners = (CRegistry*)eventElement->m_object;
+    if (m_param != 0) {
+        // only the listener registered under m_param
+        if (listeners->Query(0, m_param, &element)) {
+            CEventListener* listener = (CEventListener*)element->m_object;
+            if (listener->m_callback(*this, listener)) {
+                m_wasHandled = 1;
+                m_wasEverHandled = 1;
+            }
+        }
+    } else {
+        // broadcast to every listener of the event
+        for (CRegistryItr itr(*listeners); !itr.IsDone(); itr++) {
+            CEventListener* listener = (CEventListener*)(*itr).m_object;
+            if (listener != NULL && listener->m_callback(*this, listener)) {
+                m_wasHandled = 1;
+                m_wasEverHandled = 1;
             }
         }
     }
-    core->m_isDispatching = 0;
+    core->m_isDispatching = alreadyDispatching;
+    if (alreadyDispatching || core->m_pendingRemovals.Size() == 0) {
+        return;
+    }
 
-    // listeners unregistered during the dispatch are removed now
-    if (pendingCount < core->m_pendingRemovals.Size()) {
-        if (rootSystem->Query(0, kEventSystemHandle, &element)) {
-            CSystem* eventSystem = (CSystem*)element->m_object;
-            for (int index = pendingCount; index < core->m_pendingRemovals.Size() - pendingCount; index++) {
-                CRegistry* listeners = NULL;
-                CSystemElement* eventElement;
-                if (eventSystem->Query(0, m_eventId, &eventElement)) {
-                    listeners = (CRegistry*)eventElement->m_object;
-                    listeners->Remove(*core->m_pendingRemovals[index]);
-                }
-                if (core->m_pendingRemovals[index] != NULL) {
-                    delete core->m_pendingRemovals[index];
-                }
-                if (listeners != NULL && listeners->IsEmpty()) {
-                    // last listener gone: drop the registry of the event
-                    eventSystem->Remove(*eventElement);
-                    delete listeners;
-                    if (eventElement != NULL) {
-                        delete eventElement;
-                    }
-                }
-            }
+    // All iterators have returned. Release the removed nodes and any empty event registry.
+    for (int index = 0; index < core->m_pendingRemovals.Size(); index++) {
+        delete core->m_pendingRemovals[index];
+    }
+    core->m_pendingRemovals.Clear();
+    CRegistryItr itr(*eventSystem);
+    while (!itr.IsDone()) {
+        CSystemElement* entry = &*itr;
+        CRegistry* eventListeners = (CRegistry*)entry->m_object;
+        itr++;
+        if (eventListeners->IsEmpty()) {
+            eventSystem->Remove(*entry);
+            delete eventListeners;
+            delete entry;
         }
-        core->m_pendingRemovals.SetSize(pendingCount);
     }
 }
 

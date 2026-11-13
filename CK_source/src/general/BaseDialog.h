@@ -48,7 +48,7 @@ public:
 };
 
 /** A tiled horizontal image with optional end caps. */
-class HorizImageWindow : public Window {
+class HorizImageWindow : public WindowTransparent {
 public:
     HorizImageWindow(const ImageRes& left, const ImageRes& middle, const ImageRes& right, bool fill);
     virtual ~HorizImageWindow() {}

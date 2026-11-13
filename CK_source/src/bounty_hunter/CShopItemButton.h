@@ -5,6 +5,7 @@
 #include "CBH_Button.h"
 
 class CItem;
+class CImageButton;
 class CItemManager;
 class TextWindow;
 
@@ -29,9 +30,6 @@ private:
     class Label;
 
     Label* CreateLabel();
-    Window* AddOfferMarker(const char* image, int index);
-    void AddPackAmount(CItem* item);
-    void AddDealTimer(CItem* item);
     void UpdateGoPills();
     void UpdateMisc();
 
@@ -53,7 +51,7 @@ private:
     ImageRes m_currencyIcon;
     CItemManager* m_manager;
     CItem* m_item;
-    Window* m_saleMarker;
+    CImageButton* m_saleMarker;
     Window* m_dealTimer;
     bool m_blink;
 };

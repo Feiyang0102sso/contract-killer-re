@@ -29,8 +29,6 @@ public:
     virtual void DiscardContents();
     virtual unsigned char IsLocked();
     virtual void Bind();
-    virtual unsigned char SaveStateForFutureRecreation();
-    virtual unsigned char Recreate();
 
     /** Delete the buffers the surface owns. */
     void DestroyBuffers();
@@ -46,16 +44,6 @@ public:
     unsigned char CreateAndInitializeReferenceAndSecondaryBuffers(const RSBFormat* formats, void* reference,
                                                                   unsigned int resourceType, void* palette,
                                                                   unsigned char powerOfTwo);
-
-    /** Make this surface the target of the device and reset viewport and scissor to its size. */
-    void SetAsTargetSurface()
-    {
-        CGraphics_OGLES* graphics = CGraphics_OGLES::GetHardware();
-        if (graphics != NULL && graphics->m_target != this) {
-            graphics->m_target = this;
-            graphics->SetWidthAndHeightMappedViewportAndOrthoProjection(*this);
-        }
-    }
 
     void* m_palette;                        // 0x0c Flag_OwnsPalette: allocated by the surface
     union {

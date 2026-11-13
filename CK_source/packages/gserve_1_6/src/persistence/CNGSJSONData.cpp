@@ -449,7 +449,7 @@ unsigned char CNGSJSONData::entryIsExpired(CObjectMapObject* object)
             }
             // "start" still ahead: not active yet.
             if (seconds < 0.0) {
-                return 0;
+                return 1;
             }
         }
     }
@@ -476,7 +476,9 @@ double CNGSJSONData::convertDateToSecondsFromNow(const CStrWChar& date)
     } else {
         text[255] = 0;
     }
-    strptime(text, "%a, %d %b %Y %H:%M:%S %Z", &dateTime);
+    if (strptime(text, "%a, %d %b %Y %H:%M:%S %Z", &dateTime) == NULL) {
+        return 0.0;
+    }
     return difftime(now, mktime(&dateTime));
 }
 

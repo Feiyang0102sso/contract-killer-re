@@ -23,8 +23,8 @@ void CGoPill::setAvailable(bool)
 void CGoPill::ParseStats(const TiXmlElement& stats)
 {
     CItem::ParseStats(stats);
-    m_pills = CXmlHelper::GetAttributeValueOptional(stats, "pills_gain").ToInt();
-    m_seconds = CXmlHelper::GetAttributeValueOptional(stats, "seconds_gain").ToInt();
+    m_pills = CXmlHelper::GetAttributeValueOrUseDefault(stats, "pills_gain", XString("0")).ToInt();
+    m_seconds = CXmlHelper::GetAttributeValueOrUseDefault(stats, "seconds_gain", XString("0")).ToInt();
 }
 
 XString CGoPill::getUIDString() const
@@ -49,16 +49,19 @@ void CGoPill::ParseGraphics(const TiXmlElement& graphics)
 
 XString CGoPill::GetStatsString() const
 {
+    // Original: pills show the plain pill text, otherwise the Reactix minutes; then the prices.
     XString result;
     if (m_pills > 0) {
-        result.Append(XString::Format(Window::ResString("IDS_SHOP_PILLS_STATS").c_str(), m_pills));
-        result.Append(XString(L"\n"));
+        result = Window::ResString("IDS_SHOP_PILLS_STATS") + L"\n";
+    } else {
+        result = XString::Format(Window::ResString("IDS_SHOP_REACTIX_CONTROL_STATS").c_str(), m_seconds / 60) + L"\n";
     }
-    if (m_seconds > 0) {
-        result.Append(XString::Format(Window::ResString("IDS_SHOP_REACTIX_CONTROL_STATS").c_str(), m_seconds));
-        result.Append(XString(L"\n"));
+    if (getPriceCredits() > 0) {
+        result.Append(XString::Format(Window::ResString("IDS_SHOP_AMMO_STATS_PRICE_CREDITS").c_str(), getPriceCredits()) + L"\n");
     }
-    result.Append(CItem::GetStatsString());
+    if (m_pricePoints > 0) {
+        result.Append(XString::Format(Window::ResString("IDS_SHOP_AMMO_STATS_PRICE_CASH").c_str(), m_pricePoints) + L"\n");
+    }
     return result;
 }
 

@@ -11,7 +11,6 @@ public:
     {
     }
 
-    virtual void Tick(int elapsed);
     virtual void OnAnimationComplete(EPersonAnimType animType, const char* animName);
 
     virtual const wchar_t* GetName() const
@@ -20,6 +19,7 @@ public:
     }
 
     void OnStart();
+    bool HasActiveAnimation() const { return m_activeAnimation != NULL; }
 };
 
 /** Push an alert executor on `mind` (ignored when NULL). */

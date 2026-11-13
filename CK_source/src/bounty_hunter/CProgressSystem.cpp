@@ -106,7 +106,8 @@ int CProgressSystem::GetCivilianCount(int level) const
 
 float CProgressSystem::GetRandValue() const
 {
-    return CRandGen::GetInstance()->GetRandRange(0, 0x7fffffff) * (1.0f / 2147483648.0f);
+    unsigned int randomValue = CRandGen::GetInstance()->GetRandRange(0, 0x7fffffff);
+    return randomValue * (1.0f / 2147483648.0f);
 }
 
 float CProgressSystem::GetLevelCoef(bool allowAlternate) const
@@ -121,11 +122,8 @@ float CProgressSystem::GetLevelCoef(bool allowAlternate) const
 
 float CProgressSystem::GetDmgCoeff() const
 {
-    int level = CBH_Player::GetInstance()->GetLevel();
-    if (level >= 0 && level < m_levels.size()) {
-        return m_levels[level].m_damageCoefficient;
-    }
-    return 1.0f;
+    // the original does not range-check the level
+    return m_levels[CBH_Player::GetInstance()->GetLevel()].m_damageCoefficient;
 }
 
 float CProgressSystem::GetLevelForkFormulaCoef(bool allowAlternate) const
@@ -159,27 +157,28 @@ int CProgressSystem::CalcXpForKilledUnit(CUnit* unit)
 int CProgressSystem::GetTaggingTimeMS()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
-    int limit = static_cast<int>(app->m_helper->m_config.GetFloatValueByToken("TIME_TAGGING_LIMIT_MS", true));
-    if (m_levels.size() > 0) {
-        return limit * (CBH_Player::GetInstance()->GetLevel() - 1) / m_levels.size();
+    float limit = app->m_helper->m_config.GetFloatValueByToken("TIME_TAGGING_LIMIT_MS", true);
+    // the original asks for the player before testing the level table
+    CBH_Player* player = CBH_Player::GetInstance();
+    if (m_levels.size() < 1) {
+        return 0;
     }
-    return 0;
+    return static_cast<int>(limit) * (player->GetLevel() - 1) / m_levels.size();
 }
 
 void CProgressSystem::RegisterGameEvent(EGameEvent event, int experience, int headshot)
 {
-    CBH_Player* player = CBH_Player::GetInstance();
     switch (event) {
     case EVENT_ENEMY_KILLED:
         AddXPForUnit(experience, headshot == 1);
-        player->OnEnemyKilled();
+        CBH_Player::GetInstance()->OnEnemyKilled();
         break;
     case EVENT_ENEMY_TRANQUILLIZED:
         AddXPForUnit(experience, headshot == 1);
-        player->OnEnemyTranquillized();
+        CBH_Player::GetInstance()->OnEnemyTranquillized();
         break;
     case EVENT_ENEMY_ESCAPED:
-        player->OnEnemyEscaped();
+        CBH_Player::GetInstance()->OnEnemyEscaped();
         break;
     }
 }

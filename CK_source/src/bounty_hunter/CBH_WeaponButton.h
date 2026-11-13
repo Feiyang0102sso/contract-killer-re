@@ -3,8 +3,10 @@
 
 #include "CBH_Button.h"
 
+class CAmmo;
 class CDH_Weapon;
 class ImageWindow;
+class LabelWithIcon;
 class TextWindow;
 
 class CBH_WeaponButton : public CBH_Button {
@@ -31,13 +33,14 @@ private:
     int m_weaponId;                      // 0xec
     int m_slot;
     int m_ammoCount;
-    TextWindow* m_name;
-    TextWindow* m_ammo;
+    const CAmmo* m_shownAmmo;             // 0xf8
+    LabelWithIcon* m_ammo;                // 0xfc
     ImageWindow* m_lockImage;
     ImageWindow* m_backgroundImage;       // 0x104
     ImageWindow* m_weaponImage;
     CDH_Weapon* m_shownWeapon;
-    unsigned char m_reserved110[0x14];
+    TextWindow* m_name;
+    unsigned char m_reserved114[0x10];
 };
 
 #endif

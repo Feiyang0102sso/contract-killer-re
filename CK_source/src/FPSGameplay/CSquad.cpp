@@ -19,7 +19,9 @@ void CSquad::AddLeader(CUnit* unit)
 {
     if (unit != NULL) {
         m_leader = unit;
-        m_members.Add(HashTableKey<const CUnit*>(unit), vec3(0.0f, 0.0f, 0.0f));
+        const vec3 leaderOffset(0.0f, 0.0f, 0.0f);
+        const HashTableKey<const CUnit*> leaderKey(unit);
+        m_members.Add(leaderKey, leaderOffset);
         unit->SetSquad(this);
         m_hasLeader = true;
     }
@@ -41,12 +43,14 @@ void CSquad::NoticeUnitParams(CUnit* unit)
         m_position = unit->m_body.m_position;
         vec3 direction = unit->m_body.m_target - m_position;
         float squared = direction.LengthSqr();
-        float length = squared * MathLib::InvSqrt(squared);
-        if (length >= 0.001f) {
-            float inverse = MathLib::InvSqrt(squared);
-            m_forward = vec3(direction.m_x * inverse, direction.m_y * inverse, 0.0f);
-            m_right = vec3(m_forward.m_y, -m_forward.m_x, 0.0f);
+        float length = MathLib::InvSqrt(squared) * squared;
+        // 原版写法：长度过短时直接返回（bmi，NaN 也继续）
+        if (length < 0.001f) {
+            return;
         }
+        float inverse = MathLib::InvSqrt(squared);
+        m_forward = vec3(direction.m_x * inverse, direction.m_y * inverse, 0.0f);
+        m_right = vec3(m_forward.m_y, -m_forward.m_x, 0.0f);
     }
 }
 

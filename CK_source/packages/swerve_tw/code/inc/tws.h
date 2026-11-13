@@ -605,12 +605,12 @@ public:
     virtual void VirtualSlot28() = 0;
     virtual void VirtualSlot2c() = 0;
     virtual void VirtualSlot30() = 0;
-    virtual int SetViewport(int x, int y, int width, int height) = 0;  // 0x34  // changed by fx2 (was VirtualSlot34; = IGraphics3DFunctions::SetViewport)
+    virtual void VirtualSlot34() = 0;  // 0x34 is _graphics3d_setCroppedBackBufferData  // changed by fx2
     virtual void VirtualSlot38() = 0;
     virtual void VirtualSlot3c() = 0;
     virtual void VirtualSlot40() = 0;
     virtual void VirtualSlot44() = 0;
-    virtual void VirtualSlot48() = 0;
+    virtual int SetViewport(int x, int y, int width, int height) = 0;  // 0x48
     virtual void VirtualSlot4c() = 0;
     virtual void VirtualSlot50() = 0;
     virtual void VirtualSlot54() = 0;
@@ -654,7 +654,7 @@ public:
         return m_graphics->m_target != NULL || m_graphics->m_boundImage != NULL;  // added by fx2
     }  // added by fx2
 
-    /** Viewport inside the bound target (renderer slot 0x34). */  // added by fx2
+    /** Viewport inside the bound target (renderer slot 0x48). */  // added by fx2
     void setViewport(int x, int y, int width, int height)  // added by fx2
     {  // added by fx2
         renderer()->SetViewport(x, y, width, height);  // added by fx2
@@ -1167,13 +1167,18 @@ public:  // added by b051x
     }  // added by b051x
     Fog getFog() const
     {
-        IObject3DInterface*fog;
-        appearance()->getFog(&fog); // original ffc92..ffc98.
+        // CK's SetRandomCamera calls the appearance vtable at 0x5c.
+        IObject3DInterface* fog = NULL;
+        typedef int (*GetFog)(IQueryInterface*, IObject3DInterface**);
+        CKMethod<GetFog>(this->m_interface, 0x5c)(this->m_interface, &fog);
         return Fog(fog);
     }
     void setFog(const Fog& fog)
     {
-        appearance()->setFog(static_cast<IObject3DInterface*>(fog.m_interface));
+        // CK's ApplyFog calls the adjacent setter at 0x60.
+        typedef int (*SetFog)(IQueryInterface*, IObject3DInterface*);
+        CKMethod<SetFog>(this->m_interface, 0x60)(this->m_interface,
+                                                static_cast<IObject3DInterface*>(fog.m_interface));
     }
 };  // added by b051x
 
@@ -1191,14 +1196,18 @@ public:  // added by b051x
     int getVertexCount() const  // added by b051x
     {  // added by b051x
         int count;  // added by b051x
-        vertexArray()->getVertexCount(&count);  // added by b051x
+        // original slot 0x50 (CCollision::BuildMesh 0xd7f5c)
+        typedef int (*GetCount)(IQueryInterface*, int*);
+        CKMethod<GetCount>(this->m_interface, 0x50)(this->m_interface, &count);
         return count;  // added by b051x
     }  // added by b051x
 
     /** Copy the components of `vertexCount` vertices from `firstVertex` (`valueCount` shorts). */  // added by b051x
     void get(int firstVertex, int vertexCount, int valueCount, short* values) const  // added by b051x
     {  // added by b051x
-        vertexArray()->get(firstVertex, vertexCount, valueCount, values);  // added by b051x
+        // original slot 0x5c (CCollision::BuildMesh 0xd7f84)
+        typedef int (*Get)(IQueryInterface*, int, int, int, short*);
+        CKMethod<Get>(this->m_interface, 0x5c)(this->m_interface, firstVertex, vertexCount, valueCount, values);
     }  // added by b051x
 
 protected:  // added by b051x
@@ -1223,14 +1232,18 @@ public:  // added by b051x
     int getVertexCount() const  // added by b048
     {  // added by b048
         int count;  // added by b048
-        vertexBuffer()->getVertexCount(&count);  // added by b048
+        // original slot 0x64 (FrustumCulling::GetBoundingSphere 0x14c316)
+        typedef int (*GetCount)(IQueryInterface*, int*);
+        CKMethod<GetCount>(this->m_interface, 0x64)(this->m_interface, &count);
         return count;  // added by b048
     }  // added by b048
 
     VertexArray getPositions(float* scaleBias) const  // added by b051x
     {  // added by b051x
         IVertexArrayInterface*positions;  // added by b051x
-        vertexBuffer()->getPositions(4, scaleBias, &positions);  // added by b051x
+        // original slot 0x68 (FrustumCulling::GetBoundingSphere 0x14c32a)
+        typedef int (*GetPositions)(IQueryInterface*, int, float*, IVertexArrayInterface**);
+        CKMethod<GetPositions>(this->m_interface, 0x68)(this->m_interface, 4, scaleBias, &positions);
         return VertexArray(positions);  // added by b051x
     }  // added by b051x
 
@@ -1252,13 +1265,17 @@ public:  // added by b055x
     int getIndexCount() const
     {
         int count;
-        static_cast<IIndexBufferInterface*>(this->m_interface)->getIndexCount(&count);
+        // original slot 0x4c (CCollision::CollectMeshInfo 0xd7d70)
+        typedef int (*GetCount)(IQueryInterface*, int*);
+        CKMethod<GetCount>(this->m_interface, 0x4c)(this->m_interface, &count);
         return count;
     }
 
     void getIndices(int count, unsigned int* indices) const
     {
-        static_cast<IIndexBufferInterface*>(this->m_interface)->getIndices(count, indices);
+        // original slot 0x50 (CCollision::BuildMesh)
+        typedef int (*GetIndices)(IQueryInterface*, int, unsigned int*);
+        CKMethod<GetIndices>(this->m_interface, 0x50)(this->m_interface, count, indices);
     }
 };  // added by b055x
 
@@ -1294,7 +1311,9 @@ public:  // added by b051x
     VertexBuffer getVertexBuffer() const  // added by b051x
     {  // added by b051x
         IVertexBufferInterface*vertexBuffer;  // added by b051x
-        mesh()->getVertexBuffer(&vertexBuffer);  // added by b051x
+        // original slot 0xc4 (CCollision::CollectMeshInfo 0xd7cfa)
+        typedef int (*GetVertexBuffer)(IQueryInterface*, IVertexBufferInterface**);
+        CKMethod<GetVertexBuffer>(this->m_interface, 0xc4)(this->m_interface, &vertexBuffer);
         return VertexBuffer(vertexBuffer);  // added by b051x
     }  // added by b051x
 
@@ -1302,7 +1321,9 @@ public:  // added by b051x
     IndexBuffer getTriangleIndexBuffer(int index) const
     {
         IIndexBufferInterface*indexBuffer;
-        mesh()->getTriangleIndexBuffer(index, &indexBuffer);
+        // original slot 0xc8 (CCollision::CollectMeshInfo 0xd7d5e)
+        typedef int (*GetIndexBuffer)(IQueryInterface*, int, IIndexBufferInterface**);
+        CKMethod<GetIndexBuffer>(this->m_interface, 0xc8)(this->m_interface, index, &indexBuffer);
         return IndexBuffer(indexBuffer);
     }
 
@@ -1939,15 +1960,20 @@ inline Material Appearance::getMaterial() const
 // Graphics3D::render: out-of-line weak functions in the original (32 bytes each, called with bl).
 inline __attribute__((noinline)) void Graphics3D::render(const World& world) const
 {
+    // the original reads the world handle before testing for a target
+    IQueryInterface* handle = world.m_interface;
     if (hasTarget()) {
-        renderer()->Render(world.m_interface);
+        renderer()->Render(handle);
     }
 }
 
 inline __attribute__((noinline)) void Graphics3D::render(const Node& node, const Transform& transform) const
 {
+    // the original reads both handles before testing for a target
+    IQueryInterface* nodeHandle = node.m_interface;
+    IQueryInterface* transformHandle = transform.m_interface;
     if (hasTarget()) {
-        renderer()->RenderNode(node.m_interface, transform.m_interface);
+        renderer()->RenderNode(nodeHandle, transformHandle);
     }
 }
 

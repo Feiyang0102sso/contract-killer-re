@@ -111,7 +111,7 @@ public:
 
     /** Description of a surface (GetDescription). */
     struct Description {
-        unsigned int m_type;                // 0x00 1 software, 2 hardware
+        unsigned int m_type;                // 0x00 1 hardware, 2 software
         unsigned int m_usage;               // 0x04 0 texture, 1 target
         unsigned int m_lockAccess;          // 0x08 0..3
         unsigned int m_colorKind;           // 0x0c 0..4
@@ -129,12 +129,8 @@ public:
         ColorFormat m_depthFormat;      // 0x20
         ColorFormat m_stencilFormat;    // 0x24
         unsigned int m_multisample;         // 0x28 0..3
-        unsigned int m_magFilter;           // 0x2c
-        unsigned int m_minFilter;           // 0x30
-        unsigned int m_wrapS;               // 0x34
-        unsigned int m_wrapT;               // 0x38
-        void* m_palette;                    // 0x3c
-        ICRenderSurface* m_reference;       // 0x40 Flag_Reference
+        void* m_palette;                    // 0x2c
+        ICRenderSurface* m_reference;       // 0x30 Flag_Reference
     };
 
     /** Platform factory. */
@@ -163,8 +159,6 @@ public:
     virtual ColorFormat GetColorFormat() = 0;
     virtual unsigned char GetWidthAndHeight(unsigned int& width, unsigned int& height) = 0;  // added by b002
     virtual unsigned char GetDescription(Description& description) = 0;
-    virtual unsigned char SaveStateForFutureRecreation() = 0;
-    virtual unsigned char Recreate() = 0;
 
     unsigned int m_flags;   // 0x08 Flag bits
 };

@@ -1,12 +1,13 @@
 // COverrideManager.cpp - refresh CK item overrides from the cache and gServe.
 #include "COverrideManager.h"
 
+static const char STORE_OVERRIDE_SERVER_SUBDIR[] = "override";
 typedef char COverrideManagerSizeCheck[sizeof(COverrideManager) == 0x8c ? 1 : -1];
 
 COverrideManager::COverrideManager()
     : m_changeMark(0)
 {
-    m_overrideName = "override";
+    m_overrideName = STORE_OVERRIDE_SERVER_SUBDIR;
     m_overrideFileName = L"override.json";
     m_saveFileName = L"../Library/Caches/store_override.dat";
 }

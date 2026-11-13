@@ -45,8 +45,12 @@ void CPeaceTimeSquadExecutor::OnAnimationComplete(EPersonAnimType, const char* a
     }
 }
 
-void CPeaceTimeSquadExecutor::PlayIdleBehaviour()
+__attribute__((noinline)) void CPeaceTimeSquadExecutor::PlayIdleBehaviour()
 {
+    // the original also checks the squad mind
+    if (m_squadMind == NULL) {
+        return;
+    }
     CUnit* unit = m_squadMind->GetUnit();
     if (unit != NULL) {
         m_activeAnimation = unit->m_body.StartAnimation(PERSON_ANIM_TYPE_DEFAULT, false);
@@ -55,6 +59,10 @@ void CPeaceTimeSquadExecutor::PlayIdleBehaviour()
 
 void CPeaceTimeSquadExecutor::PlayMoveBehaviour()
 {
+    // the original also checks the squad mind
+    if (m_squadMind == NULL) {
+        return;
+    }
     CUnit* unit = m_squadMind->GetUnit();
     if (unit != NULL) {
         float speed;

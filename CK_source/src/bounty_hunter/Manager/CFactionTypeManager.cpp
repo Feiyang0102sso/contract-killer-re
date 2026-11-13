@@ -24,17 +24,16 @@ CFactionTypeManager::~CFactionTypeManager()
 
 CFactionType* CFactionTypeManager::GetType(const XString& name) const
 {
-    CFactionType* const* faction = m_factions.Get(name);
-    if (faction != NULL) {
-        return *faction;
-    }
-    return NULL;
+    // the original does not check the lookup result
+    return *m_factions.Get(name);
 }
 
 CFactionType* CFactionTypeManager::GetRandomFaction() const
 {
-    if (m_factions.m_count > 0) {
-        return GetFactionAtIndex(CRandGen::GetInstance()->GetRandRange(0, m_factions.m_count - 1));
+    // the original reads the entry directly (no range check on the random index)
+    int count = m_factions.m_count;
+    if (count > 0) {
+        return *m_factions.GetAt(CRandGen::GetInstance()->GetRandRange(0, count - 1), NULL);
     }
     return NULL;
 }

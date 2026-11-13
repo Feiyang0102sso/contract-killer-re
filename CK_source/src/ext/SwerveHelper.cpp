@@ -266,17 +266,11 @@ bool SwerveHelper::PickWithAngle(Group& group, Camera& camera,
                                  float angle, float axisX, float axisY, float axisZ,
                                  RayIntersection intersection)
 {
-    if (group == NULL || camera == NULL || intersection == NULL) {
-        return false;
-    }
+    // Original: no handle checks, the transform result is ignored and the rotation always applied.
     Transform transform = NewTransform();
-    if (!camera.getTransformTo(group, transform)) {
-        return false;
-    }
+    camera.getTransformTo(group, transform);
     float rotation[4] = {angle, axisX, axisY, axisZ};
-    if (angle != 0.0f) {
-        transform.postRotate(rotation);
-    }
+    transform.postRotate(rotation);
     float matrix[16];
     transform.get(matrix);
     float origin[3] = {matrix[3], matrix[7], matrix[11]};
@@ -345,52 +339,36 @@ void SwerveHelper::DrawToArray(unsigned char** pixels, int* width, int* height,
 
 SwerveHelper::Node SwerveHelper::CreateSprite(const unsigned char* pixels, int width, int height)
 {
-    ISwerve* runtime = CSwerve::GetInstance()->m_swerve;
+    // Original: no failure checks; picking stays at its default.
     IQueryInterface* imageObject = NULL;
-    runtime->m_functions->CreateObject(10, reinterpret_cast<void**>(&imageObject));
+    CSwerve::GetInstance()->m_swerve->m_functions->CreateObject(10, reinterpret_cast<void**>(&imageObject));
     Object3D image(imageObject);
-    if (image == NULL) {
-        return Node();
-    }
     typedef int (*SetPixels)(IQueryInterface*, int, int, int, int, const unsigned char*);
-    if (CKMethod<SetPixels>(image.m_interface, 0x4c)(image.m_interface, 100, width, height,
-                                                        width * height * 4, pixels) != 0) {
-        return Node();
-    }
-
+    CKMethod<SetPixels>(image.m_interface, 0x4c)(image.m_interface, 100, width, height, width * height * 4, pixels);
     IQueryInterface* appearanceObject = NULL;
-    runtime->m_functions->CreateObject(3, reinterpret_cast<void**>(&appearanceObject));
+    CSwerve::GetInstance()->m_swerve->m_functions->CreateObject(3, reinterpret_cast<void**>(&appearanceObject));
     Appearance appearance(appearanceObject);
     IQueryInterface* materialObject = NULL;
-    runtime->m_functions->CreateObject(0xf, reinterpret_cast<void**>(&materialObject));
+    CSwerve::GetInstance()->m_swerve->m_functions->CreateObject(0xf, reinterpret_cast<void**>(&materialObject));
     Object3D material(materialObject);
-    CompositingMode mode = NewCompositingMode();
-    if (appearance == NULL || material == NULL || mode == NULL) {
-        return Node();
-    }
     typedef int (*SetColor)(IQueryInterface*, int, unsigned int);
-    for (int target = 0x400; target <= 0x2000; target <<= 1) {
-        CKMethod<SetColor>(material.m_interface, 0x60)(material.m_interface, target, 0x64c8c800u);
-    }
+    CKMethod<SetColor>(material.m_interface, 0x60)(material.m_interface, 0x400, 0x64c8c800u);
+    CKMethod<SetColor>(material.m_interface, 0x60)(material.m_interface, 0x1000, 0x64c8c800u);
+    CKMethod<SetColor>(material.m_interface, 0x60)(material.m_interface, 0x2000, 0x64c8c800u);
+    CKMethod<SetColor>(material.m_interface, 0x60)(material.m_interface, 0x800, 0x64c8c800u);
     typedef int (*SetMaterial)(IQueryInterface*, IQueryInterface*);
     CKMethod<SetMaterial>(appearance.m_interface, 0x58)(appearance.m_interface, material.m_interface);
+    CompositingMode mode = NewCompositingMode();
     typedef int (*SetBlend)(IQueryInterface*, int);
     CKMethod<SetBlend>(mode.m_interface, 0x58)(mode.m_interface, 0x40);
     appearance.setCompositingMode(mode);
-
     IQueryInterface* spriteObject = NULL;
-    runtime->m_functions->CreateObject(0x17, reinterpret_cast<void**>(&spriteObject));
+    CSwerve::GetInstance()->m_swerve->m_functions->CreateObject(0x17, reinterpret_cast<void**>(&spriteObject));
     Node sprite(spriteObject);
-    if (sprite == NULL) {
-        return sprite;
-    }
     typedef int (*InitializeSprite)(IQueryInterface*, bool, IQueryInterface*, IQueryInterface*);
-    if (CKMethod<InitializeSprite>(sprite.m_interface, 0xb8)(sprite.m_interface, true,
-                                                         image.m_interface, appearance.m_interface) != 0) {
-        return Node();
-    }
+    CKMethod<InitializeSprite>(sprite.m_interface, 0xb8)(sprite.m_interface, true, image.m_interface,
+                                                         appearance.m_interface);
     sprite.setRenderingEnable(true);
-    sprite.setPickingEnable(false);
     return sprite;
 }
 

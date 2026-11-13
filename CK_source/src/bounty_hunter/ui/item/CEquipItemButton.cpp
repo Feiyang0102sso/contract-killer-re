@@ -20,13 +20,15 @@ CEquipItemButton::CEquipItemButton()
 CEquipAmmoButton::CEquipAmmoButton(const CDH_Weapon* weapon, const CAmmo* ammo)
     : m_weapon(weapon), m_ammo(ammo)
 {
-    XString image = ammo->m_equipButton;
-    XString::AnsiString imageId(image.c_str());
-    XString label("");
-    XString icon = ammo->m_bulletIcon;
-    XString::AnsiString iconId(icon.c_str());
-    int count = CBH_Player::GetInstance()->GetAvailableAmmo(ammo, true);
-    CreateUI(imageId, label, NULL, iconId, count);
+    {
+        XString image = ammo->m_equipButton;
+        XString::AnsiString imageId(image.c_str());
+        XString label("");
+        XString icon = ammo->m_bulletIcon;
+        XString::AnsiString iconId(icon.c_str());
+        int count = CBH_Player::GetInstance()->GetAvailableAmmo(ammo, true);
+        CreateUI(imageId, label, NULL, iconId, count);
+    }
     UpdateStatus();
 }
 
@@ -57,8 +59,7 @@ Window* CEquipItemButton::CreateUI(const char* image, const XString&, CFont*, co
 void CEquipAmmoButton::UpdateStatus()
 {
     if (m_weapon->GetActiveAmmo() == m_ammo) {
-        XString equipped = ResString("IDS_EQUIPED");
-        SetBottomText(equipped, CFontMgr::GetInstance()->GetFont(14));
+        SetBottomText(ResString("IDS_EQUIPED"), CFontMgr::GetInstance()->GetFont(14));
         SetItemCount(CBH_Player::GetInstance()->GetAvailableAmmo(m_ammo, true));
         SetClickable(false);
         SetAvailable(true);
@@ -71,8 +72,7 @@ void CEquipAmmoButton::UpdateStatus()
         SetBottomText(XString(""), NULL);
         return;
     }
-    XString owned = ResString("IDS_OWNED");
-    SetBottomText(owned, CFontMgr::GetInstance()->GetFont(13));
+    SetBottomText(ResString("IDS_OWNED"), CFontMgr::GetInstance()->GetFont(13));
     SetItemCount(CBH_Player::GetInstance()->GetAvailableAmmo(m_ammo, true));
     SetClickable(true);
     SetAvailable(false);
@@ -90,7 +90,8 @@ void CEquipItemButton::OnPointerReleased(Event&)
     }
 }
 
-CEquipItemButton::CEquipItemButton(const char* image, const XString& text, CFont* font, const char* countIcon, int count)
+__attribute__((noinline)) CEquipItemButton::CEquipItemButton(const char* image, const XString& text, CFont* font,
+                                                            const char* countIcon, int count)
     : m_clickable(true), m_available(true), m_image(NULL), m_bottomText(NULL), m_count(NULL)
 {
     CreateUI(image, text, font, countIcon, count);
@@ -105,11 +106,11 @@ void CEquipItemButton::SetAvailable(bool available)
 {
     m_available = available;
     if (m_image != NULL) {
-        float opacity = 0.5f;
-        if (available) {
-            opacity = 1.0f;
+        if (available == true) {
+            m_image->SetOpacity(1.0f);
+        } else {
+            m_image->SetOpacity(0.5f);
         }
-        m_image->SetOpacity(opacity);
     }
 }
 

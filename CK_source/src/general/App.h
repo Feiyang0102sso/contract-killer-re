@@ -212,9 +212,8 @@ public:
     {
         int scale = 1;
         if (!IsWVGA()) {
-            if (IsHD()) {
-                scale = 2;
-            }
+            // select (not if) so IsHD is tested with cmp #0 like the original
+            scale = IsHD() ? 2 : 1;
         }
         return scale;
     }

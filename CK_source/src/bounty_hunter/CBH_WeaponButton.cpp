@@ -2,17 +2,34 @@
 
 #include "App.h"
 #include "BaseDialog.h"
+#include "CAmmo.h"
 #include "CBH_Player.h"
 #include "CBH_SurfaceManager.h"
 #include "CDH_BasicGameData.h"
 #include "CDH_Weapon.h"
 #include "CDH_WeaponsManager.h"
 #include "CFontMgr.h"
+#include "CTutorialManager.h"
 #include "DGHelper.h"
+#include "SScreenAdaptingConstant.h"
+#include "ServiceWindows.h"
+
+namespace {
+
+const wchar_t* AmmoIconName(const CAmmo* ammo)
+{
+    if (ammo == NULL || ammo->m_bulletIcon.c_str()[0] == L'\0') {
+        return L"IDB_HUD_HANDGUN_BULLET_ICON";
+    }
+    return ammo->m_bulletIcon.c_str();
+}
+
+}
 
 CBH_WeaponButton::CBH_WeaponButton(int type, int slot, bool showAmmo, bool blink, int weaponId)
     : m_blinking(blink), m_showAmmo(showAmmo), m_type(type), m_scale(App::Scale()), m_weaponId(weaponId),
-      m_slot(slot), m_ammoCount(-1), m_name(NULL), m_ammo(NULL), m_lockImage(NULL), m_shownWeapon(NULL)
+      m_slot(slot), m_ammoCount(-1), m_shownAmmo(NULL), m_ammo(NULL), m_lockImage(NULL), m_shownWeapon(NULL),
+      m_name(NULL)
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     const char* background = "IDB_BUTTON_WEAPON";
@@ -38,11 +55,16 @@ CBH_WeaponButton::CBH_WeaponButton(int type, int slot, bool showAmmo, bool blink
     AddToFront(m_lockImage);
 
     if (showAmmo) {
-        m_ammo = new TextWindow(CFontMgr::GetInstance()->GetFont(8));
-        m_ammo->SetAlign(ALIGN_RIGHT | ALIGN_BOTTOM);
-        m_ammo->SetOutsetSpacing(0, 3 * m_scale, 4 * m_scale, 2 * m_scale);
+        CDH_Weapon* weapon = Weapon();
+        if (weapon != NULL) {
+            m_shownAmmo = weapon->GetActiveAmmo();
+        }
+        XString::AnsiString icon(AmmoIconName(m_shownAmmo));
+        m_ammo = new LabelWithIcon(icon, XString(), true, NULL, 0);
+        m_ammo->SetAlign(ALIGN_RIGHT | ALIGN_TOP);
+        m_ammo->SetOutsetSpacing(SScreenAdaptingConstant(3, 6)(), 0, 0, 0);
         m_ammo->ClearFlags(FLAG_FOCUSABLE);
-        AddToFront(m_ammo);
+        m_backgroundImage->AddToFront(m_ammo);
     }
     SetSize(ImageWidth(m_background), ImageHeight(m_background));
     Update();
@@ -70,15 +92,10 @@ CDH_Weapon* CBH_WeaponButton::Weapon()
 
 void CBH_WeaponButton::ReleaseResources()
 {
+    // 原版：锁图按名字归还，背景按表面归还（找不到时 ReleaseSurface 返回 false），两者都不清零
     App* app = static_cast<App*>(WindowApp::m_instance);
-    if (m_background != NULL) {
-        app->m_surfaceManager->ReleaseSurface(m_background);
-        m_background = NULL;
-    }
-    if (m_locked != NULL) {
-        app->m_surfaceManager->ReleaseSurface(m_locked);
-        m_locked = NULL;
-    }
+    app->m_surfaceManager->ReleaseSurface("IDB_ICON_LOCKED");
+    app->m_surfaceManager->ReleaseSurface(m_background);
 }
 
 void CBH_WeaponButton::OnPointerEvent(Event& event)
@@ -138,18 +155,40 @@ void CBH_WeaponButton::Update()
     } else {
         m_lockImage->ClearFlags(FLAG_VISIBLE);
     }
-    if (m_showAmmo && weapon != NULL) {
-        int ammo = CBH_Player::GetInstance()->GetAvailableAmmo(weapon->GetActiveAmmo(), true);
-        if (ammo != m_ammoCount) {
-            m_ammoCount = ammo;
-            XString text(L"\u221e");
-            if (ammo != 0xfffffff) {
-                text = XString(ammo);
+    if (m_ammo != NULL) {
+        const CAmmo* ammo = NULL;
+        if (weapon != NULL) {
+            ammo = weapon->GetActiveAmmo();
+        }
+        if (ammo != NULL) {
+            m_ammo->SetFlags(FLAG_VISIBLE);
+            int count = CBH_Player::GetInstance()->GetAvailableAmmo(ammo, true);
+            if (ammo != m_shownAmmo || count != m_ammoCount) {
+                if (ammo != m_shownAmmo) {
+                    XString::AnsiString icon(AmmoIconName(ammo));
+                    m_ammo->SetImage(icon);
+                }
+                m_shownAmmo = ammo;
+                m_ammoCount = count;
+                XString text(count);
+                if (count == 0xfffffff) {
+                    text = XString(L"\u221e");
+                }
+                m_ammo->SetText(text);
             }
-            m_ammo->SetText(text);
+        } else {
+            m_ammo->ClearFlags(FLAG_VISIBLE);
+            m_ammoCount = -1;
         }
     }
-    SetBlinking(m_blinking);
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    bool blink = m_blinking;
+    if (m_slot == -1 && weapon != NULL && app->GetTutorialManager() != NULL
+        && app->GetTutorialManager()->IsWeaponButtonBlink(weapon->m_id)) {
+        blink = true;
+    }
+    m_backgroundImage->m_blinking = blink;
+    m_weaponImage->m_blinking = blink;
 }
 
 typedef char AssertWeaponButtonSize[sizeof(CBH_WeaponButton) == 0x124 ? 1 : -1];

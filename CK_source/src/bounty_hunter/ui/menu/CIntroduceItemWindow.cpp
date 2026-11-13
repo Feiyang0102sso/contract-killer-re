@@ -4,8 +4,10 @@
 #include "App.h"
 #include "BaseDialog.h"
 #include "CBH_MenuButton.h"
+#include "CDH_WeaponsManager.h"
 #include "CRegularShop.h"
 #include "CShopItem.h"
+#include "CShopItemInfoWindow.h"
 #include "SScreenAdaptingConstant.h"
 
 namespace {
@@ -90,9 +92,14 @@ void CIntroduceItemWindow::HandleButtonPressed()
         m_pauseTime = false;
     }
     if (m_showShop) {
-        CRegularShop* shop = CRegularShop::GetInstance(false);
-        if (shop == NULL || shop->m_parent == NULL) {
-            CRegularShop::ShowItem(CShopWindow::TAB_WEAPONS, m_item->m_id);
+        CRegularShop* shop = CRegularShop::GetInstance(true);
+        if (shop->m_parent == NULL) {
+            App* app = static_cast<App*>(WindowApp::m_instance);
+            app->m_mainLayer->AddModal(shop);
+            shop->SetTab(CShopWindow::TAB_WEAPONS);
+            CShopItemInfoWindow* details = new CShopItemInfoWindow(app->InitWeaponManager(), m_item->getType(),
+                m_item->m_id, m_item->GetStatsString(), false, CShopItemInfoWindow::SOURCE_SHOP);
+            shop->AddModal(details);
             Close();
         }
     }
@@ -105,9 +112,7 @@ void CIntroduceItemWindow::SetOnCloseCommand(unsigned int command)
 
 void CIntroduceItemWindow::OnClosed()
 {
-    if (m_pauseTime) {
-        static_cast<App*>(WindowApp::m_instance)->m_timeScale = 1.0f;
-    }
+    // the original does not restore the time scale here
     if (m_closeCommand != 0) {
         WindowApp::HandleTunnelCommand(m_closeCommand, 0, 0, 0);
     }

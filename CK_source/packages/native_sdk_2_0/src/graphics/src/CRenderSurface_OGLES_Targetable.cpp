@@ -51,9 +51,10 @@ static inline int CRenderSurface_OGLES_Targetable_TextureSize(short size, int pr
     return textureSize;
 }
 
+typedef char TargetableSizeCheck[sizeof(CRenderSurface_OGLES_Targetable) == 0x38 ? 1 : -1];
+
 CRenderSurface_OGLES_Targetable::CRenderSurface_OGLES_Targetable()
 {
-    m_targetType = 0;
     m_lockCount = 0;
 }
 
@@ -68,13 +69,6 @@ void CRenderSurface_OGLES_Targetable::Destroy()
     m_lockCount = 0;
 }
 
-void CRenderSurface_OGLES_Targetable::RemoveSelfAsTarget()
-{
-    if (this == ICGraphics::GetInstance()->GetTargetSurface()) {
-        glBindFramebufferOES(GL_FRAMEBUFFER_OES, 0);
-    }
-}
-
 void CRenderSurface_OGLES_Targetable::Lock(unsigned char** data, int& pitch, LockType lockType,
                                            const CRectangle* area)
 {
@@ -83,27 +77,20 @@ void CRenderSurface_OGLES_Targetable::Lock(unsigned char** data, int& pitch, Loc
     // b117-va: the original lays out the first-lock path first and the re-lock path last
     if ((flags & Flag_LockMask) == 0) {
         CRenderSurfaceBuffer* buffer = source->m_buffers[Buffer_Color];
-        if (!m_keepBufferData) {
-            // the pixels were dropped after the upload: allocate them again
-            buffer->Initialize(buffer->m_format, buffer->m_imageWidth, buffer->m_imageHeight, 1, NULL, NULL,
-                               CRenderSurfaceBuffer::PitchCondition_Positive, buffer->m_pitch, NULL);
-        }
-        unsigned char convert = buffer->m_format != RSBFormat_A8B8G8R8;
-        void* pixels;
-        if (convert) {
-            pixels = malloc(buffer->m_imageWidth * buffer->m_imageHeight * 4);
-        } else {
-            pixels = buffer->GetLevel(0);
-        }
-
-        if ((buffer->m_format & 0x4000) == 0) {
-            if (this != ICGraphics::GetInstance()->GetTargetSurface()) {
-                Bind();
+        if (this == ICGraphics::GetInstance()->GetTargetSurface() &&
+            buffer != NULL && (buffer->m_flags & CRenderSurfaceBuffer::Flag_OwnsData)) {
+            if (!m_keepBufferData) {
+                // the pixels were dropped after the upload: allocate them again
+                buffer->Initialize(buffer->m_format, buffer->m_imageWidth, buffer->m_imageHeight, 1, NULL, NULL,
+                                   CRenderSurfaceBuffer::PitchCondition_Positive, buffer->m_pitch, NULL);
             }
-            glReadPixels(0, 0, buffer->m_imageWidth, buffer->m_imageHeight, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-            if (!convert) {
-                buffer->MakePitchNegative();
-            } else {
+
+            unsigned int width = buffer->m_imageWidth;
+            unsigned int height = buffer->m_imageHeight;
+            void* pixels = malloc(width * height * 4);
+            void* destination = buffer->GetLevel(0);
+            if (pixels != NULL && destination != NULL) {
+                glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
                 // OpenGL reads A8B8G8R8: convert into the buffer
                 CBlitUtil::BlitOpDesc blitOp;
                 blitOp.m_source = RSBFormat_A8B8G8R8;
@@ -118,43 +105,39 @@ void CRenderSurface_OGLES_Targetable::Lock(unsigned char** data, int& pitch, Loc
                 copy.m_scaleY = 0x10000;
                 copy.m_flipX = 0;
                 copy.m_flipY = 0;
-                copy.m_width = buffer->m_imageWidth;
-                copy.m_height = buffer->m_imageHeight;
+                copy.m_width = width;
+                copy.m_height = height;
                 copy.m_reserved08 = 0;
-                copy.m_sourcePitch = (short)(buffer->m_imageWidth << 2);
+                copy.m_sourcePitch = static_cast<short>(width * 4);
                 copy.m_source = pixels;
-                copy.m_destination = buffer->GetLevel(0);
+                copy.m_destination = destination;
                 copy.m_destinationPitch = buffer->m_pitch;
                 ((void (*)(const CBlit::BufferOpDesc&))blitOp.m_function)(copy);
                 buffer->MakePitchNegative();
                 free(pixels);
-            }
-        } else {
-            buffer->MakePitchNegative();
-            if (convert) {
+
+                // lock the source buffer through this surface
+                CRenderSurfaceBuffer* ownBuffer = m_buffers[Buffer_Color];
+                m_buffers[Buffer_Color] = buffer;
+                unsigned char* locked = NULL;
+                CRenderSurface_SW::Lock(&locked, pitch, lockType, area);
+                m_buffers[Buffer_Color] = ownBuffer;
+                if (locked != NULL) {
+                    if (data != NULL) {
+                        *data = locked + (buffer->m_height - height) * pitch;
+                    }
+                    m_lockCount++;
+                    m_flags |= Flag_LockMask;
+                    return;
+                }
+            } else {
                 free(pixels);
             }
         }
-
-        // lock the source buffer through this surface
-        CRenderSurfaceBuffer* ownBuffer = m_buffers[Buffer_Color];
-        m_buffers[Buffer_Color] = buffer;
-        unsigned char* locked;
-        CRenderSurface_SW::Lock(&locked, pitch, lockType, area);
-        m_buffers[Buffer_Color] = ownBuffer;
-        if (locked == NULL) {
-            if (data != NULL) {
-                *data = NULL;
-            }
-            pitch = 0;
-        } else {
-            if (data != NULL) {
-                *data = locked;
-                *data = locked + (buffer->m_height - buffer->m_imageHeight) * pitch;
-            }
-            m_lockCount++;
-            m_flags |= Flag_LockMask;
+        if (data != NULL) {
+            *data = NULL;
         }
+        pitch = 0;
     } else {
         // locked again: the pixels were read back by the first Lock
         if (!source->FetchFromBuffer(Buffer_Color, data, pitch, area)) {
@@ -172,6 +155,10 @@ void CRenderSurface_OGLES_Targetable::Unlock()
 {
     if (m_flags & Flag_LockMask) {
         CRenderSurfaceBuffer* buffer = GetSourceTexture()->m_buffers[Buffer_Color];
+        if (this != ICGraphics::GetInstance()->GetTargetSurface() ||
+            (buffer->m_flags & CRenderSurfaceBuffer::Flag_OwnsData) == 0) {
+            return;
+        }
         m_lockCount--;
         if (m_lockCount != 0) {
             return;
@@ -198,6 +185,8 @@ void CRenderSurface_OGLES_Targetable::UpdateTargetWithTexture()
     unsigned int height;
     GetWidthAndHeight(width, height);
     glDisable(GL_SCISSOR_TEST);
+    CGraphics_OGLES* graphics = CGraphics_OGLES::GetHardware();
+    graphics->SetWidthAndHeightMappedViewportAndOrthoProjection(*this);
     glActiveTexture(GL_TEXTURE0);
     glTexEnvx(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     glMatrixMode(GL_TEXTURE);
@@ -210,18 +199,24 @@ void CRenderSurface_OGLES_Targetable::UpdateTargetWithTexture()
     glLoadIdentity();
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);
-    CGraphics_OGLES* graphics = CGraphics_OGLES::GetHardware();
     const ICGraphics::Description& description = graphics->m_description;
     glDisable(GL_DITHER);
     glColorMask(1, 1, 1, 1);
     glDisable(GL_POLYGON_OFFSET_FILL);
     glDepthMask(0);
     glDisable(GL_NORMALIZE);
-    glDisable(GL_MULTISAMPLE);
     glDisable(GL_FOG);
     glDisable(GL_COLOR_MATERIAL);
     glDisable(GL_LIGHTING);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+    Description surface;
+    if (GetDescription(surface)) {
+        if (surface.m_multisample == 0) {
+            glDisable(GL_MULTISAMPLE);
+        } else {
+            glEnable(GL_MULTISAMPLE);
+        }
+    }
     for (unsigned int unit = 1; unit < description.m_maxTextureUnits; unit++) {
         glActiveTexture(GL_TEXTURE0 + unit);
         glDisable(GL_TEXTURE_2D);
@@ -229,6 +224,8 @@ void CRenderSurface_OGLES_Targetable::UpdateTargetWithTexture()
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     }
     glDisableClientState(GL_NORMAL_ARRAY);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glColor4x(Color_ARGB_fixed::White.r, Color_ARGB_fixed::White.g,
               Color_ARGB_fixed::White.b, Color_ARGB_fixed::White.a);
     glActiveTexture(GL_TEXTURE0);
@@ -253,8 +250,6 @@ void CRenderSurface_OGLES_Targetable::UpdateTargetWithTexture()
     short vertices[8];
     short x = 0;
     short y = 0;
-    int textureWidth;
-    int textureHeight;
     for (int index = 0; index < source->m_textureCount; index++) {
         GLuint texture = source->GetTextureName(index);
         short tileRight = x + (short)tileWidth;
@@ -262,7 +257,7 @@ void CRenderSurface_OGLES_Targetable::UpdateTargetWithTexture()
         if (tileRight > (short)width) {
             // the last column: scale the coordinates to the part of the texture that is used
             quadWidth = (short)width - x;
-            textureWidth = CRenderSurface_OGLES_Targetable_TextureSize(quadWidth, textureWidth);
+            int textureWidth = CRenderSurface_OGLES_Targetable_TextureSize(quadWidth, 1);
             texCoords[4] = (short)((unsigned int)CMathFixed::Div(quadWidth << 16, textureWidth << 16) >> 4);
         } else {
             texCoords[4] = Targetable_TexCoordOne;
@@ -273,7 +268,7 @@ void CRenderSurface_OGLES_Targetable::UpdateTargetWithTexture()
         short quadHeight;
         if (tileTop > (short)height) {
             quadHeight = (short)height - y;
-            textureHeight = CRenderSurface_OGLES_Targetable_TextureSize(quadHeight, textureHeight);
+            int textureHeight = CRenderSurface_OGLES_Targetable_TextureSize(quadHeight, 1);
             texCoords[1] = (short)((unsigned int)CMathFixed::Div(quadHeight << 16, textureHeight << 16) >> 4);
         } else {
             texCoords[1] = Targetable_TexCoordOne;

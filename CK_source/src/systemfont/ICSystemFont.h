@@ -9,6 +9,14 @@ class ICRenderSurface;
 
 class ICSystemFont : public CFont {
 public:
+    enum { ClassId = 0x4231dfda };
+
+    /** The original sets the class id here, before the derived vtable store. */
+    ICSystemFont()
+    {
+        m_classId = ClassId;
+    }
+
     static ICSystemFont* CreateInstance();
 
     /** Font of `size` pixels; `name` NULL selects the system font. */

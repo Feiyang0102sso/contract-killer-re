@@ -18,6 +18,7 @@
 /* general handling of the header and the vorbis_info structure (and
    substructures) */
 
+#undef memcmp
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>

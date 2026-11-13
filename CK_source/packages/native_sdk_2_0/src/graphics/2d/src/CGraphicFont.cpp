@@ -7,9 +7,12 @@
 #include <string.h>
 
 CGraphicFont::CGraphicFont()
-    : m_image(NULL), m_metrics(NULL), m_glyphs(NULL), m_controls(NULL)
 {
     m_classId = ClassId;
+    m_image = NULL;
+    m_metrics = NULL;
+    m_glyphs = NULL;
+    m_controls = NULL;
 }
 
 CGraphicFont::~CGraphicFont()
@@ -210,11 +213,7 @@ void CGraphicFont::PaintText(const wchar_t* text, int length, int x, int y, int 
             }
         }
 
-        CRectangle source;
-        source.m_x = glyph->m_x;
-        source.m_y = glyph->m_y;
-        source.m_width = glyphWidth;
-        source.m_height = glyphHeight;
+        CRectangle source(glyph->m_x, glyph->m_y, glyphWidth, glyphHeight);
         graphics->PushTransform();
         graphics->Translate((x + cursor + glyph->m_offsetX) * 0x10000, (y + glyph->m_offsetY) * 0x10000);
         graphics->Draw(*m_image, ICGraphics2d::Flip_None, &source);
@@ -223,18 +222,26 @@ void CGraphicFont::PaintText(const wchar_t* text, int length, int x, int y, int 
     }
 }
 
-const CGraphicFont::ControlChar* CGraphicFont::GetControlChar(wchar_t character) const
+__attribute__((noinline)) const CGraphicFont::ControlChar* CGraphicFont::GetControlChar(wchar_t character) const
 {
+    if (m_metrics->m_controlCount <= 0) {
+        return NULL;
+    }
+    const ControlChar* control = m_controls;
     for (int index = 0; index < m_metrics->m_controlCount; ++index) {
-        if (m_controls[index].m_character == character) {
-            return &m_controls[index];
+        if (control->m_character == character) {
+            return control;
         }
+        ++control;
     }
     return NULL;
 }
 
-const CGraphicFont::Glyph* CGraphicFont::GetChar(wchar_t character) const
+__attribute__((noinline)) const CGraphicFont::Glyph* CGraphicFont::GetChar(wchar_t character) const
 {
+    if (m_metrics->m_glyphCount <= 0) {
+        return NULL;
+    }
     int first = 0;
     int last = m_metrics->m_glyphCount - 1;
     while (first <= last) {

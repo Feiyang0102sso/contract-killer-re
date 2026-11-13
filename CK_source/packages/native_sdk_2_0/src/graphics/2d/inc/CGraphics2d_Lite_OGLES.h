@@ -11,6 +11,8 @@
 #include "TCVector.h"
 #include "CGraphicsAbstract.h"
 #include "CRenderSurfaceBuffer.h"
+#include "CVertexBuffer.h"
+#include "CVertexAttribute.h"
 
 class CGraphics2dAbstract : public ICGraphics2d {
 public:
@@ -18,7 +20,7 @@ public:
         : m_initialized(0)
         , m_softwareReady(0)
         , m_hardwareReady(0)
-        , m_field7(0)
+        , m_rendering(0)
     {
     }
     virtual ~CGraphics2dAbstract() {}
@@ -49,9 +51,10 @@ public:
     /** Saved render states: one stack per ICGraphics2d::State (State_Blend has two). */
     class AbstractState {
     public:
-        /** 20 byte entry of the State_2 stack (content not recovered). */
+        /** 20 byte entry of the State_2 stack, with packed and fixed-point channels. */
         struct Entry20 {
-            int m_values[5];
+            unsigned int m_argb;
+            Color_ARGB_fixed m_color;
         };
 
         void Initialize(unsigned int depth);
@@ -77,6 +80,7 @@ public:
         virtual ICGraphics::Abstraction GetAbstraction();
         virtual void Destroy();
         virtual void ExecuteText(Component* component);
+        virtual void ExecuteSpecial(Component* component) = 0;
 
         ICGraphics::Abstraction m_abstraction;  // 0x48
         ICGraphics2d* m_graphics;               // 0x4c set by Initialize
@@ -88,7 +92,7 @@ public:
     unsigned char m_initialized;            // 0x04
     unsigned char m_softwareReady;          // 0x05
     unsigned char m_hardwareReady;          // 0x06
-    unsigned char m_field7;                 // 0x07
+    unsigned char m_rendering;              // 0x07
     ICGraphics::Abstraction m_abstraction;  // 0x08 not set by the constructor
 };
 
@@ -98,8 +102,6 @@ public:
     virtual ~CGraphics2d_Lite_OGLES();
     virtual unsigned char Initialize();
     virtual void Destroy();
-    virtual void SetActiveAbstractionLayer(ICGraphics::Abstraction abstraction);
-    virtual ICGraphics::Abstraction GetActiveAbstractionLayer();
     virtual void RenderBegin(unsigned char writeAlpha);
     virtual void RenderEnd();
     virtual void DisplayListBegin(IDisplayProgram& program, IDisplayProgram::Mode mode);
@@ -134,26 +136,13 @@ public:
     virtual void Draw(Primitive primitive, int first, int count);
     virtual void HandleConfigStateBasedOnSrcFormat(RSBFormat format);
 
-    struct Vertex {
-        GLfloat x, y;
-        GLfloat u, v;
-    };
-
-    struct DrawCommand {
-        int count;
-        GLenum primitive;
-        GLuint texture;
-        Color_ARGB_fixed color;
-        CRectangle clip;
-        BlendArg blendArg;
-        bool blend;
-        bool alphaTest;
-    };
-
     class DisplayProgram : public CGraphics2dAbstract::DisplayProgram {
     public:
         /** Component level (index into the per mode level tables). */
         enum LevelId {
+            LevelId_Blend = 0,
+            LevelId_Layer = 1,
+            LevelId_Texture = 2,
             LevelId_Count = 8
         };
 
@@ -172,61 +161,79 @@ public:
         Mode m_recordingMode;  // 0x50, retained while the program is replayed
     };
 
-private:
     typedef CGraphicsAbstract::DisplayProgram::Component Component;
     typedef CGraphicsAbstract::DisplayProgram::PriorityStacks PriorityStacks;
 
-    bool IsRecording() const;
-    Component& ComponentAtLevel(int level);
-    void SetTextComponent(int level, unsigned int command, const int* arguments, int count);
     void ConsiderAddingToDisplayList(unsigned int command, int count, ...);
-    void ConsiderDisplayProgramAutoAdvanceLayerAndUpdateInfo();
-    void InitializeDisplayProgramStates();
+    /** Advance the layer when the state stack tops changed since the last draw (modes 4 and 5). */
+    inline void ConsiderDisplayProgramAutoAdvanceLayerAndUpdateInfo()
+    {
+        if (m_previousComponents[0].m_flag4 == 0) {
+            for (int level = 0; level < m_priorityStacks.m_stackCount - 1; level++) {
+                m_previousComponents[level] = m_priorityStacks.m_stacks[level].Top();
+            }
+        } else if (m_recording->m_currPos != IDisplayProgram::Mode_5 ||
+                   m_priorityStacks.m_stacks[0].Top().m_data[0] != (int)0xc6fb25f8) {
+            int level = 0;
+            for (;;) {
+                if (level >= m_priorityStacks.m_stackCount - 1) {
+                    return;
+                }
+                if (!(m_previousComponents[level] == m_priorityStacks.m_stacks[level].Top())) {
+                    break;
+                }
+                level++;
+            }
+            IDisplayProgram* program = m_recording;
+            program->SetLayer(program->GetLayer() + 1);
+            for (level = 0; level < m_priorityStacks.m_stackCount - 1; level++) {
+                m_previousComponents[level] = m_priorityStacks.m_stacks[level].Top();
+            }
+        }
+    }
 
-    Vertex TransformVertex(float x, float y, float u, float v) const;
-    void SetCommandState(DrawCommand& command, GLenum primitive, GLuint texture) const;
-    void ApplyClip(const CRectangle& clip) const;
     void UpdateActiveClipRect_HW();
-    void ApplyCommandState(const DrawCommand& command) const;
-    void Execute(const DrawCommand& command, const Vertex* vertices) const;
-    void Submit(DrawCommand& command);
-    Vertex ReadVertex(int index) const;
     void DrawHardwareLines(int first, int count);
     void DrawHardwarePolygon(int first, int count);
     void DrawHardwareRectangles(int first, int count);
-    void DrawUntexturedVertices(GLenum primitive, int first, int count);
 
-    DisplayProgram* m_recording;
-    PriorityStacks m_priorityStacks;
-    Component m_previousComponents[DisplayProgram::LevelId_Count - 1];
-    unsigned int m_primitiveIndex;
-    bool m_depthEnabled;
-    bool m_depthWriting;
-    bool m_textureEnabled;
-    GLuint m_boundTexture;
-    GLenum m_textureEnvironment;
-    Origin m_origin;
-    Matrix m_transform;
-    TCVector<Vertex> m_vertices;
-    TCStack<Matrix> m_transformStack;
-    TCVector<int> m_stateStack[5];
-    TCVector<BlendArg> m_blendStack;
-    TCVector<Color_ARGB_fixed> m_colorStack;
-    TCVector<unsigned int> m_colorWordStack;
-    bool m_states[5];
-    BlendArg m_blendArg;
-    Color_ARGB_fixed m_color;
-    unsigned int m_colorWord;
-    CMatrix2d m_returnMatrix;
-    CVector2d m_returnTranslation;
-    CRectangle m_clip;
-    CRectangle m_target;
-    CRectangle m_activeClip;
-    const unsigned char* m_coords;
-    unsigned int m_coordType;
-    int m_coordStride;
-    int m_coordCount;
-    bool m_rendering;
+    // Layout from the constructor (0x728f0) and Initialize (0x72a64); size 0x198 (HAL InitializeHardware).
+    unsigned char m_textureEnabled;             // 0x0c GL_TEXTURE_2D enabled by Draw
+    GLenum m_textureEnvironment;                // 0x10 GL_TEXTURE_ENV_MODE last set
+    Origin m_origin;                            // 0x14
+    int m_field18;                              // 0x18 cleared by Initialize / RenderBegin
+    AbstractState m_state;                      // 0x1c
+    CRectangle m_clip;                          // 0x64
+    CRectangle m_activeClip;                    // 0x6c target clipped by m_clip
+    CIndexVertexBuffer m_vertexBuffer;          // 0x74 shorts for the primitive draws
+    CIndexVertexBuffer m_quadBuffer;            // 0xb0 textured quads of Draw(surface)
+    int m_coordCount;                           // 0xec SetVertexPositionCoords
+    unsigned int m_coordType;                   // 0xf0
+    int m_coordStride;                          // 0xf4
+    const void* m_coords;                       // 0xf8
+    TCStack<unsigned int> m_transformFlags;     // 0xfc TransformFlag bits per transform level
+    unsigned char m_trackTransform;             // 0x108 keep m_transformStack (for recording)
+    TCStack<Matrix> m_transformStack;           // 0x10c
+    CMatrix2d m_returnMatrix;                   // 0x118 GetTransform (16.16 words)
+    CVector2d m_returnTranslation;              // 0x130
+    unsigned int m_primitiveIndex;              // 0x138 depth of recorded primitives
+    GLuint m_boundTexture;                      // 0x13c last texture bound by Draw
+    DisplayProgram* m_recording;                // 0x140
+    const CVertexAttribute::Decl* m_texturedDecl;   // 0x144 VtxDecl_t of the recording mode
+    int m_texturedStride;                       // 0x148 bytes per textured vertex
+    int m_texturedShorts;                       // 0x14c shorts per textured vertex
+    const CVertexAttribute::Decl* m_colorDecl;  // 0x150 VtxDecl_cf of the recording mode
+    int m_colorStride;                          // 0x154
+    int m_colorShorts;                          // 0x158
+    unsigned char m_depthEnabled;               // 0x15c Run of a depth mode
+    unsigned char m_depthWriting;               // 0x15d
+    unsigned char m_textureBound;               // 0x15e ExecuteSpecial texture state
+    GLuint m_lastTexture;                       // 0x160 ExecuteSpecial
+    PriorityStacks m_priorityStacks;            // 0x164
+    int* m_savedPoolPos;                        // 0x188 pool position of the recorded chains
+    int m_lastMode;                             // 0x18c mode of the last DisplayListBegin
+    Component* m_previousComponents;            // 0x190 state tops at the last draw (modes 4/5)
+    int m_field194;                             // 0x194 never touched by this class (new allocates 0x198)
 };
 
 #endif

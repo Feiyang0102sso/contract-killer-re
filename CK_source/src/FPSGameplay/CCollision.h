@@ -5,9 +5,7 @@
 #define CCOLLISION_H
 #include "MathLib.h"
 #include "tws.h"
-#include "CVector.h"
 #include "TCVector.h"
-class CUnitBody;
 class Node;
 class CSwerveAssertingErrorHandler;
 
@@ -46,15 +44,6 @@ public:
         int* m_triangleIndices;       // 0x24
         OcTreeSector* m_children[8];  // 0x28
     };
-    class CKinematicBody {
-    public:
-        CKinematicBody() : m_body(NULL) {} // original Body103526 first clears the virtual-base backptr; 1037d6 only then writes the complete this
-        // original Body D1/D0 and the virtual-base thunk make no outgoing base-class call; only a non-owning backptr, destructor inline with no side effects.
-        virtual ~CKinematicBody() {}
-        // b067/b069 original derived symbols confirm the third slot is named Intersect; the earlier Pick was a temporary slot name, no virtual slot added.
-        virtual bool Intersect(const Line&, vec3&, vec3&) = 0;
-        CUnitBody* m_body;            // 0x04 actual body back pointer
-    };
     CCollision(Node& node, int leafThreshold);
     virtual ~CCollision();
     void CollectMeshInfo(Node& node);
@@ -63,17 +52,12 @@ public:
     bool IntersectAny(const Line& line, vec3& point, vec3& normal, Triangle& triangle);
     bool IntersectAnyOcTree(OcTreeSector* sector, const Line& line, vec3& point, vec3& normal,
                             Triangle& triangle);
-    bool IntersectNearest(const Line& line, vec3& point, vec3& normal, Triangle& triangle, bool kinematic);
-    void IntersectNearestOcTree(OcTreeSector* sector, const Line& line, vec3& point, vec3& normal,
-                                int& hitCount, Triangle& triangle);
     vec3 GetPenetration(Ellipsoid& ellipsoid);
     void CalculatePenetrationCache(const Mat4x4& transform, const Mat4x4& inverse);
     void CalculatePenetrationOcTree(OcTreeSector* sector, const AABB& bounds,
                                    const Mat4x4& transform, const Mat4x4& inverse);
     void CalculatePenetrationTriangle(const Mat4x4& transform, const Mat4x4& inverse, int index);
     void MoveTo(Ellipsoid& ellipsoid, const vec3& target, bool adjustHeight, int unused);
-    void AddKinematicBody(CKinematicBody* body);
-    void RemoveKinematicBody(CKinematicBody* body);
     static bool Intersect(const Line& line, const Sphere& sphere, vec3& point);
     static bool Intersect(const AABB& box, const vec3& first, const vec3& second, const vec3& third);
     static bool Intersect(const Line& line, const AABB& box, vec3& point);
@@ -105,9 +89,6 @@ public:
     Ellipsoid m_cachedEllipsoid;     // 0x80
     TCVector<unsigned int> m_cachedTriangles; // 0xa4 (fps: TCVector in the original)
     bool m_usingCache;               // 0xbc
-    CVectorLegacy<CKinematicBody*> m_kinematicBodies; // 0xc0
-    Triangle m_kinematicTriangle;    // 0xd8, initialized to all -1
-    CKinematicBody* m_lastKinematic; // 0xe8
 };
 #include "CCollision.inl"
 #endif

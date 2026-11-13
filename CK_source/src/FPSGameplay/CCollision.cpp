@@ -15,6 +15,8 @@ typedef IndexBuffer CollisionIndexBuffer;
 typedef Transform CollisionTransform;
 typedef Appearance CollisionAppearance;
 
+typedef char CollisionSizeCheck[sizeof(CCollision) == 0xc0 ? 1 : -1];
+
 CCollision::OcTreeSector::OcTreeSector(OcTreeSector* parent, const AABB& bounds,
                                       CCollision* owner, int leafThreshold)
     : m_parent(parent), m_bounds(bounds)
@@ -97,11 +99,6 @@ CCollision::CCollision(CollisionNode& node, int leafThreshold)
     for (unsigned int index = 0; index < (unsigned int)m_vertexCount; index++) {
         bounds.Add(m_vertices[index]);
     }
-    m_kinematicTriangle.m_vertices[0] = -1;
-    m_kinematicTriangle.m_vertices[1] = -1;
-    m_kinematicTriangle.m_vertices[2] = -1;
-    m_kinematicTriangle.m_meshIndex = -1;
-    m_lastKinematic = NULL;
     m_root = new OcTreeSector(NULL, bounds, this, leafThreshold);
 }
 
@@ -211,21 +208,6 @@ void CCollision::BuildMesh(CollisionNode& node, unsigned int& vertexOffset,
         for (int index = 0; index < count; index++) {
             CollisionNode child = group.getChild(index);
             BuildMesh(child, vertexOffset, triangleOffset, meshOffset);
-        }
-    }
-}
-
-void CCollision::AddKinematicBody(CKinematicBody* body)
-{
-    m_kinematicBodies.Add(body);
-}
-
-void CCollision::RemoveKinematicBody(CKinematicBody* body)
-{
-    for (int index = 0; index < m_kinematicBodies.Size(); index++) {
-        if (m_kinematicBodies[index] == body) {
-            m_kinematicBodies.RemoveRange(index, index + 1);
-            return;
         }
     }
 }
@@ -361,101 +343,6 @@ bool CCollision::Intersect(const Line& line, const AABB& box, vec3& point)
         }
     }
     return false;
-}
-
-bool CCollision::IntersectNearest(const Line& line, vec3& point, vec3& normal,
-                                  Triangle& triangle, bool kinematic)
-{
-    if (m_triangleCount == 0) {
-        return false;
-    }
-    m_lastKinematic = NULL;
-    int hitCount = 0;
-    IntersectNearestOcTree(m_root, line, point, normal, hitCount, triangle);
-    int bodyCount = m_kinematicBodies.Size();
-    if (bodyCount >= 1 && kinematic == true) {
-        vec3 difference = point - line.m_from;
-        float lengthSquared = difference.LengthSqr();
-        float staticDistance = MathLib::InvSqrt(lengthSquared) * lengthSquared;
-        for (int index = 0; index < bodyCount; index++) {
-            vec3 hitPoint;
-            vec3 hitNormal;
-            if (m_kinematicBodies[index]->Intersect(line, hitPoint, hitNormal) == true) {
-                difference = hitPoint - line.m_from;
-                lengthSquared = difference.LengthSqr();
-                float distance = MathLib::InvSqrt(lengthSquared) * lengthSquared;
-                if (distance < staticDistance) {
-                    point = hitPoint;
-                    normal = hitNormal;
-                    triangle = m_kinematicTriangle;
-                    hitCount++;
-                    m_lastKinematic = m_kinematicBodies[index];
-                    // Original does not lower staticDistance after accepting a kinematic hit.
-                }
-            }
-        }
-    }
-    return hitCount > 0;
-}
-
-void CCollision::IntersectNearestOcTree(OcTreeSector* sector, const Line& line, vec3& point,
-                                       vec3& normal, int& hitCount, Triangle& triangle)
-{
-    vec3 boxHit;
-    if (Intersect(line, sector->m_bounds, boxHit) != true) {
-        return;
-    }
-    if (sector->m_triangleCount != 0) {
-        vec3 direction = line.m_to - line.m_from;
-        for (int index = 0; index < sector->m_triangleCount; index++) {
-            int triangleIndex = sector->m_triangleIndices[index];
-            const vec3& triangleNormal = m_normals[triangleIndex];
-            float denominator = triangleNormal.Dot(direction);
-            if (denominator > 0.0f || MathLib::Fabs(denominator) < 0.00000001f) {
-                continue;
-            }
-            const Triangle& candidate = m_triangles[triangleIndex];
-            const vec3& first = m_vertices[candidate.m_vertices[0]];
-            float fraction = -triangleNormal.Dot(line.m_from - first) / denominator;
-            if (fraction < 0.0f) {
-                continue;
-            }
-            vec3 hit = line.m_from + direction * fraction;
-            vec3 relative = hit - first;
-            const vec3& firstEdge = m_edgeVectors1c[triangleIndex];
-            const vec3& secondEdge = m_edgeVectors20[triangleIndex];
-            const vec4& products = m_planes[triangleIndex];
-            float firstDot = relative.Dot(firstEdge);
-            float secondDot = relative.Dot(secondEdge);
-            float firstWeight = (products.m_y * secondDot - products.m_z * firstDot) / products.m_w;
-            if ((double)firstWeight < 0.0 || firstWeight > 1.0f) {
-                continue;
-            }
-            float secondWeight = (products.m_y * firstDot - products.m_x * secondDot) / products.m_w;
-            if ((double)secondWeight < 0.0 || firstWeight + secondWeight > 1.0f) {
-                continue;
-            }
-            if (hitCount != 0) {
-                vec3 oldDifference = point - line.m_from;
-                float oldSquared = oldDifference.LengthSqr();
-                float oldDistance = MathLib::InvSqrt(oldSquared) * oldSquared;
-                vec3 newDifference = hit - line.m_from;
-                float newSquared = newDifference.LengthSqr();
-                float newDistance = MathLib::InvSqrt(newSquared) * newSquared;
-                if (oldDistance <= newDistance) {
-                    continue;
-                }
-            }
-            hitCount++;
-            point = hit;
-            normal = triangleNormal;
-            // The original leaf does not write `triangle`, and does not test fraction <= 1.
-        }
-    } else if (sector->m_children[0] != NULL) {
-        for (int index = 0; index < 8; index++) {
-            IntersectNearestOcTree(sector->m_children[index], line, point, normal, hitCount, triangle);
-        }
-    }
 }
 
 vec3 CCollision::GetPenetration(Ellipsoid& ellipsoid)

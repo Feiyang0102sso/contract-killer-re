@@ -4,6 +4,7 @@
 #include "CGraphicFont.h"
 #include "ARM_math.h"
 #include "CRenderText2d.h"
+#include "CResource.h"
 
 CGraphics2dAbstract::DisplayProgram::DisplayProgram(ICGraphics::Abstraction abstraction)
 {
@@ -214,8 +215,11 @@ void CGraphics2dAbstract::Draw(ICRenderText2d& text)
 {
     const CRenderText2d::TextModel& model = static_cast<CRenderText2d&>(text).m_model;
     if (!(model.m_flags & CRenderText2d::Flag_BitmapFont)) {
-        if ((model.m_flags & CRenderText2d::Flag_SystemFont) && model.m_surface != NULL) {
-            Draw(*model.m_surface, Flip_None, NULL);
+        if ((model.m_flags & CRenderText2d::Flag_SystemFont) && model.m_surfaceResource != NULL) {
+            ICRenderSurface* surface = static_cast<ICRenderSurface*>(model.m_surfaceResource->GetData());
+            if (surface != NULL) {
+                ICGraphics2d::GetInstance()->Draw(*surface, Flip_None, NULL);
+            }
         }
         return;
     }

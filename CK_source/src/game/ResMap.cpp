@@ -105,14 +105,9 @@ XString ResMap::getFilename(const char* name) const
 
 const char* ResMap::getResourceID(const XString& fileName) const
 {
-    if (fileName.m_data == NULL) {
-        return NULL;
-    }
-    if (fileName == XString("")) {
-        return NULL;
-    }
+    // the original neither checks the name nor the lookup result
     CStrChar* id = m_resourceIds.Get(fileName);
-    if (id == NULL || id->m_length == 0) {
+    if (id->m_length == 0) {
         return NULL;
     }
     return id->m_string;

@@ -2603,7 +2603,7 @@ void Window::RunPaint3D(ICGraphics2d& graphics)
     ICRenderSurface* target = ICGraphics::GetInstance()->GetTargetSurface();
     CRectangle viewport = graphics.GetClip();
     // CK passes (target, &viewport, 1, 0); the flags argument of this tree's BindTarget is ggn's.
-    renderer->BindTarget(target, &viewport, 0x40);
+    renderer->BindTarget(target, &viewport, 1, 0);
     const Window::Point& translation = app->Translation();
     // The Graphics3D wrapper of swerve_tw is a handle on the renderer (no reference counting).  // changed by fx2
     Graphics3D graphics3D = Graphics3D::getInstance();  // changed by fx2

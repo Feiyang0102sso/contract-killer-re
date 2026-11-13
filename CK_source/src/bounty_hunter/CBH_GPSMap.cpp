@@ -1,5 +1,6 @@
 #include "CBH_GPSMap.h"
 #include "CBH_Math.h"
+#include <limits.h>
 
 #include "App.h"
 #include "CAchievementManager.h"
@@ -13,13 +14,13 @@
 #include "CBH_SurfaceManager.h"
 #include "CChallenge.h"
 #include "CChallengeManager.h"
-#include "CChallengesWindow.h"
 #include "CDailyDealManager.h"
 #include "CDailyDealWindow.h"
 #include "CDH_SoundManager.h"
 #include "CDH_Weapon.h"
 #include "CDH_WeaponsManager.h"
 #include "CDialogWindow.h"
+#include "CDrawUtil.h"
 #include "CFactionType.h"
 #include "CFactionTypeManager.h"
 #include "CFiveDaysBonus.h"
@@ -107,7 +108,13 @@ namespace {
 SScreenAdaptingConstant ZeroConstant(0, 0);  // __MergedGlobals+0x40; user not mapped yet
 const int AcceptMissionDialog = 0x255fe8ff;
 const int CancelMissionDialog = -0x17cc439d;
+const int PendingStoryIntro = 0x0c;
+const int PendingHuntConfirmation = 0x0f;
+const int PendingAmmoWarning = 0x10;
+const int PendingEnergyWarning = 0x11;
+const int PendingLowMoneyWarning = 0x1d;
 const int ViewNewChallenges = 0x79399e3c;
+const int GServeLoginFinished = 3;
 const int LowMoneyGetCommand = -0x17b4f1c;  // ShowLowMoneyDialog second button
 const int ConfirmInformant = 0x43a30531;
 const int CancelInformant = 0x43a30532;
@@ -115,6 +122,7 @@ const int OpenMissionAmmoShop = 0x43a30533;
 const int OpenMissionWeaponShop = 0x43a30534;
 const int OpenMissionLoadout = 0x43a30535;
 const int AcknowledgeWhatsNew = 0x137fed7f;
+const int RefreshMapAfterGiftXp = static_cast<int>(0xbd680582u);
 const int RocketLauncherId = 28;
 const int ChooseTargetFriend = static_cast<int>(0x93e847d9u);
 const int OfferFriendGatedMission = static_cast<int>(0xdc4219a8u);
@@ -130,42 +138,16 @@ int ClampMapCoordinate(int position, int minimum, int maximum)
     return position;
 }
 
-float LimitScrollStep(float distance, float limit)
+/** Horizontal center of a rectangle. */
+inline int RectCenterX(const CRectangle& rect)
 {
-    if (distance > limit) {
-        return limit;
-    }
-    if (distance < -limit) {
-        return -limit;
-    }
-    return distance;
+    return rect.m_x + (rect.m_width >> 1);
 }
 
-float RestingScrollPosition(float position, int screenSize, int mapSize, int inset)
+/** Vertical center of a rectangle. */
+inline int RectCenterY(const CRectangle& rect)
 {
-    int minPosition = screenSize - mapSize;
-    int maxPosition = -inset;
-    if (minPosition > maxPosition) {
-        return (screenSize - mapSize) * 0.5f;
-    }
-    if (position < minPosition) {
-        return minPosition;
-    }
-    if (position > maxPosition) {
-        return maxPosition;
-    }
-    return position;
-}
-
-float SlowScroll(float velocity, float distanceToEdge, int elapsed, int scale)
-{
-    float resistance = 2000.0f * scale;
-    float brake = 0.0008f * scale * elapsed * (resistance + distanceToEdge * distanceToEdge) / resistance;
-    velocity -= LimitScrollStep(velocity, brake);
-    if (MathLib::Fabs(velocity) < 0.01f) {
-        return 0.0f;
-    }
-    return velocity;
+    return rect.m_y + (rect.m_height >> 1);
 }
 
 void ShowEquipmentWarning(Window* parent, const XString& message, int action, int itemId, bool canContinue)
@@ -210,26 +192,69 @@ class CChallengesDialog : public CTextDialog {
 public:
     CChallengesDialog();
     void SetChallengeText(const XString& text);
+
+    TextWindow* m_headerText;    // 0x120 "new challenges" text
+    TextWindow* m_challengeText; // 0x124 list of the challenges
 };
 
+// Original 0xf05b0: two buttons lifted from the bottom edge, a header text and the challenge text
+// in the content (no title).
 CChallengesDialog::CChallengesDialog()
 {
-    SetTitleText("IDS_CHALLENGE_NEW_CHALLENGES_TITLE");
+    SScreenAdaptingConstant buttonBottom(20, 40);
     SetButtons(BUTTON_OK, BUTTON_IGNORE);
     SetButtonsCommands(ViewNewChallenges, -1, -1);
+    m_buttons[0]->SetCorner(m_buttons[0]->Left(), m_height - m_buttons[0]->m_height - buttonBottom());
     m_buttons[0]->SetCaption("IDS_VIEW");
+    m_buttons[1]->SetCorner(m_buttons[1]->Left(), m_height - m_buttons[1]->m_height - buttonBottom());
     m_buttons[1]->setImage("IDB_BUTTON_SET_BOUNTY");
     m_buttons[1]->setPressedImage("IDB_BUTTON_SET_BOUNTY_ACTIVE");
     m_buttons[1]->SetCaption("IDS_CONTINUE");
     m_content->SetPercentWidth(70, 0, 0);
+
+    Window* column = new Window(false);
+    column->SetLayoutType(LAYOUT_SIMPLE);
+    column->SetAlign(0xc);
+    column->SetPercentWidth(100, 0, 0);
+    column->SetHeightByContent(0, 0);
+    m_content->AddToFront(column);
+
+    Window* headerRow = new Window(false);
+    headerRow->SetLayoutType(LAYOUT_SIMPLE);
+    headerRow->SetAlign(0x14);
+    headerRow->SetHeightByContent(0, 0);
+    headerRow->SetPercentWidth(100, 0, 0);
+    CFontMgr::GetInstance()->GetFont(15);  // result unused (original)
+    ICSystemFont* font = ICSystemFont::CreateInstance();
+    font->Initialize(SScreenAdaptingConstant(12, 24)(), NULL, 1);
+    m_headerText = new TextWindow(font);
+    m_headerText->SetHeightByContent(0, 0);
+    m_headerText->m_debugFrame = true;
+    m_headerText->SetPercentWidth(100, 0, 0);
+    m_headerText->SetAlign(0x24);
+    m_headerText->SetText(ResString("IDS_CHALLENGE_NEW_CHALLENGES_TEXT"));
+    headerRow->AddToFront(m_headerText);
+    column->AddToFront(headerRow, 0, 0);
+
+    Window* challengeRow = new Window(false);
+    challengeRow->SetLayoutType(LAYOUT_SIMPLE);
+    challengeRow->SetAlign(0xc);
+    challengeRow->SetHeightByContent(0, 0);
+    m_challengeText = new TextWindow(CFontMgr::GetInstance()->GetFont(15));
+    m_challengeText->SetAlign(1);
+    m_challengeText->SetHeightByContent(0, 0);
+    m_challengeText->SetPercentWidth(100, 0, 0);
+    challengeRow->AddToFront(m_challengeText);
+    column->AddToFront(challengeRow, 0, 1);
 }
 
+// Original 0xf04f0
 void CChallengesDialog::SetChallengeText(const XString& text)
 {
-    XString message = ResString("IDS_CHALLENGE_NEW_CHALLENGES_TEXT");
-    message.Append(XString(L"\n\n"));
-    message.Append(text);
-    SetMessageText(message, CFontMgr::GetInstance()->GetFont(15));
+    CFontMgr::GetInstance()->GetFont(15);  // result unused (original)
+    ICSystemFont* font = ICSystemFont::CreateInstance();
+    font->Initialize(SScreenAdaptingConstant(12, 24)(), NULL, 1);
+    m_challengeText->SetText(text, font);
 }
 
 bool CBH_GPSMap::m_isFirstLoading = true;
@@ -242,19 +267,21 @@ CBH_GPSMap::CBH_GPSMap()
     : CBaseScreen(false, false, false, true, false, true), m_startDialogs(NULL), m_showFeaturedInstall(true),
       m_backgroundCount(0), m_currentChallengeDay(-1), m_mapWidth(0), m_mapHeight(0), m_columns(0), m_rows(0),
       m_mapX(0), m_mapY(0), m_pendingCommand(0), m_lastDailyDealDisplay(CStdUtil_Cocoa::GetTimeSeconds()),
-      m_field144(false), m_showRocketLauncherIntro(true), m_draggingMap(false), m_field150(false),
-      m_field180(false), m_field184(0), m_field188(0), m_field18d(false), m_field194(0), m_field198(0),
+      m_dailyDealShown(false), m_showRocketLauncherIntro(true), m_draggingMap(false), m_field150(false),
+      m_field180(false), m_field184(0), m_bonusTeaserElapsed(0), m_skipAmmoCheck(false), m_field194(0), m_field198(0),
       m_field19c(0), m_gpsScan(NULL), m_field1a4(false), m_scrollState(0), m_scrollVelocityX(0.0f), m_scrollVelocityY(0.0f),
       m_scrollSpeedX(0.0f), m_scrollSpeedY(0.0f), m_scrollTargetX(0.0f), m_scrollTargetY(0.0f), m_scrollX(0.0f),
       m_scrollY(0.0f), m_previousScrollX(0.0f), m_previousScrollY(0.0f),
-      m_recordedMapDrag(true), m_shortcuts(NULL), m_cooperation(NULL), m_bar(NULL), m_shop(NULL), m_network(NULL), m_needSave(false),
+      m_recordedMapDrag(true), m_shortcuts(NULL), m_movingMissionInformant(NULL),
+      m_cooperation(NULL), m_bar(NULL), m_shop(NULL),
+      m_network(NULL), m_pressedItem(NULL), m_needSave(false),
       m_prefetchIndex(0), m_socialNetworkMode(1),
       m_hud(NULL), m_selectedCamera(NULL),
       m_selectedInformant(NULL), m_priorDialogIndex(0), m_advanceMissionDialog(false),
       m_showingHuntConfirmation(false), m_acceptInformant(false), m_showTutorialFinish(false),
-      m_dailyDealShown(false), m_nextGiftSaveAttempt(0), m_zombiesPromo(NULL),
-      m_nextChallengeSaveAttempt(0), m_mapIdleElapsed(0), m_bonusTeaserElapsed(0),
-      m_scrollToItem(false), m_openTargetPickerAfterLogin(false),
+      m_nextGiftSaveAttempt(0), m_zombiesPromo(NULL),
+      m_nextChallengeSaveAttempt(0), m_mapIdleElapsed(0),
+      m_openTargetPickerAfterLogin(false),
       m_friendGatedMission(NULL), m_friendGatedBoss(NULL)
 {
     SetFlags(0x40);
@@ -290,21 +317,25 @@ CBH_GPSMap::~CBH_GPSMap()
 
 void CBH_GPSMap::LoadTiles()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    ResMap* resources = app->InitResMap();
-    char* xml = resources->loadText(resources->getFilename("GPS_MAP_DESCRIPTION"));
+    m_mapWidth = 0;
+    m_mapHeight = 0;
+    XString filename = static_cast<App*>(WindowApp::m_instance)->InitResMap()->getFilename("GPS_MAP_DESCRIPTION");
+    ResMap* resources = static_cast<App*>(WindowApp::m_instance)->InitResMap();
+    char* xml = resources->loadText(filename);
     TiXmlDocument document;
     document.Parse(xml);
     delete[] xml;
 
-    const TiXmlElement* maps = document.FirstChildElement("maps");
-    if (maps == NULL) {
-        return;
-    }
-    const TiXmlElement* map = maps->FirstChildElement("map");
-    if (map != NULL) {
-        SetTileLayout(*map);
-    }
+    // Original 0xe7a74: no NULL checks on the nodes.
+    TiXmlElement* map = static_cast<TiXmlElement*>(document.FirstChild("maps")->FirstChild("map"));
+    map->Attribute("width", &m_mapWidth);
+    m_mapWidth -= MapWidthInset();
+    map->Attribute("height", &m_mapHeight);
+    m_mapHeight -= MapHeightInset();
+    map->Attribute("tiles_count_x", &m_columns);
+    map->Attribute("tiles_count_y", &m_rows);
+    m_mapX = WindowApp::m_instance->m_screenWidth / 2 - m_mapWidth / 2;
+    m_mapY = WindowApp::m_instance->m_screenHeight / 2 - m_mapHeight / 2;
 }
 
 void CBH_GPSMap::InitPrefetchedManager()
@@ -313,16 +344,15 @@ void CBH_GPSMap::InitPrefetchedManager()
         return;
     }
     m_prefetchedManagers.ensureCapacity(10);
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    m_prefetchedManagers.addElement(app->InitWeaponManager());
-    m_prefetchedManagers.addElement(app->InitAmmoManager());
-    m_prefetchedManagers.addElement(app->m_ammoPackManager);
-    m_prefetchedManagers.addElement(app->InitIAPCurrencyManager());
-    m_prefetchedManagers.addElement(app->m_medicantManager);
-    m_prefetchedManagers.addElement(app->m_goPillManager);
-    m_prefetchedManagers.addElement(app->m_armorManager);
-    m_prefetchedManagers.addElement(app->m_energyManager);
-    m_prefetchedManagers.addElement(app->InitMiscItemManager());
+    m_prefetchedManagers.addElement(static_cast<App*>(WindowApp::m_instance)->InitWeaponManager());
+    m_prefetchedManagers.addElement(static_cast<App*>(WindowApp::m_instance)->InitAmmoManager());
+    m_prefetchedManagers.addElement(static_cast<App*>(WindowApp::m_instance)->m_ammoPackManager);
+    m_prefetchedManagers.addElement(static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager());
+    m_prefetchedManagers.addElement(static_cast<App*>(WindowApp::m_instance)->m_medicantManager);
+    m_prefetchedManagers.addElement(static_cast<App*>(WindowApp::m_instance)->m_goPillManager);
+    m_prefetchedManagers.addElement(static_cast<App*>(WindowApp::m_instance)->m_armorManager);
+    m_prefetchedManagers.addElement(static_cast<App*>(WindowApp::m_instance)->m_energyManager);
+    m_prefetchedManagers.addElement(static_cast<App*>(WindowApp::m_instance)->InitMiscItemManager());
 }
 
 void CBH_GPSMap::Init()
@@ -340,8 +370,7 @@ void CBH_GPSMap::Init()
     AddToFront(m_shortcuts);
     Load();
 
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (!CTutorialManager::IsPlayerInTutorial()) {
+    if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
         CheckForNewChallenges();
     }
     if (CBH_Player::GetInstance()->m_fieldb4 > 0 && CBH_Player::GetInstance()->m_energy < 3) {
@@ -349,21 +378,18 @@ void CBH_GPSMap::Init()
     }
 
     // A hunt result is pending when the last hunt item is still set.
-    bool huntPending = false;
-    if (CBH_Player::GetInstance()->m_lastHuntResult != 0 && CBH_Player::GetInstance()->m_lastHuntItem >= 0) {
-        huntPending = true;
-    }
-    bool weaponGated = app->m_huntingInfo->m_fieldc0;
+    bool huntPending = CBH_Player::GetInstance()->m_lastHuntResult != 0 && CBH_Player::GetInstance()->m_lastHuntItem >= 0;
+    bool weaponGated = static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_fieldc0;
 
     // Decide which shop page (if any) opens on top of the map.
-    if (CTutorialManager::IsShowShop() == true) {
-        ShowShop(static_cast<CShopWindow::ETab>(CTutorialManager::GetCurrentShopTab()), false);
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsShowShop() == true) {
+        ShowShop(static_cast<CShopWindow::ETab>(static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->GetCurrentShopTab()), false);
         CGameAnalytics::logStoreEnter(static_cast<CGameAnalytics::EShopEnterFrom>(0));
-    } else if (CTutorialManager::IsShowHome() == true) {
-        CBH_NetworkWindow::GetInstance()->BringToFrontModal(app->m_mainLayer);
-    } else if (!huntPending && app->m_huntingInfo->m_assignedData.m_weaponGated
-               && app->m_huntingInfo->m_assignedData.m_requiredWeaponId == -1) {
-        CDH_Weapon* weapon = GetMostExpensiveWeaponInCategory(app->m_huntingInfo->m_assignedData.m_weaponCategory);
+    } else if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsShowHome() == true) {
+        CBH_NetworkWindow::GetInstance()->BringToFrontModal(static_cast<App*>(WindowApp::m_instance)->m_mainLayer);
+    } else if (!huntPending && static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_weaponGated
+               && static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_requiredWeaponId == -1) {
+        CDH_Weapon* weapon = GetMostExpensiveWeaponInCategory(static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_weaponCategory);
         if (weapon == NULL) {
             return;
         }
@@ -377,14 +403,14 @@ void CBH_GPSMap::Init()
         CGameAnalytics::logStoreEnter(static_cast<CGameAnalytics::EShopEnterFrom>(0));
     } else if (weaponGated) {
         Vector<int> unlocked;
-        app->InitWeaponManager()->GetUnlockedWeaponsIdOnLevel(CBH_Player::GetInstance()->m_level, unlocked);
+        static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetUnlockedWeaponsIdOnLevel(CBH_Player::GetInstance()->m_level, unlocked);
         if (unlocked.size() > 0) {
             ShowShopWithUnlockedWeapon(GetMostExpensiveWeaponId(unlocked), static_cast<CShopItemInfoWindow::ESource>(1));
             CGameAnalytics::logStoreEnter(static_cast<CGameAnalytics::EShopEnterFrom>(0));
         }
-    } else if (CBH_Player::GetInstance()->m_lastHuntItem >= 0 && !CTutorialManager::IsPlayerInTutorial()
-               && app->m_helper->GetGameData()->GetWeapon01(true)->GetActiveAmmo() != NULL
-               && app->m_helper->GetGameData()->GetWeapon02(true)->GetActiveAmmo() != NULL) {
+    } else if (CBH_Player::GetInstance()->m_lastHuntItem >= 0 && !static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()
+               && static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true)->GetActiveAmmo() != NULL
+               && static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true)->GetActiveAmmo() != NULL) {
         ShowShop(CShopWindow::TAB_AMMO, false);
         CGameAnalytics::logStoreEnter(static_cast<CGameAnalytics::EShopEnterFrom>(0));
     }
@@ -397,17 +423,17 @@ void CBH_GPSMap::Init()
             if (item != NULL) {
                 if (item->GetType() == 1) {
                     CBountyManager::SBountyGeneralInfo info =
-                        *app->m_bountyManager->GetInfo(static_cast<CGPSBounty*>(item)->m_bountyType);
+                        *static_cast<App*>(WindowApp::m_instance)->m_bountyManager->GetInfo(static_cast<CGPSBounty*>(item)->m_bountyType);
                     missionName = info.m_name;
                 } else {
                     missionName = XString::Format(L"mission_%d", item->GetMissionId());
                 }
-                CGameAnalytics::logMissionFailed(app->m_huntingInfo->m_assignedData.m_missionId, missionName);
+                CGameAnalytics::logMissionFailed(static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_missionId, missionName);
             }
         }
-        if (CTutorialManager::IsPlayerInTutorial() == true && !CBH_Player::GetInstance()->HasAnyAmmo()) {
+        if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial() == true && !CBH_Player::GetInstance()->HasAnyAmmo()) {
             CBH_Player* player = CBH_Player::GetInstance();
-            player->SetAmmoForWeaponId(app->m_helper->GetGameData()->GetWeapon01(true)->m_id, 1);
+            player->SetAmmoForWeaponId(static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true)->m_id, 1);
         }
     }
 
@@ -443,7 +469,7 @@ void CBH_GPSMap::Init()
             camera->HasTargettingMission();
             camera->OnCameraBountyComplete();
         }
-        if (!CTutorialManager::IsPlayerInTutorial()) {
+        if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
             CBH_Player::GetInstance()->MissionCompleted();
         }
     }
@@ -451,7 +477,7 @@ void CBH_GPSMap::Init()
     CBH_Player* player = CBH_Player::GetInstance();
     player->m_lastHuntItem = -1;
     player->Save();
-    if (CTutorialManager::IsAutoStartMission() == true) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsAutoStartMission() == true) {
         StartTutorialMission();
     } else {
         m_hud = new CBH_GPSHud(false);
@@ -461,42 +487,28 @@ void CBH_GPSMap::Init()
         CheckGameCenterAccounts();
     }
     UpdateMissionInformants();
-    app->m_challengeManager->Save();
+    static_cast<App*>(WindowApp::m_instance)->m_challengeManager->Save();
     Save();
-    if (CTutorialManager::IsPlayerInTutorial() == true) {
-        app->m_tutorialManager->ShowStateInitMessage();
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial() == true) {
+        static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->ShowStateInitMessage();
     }
     m_openFriendsWindow = false;
     m_field2b5 = false;
 }
 
-void CBH_GPSMap::SetTileLayout(const TiXmlElement& map)
-{
-    map.Attribute("width", &m_mapWidth);
-    map.Attribute("height", &m_mapHeight);
-    map.Attribute("tiles_count_x", &m_columns);
-    map.Attribute("tiles_count_y", &m_rows);
-    m_mapWidth -= MapWidthInset();
-    m_mapHeight -= MapHeightInset();
-    m_mapX = WindowApp::m_instance->m_screenWidth / 2 - m_mapWidth / 2;
-    m_mapY = WindowApp::m_instance->m_screenHeight / 2 - m_mapHeight / 2;
-    m_previousScrollX = m_scrollX = m_mapX;
-    m_previousScrollY = m_scrollY = m_mapY;
-}
-
 void CBH_GPSMap::AddMapPatch(ICRenderSurface* surface)
 {
-    m_tiles.addElement(surface);
+    // the original skips missing tiles
+    if (surface != NULL) {
+        m_tiles.addElement(surface);
+    }
 }
 
+// Original 0xee184: ShowMessage is called with a NULL this (original; it does not use this).
 void CBH_GPSMap::OnHauntSelected(CGPSHaunt* haunt)
 {
-    CDialogWindow* dialog = new CDialogWindow(false);
-    dialog->SetTitleText(haunt->m_screenName);
-    dialog->SetMessageText(haunt->m_description);
-    dialog->SetButtons(CDialogWindow::BUTTON_OK);
-    m_parent->AddModal(dialog);
-    ScrollToItem(*haunt, 0.2f);
+    static_cast<CBH_GPSMap*>(NULL)->ShowMessage(haunt->m_screenName, haunt->m_description, NULL, NULL);
+    haunt->SetAttractSpeed(0.2f);
 }
 
 void CBH_GPSMap::OnCameraSelected(CGPSHauntCamera* camera)
@@ -511,24 +523,37 @@ void CBH_GPSMap::OnCameraSelected(CGPSHauntCamera* camera)
     m_selectedCamera = camera;
     m_priorDialogIndex = 0;
     m_showingHuntConfirmation = false;
-    if (!MakePlayerEnergyCheck(item->m_energyCost) || !CheckMissionEquipment(camera, item)) {
-        m_selectedCamera = NULL;
+    bool skipAmmoCheck = m_skipAmmoCheck;
+    m_skipAmmoCheck = false;
+    if (!MakePlayerEnergyCheck(item->m_energyCost) || !CheckMissionEquipment(camera, item, skipAmmoCheck)) {
+        if (m_pendingCommand != PendingAmmoWarning) {
+            m_selectedCamera = NULL;
+        }
         return;
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_soundManager->PlaySound("IDM_MENU_WINDOW_OPEN_CLOSE", false, false);
+    if (item->GetType() != 0) {
+        App* app = static_cast<App*>(WindowApp::m_instance);
+        app->m_soundManager->PlaySound("IDM_MENU_WINDOW_OPEN_CLOSE", false, false);
+    }
     ShowMissionDialog();
 }
 
 bool CBH_GPSMap::MakePlayerEnergyCheck(int cost)
 {
-    CBH_Player* player = CBH_Player::GetInstance();
-    if (!player->IsEnegyEnabled() || player->m_energy >= cost) {
+    if (!CBH_Player::GetInstance()->IsEnegyEnabled()) {
         return true;
     }
-    XString message = ResString("IDS_MESSAGE_NO_ENERGY");
-    ShowEquipmentWarning(m_parent, XString::Format(message.c_str(), cost), -1, -1, false);
-    CGameAnalytics::logNotEnoughEnergy(player->m_energy);
+    if (CBH_Player::GetInstance()->m_energy >= cost) {
+        return true;
+    }
+    CDialogWindow* warning = new CDialogWindow(true);
+    warning->SetTitleText("IDS_DIALOG_TITLE_WARNING");
+    warning->SetMessageText(XString::Format(ResString("IDS_MESSAGE_NO_ENERGY").c_str(), cost));
+    warning->SetButtons(CDialogWindow::BUTTON_OK, CDialogWindow::BUTTON_IGNORE);
+    warning->SetButtonsCommands(AcceptMissionDialog, CancelMissionDialog, -1);
+    m_parent->AddModal(warning);
+    m_pendingCommand = PendingEnergyWarning;
+    CGameAnalytics::logNotEnoughEnergy(CBH_Player::GetInstance()->m_energy);
     return false;
 }
 
@@ -538,6 +563,7 @@ bool CBH_GPSMap::MakeLowAmmoCheck(const CDH_Weapon* weapon)
         return true;
     }
     XString message = ResString("IDS_MESSAGE_LOW_AMMO_IN_MAIN_WEAPON");
+    m_pendingCommand = PendingAmmoWarning;
     ShowEquipmentWarning(m_parent, XString::Format(message.c_str(), weapon->m_name.c_str()),
                          OpenMissionAmmoShop, -1, true);
     return false;
@@ -551,6 +577,7 @@ bool CBH_GPSMap::MakePlayerAmmoCheck()
         return false;
     }
     if (!player->HasAmmoInBothWeapons()) {
+        m_pendingCommand = PendingAmmoWarning;
         ShowEquipmentWarning(m_parent, ResString("IDS_MESSAGE_NO_AMMO_IN_ONE_WEAPON"), OpenMissionAmmoShop, -1, true);
         return false;
     }
@@ -613,7 +640,7 @@ bool CBH_GPSMap::MakeSilentWeaponCheck()
     return false;
 }
 
-bool CBH_GPSMap::CheckMissionEquipment(CGPSHauntCamera* camera, CGPSHuntingItem* item)
+bool CBH_GPSMap::CheckMissionEquipment(CGPSHauntCamera* camera, CGPSHuntingItem* item, bool skipAmmoCheck)
 {
     const bool weaponLoan = item->m_randomWeapon >= 0 || item->GetEstimatedWeaponID() >= 0;
     if (!weaponLoan && item->GetType() == 0 && !MakePlayerWeaponCheck(item->GetMissionId())) {
@@ -622,14 +649,14 @@ bool CBH_GPSMap::CheckMissionEquipment(CGPSHauntCamera* camera, CGPSHuntingItem*
     if (camera->m_durationMs < 0 && item->m_tranquillize && !weaponLoan && !MakePlayerTranqMissionCheck()) {
         return false;
     }
-    if (!weaponLoan && !MakePlayerWeaponRangeCheck(camera->m_minWeaponRange)) {
+    if (!weaponLoan && item->m_minWeaponRange < 0.0f && !MakePlayerWeaponRangeCheck(camera->m_minWeaponRange)) {
         return false;
     }
     if (camera->m_durationMs <= 0 && item->m_silentKill && !weaponLoan && !MakeSilentWeaponCheck()) {
         return false;
     }
     if (!item->m_weaponGated) {
-        return weaponLoan || MakePlayerAmmoCheck();
+        return weaponLoan || skipAmmoCheck || MakePlayerAmmoCheck();
     }
 
     App* app = static_cast<App*>(WindowApp::m_instance);
@@ -642,7 +669,7 @@ bool CBH_GPSMap::CheckMissionEquipment(CGPSHauntCamera* camera, CGPSHuntingItem*
         }
         return MakePlayerWeaponGatedCategoryCheck(category);
     }
-    if (CBH_Player::GetInstance()->GetAvailableAmmo(weapon->GetActiveAmmo(), true) <= 0) {
+    if (!skipAmmoCheck && CBH_Player::GetInstance()->GetAvailableAmmo(weapon->GetActiveAmmo(), true) <= 0) {
         ShowEquipmentWarning(m_parent, ResString("IDS_MESSAGE_NO_AMMO"), OpenMissionAmmoShop, -1, false);
         return false;
     }
@@ -699,13 +726,13 @@ void CBH_GPSMap::ShowShop(CShopWindow::ETab tab, bool openTapJoy)
 
 CDH_Weapon* CBH_GPSMap::GetMostExpensiveWeaponInCategory(int category) const
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_WeaponsManager* manager = app->InitWeaponManager();
+    // Original 0xe8958: the weapon manager is fetched again for every step.
     CDH_Weapon* best = NULL;
     int bestPrice = -1;
-    for (CItem* item = manager->firstItem(); item != NULL; item = manager->nextItem()) {
-        CDH_Weapon* weapon = static_cast<CDH_Weapon*>(item);
-        if (!weapon->IsPriceless() && weapon->m_category == category && weapon->getPriceCredits() > bestPrice) {
+    for (CDH_Weapon* weapon = static_cast<CDH_Weapon*>(static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->firstItem());
+         weapon != NULL;
+         weapon = static_cast<CDH_Weapon*>(static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->nextItem())) {
+        if (!weapon->IsPriceless() && weapon->m_category == category && bestPrice < weapon->getPriceCredits()) {
             best = weapon;
             bestPrice = weapon->getPriceCredits();
         }
@@ -718,9 +745,9 @@ void CBH_GPSMap::ShowShopWithWeapon(const CDH_Weapon& weapon)
     CRegularShop* shop = CRegularShop::GetInstance(true);
     shop->SetTab(CShopWindow::TAB_WEAPONS);
     shop->SwitchWeaponFilter(weapon.m_category);
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_mainLayer->AddModal(shop);
-    CShopItemInfoWindow* details = new CShopItemInfoWindow(app->InitWeaponManager(), 0, weapon.m_id,
+    static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(shop);
+    CShopItemInfoWindow* details = new CShopItemInfoWindow(static_cast<App*>(WindowApp::m_instance)->InitWeaponManager(),
+                                                           0, weapon.m_id,
                                                            weapon.GetStatsString(), false,
                                                            CShopItemInfoWindow::SOURCE_SHOP);
     shop->AddModal(details);
@@ -730,41 +757,36 @@ void CBH_GPSMap::ShowShopWithUnlockedWeapon(int weaponId, CShopItemInfoWindow::E
 {
     CRegularShop* shop = CRegularShop::GetInstance(true);
     shop->SetTab(CShopWindow::TAB_WEAPONS);
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_mainLayer->AddModal(shop);
-    CItem* weapon = app->InitWeaponManager()->getItemById(weaponId);
-    CShopItemInfoWindow* details = new CShopItemInfoWindow(app->InitWeaponManager(), 0, weaponId,
+    static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(shop);
+    CItem* weapon = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->getItemById(weaponId);
+    CShopItemInfoWindow* details = new CShopItemInfoWindow(static_cast<App*>(WindowApp::m_instance)->InitWeaponManager(), 0, weaponId,
                                                            weapon->GetStatsString(), false, source);
     shop->AddModal(details);
 }
 
+// Original 0xe8b20: prefers the weapon with the highest credit price, else the highest cash
+// price; an empty list (or only free weapons) dereferences NULL (original).
 int CBH_GPSMap::GetMostExpensiveWeaponId(const Vector<int>& ids)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_WeaponsManager* manager = app->InitWeaponManager();
+    CDH_Weapon* creditWeapon = NULL;
+    CDH_Weapon* cashWeapon = NULL;
+    int bestCashPrice = 0;
     int bestCreditPrice = 0;
-    int bestCashPrice = -1;
-    int creditItem = -1;
-    int cashItem = -1;
     for (int index = 0; index < ids.size(); ++index) {
-        CDH_Weapon* weapon = manager->GetWeaponById(ids[index]);
-        if (weapon == NULL) {
-            continue;
-        }
-        int credits = weapon->getPriceCredits();
-        if (credits > bestCreditPrice) {
-            bestCreditPrice = credits;
-            creditItem = weapon->m_id;
+        CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(ids[index]);
+        if (weapon->getPriceCredits() > bestCreditPrice) {
+            creditWeapon = weapon;
+            bestCreditPrice = weapon->getPriceCredits();
         }
         if (weapon->m_pricePoints > bestCashPrice) {
+            cashWeapon = weapon;
             bestCashPrice = weapon->m_pricePoints;
-            cashItem = weapon->m_id;
         }
     }
-    if (creditItem >= 0) {
-        return creditItem;
+    if (creditWeapon == NULL) {
+        creditWeapon = cashWeapon;
     }
-    return cashItem;
+    return creditWeapon->m_id;
 }
 
 bool CBH_GPSMap::MakePlayerWeaponCheck(int missionId)
@@ -821,6 +843,24 @@ void CBH_GPSMap::OnCommand(Event& event)
 {
     bool handledShortcut = true;
     switch (event.m_id) {
+    case GServeLoginFinished: {
+        if (!App::m_bIsLoginOK) {
+            App::m_bIsLoginOK = true;
+            m_openFriendsWindow = false;
+            return;
+        }
+        if (m_openFriendsWindow) {
+            CNGSLocalUser* local = CNGS::GetInstance()->GetLocalUser();
+            if (local->isAuthenticated(SOCIAL_NETWORK_FACEBOOK) ||
+                (local->isAuthenticated(SOCIAL_NETWORK_GAME_CENTER) &&
+                 GameCenter_Facade::GetInstance()->isGameCenterSupported() == true)) {
+                OpenPendingFriendsWindow();
+            } else {
+                m_openFriendsWindow = false;
+            }
+        }
+        return;
+    }
     case OfferFriendGatedMission:
         ShowBeforeFriendsGatedMission();
         break;
@@ -838,15 +878,24 @@ void CBH_GPSMap::OnCommand(Event& event)
     case AcknowledgeWhatsNew:
         CBH_Player::GetInstance()->ChangeGameVersion();
         break;
+    case RefreshMapAfterGiftXp:
+        UpdateMapItems();
+        break;
     case CFiveDaysBonusDialog::INCENTIVE_BONUS_ACCEPTED:
         ShowFiveDaysInventiveBonusRecomendedItem();
         break;
     case CBH_InformantsHud::Shop:
         OnShopItemSelected(NULL);
         break;
-    case CBH_InformantsHud::Bank:
-        CRegularShop::Show(CShopWindow::TAB_BANK);
+    case CBH_InformantsHud::Bank: {
+        CGameAnalytics::logStoreEnter(CGameAnalytics::SHOP_ENTER_GPS_ITEM);
+        CRegularShop* shop = CRegularShop::GetInstance(true);
+        shop->SetTab(CShopWindow::TAB_BANK);
+        if (shop->m_parent == NULL) {
+            m_parent->AddModal(shop);
+        }
         break;
+    }
     case CBH_InformantsHud::SafeHouse:
         OnGPSNetworkSelected(NULL);
         break;
@@ -861,17 +910,24 @@ void CBH_GPSMap::OnCommand(Event& event)
         break;
     }
     case ViewNewChallenges:
+        ShowCoopWindow();
+        break;
     case CBH_InformantsHud::Coop:
         OnCooperationItemSelected(m_cooperation);
         break;
-    case CBH_InformantsHud::Weapon:
-    case CBH_InformantsHud::Vehicle: {
-        CGPSInstantInformant* informant;
-        if (event.m_id == CBH_InformantsHud::Weapon) {
-            informant = FindInstantInformant(CGPSInstantInformant::Gated, true);
-        } else {
-            informant = FindInstantInformant(CGPSInstantInformant::Moving, false);
+    case CBH_InformantsHud::Weapon: {
+        CGPSInstantInformant* informant = FindInstantInformant(CGPSInstantInformant::Gated, true);
+        if (informant != NULL) {
+            OnGPSInstantInformantSelected(informant);
         }
+        break;
+    }
+    case CBH_InformantsHud::Vehicle: {
+        if (m_movingMissionInformant != NULL) {
+            OnGpsMissionInformantSelected(m_movingMissionInformant);
+            break;
+        }
+        CGPSInstantInformant* informant = FindInstantInformant(CGPSInstantInformant::Moving, false);
         if (informant != NULL) {
             OnGPSInstantInformantSelected(informant);
         }
@@ -886,12 +942,21 @@ void CBH_GPSMap::OnCommand(Event& event)
         return;
     }
     if (event.m_id == OpenMissionAmmoShop || event.m_id == OpenMissionWeaponShop || event.m_id == OpenMissionLoadout) {
+        if (m_pendingCommand == PendingAmmoWarning) {
+            m_pendingCommand = 0;
+        }
         m_selectedCamera = NULL;
         if (event.m_id == OpenMissionAmmoShop) {
             CRegularShop::Show(CShopWindow::TAB_AMMO);
         } else if (event.m_id == OpenMissionWeaponShop) {
             if (event.m_param1 >= 0) {
-                CRegularShop::ShowItem(CShopWindow::TAB_WEAPONS, event.m_param1);
+                App* app = static_cast<App*>(WindowApp::m_instance);
+                CItem* item = app->InitWeaponManager()->getItemById(event.m_param1);
+                if (item != NULL && item->m_unlockLevel <= CBH_Player::GetInstance()->GetLevel()) {
+                    ShowShopWithUnlockedWeapon(event.m_param1, CShopItemInfoWindow::SOURCE_SHOP);
+                } else {
+                    CRegularShop::Show(CShopWindow::TAB_WEAPONS);
+                }
             } else {
                 CRegularShop::Show(CShopWindow::TAB_WEAPONS);
             }
@@ -910,9 +975,44 @@ void CBH_GPSMap::OnCommand(Event& event)
             event.Clear();
         }
     }
+    if (m_pendingCommand == PendingLowMoneyWarning &&
+        (event.m_id == AcceptMissionDialog || event.m_id == LowMoneyGetCommand ||
+         event.m_id == CancelMissionDialog)) {
+        m_pendingCommand = 0;
+        if (event.m_id != CancelMissionDialog) {
+            ShowShop(CShopWindow::TAB_BANK, event.m_id == LowMoneyGetCommand);
+            CGameAnalytics::logStoreEnter(CGameAnalytics::SHOP_ENTER_MISSION_PROMPT);
+        }
+        event.Clear();
+        return;
+    }
+    if (m_pendingCommand == PendingEnergyWarning) {
+        if (event.m_id == AcceptMissionDialog) {
+            m_pendingCommand = 0;
+            m_selectedCamera = NULL;
+            ShowShop(CShopWindow::TAB_ENERGY, false);
+            event.Clear();
+            return;
+        }
+        if (event.m_id == CancelMissionDialog) {
+            m_pendingCommand = 0;
+            event.Clear();
+            return;
+        }
+    }
     if (event.m_id == AcceptMissionDialog && m_dialogsQueue.size() != 0) {
         m_dialogsQueue.removeElementAt(m_dialogsQueue.size() - 1);
         if (ShowNextQueueDialog(false)) {
+            event.Clear();
+            return;
+        }
+        if (m_pendingCommand == PendingStoryIntro) {
+            m_pendingCommand = 0;
+            CGPSHauntCamera* camera = m_selectedCamera;
+            m_selectedCamera = NULL;
+            if (camera != NULL) {
+                camera->SetAttractSpeed(1.1f);
+            }
             event.Clear();
             return;
         }
@@ -937,9 +1037,17 @@ void CBH_GPSMap::OnCommand(Event& event)
         return;
     }
     if (event.m_id == AcceptMissionDialog) {
+        if (m_pendingCommand == PendingAmmoWarning && m_selectedCamera != NULL) {
+            m_pendingCommand = 0;
+            m_skipAmmoCheck = true;
+        }
         m_advanceMissionDialog = true;
         event.Clear();
     } else if (event.m_id == CancelMissionDialog) {
+        if (m_pendingCommand == PendingAmmoWarning || m_pendingCommand == PendingHuntConfirmation) {
+            m_pendingCommand = 0;
+        }
+        m_skipAmmoCheck = false;
         m_selectedCamera = NULL;
         m_friendGatedMission = NULL;
         m_friendGatedBoss = NULL;
@@ -963,15 +1071,16 @@ void CBH_GPSMap::ShowMissionDialog()
         m_selectedCamera = NULL;
         return;
     }
-    if (m_selectedCamera->HasTargettingMission()) {
+    if (m_selectedCamera->HasTargettingMission() && item->GetType() == 1) {
+        FillBeforeTargetHuntInfo(static_cast<const CGPSBounty*>(item));
         CBeforeTargettingDialog* targetDialog = CreateBeforeTargettingDialog(true);
         m_showingHuntConfirmation = true;
         m_parent->AddModal(targetDialog);
         return;
     }
-    if (mission != NULL && m_priorDialogIndex < mission->m_priorDialogs.size()) {
-        const CMission::Dialog& prior = mission->m_priorDialogs[m_priorDialogIndex++];
-        ShowMessage(prior.m_title, item->ParametrizeText(prior.m_text), prior.m_image, NULL);
+    if (mission != NULL && item->GetType() == 0 && m_priorDialogIndex == 0) {
+        m_priorDialogIndex = mission->m_priorDialogs.size();
+        ShowMissionPriorDialogs(item->GetMissionId());
         return;
     }
     if (item->GetType() == 1 && m_priorDialogIndex == 0) {
@@ -982,18 +1091,15 @@ void CBH_GPSMap::ShowMissionDialog()
             return;
         }
     }
-    CBeforeHuntDialog* dialog = CreateBeforeHuntDialog(true);
-    if (dialog != NULL) {
-        m_showingHuntConfirmation = true;
-        m_parent->AddModal(dialog);
-    }
+    ShowBeforeHuntDialog();
 }
 
 CGPSHaunt* CBH_GPSMap::GetHauntByName(const XString& name)
 {
     for (int index = 0; index < m_haunts.size(); ++index) {
-        if (m_haunts[index]->m_name == name) {
-            return m_haunts[index];
+        CGPSHaunt* haunt = m_haunts[index];
+        if (haunt->m_name == name) {
+            return haunt;
         }
     }
     return NULL;
@@ -1024,31 +1130,40 @@ void CBH_GPSMap::ShowMessage(XString title, XString message, const char* image, 
     dialog->SetMessageText(message, font);
     dialog->SetButtons(CDialogWindow::BUTTON_OK);
     dialog->SetButtonsCommands(AcceptMissionDialog, CancelMissionDialog, -1);
-    m_parent->AddModal(dialog);
+    static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(dialog);
 }
 
 CBeforeHuntDialog* CBH_GPSMap::CreateBeforeHuntDialog(bool allowLater)
 {
-    CGPSHuntingItem* item = m_selectedCamera->GetGPSHuntingItem();
-    if (m_selectedCamera->HasTempMission()) {
-        item = m_selectedCamera->m_temporaryItem;
-    }
-    if (item == NULL) {
-        return NULL;
-    }
-    PrepareHuntBrief(*m_selectedCamera, *item);
     CBH_Player* player = CBH_Player::GetInstance();
     CBeforeHuntDialog* dialog = new CBeforeHuntDialog();
-    dialog->SetExtraImageFromImageID(player->m_missionBriefImage);
+    if (player->m_missionBriefImage != NULL) {
+        dialog->SetExtraImageFromImageID(player->m_missionBriefImage);
+    } else if (player->m_field208 != 0) {
+        dialog->SetExtraImage(reinterpret_cast<ICRenderSurface*>(player->m_field208));
+    }
     dialog->SetTitleText(player->m_missionBriefTitle);
     dialog->SetMessageText(player->m_missionBriefText);
-    dialog->SetMissionRewards(item->m_moneyReward, item->m_experienceReward, item->m_energyCost, false);
     CDialogWindow::EDialogButton later = CDialogWindow::BUTTON_NONE;
     if (allowLater) {
         later = CDialogWindow::BUTTON_LATER;
     }
     dialog->SetButtons(CDialogWindow::BUTTON_OK, later);
     dialog->SetButtonsCommands(AcceptMissionDialog, CancelMissionDialog, -1);
+    eGameFont rewardFont = GAME_FONT_DEFAULT;
+    if (player->m_field238 != 0) {
+        rewardFont = static_cast<eGameFont>(17);
+    }
+    XString money = XString("+") + XString(player->m_field220);
+    dialog->AddDownTextWithIcon(money, "IDB_HUD_ICON_MONEY", false, true, rewardFont);
+    XString experience = XString("+") + XString(player->m_field21c);
+    dialog->AddDownTextWithIcon(experience, "IDB_HUD_ICON_EXP", false, true, rewardFont);
+    if (player->IsEnegyEnabled()) {
+        XString cost = XString(L"   ") + ResString("IDS_DIALOG_COST") + L":";
+        dialog->AddDownTextWithIcon(cost, NULL, false, false, GAME_FONT_DEFAULT);
+        dialog->AddDownTextWithIcon(XString(player->m_missionBriefEnergy), "IDB_HUD_ICON_ENERGY",
+                                    false, false, GAME_FONT_DEFAULT);
+    }
     return dialog;
 }
 
@@ -1090,6 +1205,9 @@ void CBH_GPSMap::ShowBeforeFriendsGatedMission()
     }
     CBH_PersonType* boss = app->InitPersonTypeManager()->GetType(faction->GetBoss());
     if (boss == NULL || boss->m_visualCharacter == NULL || boss->m_nationality == NULL) {
+        return;
+    }
+    if (!app->m_bountyManager->HasTargettingMessages()) {
         return;
     }
     const CBountyManager::SMessage* brief = app->m_bountyManager->GetRandomTargettingMessage();
@@ -1186,33 +1304,19 @@ void CBH_GPSMap::StartNextFriendGatedMission()
 
 CBeforeTargettingDialog* CBH_GPSMap::CreateBeforeTargettingDialog(bool allowLater)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CGPSHuntingItem* item = m_selectedCamera->GetGPSHuntingItem();
-    if (m_selectedCamera->HasTempMission()) {
-        item = m_selectedCamera->m_temporaryItem;
-    }
-    CBeforeTargettingDialog* dialog;
-    if (item->m_targetFriendId >= 0) {
-        dialog = new CBeforeTargettingDialog(item->m_targetFriendId);
-    } else {
-        dialog = new CBeforeTargettingDialog(CStrWChar(item->m_targetFBUser.c_str()));
-    }
-    dialog->SetExtraImageFromImageID("IDB_DIALOG_NOTEBOOK");
-    const CBountyManager::SMessage* message = app->m_bountyManager->GetRandomTargettingMessage();
-    XString title = item->GetObjectiveTitle();
-    XString text = item->GetObjectiveGoal();
-    if (message != NULL) {
-        title = message->m_title;
-        text = item->ParametrizeText(message->m_text);
-    }
-    text = XString::Format(L"%ls: %ls\n%ls", ResString("IDS_DIALOG_NAME").c_str(), item->m_bossName.c_str(), text.c_str());
     CBH_Player* player = CBH_Player::GetInstance();
-    player->m_missionBriefImage = "IDB_DIALOG_NOTEBOOK";
-    player->m_missionBriefTitle = title;
-    player->m_missionBriefText = text;
-    dialog->SetTitleText(title);
-    dialog->SetMessageText(text);
-    dialog->SetMissionRewards(item->m_moneyReward, item->m_experienceReward, item->m_energyCost, true);
+    CBeforeTargettingDialog* dialog;
+    if (player->m_targetFriendId >= 0) {
+        dialog = new CBeforeTargettingDialog(player->m_targetFriendId);
+    } else {
+        dialog = new CBeforeTargettingDialog(player->m_missionBriefTargetFB);
+    }
+    if (player->m_missionBriefImage != NULL) {
+        dialog->SetExtraImageFromImageID(player->m_missionBriefImage);
+    }
+    dialog->SetTitleText(player->m_missionBriefTitle);
+    dialog->SetMessageText(player->m_missionBriefText);
+    dialog->SetMissionRewards(player->m_field220, player->m_field21c, player->m_missionBriefEnergy, true);
     CDialogWindow::EDialogButton later = CDialogWindow::BUTTON_NONE;
     if (allowLater) {
         later = CDialogWindow::BUTTON_LATER;
@@ -1247,7 +1351,7 @@ bool CBH_GPSMap::StartTargettingMission(int friendId, bool revenge)
     targeting->OnBountyGiven(camera->m_id);
     Save();
     OnCameraSelected(camera);
-    ScrollToItem(*camera, 1.1f);
+    camera->SetAttractSpeed(1.1f);
     return true;
 }
 
@@ -1346,16 +1450,18 @@ void CBH_GPSMap::CreateBar()
 
 void CBH_GPSMap::CreateZombiesPromoIcon()
 {
-    m_zombiesPromo = new CGPSZombiesPromo();
-    m_zombiesPromo->SetPos(500 + MapWidthInset(), 350 + MapHeightInset());
-    m_zombiesPromo->m_listener = this;
-    m_items.addElement(m_zombiesPromo);
+    // the original keeps the icon in a local only (m_zombiesPromo stays NULL)
+    CGPSZombiesPromo* promo = new CGPSZombiesPromo();
+    promo->SetPos(500 + MapWidthInset(), 350 + MapHeightInset());
+    promo->m_listener = this;
+    m_items.addElement(promo);
 }
 
 void CBH_GPSMap::CreateCooperationIcon()
 {
     m_cooperation = new CGPSCooperation();
-    m_cooperation->SetPos(290 + MapWidthInset(), 270 + MapHeightInset());
+    // the original uses the height inset for both coordinates
+    m_cooperation->SetPos(290 + MapHeightInset(), 270 + MapHeightInset());
     m_cooperation->SetListener(this);
     m_items.addElement(m_cooperation);
 }
@@ -1368,13 +1474,16 @@ void CBH_GPSMap::CreateShop()
     m_items.addElement(m_shop);
 }
 
+// Original 0xe8394: in the tutorial the home icon is only created when it is visible.
 void CBH_GPSMap::CreateNetwork()
 {
-    m_network = new CGPSNetwork();
-    m_network->SetPos(465, 285);
-    m_network->SetListener(this);
-    m_network->SetVisible(CTutorialManager::IsHomeVisible());
-    m_items.addElement(m_network);
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial() != true
+        || static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsHomeVisible() == true) {
+        m_network = new CGPSNetwork();
+        m_network->SetPos(465, 285);
+        m_network->SetListener(this);
+        m_items.addElement(m_network);
+    }
 }
 
 void CBH_GPSMap::CreateInstantInformants()
@@ -1480,18 +1589,18 @@ CGPSHauntCamera* CBH_GPSMap::GetMovingRandomCamera() const
 void CBH_GPSMap::ShowBuyInformantDialog(CGPSInstantInformant* informant)
 {
     CDialogWindow* dialog = new CDialogWindow(true);
-    dialog->SetTitleText(informant->m_name);
+    dialog->SetTitleText(informant->m_name.Upper());
     XString text = informant->m_startText;
-    text.Append(XString(L"\n"));
-    text.Append(ResString("IDS_DIALOG_IT_WILL_COST"));
     if (informant->m_cashCost > 0) {
-        text.Append(XString::Format(L" $%d", informant->m_cashCost));
+        text.Append(XString("\n") + ResString("IDS_DIALOG_IT_WILL_COST")
+                    + L" $" + XString(informant->m_cashCost));
     }
     if (informant->m_creditsCost > 0) {
-        text.Append(XString::Format(L" %d %ls", informant->m_creditsCost, ResString("IDS_DIALOG_CREDITS").c_str()));
+        text.Append(XString("\n") + ResString("IDS_DIALOG_IT_WILL_COST")
+                    + L" " + XString(informant->m_creditsCost) + L" " + ResString("IDS_DIALOG_CREDITS") + L".");
     }
     dialog->SetMessageText(text);
-    dialog->SetButtons(CDialogWindow::BUTTON_HIRE, CDialogWindow::BUTTON_LATER);
+    dialog->SetButtons(CDialogWindow::BUTTON_OK, CDialogWindow::BUTTON_IGNORE);
     dialog->SetButtonsCommands(ConfirmInformant, CancelInformant, -1);
     m_selectedInformant = informant;
     m_parent->AddModal(dialog);
@@ -1500,12 +1609,11 @@ void CBH_GPSMap::ShowBuyInformantDialog(CGPSInstantInformant* informant)
 void CBH_GPSMap::ShowInformantIsSearchingDialog(CGPSInstantInformant* informant)
 {
     CDialogWindow* dialog = new CDialogWindow(true);
-    dialog->SetTitleText(informant->m_name);
+    dialog->SetTitleText(informant->m_name.Upper());
     XString text = informant->m_comeLaterText;
-    text.Append(XString::Format(L"\n%ls\n%d %ls", DGHelper::ClockStringFromSeconds(informant->GetCooldownTimeLeft()).c_str(),
-                               informant->m_resetCost, ResString("IDS_DIALOG_CREDITS").c_str()));
+    text.Append(XString("\n") + ResString("IDS_DIALOG_CREDITS") + XString(":") + XString(informant->m_resetCost));
     dialog->SetMessageText(text);
-    dialog->SetButtons(CDialogWindow::BUTTON_BUY, CDialogWindow::BUTTON_LATER);
+    dialog->SetButtons(CDialogWindow::BUTTON_BUY, CDialogWindow::BUTTON_IGNORE);
     dialog->SetButtonsCommands(ConfirmInformant, CancelInformant, -1);
     m_selectedInformant = informant;
     m_parent->AddModal(dialog);
@@ -1522,14 +1630,15 @@ void CBH_GPSMap::ResolveInformantPurchase(CGPSInstantInformant* informant)
         success = informant->Buy();
     }
     if (!success) {
-        CDialogWindow* dialog = new CDialogWindow(true);
-        dialog->SetTitleText("IDS_DIALOG_TITLE_WARNING");
-        dialog->SetMessageText(ResString("IDS_MESSAGE_NO_MONEY"));
-        if (!bought && CTutorialManager::IsPlayerInTutorial() && app->m_tutorialManager->IsTutorialInstantInformant(informant->m_id)) {
-            success = informant->BuyFree();
-            dialog->SetTitleText("IDS_TUTORIAL_TITLE");
-            dialog->SetMessageText(ResString("IDS_TUTORIAL_INFORMANT_NO_MONEY"));
+        if (bought || !static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial() ||
+            !app->m_tutorialManager->IsTutorialInstantInformant(informant->m_id)) {
+            ShowLowMoneyDialog();
+            return;
         }
+        success = informant->BuyFree();
+        CDialogWindow* dialog = new CDialogWindow(true);
+        dialog->SetTitleText("IDS_TUTORIAL_TITLE");
+        dialog->SetMessageText(ResString("IDS_TUTORIAL_INFORMANT_NO_MONEY"));
         dialog->SetButtons(CDialogWindow::BUTTON_OK);
         m_startDialogs->Add(dialog);
         m_startDialogs->Start();
@@ -1547,12 +1656,18 @@ void CBH_GPSMap::ResolveInformantPurchase(CGPSInstantInformant* informant)
 
 void CBH_GPSMap::OnGPSInstantInformantSelected(CGPSInstantInformant* informant)
 {
-    if (!informant->m_bought && informant->m_type != CGPSInstantInformant::Moving) {
+    informant->SetAttractSpeed(0.2f);
+    if (!informant->m_bought) {
+        if (CBH_Player::GetInstance()->GetTutorialState() == 11) {
+            CGameAnalytics::logTutorialEvents(CGameAnalytics::TUTORIAL_EVENT_INFORMANT_PURCHASED);
+        }
         ShowBuyInformantDialog(informant);
+        Save();
         return;
     }
     if (informant->IsSearching()) {
         ShowInformantIsSearchingDialog(informant);
+        Save();
         return;
     }
 
@@ -1567,20 +1682,18 @@ void CBH_GPSMap::OnGPSInstantInformantSelected(CGPSInstantInformant* informant)
     if (!informant->IsBountyAvailable()) {
         return;
     }
-    if (informant->m_type == CGPSInstantInformant::Targeting) {
-        RequestTargetPicker();
-        return;
-    }
     if (informant->m_type == CGPSInstantInformant::Blue) {
-        camera = GetRandomCamera(false, false);
-        if (camera == NULL) {
-            camera = GetRandomCamera(true, false);
-        }
+        camera = GetCameraForBlueInformant();
+    } else if (informant->m_type == CGPSInstantInformant::Moving) {
+        camera = GetMovingRandomCamera();
     } else {
-        camera = GetRandomCamera(true, informant->m_type == CGPSInstantInformant::Moving);
+        camera = GetRandomCamera(true, false);
     }
     if (camera != NULL) {
-        if (informant->m_type == CGPSInstantInformant::Gated) {
+        if (informant->m_type == CGPSInstantInformant::Targeting) {
+            RequestTargetPicker();
+            return;
+        } else if (informant->m_type == CGPSInstantInformant::Gated) {
             camera->SetGatedMissionOnCamera(informant, 0, false);
         } else {
             camera->SetBountyOnCamera(informant, false, false);
@@ -1598,10 +1711,11 @@ void CBH_GPSMap::OnGPSInstantInformantSelected(CGPSInstantInformant* informant)
         dialog->SetButtons(CDialogWindow::BUTTON_OK);
         m_startDialogs->Add(dialog);
         m_startDialogs->Start();
+        Save();
         return;
     }
     informant->OnBountyGiven(camera->m_id);
-    ScrollToItem(*camera, 1.1f);
+    camera->SetAttractSpeed(1.1f);
     Save();
     OnCameraSelected(camera);
 }
@@ -1717,6 +1831,16 @@ void CBH_GPSMap::OnEnterBackground()
     m_backgroundCount++;
 }
 
+void CBH_GPSMap::OpenPendingFriendsWindow()
+{
+    if (m_openFriendsWindow) {
+        m_openFriendsWindow = false;
+        CFriendsWindow* window = new CFriendsWindow();
+        window->SetTab(m_socialNetworkMode);
+        AddModal(window);
+    }
+}
+
 void CBH_GPSMap::OnGPSSocialNetworkSelected()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
@@ -1725,17 +1849,15 @@ void CBH_GPSMap::OnGPSSocialNetworkSelected()
         return;
     }
     CNGSLocalUser* local = CNGS::GetInstance()->GetLocalUser();
-    if (!local->isAuthenticated(2) ||
-        (!local->isAuthenticated(1) && GameCenter_Facade::GetInstance()->isGameCenterSupported() == true)) {
-        app->StartLogin(App::LoginBothNetworks, true);
+    if (!local->isAuthenticated(SOCIAL_NETWORK_FACEBOOK) ||
+        (!local->isAuthenticated(SOCIAL_NETWORK_GAME_CENTER) &&
+         GameCenter_Facade::GetInstance()->isGameCenterSupported() == true)) {
+        if (!CNGSLoginFlow::GetInstance()->IsRunning()) {
+            app->StartLogin(App::LoginBothNetworks, true);
+        }
         return;
     }
-    if (m_openFriendsWindow) {
-        CFriendsWindow* window = new CFriendsWindow();
-        window->SetTab(m_socialNetworkMode);
-        AddModal(window);
-    }
-    m_openFriendsWindow = false;
+    OpenPendingFriendsWindow();
 }
 
 bool CBH_GPSMap::LoadPrefetchedManagerResource()
@@ -1761,8 +1883,11 @@ void CBH_GPSMap::CancelInstantInformantWithCamera(int cameraId)
 
 void CBH_GPSMap::OnGPSNetworkSelected(CGPSNetwork*)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CBH_NetworkWindow::GetInstance()->BringToFrontModal(app->m_mainLayer);
+    if (CBH_Player::GetInstance()->GetTutorialState() == 7) {
+        CGameAnalytics::logTutorialEvents(CGameAnalytics::TUTORIAL_EVENT_ENTERED_SAFEHOUSE);
+    }
+    CBH_NetworkWindow* network = CBH_NetworkWindow::GetInstance();
+    network->BringToFrontModal(static_cast<App*>(WindowApp::m_instance)->m_mainLayer);
     WindowApp::HandleTunnelCommand(-0x4e79c923, 0, 0, 0);
 }
 
@@ -1773,19 +1898,28 @@ void CBH_GPSMap::NeedSave()
 
 void CBH_GPSMap::OnShopItemSelected(CGPSShop*)
 {
-    CShopWindow::ETab tab = CShopWindow::TAB_WEAPONS;
-    if (CTutorialManager::IsPlayerInTutorial()) {
-        tab = static_cast<CShopWindow::ETab>(CTutorialManager::GetCurrentShopTab());
+    CGameAnalytics::logStoreEnter(CGameAnalytics::SHOP_ENTER_GPS_ITEM);
+    CRegularShop* shop = CRegularShop::GetInstance(true);
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial() == 1) {
+        shop->SetTab(static_cast<CShopWindow::ETab>(static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->GetCurrentShopTab()));
     }
-    CRegularShop::Show(tab);
+    // the original adds the shop without checking its parent
+    m_parent->AddModal(shop);
 }
 
 void CBH_GPSMap::OnBarItemSelected(CGPSBar*)
 {
-    if (!HasModalChild()) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        app->m_mainLayer->AddModal(new CFriendsWindow());
+    if (HasModalChild()) {
+        return;
     }
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    if (!app->GetNetworkAvailability()->IsAvailable()) {
+        static_cast<App*>(WindowApp::m_instance)->m_gserveHandler->ShowOfflineModeDialog();
+        return;
+    }
+    m_openFriendsWindow = true;
+    m_socialNetworkMode = 1;
+    OnGPSSocialNetworkSelected();
 }
 
 void CBH_GPSMap::OnBarVisible()
@@ -1803,14 +1937,8 @@ void CBH_GPSMap::OnZombiesItemSelected(CGPSZombiesPromo*)
 
 void CBH_GPSMap::OnCooperationItemSelected(CGPSCooperation*)
 {
-    if (HasModalChild()) {
-        return;
-    }
-    if (CChallengeManager::GetTimeSec() == 0) {
-        static_cast<App*>(WindowApp::m_instance)->m_gserveHandler->ShowOfflineModeDialog();
-    } else {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        app->m_mainLayer->AddModal(new CChallengesWindow());
+    if (!HasModalChild()) {
+        ShowCoopWindow();
     }
 }
 
@@ -1858,39 +1986,53 @@ void CBH_GPSMap::CreateAlternativeStoryLineInformants()
 
 void CBH_GPSMap::UpdateMissionInformants()
 {
-    for (int group = 0; group < 5; ++group) {
+    // the original keeps m_movingMissionInformant here
+    HideAllInformantsImpl(&m_missionInformants[0]);
+    UnhideInformantImpl(&m_missionInformants[0]);
+    for (int group = 1; group < 5; ++group) {
         HideAllInformantsImpl(&m_missionInformants[group]);
-        if (group == 0 || !CTutorialManager::IsPlayerInTutorial()) {
+        if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
             UnhideInformantImpl(&m_missionInformants[group]);
         }
     }
 }
 
-void CBH_GPSMap::HideAllInformantsImpl(Vector<CGPSMissionInformant*>* informants)
+__attribute__((noinline)) void CBH_GPSMap::HideAllInformantsImpl(Vector<CGPSMissionInformant*>* informants)
 {
     for (int index = 0; index < informants->size(); ++index) {
         (*informants)[index]->SetVisible(false);
     }
 }
 
-void CBH_GPSMap::UnhideInformantImpl(Vector<CGPSMissionInformant*>* informants)
+__attribute__((noinline)) void CBH_GPSMap::UnhideInformantImpl(Vector<CGPSMissionInformant*>* informants)
 {
     CGPSMissionInformant* first = NULL;
+    int firstMissionId = INT_MAX;
     for (int index = 0; index < informants->size(); ++index) {
         CGPSMissionInformant* informant = (*informants)[index];
-        if (informant->IsAvailable() && (first == NULL || informant->m_missionId < first->m_missionId)) {
+        if (informant->IsAvailable() && informant->m_missionId < firstMissionId) {
             first = informant;
+            firstMissionId = informant->m_missionId;
         }
     }
     if (first != NULL) {
         first->SetVisible(true);
+        const Vector<CGPSMissionInformant*>& movingInformants = m_missionInformants[3];
+        for (int index = 0; index < movingInformants.size(); ++index) {
+            if (first == movingInformants[index]) {
+                m_movingMissionInformant = first;
+            }
+        }
     }
 }
 
 void CBH_GPSMap::OnGpsMissionInformantSelected(CGPSMissionInformant* informant)
 {
-    if (informant == NULL || !informant->IsAvailable()) {
+    if (informant == NULL || !informant->IsAvailable() || m_dialogsQueue.size() != 0) {
         return;
+    }
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsMissionInformantBlink(informant->m_id)) {
+        CGameAnalytics::logTutorialEvents(CGameAnalytics::TUTORIAL_EVENT_STORY_INFORMANT_SELECTED);
     }
     if (!MakePlayerWeaponCheck(informant->m_missionId)) {
         return;
@@ -1900,13 +2042,14 @@ void CBH_GPSMap::OnGpsMissionInformantSelected(CGPSMissionInformant* informant)
         return;
     }
     CGPSHuntingItem* item = camera->GetGPSHuntingItem();
-    if (item != NULL && item->GetMissionId() != informant->m_missionId) {
+    if (camera->HasBlueBounty()
+        || (item != NULL && (!camera->HasMission() || item->GetMissionId() != informant->m_missionId))) {
         CDialogWindow* warning = new CDialogWindow(true);
         warning->SetTitleText("IDS_DIALOG_TITLE_WARNING");
         warning->SetMessageText(ResString("IDS_MESSAGE_CAN_NOT_TAKE_RED_MISSION_BECAUSE_OF_BLUE"));
         warning->SetButtons(CDialogWindow::BUTTON_OK);
         m_parent->AddModal(warning);
-        ScrollToItem(*camera, 1.1f);
+        camera->SetAttractSpeed(1.1f);
         return;
     }
     if (item == NULL) {
@@ -1914,94 +2057,124 @@ void CBH_GPSMap::OnGpsMissionInformantSelected(CGPSMissionInformant* informant)
         WindowApp::HandleTunnelCommand(-0x2051ee21, 0, 0, 0);
         Save();
     }
+    m_selectedCamera = camera;
     ShowMissionStartDialogs(informant->m_missionId);
-    ScrollToItem(*informant, 0.2f);
+    if (m_dialogsQueue.size() == 0) {
+        m_selectedCamera = NULL;
+        camera->SetAttractSpeed(1.1f);
+        return;
+    }
+    informant->SetAttractSpeed(0.2f);
 }
 
+// Original 0xefefc: up to 5 rounds (doubling the radius) of 1000 random spots on a circle around
+// the camera; at the 999th spot the ring is scanned every 2 degrees (shrinking the radius by 2)
+// and then the whole region pixel by pixel. Without a free spot the last tried one is used.
 void CBH_GPSMap::PlaceSubContract(CGPSSubContract* contract, unsigned int radius)
 {
-    const CGPSHauntCamera* camera = contract->GetHauntCamera();
-    const int width = contract->GetWidth();
-    const int height = contract->GetHeight();
-    const int centerX = camera->GetX() + camera->GetWidth() / 2 - width / 2;
-    const int centerY = camera->GetY() + camera->GetHeight() / 2 - height / 2;
-    const int mapBottom = m_mapHeight - SubContractBottomInset();
-    const int mapTop = SScreenAdaptingConstant(40, 80)() + MapHeightInset();
-    const int stepX = static_cast<int>(contract->m_scaleX);
-    const int stepY = static_cast<int>(contract->m_scaleY);
-    const int minimumRadius = (width + camera->GetWidth()) / 2;
-    int searchRadius = static_cast<int>(radius);
-    if (searchRadius < width * 3) {
+    CGPSHauntCamera* camera = contract->GetHauntCamera();
+    int cameraWidth = camera->GetWidth();
+    int cameraX = camera->GetX();
+    int cameraY = camera->GetY();
+    int cameraHeight = camera->GetHeight();
+    int width = contract->GetWidth();
+    int height = contract->GetHeight();
+    CRandGen* random = CRandGen::GetInstance();
+    unsigned int searchRadius = radius;
+    if (searchRadius < static_cast<unsigned int>(width * 3)) {
         searchRadius = width * 3;
     }
-    if (searchRadius < minimumRadius) {
-        searchRadius = minimumRadius;
-    }
-    CRandGen* random = CRandGen::GetInstance();
-    for (int expansion = 0; expansion < 5; ++expansion, searchRadius *= 2) {
-        int minX = centerX - searchRadius - width / 2;
-        int minY = centerY - searchRadius - height / 2;
-        int maxX = centerX + searchRadius + width / 2;
-        int maxY = centerY + searchRadius + height / 2;
+    int centerY = cameraY + cameraHeight / 2;
+    int halfWidth = width / 2;
+    int halfCameraWidth = cameraWidth / 2;
+    int centerX = cameraX + halfCameraWidth;
+    int halfHeight = height / 2;
+    int x = cameraX;
+    int y = centerY;
+    for (int round = 5; round != 0; --round) {
+        int mapWidth = m_mapWidth;
+        int top = SScreenAdaptingConstant(40, 80)() + MapHeightInset();
+        int mapHeight = m_mapHeight;
+        int bottom = SScreenAdaptingConstant(mapHeight - SubContractBottomInset())();
+        Vector<const CGPSItem*> items;
+        int attempt = 0;
+        items.addElement(camera);
+        int maxY = halfHeight + centerY + searchRadius;
+        if (mapHeight - height < maxY) {
+            maxY = mapHeight - height;
+        }
+        if (bottom - height < maxY) {
+            maxY = bottom - height;
+        }
+        int maxX = halfWidth + centerX + searchRadius;
+        if (mapWidth - width < maxX) {
+            maxX = mapWidth - width;
+        }
+        int minY = centerY - searchRadius - halfHeight;
+        if (minY < top) {
+            minY = top;
+        }
+        int minX = centerX - searchRadius - halfWidth;
         if (minX < 0) {
             minX = 0;
         }
-        if (minY < mapTop) {
-            minY = mapTop;
+        FilterRegionItems(minX, minY, maxX, maxY, items);
+        int scanTop = cameraY + cameraHeight / 2 - halfHeight - searchRadius;
+        if (scanTop < top) {
+            scanTop = top;
         }
-        if (maxX > m_mapWidth - width) {
-            maxX = m_mapWidth - width;
+        int scanLeft = halfCameraWidth + cameraX - halfWidth - searchRadius;
+        if (scanLeft < 1) {
+            scanLeft = 0;
         }
-        if (maxY > mapBottom - height) {
-            maxY = mapBottom - height;
-        }
-        if (minX > maxX || minY > maxY) {
-            continue;
-        }
-        // SetScaledPos stores unscaled coordinates. Check the position it will display.
-        const int firstX = (minX + stepX - 1) / stepX;
-        const int firstY = (minY + stepY - 1) / stepY;
-        const int lastX = maxX / stepX;
-        const int lastY = maxY / stepY;
-        if (firstX > lastX || firstY > lastY) {
-            continue;
-        }
-
-        Vector<const CGPSItem*> items;
-        FilterRegionItems(minX, minY, maxX + width, maxY + height, items);
-        for (int index = items.size() - 1; index >= 0; --index) {
-            if (items[index] == contract) {
-                items.removeElementAt(index);
-            }
-        }
-
-        for (int attempt = 0; attempt < 1000; ++attempt) {
-            int distance = random->GetRandRange(minimumRadius, searchRadius);
-            float angle = static_cast<float>(random->GetRand(360));
-            int x = (centerX + static_cast<int>(MathLib::Sin(angle) * distance)) / stepX;
-            int y = (centerY + static_cast<int>(MathLib::Cos(angle) * distance)) / stepY;
-            x = ClampMapCoordinate(x, firstX, lastX) * stepX;
-            y = ClampMapCoordinate(y, firstY, lastY) * stepY;
+        bool found = false;
+        for (; attempt < 1000; ++attempt) {
+            float distance = random->GetRandRange(halfWidth + halfCameraWidth, searchRadius);
+            float angle = random->GetRand(360);
+            x = ClampMapCoordinate(static_cast<int>(MathLib::Sin(angle) * distance) + (centerX - halfWidth), minX, maxX);
+            y = ClampMapCoordinate(static_cast<int>(MathLib::Cos(angle) * distance) + (centerY - halfHeight), minY, maxY);
             if (IsRegionFree(x, y, x + width, y + height, items)) {
-                contract->SetScaledPos(x, y);
-                return;
+                found = true;
+                break;
             }
-        }
-        for (int x = firstX * stepX; x <= maxX; x += stepX) {
-            for (int y = firstY * stepY; y <= maxY; y += stepY) {
-                if (IsRegionFree(x, y, x + width, y + height, items)) {
-                    contract->SetScaledPos(x, y);
-                    return;
+            if (attempt == 998) {
+                for (unsigned int ring = searchRadius; halfWidth + halfCameraWidth < static_cast<int>(ring); ring -= 2) {
+                    for (int degrees = 0; degrees < 360; degrees += 2) {
+                        x = ClampMapCoordinate(static_cast<int>(MathLib::Sin(degrees) * ring) + (centerX - halfWidth), minX, maxX);
+                        y = ClampMapCoordinate(static_cast<int>(MathLib::Cos(degrees) * ring) + (centerY - halfHeight), minY, maxY);
+                        if (IsRegionFree(x, y, x + width, y + height, items)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        break;
+                    }
+                }
+                if (found) {
+                    break;
+                }
+                for (x = scanLeft; x < maxX; ++x) {
+                    for (y = scanTop; y < maxY; ++y) {
+                        if (IsRegionFree(x, y, width + x, height + y, items)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        break;
+                    }
+                }
+                if (found) {
+                    break;
                 }
             }
         }
-        if (minX == 0 && minY == mapTop && maxX == m_mapWidth - width && maxY == mapBottom - height) {
+        if (found) {
             break;
         }
+        searchRadius = searchRadius << 1;
     }
-
-    int x = ClampMapCoordinate(camera->GetX() + camera->GetWidth() + stepX, 0, m_mapWidth - width);
-    int y = ClampMapCoordinate(centerY, 0, mapBottom - height);
     contract->SetScaledPos(x, y);
 }
 
@@ -2014,7 +2187,7 @@ bool CBH_GPSMap::IsItemIntersects(const CGPSItem& item, int left, int top, int r
     if (x <= right && y <= bottom && x + width >= left && y + height >= top) {
         return true;
     }
-    for (int index = 0; index < item.m_subItems.size(); ++index) {
+    for (unsigned int index = 0; index < static_cast<unsigned int>(item.m_subItems.size()); ++index) {
         const CRectangle& rect = item.m_subItems[index];
         if (rect.m_x <= right && rect.m_y <= bottom
             && rect.m_x + rect.m_width >= left && rect.m_y + rect.m_height >= top) {
@@ -2024,10 +2197,10 @@ bool CBH_GPSMap::IsItemIntersects(const CGPSItem& item, int left, int top, int r
     return false;
 }
 
-bool CBH_GPSMap::IsRegionFree(int left, int top, int right, int bottom,
+__attribute__((noinline)) bool CBH_GPSMap::IsRegionFree(int left, int top, int right, int bottom,
                              const Vector<const CGPSItem*>& items)
 {
-    for (int index = 0; index < items.size(); ++index) {
+    for (unsigned int index = 0; index < static_cast<unsigned int>(items.size()); ++index) {
         if (IsItemIntersects(*items[index], left, top, right, bottom)) {
             return false;
         }
@@ -2035,39 +2208,25 @@ bool CBH_GPSMap::IsRegionFree(int left, int top, int right, int bottom,
     return true;
 }
 
+// Original 0xf02e0: every map item, then every haunt camera and its sub contract.
 void CBH_GPSMap::FilterRegionItems(int left, int top, int right, int bottom,
                                   Vector<const CGPSItem*>& items) const
 {
-    const CGPSItem* fixedItems[] = {m_shop, m_network, m_bar, m_cooperation, m_zombiesPromo};
-    for (unsigned int index = 0; index < sizeof(fixedItems) / sizeof(fixedItems[0]); ++index) {
-        const CGPSItem* item = fixedItems[index];
-        if (item != NULL && IsItemIntersects(*item, left, top, right, bottom)) {
+    for (unsigned int index = 0; index < static_cast<unsigned int>(m_items.size()); ++index) {
+        const CGPSItem* item = m_items[index];
+        if (IsItemIntersects(*item, left, top, right, bottom) == true) {
             items.addElement(item);
         }
     }
-    for (int group = 0; group < 5; ++group) {
-        for (int index = 0; index < m_missionInformants[group].size(); ++index) {
-            const CGPSItem* item = m_missionInformants[group][index];
-            if (IsItemIntersects(*item, left, top, right, bottom)) {
-                items.addElement(item);
-            }
-        }
-    }
-    for (int index = 0; index < m_instantInformants.size(); ++index) {
-        const CGPSItem* item = m_instantInformants[index];
-        if (IsItemIntersects(*item, left, top, right, bottom)) {
-            items.addElement(item);
-        }
-    }
-    for (int haunt = 0; haunt < m_haunts.size(); ++haunt) {
+    for (unsigned int haunt = 0; haunt < static_cast<unsigned int>(m_haunts.size()); ++haunt) {
         const Vector<CGPSHauntCamera*>& cameras = m_haunts[haunt]->m_cameras;
-        for (int index = 0; index < cameras.size(); ++index) {
+        for (unsigned int index = 0; index < static_cast<unsigned int>(cameras.size()); ++index) {
             const CGPSHauntCamera* camera = cameras[index];
-            if (IsItemIntersects(*camera, left, top, right, bottom)) {
+            if (IsItemIntersects(*camera, left, top, right, bottom) == true) {
                 items.addElement(camera);
             }
             const CGPSSubContract* contract = camera->m_subContract;
-            if (contract != NULL && IsItemIntersects(*contract, left, top, right, bottom)) {
+            if (contract != NULL && IsItemIntersects(*contract, left, top, right, bottom) == true) {
                 items.addElement(contract);
             }
         }
@@ -2088,9 +2247,9 @@ void CBH_GPSMap::FlushDialogsQueue()
     m_dialogsQueue.removeAllElements();
 }
 
-void CBH_GPSMap::ShowLowMoneyDialog()
+__attribute__((noinline)) void CBH_GPSMap::ShowLowMoneyDialog()
 {
-    m_pendingCommand = 0x1d;
+    m_pendingCommand = PendingLowMoneyWarning;
     CDialogWindow* dialog = new CDialogWindow(true);
     dialog->SetButtons(CDialogWindow::BUTTON_BUY, CDialogWindow::BUTTON_GET, CDialogWindow::BUTTON_IGNORE);
     dialog->SetMessageText(ResString("IDS_MENU_LOW_MONEY_DIALOG"), NULL);
@@ -2099,11 +2258,11 @@ void CBH_GPSMap::ShowLowMoneyDialog()
     m_parent->AddModal(dialog);
 }
 
-void CBH_GPSMap::ShowCoopWindow()
+__attribute__((noinline)) void CBH_GPSMap::ShowCoopWindow()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     if (!app->GetNetworkAvailability()->IsAvailable()) {
-        app->m_gserveHandler->ShowOfflineModeDialog();
+        static_cast<App*>(WindowApp::m_instance)->m_gserveHandler->ShowOfflineModeDialog();
         return;
     }
     m_openFriendsWindow = true;
@@ -2113,28 +2272,22 @@ void CBH_GPSMap::ShowCoopWindow()
 
 void CBH_GPSMap::FillBeforeTargetHuntInfo(const CGPSBounty* bounty)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    int friendId = bounty->m_targetFriendId;
-    CBH_Player::GetInstance()->m_missionBriefImage = "IDB_DIALOG_NOTEBOOK";
-    ICRenderSurface* avatar = app->m_surfaceManager->CreateSurface("IDB_AVATAR_01", true);
-    CBH_Player::GetInstance()->m_field208 = reinterpret_cast<int>(avatar);
-    CBH_Player::GetInstance()->m_missionBriefEnergy = bounty->m_energyCost;
-    CBH_Player::GetInstance()->m_field21c = bounty->m_experienceReward;
-    CBH_Player::GetInstance()->m_field220 = bounty->m_moneyReward;
-    CBH_Player::GetInstance()->m_targetFriendId = friendId;
-    CBH_Player::GetInstance()->m_missionBriefTargetFB = "";
+    // The target dialog owns its avatar; the briefing holds text and reward values.
+    FillBeforeHuntInfo(bounty, "IDB_DIALOG_NOTEBOOK", NULL);
+    CBH_Player* player = CBH_Player::GetInstance();
+    player->m_targetFriendId = bounty->m_targetFriendId;
 
-    XString bossName;
-    bossName = bounty->m_bossName;
-    XString text = bounty->GetObjectiveGoal();
-    CGPSHaunt* haunt = GetHauntByName(m_selectedCamera->m_haunt);
-    XString goal = text.Replace(L"[LocationName]", haunt->m_screenName.c_str(), true);
-    CBountyManager::SMessage* message = app->m_bountyManager->GetRandomTargettingMessage();
-    XString brief = ResString("IDS_DIALOG_NAME") + XString(": ") + bossName;
-    brief.Append(XString("\n"));
-    brief.Append(message->m_text + XString(""));
-    CBH_Player::GetInstance()->m_missionBriefText = brief;
-    CBH_Player::GetInstance()->m_missionBriefTitle = message->m_title;
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    if (app->m_bountyManager->HasTargettingMessages()) {
+        const CBountyManager::SMessage* message = app->m_bountyManager->GetRandomTargettingMessage();
+        if (message != NULL) {
+            XString brief = ResString("IDS_DIALOG_NAME") + XString(": ") + bounty->m_bossName;
+            brief.Append(XString("\n"));
+            brief.Append(bounty->ParametrizeText(message->m_text));
+            player->m_missionBriefText = brief;
+            player->m_missionBriefTitle = message->m_title;
+        }
+    }
 }
 
 void CBH_GPSMap::ShowShopWithItem(CItemManager* manager, CShopWindow::ETab tab, CItem::EItemTypes, int id)
@@ -2157,10 +2310,12 @@ void CBH_GPSMap::ShowShopWithItem(CItemManager* manager, CShopWindow::ETab tab, 
 
 void CBH_GPSMap::FillBeforeHuntInfo(const CGPSHuntingItem* item)
 {
-    const char* image = "IDB_DIALOG_NOTEBOOK";
+    const char* image;
     if (CStrWChar(item->m_targetFBUser.c_str()).GetLength() < 1 && item->m_targetFriendId < 0) {
-        // Boss portrait when the target is not a friend.
+        // Boss portrait when the target is not a friend (the original checks nothing on the way).
         image = item->GetObjectiveBossType()->m_visualCharacter->m_screenImage;
+    } else {
+        image = "IDB_DIALOG_NOTEBOOK";
     }
     FillBeforeHuntInfo(item, image, NULL);
 }
@@ -2177,13 +2332,12 @@ void CBH_GPSMap::FillBeforeHuntInfo(const CGPSHuntingItem* item, const char* ima
     CBH_Player::GetInstance()->m_missionBriefTargetFB = CStrWChar(item->m_targetFBUser.c_str());
     CBH_Player::GetInstance()->m_field238 = item->m_hasBonus;
 
-    XString goal;
-    if (item->GetType() == 0) {
-        goal = item->GetObjectiveGoal();
-    } else {
-        XString text = item->GetObjectiveGoal();
+    XString goal = item->GetObjectiveGoal();
+    if (item->GetType() != 0 && m_selectedCamera != NULL) {
         CGPSHaunt* haunt = GetHauntByName(m_selectedCamera->m_haunt);
-        goal = text.Replace(L"[LocationName]", haunt->m_screenName.c_str(), true);
+        if (haunt != NULL) {
+            goal = goal.Replace(L"[LocationName]", haunt->m_screenName.c_str(), true);
+        }
     }
     XString brief = ResString("IDS_DIALOG_NAME") + XString(": ") + item->GetObjectiveBossScreenName();
     brief.Append(XString("\n"));
@@ -2196,15 +2350,23 @@ void CBH_GPSMap::ShowMissionPriorDialogs(int missionId)
     App* app = static_cast<App*>(WindowApp::m_instance);
     m_pendingCommand = 0xb;
     const CMission* mission = app->m_missionManager->GetMissionById(missionId);
+    if (mission == NULL) {
+        return;
+    }
     app->m_soundManager->PlaySound("IDM_MENU_WINDOW_OPEN_CLOSE", false, false);
     for (int index = 0; index < mission->m_priorDialogs.size(); ++index) {
         CMission::Dialog entry = mission->m_priorDialogs[index];
         CDialogWindow* dialog = new CDialogWindow(true);
-        dialog->SetExtraImageFromImageID(entry.m_image);
+        if (entry.m_image != NULL) {
+            dialog->SetExtraImageFromImageID(entry.m_image);
+        }
         dialog->SetTitleText(entry.m_title.Upper());
         CBH_PersonType* boss = app->InitPersonTypeManager()->GetType(mission->m_boss);
-        XString text = CGPSHuntingItem::ParametrizeTextWithParams(entry.m_text, mission->m_bossName,
-                                                                  boss->m_visualCharacter->m_isMan);
+        bool isMan = true;
+        if (boss != NULL && boss->m_visualCharacter != NULL) {
+            isMan = boss->m_visualCharacter->m_isMan;
+        }
+        XString text = CGPSHuntingItem::ParametrizeTextWithParams(entry.m_text, mission->m_bossName, isMan);
         dialog->SetMessageText(text, NULL);
         dialog->SetButtons(CDialogWindow::BUTTON_OK, CDialogWindow::BUTTON_NONE, CDialogWindow::BUTTON_NONE);
         dialog->SetButtonsCommands(AcceptMissionDialog, -1, -1);
@@ -2220,18 +2382,30 @@ void CBH_GPSMap::ShowMissionPriorDialogs(int missionId)
 
 void CBH_GPSMap::ShowBeforeHuntDialog()
 {
-    FillBeforeHuntInfo(m_selectedCamera->GetGPSHuntingItem());
+    if (m_selectedCamera == NULL) {
+        return;
+    }
+    CGPSHuntingItem* item = m_selectedCamera->GetGPSHuntingItem();
+    if (m_selectedCamera->HasTempMission()) {
+        item = m_selectedCamera->m_temporaryItem;
+    }
+    if (item == NULL) {
+        m_selectedCamera = NULL;
+        return;
+    }
+    if (item->GetType() == 1 && item->m_targetFBUser.Length() != 0) {
+        FillBeforeTargetHuntInfo(static_cast<const CGPSBounty*>(item));
+    } else {
+        FillBeforeHuntInfo(item);
+    }
     Window* dialog = NULL;
     if (CBH_Player::GetInstance()->m_missionBriefTargetFB.GetLength() < 1) {
         dialog = CreateBeforeHuntDialog(true);
     } else {
         dialog = CreateBeforeTargettingDialog(true);
     }
-    CGPSSubContract* contract = NULL;
-    if (m_selectedCamera != NULL) {
-        contract = m_selectedCamera->m_subContract;
-    }
-    if (m_selectedCamera != NULL && contract != NULL) {
+    CGPSSubContract* contract = m_selectedCamera->m_subContract;
+    if (contract != NULL) {
         unsigned int activateTime = contract->GetActivateTime();
         if (App::GetTime() + 1 < activateTime) {
             // Countdown to the next sub contract under the dialog.
@@ -2268,7 +2442,8 @@ void CBH_GPSMap::ShowBeforeHuntDialog()
         }
     }
     m_parent->AddModal(dialog);
-    m_pendingCommand = 0xf;
+    m_showingHuntConfirmation = true;
+    m_pendingCommand = PendingHuntConfirmation;
 }
 
 void CBH_GPSMap::UpdateMapItems()
@@ -2284,49 +2459,47 @@ void CBH_GPSMap::ShowMissionStartDialogs(int missionId)
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     const CMission* mission = app->m_missionManager->GetMissionById(missionId);
-    if (mission == NULL) {
+    if (mission == NULL || m_selectedCamera == NULL || m_dialogsQueue.size() != 0) {
         return;
     }
-    for (int group = 0; group < 5; ++group) {
-        for (int index = 0; index < m_missionInformants[group].size(); ++index) {
-            CGPSMissionInformant* informant = m_missionInformants[group][index];
-            if (informant->m_missionId != missionId) {
-                continue;
-            }
-            CGPSHauntCamera* camera = GetCameraById(informant->m_cameraId);
-            if (camera == NULL || camera->GetGPSHuntingItem() == NULL) {
-                return;
-            }
-            CGPSHuntingItem* item = camera->GetGPSHuntingItem();
-            for (int dialogIndex = 0; dialogIndex < mission->m_startDialogs.size(); ++dialogIndex) {
-                const CMission::Dialog& entry = mission->m_startDialogs[dialogIndex];
-                CDialogWindow* dialog = new CDialogWindow(true);
-                dialog->SetExtraImageFromImageID(entry.m_image);
-                dialog->SetTitleText(entry.m_title);
-                dialog->SetMessageText(item->ParametrizeText(entry.m_text));
-                dialog->SetButtons(CDialogWindow::BUTTON_OK);
-                m_startDialogs->Add(dialog);
-            }
-            m_startDialogs->Start();
-            return;
+    const CGPSHuntingItem* item = m_selectedCamera->GetGPSHuntingItem();
+    if (item == NULL) {
+        return;
+    }
+    app->m_soundManager->PlaySound("IDM_MENU_WINDOW_OPEN_CLOSE", false, false);
+    for (int index = 0; index < mission->m_startDialogs.size(); ++index) {
+        const CMission::Dialog& entry = mission->m_startDialogs[index];
+        CDialogWindow* dialog = new CDialogWindow(true);
+        if (entry.m_image != NULL) {
+            dialog->SetExtraImageFromImageID(entry.m_image);
         }
+        dialog->SetTitleText(entry.m_title.Upper());
+        dialog->SetMessageText(item->ParametrizeText(entry.m_text));
+        dialog->SetButtons(CDialogWindow::BUTTON_OK);
+        dialog->SetButtonsCommands(AcceptMissionDialog, -1, -1);
+        m_dialogsQueue.insertElementAt(dialog, 0);
+    }
+    if (m_dialogsQueue.size() != 0) {
+        m_pendingCommand = PendingStoryIntro;
+        ShowNextQueueDialog(true);
     }
 }
 
+// Original 0xe8e34: the map element is cleared and every item writes a fresh element.
 void CBH_GPSMap::Save()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    TiXmlElement* map = CXmlHelper::ObtainElement(app->m_saveManager->GetRootElement(), XString("gps_map"));
-    // Keep map fields belonging to systems that have not been restored yet.
+    m_needSave = false;
+    TiXmlElement* map = CXmlHelper::ObtainElement(
+        static_cast<App*>(WindowApp::m_instance)->m_saveManager->GetRootElement(), XString("gps_map"));
+    map->Clear();
+    map->SetAttribute("show_featured_install", m_showFeaturedInstall);
+    map->SetAttribute("FI_minimizes_count", m_backgroundCount);
     map->SetAttribute("currentChallengeDay", m_currentChallengeDay);
     map->SetAttribute("needToShowRocketLauncherIntro", m_showRocketLauncherIntro);
-    for (int index = 0; index < m_haunts.size(); ++index) {
-        m_haunts[index]->Save(map);
+    for (int index = 0; index < m_items.size(); ++index) {
+        m_items[index]->Save(map);
     }
-    for (int index = 0; index < m_instantInformants.size(); ++index) {
-        m_instantInformants[index]->Save(map);
-    }
-    app->m_saveManager->SaveOnNextUpdate(false);
+    static_cast<App*>(WindowApp::m_instance)->m_saveManager->SaveOnNextUpdate(false);
 }
 
 CGPSHauntCamera* CBH_GPSMap::GetCameraById(int id)
@@ -2345,7 +2518,11 @@ bool CBH_GPSMap::IsMovingCameraMissionsFinished() const
     const Vector<CGPSMissionInformant*>& informants = m_missionInformants[3];
     for (int index = 0; index < informants.size(); ++index) {
         CGPSMissionInformant* informant = informants[index];
-        if (informant == NULL || !CBH_Player::GetInstance()->IsMissionCompleted(informant->m_missionId)) {
+        if (informant == NULL) {
+            return false;
+        }
+        const int missionId = informant->m_missionId;
+        if (!CBH_Player::GetInstance()->IsMissionCompleted(missionId)) {
             return false;
         }
     }
@@ -2360,21 +2537,20 @@ bool CBH_GPSMap::ShowNextQueueDialog(bool animate)
     }
     CDialogWindow* dialog = m_dialogsQueue[count - 1];
     dialog->SetEasyStyle(animate, count == 1);
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_mainLayer->AddModal(dialog);
+    static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(dialog);
     return true;
 }
 
 void CBH_GPSMap::StartTutorialMission()
 {
+    // the original resets the player first, does not check the camera and saves afterwards
+    CBH_Player::GetInstance()->SetPlayerStartParams();
     CGPSHauntCamera* camera = GetCameraById(4);
-    if (camera != NULL) {
-        CBH_Player::GetInstance()->SetPlayerStartParams();
-        if (!camera->HasHuntingItem()) {
-            camera->SetMissionOnCamera(1);
-        }
-        StartHunt(camera, NULL, true);
+    if (!camera->HasHuntingItem()) {
+        camera->SetMissionOnCamera(1);
     }
+    StartHunt(camera, NULL, true);
+    Save();
 }
 
 void CBH_GPSMap::CheckGameCenterAccounts()
@@ -2477,6 +2653,7 @@ void CBH_GPSMap::StartHunt(CGPSHauntCamera* camera, const CLocation* location, b
     data.m_cameraDurationMs = camera->m_durationMs;
     data.m_cameraHUDModel = camera->m_hudModel;
     data.m_additionalMinionCount = camera->m_additionalMinionCount;
+    data.m_informantUnlockOnLevelUp = WillInformantUnlockOnLevelUp();
     data.m_hasTarget = item->m_targetFriendId != -1 || item->m_targetFBUser.Length() != 0;
     data.m_revenge = item->m_revenge;
     data.m_weaponGated = item->m_weaponGated && item->m_gatedWeapon < 0;
@@ -2848,38 +3025,36 @@ bool CBH_GPSMap::QueueChallengeNewsDialog(CChallenge* challenge, int sender, int
     return true;
 }
 
+// Original 0xe8828: a new challenge day with at least three active challenges queues the
+// challenge dialog (no modal / queue checks in the original).
 void CBH_GPSMap::CheckForNewChallenges()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (app->m_mainLayer->HasModalChild() || !m_startDialogs->IsEmpty()
-        || CChallengeManager::GetTimeSec() == 0 || !app->GetNetworkAvailability()->IsAvailable()) {
-        return;
+    if (static_cast<App*>(WindowApp::m_instance)->GetNetworkAvailability()->IsAvailable()) {
+        int day = static_cast<App*>(WindowApp::m_instance)->m_challengeManager->GetCurrentChallengeDay();
+        if (day != m_currentChallengeDay) {
+            Vector<CChallenge*> challenges = static_cast<App*>(WindowApp::m_instance)->m_challengeManager->GetActiveChallenges();
+            if (challenges.size() > 2) {
+                CChallengesDialog* dialog = new CChallengesDialog();
+                dialog->SetTitleText(ResString("IDS_CHALLENGE_NEW_CHALLENGES_TITLE"));
+                XString text = XString::Format(ResString("IDS_CHALLENGE_LIST_TEXT").c_str(), challenges[0]->m_name.c_str(),
+                                               challenges[1]->m_name.c_str(), challenges[2]->m_name.c_str());
+                dialog->SetChallengeText(text);
+                m_startDialogs->Add(dialog);
+                m_startDialogs->Start();
+                m_currentChallengeDay = day;
+                Save();
+            }
+        }
     }
-    CChallengeManager* manager = app->m_challengeManager;
-    int day = manager->GetCurrentChallengeDay();
-    if (day == m_currentChallengeDay) {
-        return;
-    }
-    Vector<CChallenge*> challenges = manager->GetActiveChallenges();
-    if (challenges.size() < 3) {
-        return;
-    }
-    CChallengesDialog* dialog = new CChallengesDialog();
-    XString format = ResString("IDS_CHALLENGE_LIST_TEXT");
-    dialog->SetChallengeText(XString::Format(format.c_str(), challenges[0]->m_name.c_str(),
-        challenges[1]->m_name.c_str(), challenges[2]->m_name.c_str()));
-    m_startDialogs->Add(dialog);
-    m_startDialogs->Start();
-    m_currentChallengeDay = day;
-    Save();
 }
 
 void CBH_GPSMap::Update()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
+    CheckMapPosBounds();
     app->InitAchievementManager()->Update();
     CheckGiftReceivedNews();
-    if (!CTutorialManager::IsPlayerInTutorial()) {
+    if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
         app->m_challengeManager->Update();
         CheckForNewChallenges();
         CheckChallengeNews();
@@ -2889,7 +3064,7 @@ void CBH_GPSMap::Update()
         m_shop->Update(app->m_updateFrameTime);
     }
     if (m_network != NULL) {
-        m_network->SetVisible(CTutorialManager::IsHomeVisible());
+        m_network->SetVisible(static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsHomeVisible());
         m_network->Update(app->m_updateFrameTime);
     }
     if (m_bar != NULL) {
@@ -2909,6 +3084,9 @@ void CBH_GPSMap::Update()
             m_missionInformants[group][index]->Update(app->m_updateFrameTime);
         }
     }
+    if (m_needSave) {
+        Save();
+    }
     CTjManager* featuredOffers = CTjManager::GetInstance();
     featuredOffers->CheckFeaturedAppCondition();
     if (featuredOffers->m_elapsed == 0) {
@@ -2918,7 +3096,41 @@ void CBH_GPSMap::Update()
         }
     }
     featuredOffers->Update(app->m_updateFrameTime);
-    UpdateScroll();
+    // Original 0xe9f84: an item with an attract speed scrolls the map to it (scroll state 2).
+    for (int index = 0; index < m_clickableItems.size(); ++index) {
+        float speed = m_clickableItems[index]->AttractSpeed();
+        if (speed > 0.0f) {
+            m_scrollTargetX = static_cast<App*>(WindowApp::m_instance)->m_screenWidth / 2
+                - RectCenterX(m_clickableItems[index]->GetRect());
+            m_scrollTargetY = static_cast<App*>(WindowApp::m_instance)->m_screenHeight / 2
+                - RectCenterY(m_clickableItems[index]->GetRect());
+            float minX = static_cast<App*>(WindowApp::m_instance)->m_screenWidth - m_mapWidth;
+            m_scrollTargetX = m_scrollTargetX < minX ? minX : (0.0f < m_scrollTargetX ? 0.0f : m_scrollTargetX);
+            float minY = static_cast<App*>(WindowApp::m_instance)->m_screenHeight - m_mapHeight;
+            m_scrollTargetY = m_scrollTargetY < minY ? minY : (0.0f < m_scrollTargetY ? 0.0f : m_scrollTargetY);
+            m_scrollSpeedX = MathLib::Fabs((m_scrollTargetX - m_mapX) * speed);
+            m_scrollSpeedY = MathLib::Fabs((m_scrollTargetY - m_mapY) * speed);
+            m_scrollX = m_mapX;
+            m_scrollY = m_mapY;
+            m_clickableItems[index]->SetAttractSpeed(0.0f);
+            SetScrollState(2);
+        }
+    }
+    if (m_draggingMap) {
+        // the drag speed becomes the fling velocity, limited to one pixel per millisecond
+        SetScrollState(1);
+        float inverseTicks = 1.0f / (app->m_updateFrameTime + 1);
+        m_scrollVelocityX = (m_scrollX - m_previousScrollX) * inverseTicks;
+        m_scrollVelocityY = (m_scrollY - m_previousScrollY) * inverseTicks;
+        m_scrollVelocityX = m_scrollVelocityX < -1.0f ? -1.0f : (1.0f < m_scrollVelocityX ? 1.0f : m_scrollVelocityX);
+        m_scrollVelocityY = m_scrollVelocityY < -1.0f ? -1.0f : (1.0f < m_scrollVelocityY ? 1.0f : m_scrollVelocityY);
+    } else {
+        UpdateScroll();
+    }
+    m_previousScrollX = m_scrollX;
+    m_previousScrollY = m_scrollY;
+    m_mapX = static_cast<int>(m_scrollX) & ~1;
+    m_mapY = static_cast<int>(m_scrollY) & ~1;
     Window::Update();
     if (m_openTargetPickerAfterLogin && !CNGSLoginFlow::GetInstance()->IsRunning()
         && m_parent != NULL && !m_parent->HasModalChild() && !HasModalChild()) {
@@ -2942,9 +3154,12 @@ void CBH_GPSMap::Update()
         if (m_friendGatedMission != NULL) {
             StartNextFriendGatedMission();
         } else if (m_selectedCamera != NULL) {
-            if (m_showingHuntConfirmation) {
+            if (m_skipAmmoCheck) {
+                OnCameraSelected(m_selectedCamera);
+            } else if (m_showingHuntConfirmation) {
                 CGPSHauntCamera* camera = m_selectedCamera;
                 m_selectedCamera = NULL;
+                m_pendingCommand = 0;
                 StartHunt(camera, NULL, true);
             } else {
                 ShowMissionDialog();
@@ -2968,7 +3183,7 @@ void CBH_GPSMap::Update()
         if (m_mapIdleElapsed >= 2000) {
             HandleBonuses(elapsed);
         }
-        if (m_showRocketLauncherIntro && !CTutorialManager::IsPlayerInTutorial()
+        if (m_showRocketLauncherIntro && !static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()
             && !m_parent->HasModalChild() && m_startDialogs->IsEmpty()) {
             m_showRocketLauncherIntro = false;
             ShowRocketLauncherInroduce();
@@ -2988,21 +3203,19 @@ void CBH_GPSMap::ShowWhatsNewDialog()
     m_startDialogs->Start();
 }
 
+// Original 0xeabb4: tops the rocket ammo up to 3 (no player save here) and queues the intro.
 void CBH_GPSMap::ShowRocketLauncherInroduce()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_Weapon* launcher = app->InitWeaponManager()->GetWeaponById(RocketLauncherId);
-    if (launcher == NULL) {
-        return;
+    CDH_Weapon* launcher = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(RocketLauncherId);
+    if (launcher != NULL) {
+        launcher->setAvailable(true);
+        const CAmmo* ammo = launcher->GetActiveAmmo();
+        if (CBH_Player::GetInstance()->GetAvailableAmmo(ammo, true) < 3) {
+            CBH_Player::GetInstance()->SetAmmoCount(ammo, 3);
+        }
     }
-    launcher->setAvailable(true);
-    const CAmmo* ammo = launcher->GetActiveAmmo();
-    CBH_Player* player = CBH_Player::GetInstance();
-    if (ammo != NULL && player->GetAvailableAmmo(ammo, true) < 3) {
-        player->SetAmmoCount(ammo, 3);
-    }
-    player->Save();
-    CIntroduceItemWindow* dialog = new CIntroduceItemWindow(launcher, XString(""), true, false);
+    CIntroduceItemWindow* dialog = new CIntroduceItemWindow(
+        static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->GetWeaponById(RocketLauncherId), XString(""), true, false);
     dialog->SetOnCloseCommand(AcceptMissionDialog);
     m_startDialogs->Add(dialog);
     m_startDialogs->Start();
@@ -3010,16 +3223,14 @@ void CBH_GPSMap::ShowRocketLauncherInroduce()
 
 void CBH_GPSMap::HandleBonuses(int elapsed)
 {
-    CBH_Player* player = CBH_Player::GetInstance();
+    // the original asks for the player every time and does not restart the start dialogs here
     bool newDay = false;
-    if (player->TryMakeFiveDaysBonus(&newDay)) {
-        m_bonusTeaserElapsed = 0;
+    if (CBH_Player::GetInstance()->TryMakeFiveDaysBonus(&newDay)) {
         ShowFiveDaysBonusMessage();
-        if (player->CanShowFiveDaysIncentiveBonusExpirationMessage()) {
+        if (CBH_Player::GetInstance()->CanShowFiveDaysIncentiveBonusExpirationMessage()) {
             ShowFiveDaysIncentiveBonusExpirationMessage();
-            player->RegisterFiveDaysIncentiveBonusExpirationMessageShown();
+            CBH_Player::GetInstance()->RegisterFiveDaysIncentiveBonusExpirationMessageShown();
         }
-        m_startDialogs->Start();
     } else if (newDay) {
         m_bonusTeaserElapsed += elapsed;
         if (m_bonusTeaserElapsed > 60000) {
@@ -3027,7 +3238,7 @@ void CBH_GPSMap::HandleBonuses(int elapsed)
             ShowFiveDaysBonusTeaser();
         }
     }
-    if (player->TryMakeFiveDaysIncentiveBonus()) {
+    if (CBH_Player::GetInstance()->TryMakeFiveDaysIncentiveBonus()) {
         ShowFiveDaysIncentivisedBonusMessage();
     }
 }
@@ -3036,7 +3247,9 @@ void CBH_GPSMap::ShowFiveDaysBonusMessage()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     int day = app->m_fiveDaysBonus->GetDay();
-    m_startDialogs->Add(new CFiveDaysBonusDialog(day, CFiveDaysBonusDialog::DAILY_BONUS));
+    // the original shows the dialog at once on the parent (not through m_startDialogs)
+    CFiveDaysBonusDialog* dialog = new CFiveDaysBonusDialog(day, CFiveDaysBonusDialog::DAILY_BONUS);
+    m_parent->AddModal(dialog);
 }
 
 void CBH_GPSMap::ShowFiveDaysIncentiveBonusExpirationMessage()
@@ -3045,17 +3258,18 @@ void CBH_GPSMap::ShowFiveDaysIncentiveBonusExpirationMessage()
     dialog->SetTitleText("IDS_DIALOG_TITLE_WARNING");
     dialog->SetMessageText(ResString("IDS_DAILY_BONUS_EXPIRE"));
     dialog->SetButtons(CDialogWindow::BUTTON_OK);
-    m_startDialogs->Add(dialog);
+    // the original shows it at once on the parent
+    m_parent->AddModal(dialog);
 }
 
 void CBH_GPSMap::ShowFiveDaysBonusTeaser()
 {
+    // the original asks CBH_Player::GetInstance() for the test and for the update
     int day = App::GetCurrentDay();
-    CBH_Player* player = CBH_Player::GetInstance();
-    if (day <= player->m_lastFiveDaysBonusTeaserDay) {
+    if (day <= CBH_Player::GetInstance()->m_lastFiveDaysBonusTeaserDay) {
         return;
     }
-    player->m_lastFiveDaysBonusTeaserDay = day;
+    CBH_Player::GetInstance()->m_lastFiveDaysBonusTeaserDay = day;
     CTextDialog* dialog = new CTextDialog();
     dialog->SetTitleText("IDS_FIVE_DAYS_BONUS_OFFLINE_TITLE");
     dialog->SetMessageText(ResString("IDS_FIVE_DAYS_BONUS_OFFLINE_TEXT"));
@@ -3067,71 +3281,66 @@ void CBH_GPSMap::ShowFiveDaysIncentivisedBonusMessage()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     int day = app->m_fiveDaysIncentiveBonus->GetDay();
-    m_parent->AddModal(new CFiveDaysBonusDialog(day, CFiveDaysBonusDialog::INCENTIVE_BONUS));
+    CFiveDaysBonusDialog* dialog = new CFiveDaysBonusDialog(day, CFiveDaysBonusDialog::INCENTIVE_BONUS);
+    m_parent->AddModal(dialog);
 }
 
 void CBH_GPSMap::ShowFiveDaysInventiveBonusRecomendedItem()
 {
     int day = CBH_Player::GetInstance()->m_activeFiveDaysIncentiveBonusDay;
-    int type;
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    CItemManager* manager;
+    CShopWindow::ETab tab = CShopWindow::TAB_OTHER;
     int itemId = 0;
     switch (day) {
     case 1:
-        type = 11;  // Armor
+        manager = reinterpret_cast<CItemManager*>(app->m_armorManager);
         break;
     case 2:
-        type = 9;   // Ammo pack
+        manager = reinterpret_cast<CItemManager*>(app->m_ammoPackManager);
+        tab = CShopWindow::TAB_AMMO;
         break;
     case 3:
-        type = 10;  // Go pill
+        manager = reinterpret_cast<CItemManager*>(app->m_goPillManager);
         break;
     case 4:
-        type = 9;
+        manager = reinterpret_cast<CItemManager*>(app->m_ammoPackManager);
+        tab = CShopWindow::TAB_AMMO;
         itemId = 2;
         break;
     case 5:
-        type = 3;   // Medicant
+        manager = reinterpret_cast<CItemManager*>(app->m_medicantManager);
         itemId = 3;
         break;
     default:
         return;
     }
-    CItemManager* manager = App::GetItemManagerByType(type);
-    if (manager != NULL) {
-        CItem* item = manager->getItemById(itemId);
-        if (item != NULL) {
-            CRegularShop::ShowDeal(item);
-        }
-    }
+    ShowShopWithItem(manager, tab, CItem::ITEM_TYPE_FIRST, itemId);
 }
 
 void CBH_GPSMap::MakeDailyDealCheck()
 {
-    if (m_parent == NULL || m_parent->HasModalChild() || HasModalChild()
-        || !m_startDialogs->IsEmpty() || m_selectedCamera != NULL || m_showTutorialFinish) {
+    // the original only skips the tutorial; ShowDailyDealWindow stores the display time
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
         return;
     }
-    unsigned int now = CStdUtil_Cocoa::GetTimeSeconds();
-    bool firstOffer = !m_dailyDealShown && CBH_Player::GetInstance()->m_completedMissionCount == 1;
-    if (firstOffer || (now >= m_lastDailyDealDisplay && now - m_lastDailyDealDisplay > 1200)) {
+    if (CStdUtil_Cocoa::GetTimeSeconds() - m_lastDailyDealDisplay > 1200
+        || (CBH_Player::GetInstance()->m_completedMissionCount == 1 && !m_dailyDealShown)) {
         m_dailyDealShown = true;
-        m_lastDailyDealDisplay = now;
         ShowDailyDealWindow();
     }
 }
 
 void CBH_GPSMap::ShowDailyDealWindow()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDailyDealManager* manager = app->InitDailyDealManager();
-    if (manager->GetCurrentDailyDeal() == NULL) {
+    // the original does not check the item level and remembers when the deal was shown
+    if (static_cast<App*>(WindowApp::m_instance)->InitDailyDealManager()->GetCurrentDailyDeal() == NULL) {
         return;
     }
-    CItem* item = manager->GetCurrentDealItem();
-    if (item != NULL && item->m_unlockLevel <= CBH_Player::GetInstance()->GetLevel()) {
-        AddModal(new CDailyDealWindow());
-        Save();
-    }
+    unsigned int now = CStdUtil_Cocoa::GetTimeSeconds();
+    AddModal(new CDailyDealWindow());
+    m_lastDailyDealDisplay = now;
+    Save();
 }
 
 void CBH_GPSMap::ReleasePrefetchedManagerResource()
@@ -3143,219 +3352,206 @@ void CBH_GPSMap::ReleasePrefetchedManagerResource()
 
 void CBH_GPSMap::Paint(ICGraphics2d& graphics)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    FillRect(graphics, 0, 0, app->m_screenWidth, app->m_screenHeight, 0xff636563);
-    if (m_columns < 1 || m_rows < 1) {
-        return;
-    }
+    if (!shopIsPainting && !safehouseIsPainting && !weaponIsPainting) {
+        CDrawUtil::Fill(0, 0, static_cast<App*>(WindowApp::m_instance)->m_screenWidth,
+                        static_cast<App*>(WindowApp::m_instance)->m_screenHeight, 0xff636563,
+                        ICGraphics2d::Primitive_Rectangles);
 
-    int y = m_mapY;
-    for (int row = 0; row < m_rows; ++row) {
-        int x = m_mapX;
-        int rowHeight = 0;
-        for (int column = 0; column < m_columns; ++column) {
-            int index = row * m_columns + column;
-            if (index >= m_tiles.size()) {
-                break;
+        // Original 0xe9184: tiles are drawn back to back; each row advances by the height of its
+        // last tile (no NULL tile handling in the original).
+        if (m_tiles.size() > 0 && m_rows > 0) {
+            int x = m_mapX;
+            int y = m_mapY;
+            for (int row = 0; row < m_rows; ++row) {
+                ICRenderSurface* tile = NULL;
+                for (int column = 0; column < m_columns; ++column) {
+                    int index = row * m_columns + column;
+                    if (index < m_tiles.size()) {
+                        tile = m_tiles[index];
+                        static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(tile, x, y, 1.0f, 0, 0, 0.0f, 0);
+                        x += ImageWidth(tile);
+                    }
+                }
+                x = m_mapX;
+                y += ImageHeight(tile);
             }
-            ICRenderSurface* tile = m_tiles[index];
-            if (tile == NULL) {
-                x += m_mapWidth / m_columns;
-                continue;
-            }
-            app->m_helper->DrawImage(tile, x, y, 1.0f, 0, 0, 0.0f, 0);
-            x += ImageWidth(tile);
-            rowHeight = ImageHeight(tile);
         }
-        if (rowHeight == 0) {
-            rowHeight = m_mapHeight / m_rows;
+        for (int index = 0; index < m_items.size(); ++index) {
+            m_items[index]->Paint(graphics, m_mapX, m_mapY);
         }
-        y += rowHeight;
-    }
-    for (int index = 0; index < m_haunts.size(); ++index) {
-        m_haunts[index]->Paint(graphics, m_mapX, m_mapY);
-    }
-    for (int index = 0; index < m_instantInformants.size(); ++index) {
-        m_instantInformants[index]->Paint(graphics, m_mapX, m_mapY);
-    }
-    for (int group = 0; group < 5; ++group) {
-        for (int index = 0; index < m_missionInformants[group].size(); ++index) {
-            m_missionInformants[group][index]->Paint(graphics, m_mapX, m_mapY);
-        }
-    }
-    if (m_shop != NULL) {
-        m_shop->Paint(graphics, m_mapX, m_mapY);
-    }
-    if (m_network != NULL && m_network->m_visible) {
-        m_network->Paint(graphics, m_mapX, m_mapY);
-    }
-    if (m_zombiesPromo != NULL) {
-        m_zombiesPromo->Paint(graphics, m_mapX, m_mapY);
+        m_gpsScan->Paint(m_mapX, m_mapY);
+        CBaseScreen::Paint(graphics);
     }
 }
 
-CGPSItem* CBH_GPSMap::FindItem(int x, int y)
-{
-    CGPSItem* item = NULL;
-    if (m_zombiesPromo != NULL && m_zombiesPromo->CheckHit(x - m_mapX, y - m_mapY, &item)) {
-        return item;
-    }
-    if (m_network != NULL && m_network->CheckHit(x - m_mapX, y - m_mapY, &item)) {
-        return item;
-    }
-    if (m_shop != NULL && m_shop->CheckHit(x - m_mapX, y - m_mapY, &item)) {
-        return item;
-    }
-    for (int group = 4; group >= 0; --group) {
-        for (int index = m_missionInformants[group].size() - 1; index >= 0; --index) {
-            if (m_missionInformants[group][index]->CheckHit(x - m_mapX, y - m_mapY, &item)) {
-                return item;
-            }
-        }
-    }
-    for (int index = m_instantInformants.size() - 1; index >= 0; --index) {
-        if (m_instantInformants[index]->CheckHit(x - m_mapX, y - m_mapY, &item)) {
-            return item;
-        }
-    }
-    for (int index = m_haunts.size() - 1; index >= 0; --index) {
-        if (m_haunts[index]->CheckHit(x - m_mapX, y - m_mapY, &item)) {
-            return item;
-        }
-    }
-    return NULL;
-}
-
+// Original 0xe92f4: press picks the touched item, release clicks it when the map barely moved
+// (15 * scale pixels) and starts the fling (scroll state 3), move drags the map.
 void CBH_GPSMap::OnPointerEvent(PointerEventController::Event event)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (app->m_timeScale == 0.0f || HasModalChild() || (m_parent != NULL && m_parent->HasModalChild())) {
-        return;
-    }
-    if (event.m_type == PointerEventController::EVENT_DOWN) {
-        m_draggingMap = true;
-        m_recordedMapDrag = false;
-        m_scrollToItem = false;
-        m_scrollVelocityX = 0.0f;
-        m_scrollVelocityY = 0.0f;
-        m_dragOriginX = m_mapX;
-        m_dragOriginY = m_mapY;
-        m_previousScrollX = m_scrollX;
-        m_previousScrollY = m_scrollY;
-        if (m_pressedItem != NULL) {
-            m_pressedItem->SetPressed(false);
-        }
-        m_pressedItem = FindItem(event.m_position.x, event.m_position.y);
-        if (m_pressedItem != NULL) {
-            m_pressedItem->SetPressed(true);
-        }
-        return;
-    }
-    if (!m_draggingMap) {
-        return;
-    }
-    if (event.m_type == PointerEventController::EVENT_MOVE) {
-        m_scrollX += event.m_deltaX;
-        m_scrollY += event.m_deltaY;
-        CheckMapPosBounds();
-        if (!m_recordedMapDrag) {
-            CBH_Player::GetInstance()->m_gameStats.AddMapDrags(1);
+    if (!HasModalChild() && static_cast<App*>(WindowApp::m_instance)->m_timeScale != 0.0f) {
+        if (event.m_type == PointerEventController::EVENT_MOVE) {
+            m_scrollX += event.m_deltaX;
+            m_scrollY += event.m_deltaY;
+            if (!m_recordedMapDrag) {
+                CBH_Player::GetInstance()->m_gameStats.AddMapDrags(1);
+                m_recordedMapDrag = true;
+            }
+            if (MathLib::Fabs(m_mapX - m_dragOriginX) < App::Scale() * 15
+                && MathLib::Fabs(m_mapY - m_dragOriginY) < App::Scale() * 15) {
+                return;
+            }
+            if (m_pressedItem != NULL) {
+                m_pressedItem->SetPressed(false);
+                m_pressedItem = NULL;
+            }
+        } else if (event.m_type == PointerEventController::EVENT_UP) {
+            m_draggingMap = false;
             m_recordedMapDrag = true;
-        }
-    }
-    int tolerance = App::Scale() * 15;
-    bool insideTapArea = MathLib::Fabs(m_scrollX - m_dragOriginX) < tolerance
-                      && MathLib::Fabs(m_scrollY - m_dragOriginY) < tolerance;
-    if (m_pressedItem != NULL && (!insideTapArea || event.m_type == PointerEventController::EVENT_UP)) {
-        m_pressedItem->SetPressed(false);
-        m_pressedItem = NULL;
-    }
-    if (event.m_type != PointerEventController::EVENT_UP) {
-        return;
-    }
-    m_draggingMap = false;
-    if (insideTapArea) {
-        CGPSItem* item = FindItem(event.m_position.x, event.m_position.y);
-        if (item != NULL) {
-            item->OnClick();
+            m_pressedItem = NULL;
+            SetScrollState(3);
+            if (MathLib::Fabs(m_mapX - m_dragOriginX) < App::Scale() * 15
+                && MathLib::Fabs(m_mapY - m_dragOriginY) < App::Scale() * 15) {
+                for (int index = 0; index < m_items.size(); ++index) {
+                    CGPSItem* item;
+                    if (m_items[index]->CheckHit(event.m_position.x - m_mapX, event.m_position.y - m_mapY, &item) == true) {
+                        item->OnClick();
+                        item->SetPressed(false);
+                        return;
+                    }
+                }
+            }
+        } else if (event.m_type == PointerEventController::EVENT_DOWN) {
+            m_draggingMap = true;
+            m_dragOriginX = m_mapX;
+            m_dragOriginY = m_mapY;
+            m_recordedMapDrag = false;
+            for (int index = 0; index < m_items.size(); ++index) {
+                CGPSItem* item;
+                if (m_items[index]->CheckHit(event.m_position.x - m_mapX, event.m_position.y - m_mapY, &item) == true) {
+                    if (m_pressedItem != NULL) {
+                        m_pressedItem->SetPressed(false);
+                    }
+                    m_pressedItem = item;
+                    item->SetPressed(true);
+                    return;
+                }
+            }
         }
     }
 }
 
-void CBH_GPSMap::ScrollToItem(const CGPSItem& item, float speed)
+/** -1, 0 or 1 (float). */
+static inline float ScrollSign(float value)
 {
-    int screenWidth = WindowApp::m_instance->m_screenWidth;
-    int screenHeight = WindowApp::m_instance->m_screenHeight;
-    float x = screenWidth / 2 - item.GetX() - item.GetWidth() / 2;
-    float y = screenHeight / 2 - item.GetY() - item.GetHeight() / 2;
-    m_scrollTargetX = RestingScrollPosition(x, screenWidth, m_mapWidth, MapWidthInset());
-    m_scrollTargetY = RestingScrollPosition(y, screenHeight, m_mapHeight, MapHeightInset());
-    m_scrollSpeedX = MathLib::Fabs(m_scrollTargetX - m_scrollX) * speed;
-    m_scrollSpeedY = MathLib::Fabs(m_scrollTargetY - m_scrollY) * speed;
-    m_scrollVelocityX = 0.0f;
-    m_scrollVelocityY = 0.0f;
-    m_scrollToItem = true;
+    if (value < 0.0f) {
+        return -1.0f;
+    }
+    return value > 0.0f ? 1.0f : 0.0f;
 }
 
+/** -1, 0 or 1 (double). */
+static inline double ScrollSignDouble(float value)
+{
+    if (value < 0.0f) {
+        return -1.0;
+    }
+    return value > 0.0f ? 1.0 : 0.0;
+}
+
+// Original 0xea550: state 2 moves towards the scroll target, state 3 is the fling after a drag;
+// both fall back to state 1 when they stop. A map dragged past its edge springs back.
 void CBH_GPSMap::UpdateScroll()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (m_draggingMap && (app->m_timeScale == 0.0f || HasModalChild()
-        || (m_parent != NULL && m_parent->HasModalChild()))) {
-        m_draggingMap = false;
-        m_scrollVelocityX = 0.0f;
-        m_scrollVelocityY = 0.0f;
-        if (m_pressedItem != NULL) {
-            m_pressedItem->SetPressed(false);
-            m_pressedItem = NULL;
+    int elapsed = static_cast<App*>(WindowApp::m_instance)->m_updateFrameTime;
+    // how far the map is outside its allowed area
+    float overX = 0.0f;
+    if (m_mapX > -MapWidthInset()) {
+        overX = -(m_mapX + MapWidthInset());
+    } else if (m_mapX + m_mapWidth < static_cast<App*>(WindowApp::m_instance)->m_screenWidth) {
+        overX = static_cast<App*>(WindowApp::m_instance)->m_screenWidth - (m_mapX + m_mapWidth);
+    }
+    float overY = 0.0f;
+    if (m_mapY > -MapHeightInset()) {
+        overY = -(m_mapY + MapHeightInset());
+    } else if (m_mapY + m_mapHeight < static_cast<App*>(WindowApp::m_instance)->m_screenHeight) {
+        overY = static_cast<App*>(WindowApp::m_instance)->m_screenHeight - (m_mapY + m_mapHeight);
+    }
+
+    if (m_scrollState == 2) {
+        float distanceX = m_scrollTargetX - m_scrollX;
+        float distanceY = m_scrollTargetY - m_scrollY;
+        float stepX = ScrollSign(distanceX) * m_scrollSpeedX * elapsed / 1000.0f;
+        float stepY = ScrollSign(distanceY) * m_scrollSpeedY * elapsed / 1000.0f;
+        if (MathLib::Fabs(stepX) > MathLib::Fabs(distanceX)) {
+            stepX = distanceX;
+        }
+        if (MathLib::Fabs(stepY) > MathLib::Fabs(distanceY)) {
+            stepY = distanceY;
+        }
+        m_scrollX += stepX;
+        m_scrollY += stepY;
+        if (MathLib::Fabs(m_scrollTargetX - m_mapX) < MapWidthInset() + 4) {
+            m_scrollSpeedX = 0.0f;
+        }
+        if (MathLib::Fabs(m_scrollTargetY - m_mapY) < MapHeightInset() + 4) {
+            m_scrollSpeedY = 0.0f;
+        }
+        if (MathLib::Sqrt(m_scrollSpeedX * m_scrollSpeedX + m_scrollSpeedY * m_scrollSpeedY) == 0.0f) {
+            SetScrollState(1);
+        }
+    } else if (m_scrollState == 3) {
+        float brakeFactor = App::Scale() * 0.0008f;
+        float ticks = elapsed + 1;
+        float resistance = App::Scale() * 2000.0f;
+        m_scrollX += m_scrollVelocityX * ticks;
+        m_scrollY += m_scrollVelocityY * ticks;
+        float brakeX = ScrollSign(m_scrollVelocityX) * brakeFactor * ticks * ((resistance + overX * overX) / resistance);
+        if (MathLib::Fabs(brakeX) > MathLib::Fabs(m_scrollVelocityX)) {
+            m_scrollVelocityX = 0.0f;
+        } else {
+            m_scrollVelocityX -= brakeX;
+        }
+        float brakeY = ScrollSign(m_scrollVelocityY) * brakeFactor * ticks * ((resistance + overY * overY) / resistance);
+        if (MathLib::Fabs(brakeY) > MathLib::Fabs(m_scrollVelocityY)) {
+            m_scrollVelocityY = 0.0f;
+        } else {
+            m_scrollVelocityY -= brakeY;
+        }
+        if (MathLib::Sqrt(m_scrollVelocityX * m_scrollVelocityX + m_scrollVelocityY * m_scrollVelocityY) < 0.01) {
+            m_scrollVelocityX = 0.0f;
+            SetScrollState(1);
         }
     }
-    const int elapsed = app->m_updateFrameTime;
-    if (m_draggingMap) {
-        m_scrollVelocityX = LimitScrollStep((m_scrollX - m_previousScrollX) / (elapsed + 1), 1.0f);
-        m_scrollVelocityY = LimitScrollStep((m_scrollY - m_previousScrollY) / (elapsed + 1), 1.0f);
-    } else if (m_scrollToItem) {
-        float remainingX = m_scrollTargetX - m_scrollX;
-        float remainingY = m_scrollTargetY - m_scrollY;
-        m_scrollX += LimitScrollStep(remainingX, m_scrollSpeedX * app->m_frameTimeSeconds);
-        m_scrollY += LimitScrollStep(remainingY, m_scrollSpeedY * app->m_frameTimeSeconds);
-        if (MathLib::Fabs(m_scrollTargetX - m_scrollX) < 1.0f
-            && MathLib::Fabs(m_scrollTargetY - m_scrollY) < 1.0f) {
-            m_scrollX = m_scrollTargetX;
-            m_scrollY = m_scrollTargetY;
-            m_scrollToItem = false;
+
+    if (MathLib::Sqrt(overX * overX + overY * overY) > 0.0f) {
+        float stepX = elapsed * 0.5 * ScrollSignDouble(overX);
+        if (MathLib::Fabs(stepX) > MathLib::Fabs(overX)) {
+            stepX = overX;
         }
-    } else {
-        float edgeX = RestingScrollPosition(m_scrollX, app->m_screenWidth, m_mapWidth, MapWidthInset()) - m_scrollX;
-        float edgeY = RestingScrollPosition(m_scrollY, app->m_screenHeight, m_mapHeight, MapHeightInset()) - m_scrollY;
-        m_scrollX += m_scrollVelocityX * (elapsed + 1);
-        m_scrollY += m_scrollVelocityY * (elapsed + 1);
-        m_scrollVelocityX = SlowScroll(m_scrollVelocityX, edgeX, elapsed + 1, App::Scale());
-        m_scrollVelocityY = SlowScroll(m_scrollVelocityY, edgeY, elapsed + 1, App::Scale());
-        m_scrollX += LimitScrollStep(edgeX, elapsed * 0.5f);
-        m_scrollY += LimitScrollStep(edgeY, elapsed * 0.5f);
+        float stepY = elapsed * 0.5 * ScrollSignDouble(overY);
+        float scrollX = m_scrollX;
+        float scrollY = m_scrollY;
+        if (MathLib::Fabs(stepY) > MathLib::Fabs(overY)) {
+            stepY = overY;
+        }
+        m_scrollX = scrollX + stepX;
+        m_scrollY = scrollY + stepY;
     }
-    CheckMapPosBounds();
-    m_previousScrollX = m_scrollX;
-    m_previousScrollY = m_scrollY;
 }
 
+// Original 0xea450: keeps 40 % of the screen covered by the map (Update copies it to m_mapX).
 void CBH_GPSMap::CheckMapPosBounds()
 {
-    int screenWidth = WindowApp::m_instance->m_screenWidth;
-    int screenHeight = WindowApp::m_instance->m_screenHeight;
-    if (m_scrollX > screenWidth * 0.6) {
-        m_scrollX = static_cast<float>(screenWidth * 0.6);
+    if (m_scrollX > static_cast<App*>(WindowApp::m_instance)->m_screenWidth * 0.6) {
+        m_scrollX = static_cast<App*>(WindowApp::m_instance)->m_screenWidth * 0.6;
     }
-    if (m_scrollX + m_mapWidth < screenWidth * 0.4) {
-        m_scrollX = static_cast<float>(screenWidth * 0.4 - m_mapWidth);
+    if (m_scrollX + m_mapWidth < static_cast<App*>(WindowApp::m_instance)->m_screenWidth * 0.4) {
+        m_scrollX = static_cast<App*>(WindowApp::m_instance)->m_screenWidth * 0.4 - m_mapWidth;
     }
-    if (m_scrollY > screenHeight * 0.6) {
-        m_scrollY = static_cast<float>(screenHeight * 0.6);
+    if (m_scrollY > static_cast<App*>(WindowApp::m_instance)->m_screenHeight * 0.6) {
+        m_scrollY = static_cast<App*>(WindowApp::m_instance)->m_screenHeight * 0.6;
     }
-    if (m_scrollY + m_mapHeight < screenHeight * 0.4) {
-        m_scrollY = static_cast<float>(screenHeight * 0.4 - m_mapHeight);
+    if (m_scrollY + m_mapHeight < static_cast<App*>(WindowApp::m_instance)->m_screenHeight * 0.4) {
+        m_scrollY = static_cast<App*>(WindowApp::m_instance)->m_screenHeight * 0.4 - m_mapHeight;
     }
-    m_mapX = static_cast<int>(m_scrollX) & ~1;
-    m_mapY = static_cast<int>(m_scrollY) & ~1;
 }

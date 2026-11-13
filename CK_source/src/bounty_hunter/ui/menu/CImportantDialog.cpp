@@ -52,10 +52,7 @@ Window* CImportantDialog::CreateButton(const XString& text)
     m_okButton->SetAlign(0x24);
     m_okButton->SetText(text, 0x24, NULL, 0, 0);
     m_okButton->SetOutsetSpacing(0, 0, SScreenAdaptingConstant(10, 20)(), 0);
-    m_okButton->m_command = 0x1fddbe68;
-    m_okButton->m_commandParameter1 = 0;
-    m_okButton->m_commandParameter2 = 0;
-    m_okButton->m_commandParameter3 = 0;
+    m_okButton->SetCommandParameters(0x1fddbe68, 0, 0, 0);
     holder->AddToFront(m_okButton);
     return holder;
 }

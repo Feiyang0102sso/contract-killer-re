@@ -10,12 +10,13 @@
 #include "tinyxml.h"
 
 CGPSMissionInformant::CGPSMissionInformant(TiXmlNode* node)
-    : m_field64(0), m_font(NULL), m_listener(NULL), m_hidden(1)
+    : m_listener(NULL)
 {
+    // Original 0x12ad48: hidden until the map unhides it (m_visible keeps its default).
     ParseNode(node);
+    m_hidden = 1;
     m_font = CFontMgr::GetInstance()->GetFont(15);
     SetPressImage("IDB_GPS_ROUND_ICON_ANIM");
-    m_visible = false;
 }
 
 CGPSMissionInformant::~CGPSMissionInformant()
@@ -24,8 +25,9 @@ CGPSMissionInformant::~CGPSMissionInformant()
 
 void CGPSMissionInformant::ParseNode(TiXmlNode* node)
 {
+    TiXmlNode* info = node->FirstChild("info");
     m_id = CXmlHelper::GetAttributeValue(node, "id").ToInt();
-    ParseInfo(node->FirstChild("info"));
+    ParseInfo(info);
 }
 
 void CGPSMissionInformant::ParseInfo(TiXmlNode* node)
@@ -57,13 +59,16 @@ void CGPSMissionInformant::Load(TiXmlElement*)
 
 bool CGPSMissionInformant::IsAvailable()
 {
-    CBH_Player* player = CBH_Player::GetInstance();
-    return player->GetLevel() >= m_unlockLevel && !player->IsMissionCompleted(m_missionId);
+    // the original asks CBH_Player::GetInstance() for each check
+    if (CBH_Player::GetInstance()->GetLevel() < m_unlockLevel) {
+        return false;
+    }
+    return !CBH_Player::GetInstance()->IsMissionCompleted(m_missionId);
 }
 
 void CGPSMissionInformant::SetVisible(bool visible)
 {
-    if (CTutorialManager::IsPlayerInTutorial() && !CTutorialManager::IsMissionInformantVisible(m_id)) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial() && !static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsMissionInformantVisible(m_id)) {
         visible = false;
     }
     m_hidden = !visible;
@@ -82,8 +87,8 @@ void CGPSMissionInformant::SetBlinking(bool blinking)
 
 void CGPSMissionInformant::Update(long)
 {
-    if (CTutorialManager::IsPlayerInTutorial()) {
-        SetBlinking(CTutorialManager::IsMissionInformantBlink(m_id));
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
+        SetBlinking(static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsMissionInformantBlink(m_id));
     }
 }
 
@@ -96,44 +101,19 @@ void CGPSMissionInformant::OnClick()
 
 void CGPSMissionInformant::Paint(ICGraphics2d& graphics, int mapX, int mapY)
 {
-    if (m_hidden != 0) {
-        return;
-    }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (GetImage() != NULL) {
-        app->m_helper->DrawImage(GetImage(), mapX + GetX(), mapY + GetY(), 1.0f, 0, 0, 0.0f, 0);
-    }
-    if (m_font != NULL) {
-        int width = m_font->MeasureTextWidth(m_name.c_str(), -1, -1, NULL);
-        CRectangle label;
-        label.m_x = GetX() + (GetWidth() - width) / 2;
-        label.m_y = GetY() + GetHeight();
-        label.m_width = width;
-        label.m_height = m_font->GetFontHeight();
-        m_font->PaintText(m_name.c_str(), -1, mapX + label.m_x, mapY + label.m_y, -1, -1);
+    // Original 0x12af14: the text y uses GetWidth() (original; the icons are square).
+    if (m_hidden == 0) {
+        static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+            GetImage(), GetX() + mapX, GetY() + mapY, 1.0f, 0, 0, 0.0f, 0);
+        int width = static_cast<App*>(WindowApp::m_instance)->m_helper->GetTextWidth(
+            XString::AnsiString(m_name.c_str()), m_font);
+        m_font->PaintText(m_name.c_str(), -1, GetX() + mapX + GetWidth() / 2 - width / 2,
+                          mapY + GetY() + GetWidth(), -1, -1);
+        CRectangle label(GetX() - width / 2 + GetWidth() / 2, GetY() + GetHeight(), width,
+                         m_font->GetFontHeight());
         setSubItem(0, label, mapX, mapY);
+        CGPSItem::Paint(graphics, mapX, mapY);
     }
-    CGPSItem::Paint(graphics, mapX, mapY);
-}
-
-bool CGPSMissionInformant::CheckHit(int x, int y, CGPSItem** item)
-{
-    if (!m_visible) {
-        return false;
-    }
-    if (CGPSItem::CheckHit(x, y, item)) {
-        return true;
-    }
-    if (m_font != NULL) {
-        int width = m_font->MeasureTextWidth(m_name.c_str(), -1, -1, NULL);
-        int left = GetX() + (GetWidth() - width) / 2;
-        int top = GetY() + GetHeight();
-        if (x >= left && x < left + width && y >= top && y < top + m_font->GetFontHeight()) {
-            *item = this;
-            return true;
-        }
-    }
-    return false;
 }
 
 typedef char AssertGPSMissionInformantSize[sizeof(CGPSMissionInformant) == 0x74 ? 1 : -1];

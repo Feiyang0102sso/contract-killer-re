@@ -45,16 +45,25 @@ void CGPSHuntingItem::Load(TiXmlElement* element)
     m_silentKill = CXmlHelper::GetAttributeValueOptional(element, "silentKill").ToBool();
     m_seed = CXmlHelper::GetAttributeValue(element, "seed").ToInt();
     m_playerLevel = CXmlHelper::GetAttributeValue(element, "playerLevel").ToInt();
-    m_targetFriendId = CXmlHelper::GetIntAttributeValueOrUseDefault(element, "targetFriendId", -1);
-    m_targetFBUser = CXmlHelper::GetAttributeValueOptional(element, "targetFBUser");
-    m_revenge = CXmlHelper::GetBoolAttributeValueOrUseDefault(element, "isRevenge", false);
-    m_gatedWeapon = CXmlHelper::GetIntAttributeValueOrUseDefault(element, "gatedWeaponID", -1);
-    m_weaponGated = CXmlHelper::GetBoolAttributeValueOrUseDefault(element, "isWeaponGated", false);
-    m_randomWeapon = CXmlHelper::GetIntAttributeValueOrUseDefault(element, "randomWeapon", -1);
-    m_hasBonus = CXmlHelper::GetBoolAttributeValueOrUseDefault(element, "hasBonus", false);
+    m_targetFriendId = CXmlHelper::GetAttributeValueOrUseDefault(element, "targetFriendId", XString("-1")).ToInt();
+    // Original: a loaded target is applied again through the setters.
+    if (m_targetFriendId >= 0) {
+        SetTargetFriendId(m_targetFriendId);
+    }
+    m_targetFBUser = CXmlHelper::GetAttributeValueOrUseDefault(element, "targetFBUser", XString(""));
+    if (m_targetFBUser.Length() > 0) {
+        SetTargetFBUser(CStrWChar(m_targetFBUser.c_str()));
+    }
+    m_revenge = CXmlHelper::GetAttributeValueOrUseDefault(element, "isRevenge", XString("false")).ToBool();
+    m_gatedWeapon = CXmlHelper::GetAttributeValueOrUseDefault(element, "gatedWeaponID", XString("-1")).ToInt();
+    m_weaponGated = CXmlHelper::GetAttributeValueOrUseDefault(element, "isWeaponGated", XString("false")).ToBool();
+    m_randomWeapon = CXmlHelper::GetAttributeValueOrUseDefault(element, "randomWeapon", XString("-1")).ToInt();
+    m_hasBonus = CXmlHelper::GetAttributeValueOrUseDefault(element, "hasBonus", XString("false")).ToBool();
     m_minWeaponRange = CXmlHelper::GetAttributeValueOrUseDefault(element, "minimalWeaponRange", XString("-1.0")).ToFloat();
-    if (CXmlHelper::HasAttribute(element, "creationTime")) {
+    if (CXmlHelper::HasAttribute(element, "creationTime") == true) {
         m_creationTime = CXmlHelper::GetAttributeValue(element, "creationTime").ToInt();
+    } else {
+        m_creationTime = App::GetTime();
     }
 }
 

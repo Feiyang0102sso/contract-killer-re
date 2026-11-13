@@ -1,6 +1,15 @@
 // App.cpp - the game's window application.
 // Function order follows the original debug map (app, 2026-11-11).
 #include "App.h"
+#define AD_BANNER_SIZES_NO_MARGINS
+#include "AdBannerSizes.h"
+#undef AD_BANNER_SIZES_NO_MARGINS
+#include "ICInAppPurchase.h"
+
+// The original initializes the IAP class ID between the sizes and margins.
+static AdBannerMarginsX s_adBannerMarginsX;
+static AdBannerMarginsY s_adBannerMarginsY;
+
 #include "AppMedia.h"
 #include "AppSettings.h"
 #include "ButtonWindow.h"

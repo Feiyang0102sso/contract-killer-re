@@ -314,19 +314,20 @@ void CChallengeWindow::OnPointerPressed(Event&)
 
 void CChallengeWindow::OnCommand(Event& event)
 {
-    if (event.m_id == OpenInvite && event.m_param1 == m_challengeId) {
-        if (m_inviteCooldownMs == 0) {
-            HandleShowInviteToChallenge(m_challengeId);
+    // the original neither clears the event nor passes it on to Window::OnCommand
+    switch (event.m_id) {
+    case OpenInvite:
+        if (event.m_param1 == m_challengeId && m_inviteCooldownMs == 0) {
+            HandleShowInviteToChallenge(event.m_param1);
             m_inviteCooldownMs = InviteCooldownMs;
         }
-        event.Clear();
-    } else if (event.m_id == SendInvites && event.m_param2 == m_challengeId) {
+        break;
+    case SendInvites: {
         CIncentivizedWindow* picker = reinterpret_cast<CIncentivizedWindow*>(event.m_param1);
         Vector<int> friendIds = picker->GetSelectedIds();
         HandleShareChallengePressed(friendIds, m_challengeId);
-        event.Clear();
-    } else {
-        Window::OnCommand(event);
+        break;
+    }
     }
 }
 

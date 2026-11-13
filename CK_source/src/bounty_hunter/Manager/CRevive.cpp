@@ -7,12 +7,15 @@
 CRevive::CRevive(const TiXmlElement& config)
     : CItem(0), m_count(0)
 {
-    init(config);
+    CItem::Parse(config);
 }
 
-void CRevive::setAvailable(bool)
+void CRevive::setAvailable(bool available)
 {
-    CBH_Player::GetInstance()->AddRevive(m_count);
+    // the original only acts on true
+    if (available) {
+        CBH_Player::GetInstance()->AddRevive(m_count);
+    }
 }
 
 void CRevive::ParseStats(const TiXmlElement& stats)

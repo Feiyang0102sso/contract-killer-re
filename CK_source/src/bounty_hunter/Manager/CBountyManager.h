@@ -68,6 +68,7 @@ public:
                                            int camera, int playerLevel, unsigned int seed);
     int GetRandomAmbushTypeId();
     SMessage* GetRandomTargettingMessage();
+    bool HasTargettingMessages() const { return m_targetingMessages.size() != 0; }
 
 private:
     void ParseBountyConfig();

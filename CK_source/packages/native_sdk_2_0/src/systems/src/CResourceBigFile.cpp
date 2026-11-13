@@ -18,9 +18,7 @@ CResourceBigFile::~CResourceBigFile()
 
 void CResourceBigFile::Destroy()
 {
-    if (m_manager != NULL) {
-        m_manager->RemoveResource(*this);
-    }
+    // 原版只释放归档；从管理器摘除由 CResource 基类析构负责
     if (m_bigFile != NULL) {
         delete m_bigFile;
         m_bigFile = NULL;

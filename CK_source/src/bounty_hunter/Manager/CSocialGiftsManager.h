@@ -3,12 +3,14 @@
 
 #include "Vector_ss.h"
 #include "xString.h"
-
-class CItem;
-class CItemManager;
+#include "CShopItem.h"
 
 struct SGift {
-    CItem* GetItem() const;
+    /** Item of the gift (inline in the original: no symbol, no manager check). */
+    CItem* GetItem() const
+    {
+        return m_itemManager->getItemById(m_itemId);
+    }
     int m_itemId;
     bool m_hidden;
     CItemManager* m_itemManager;

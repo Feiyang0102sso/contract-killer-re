@@ -28,10 +28,12 @@
 class CSur : public CRenderSurface_OGLES_Targetable {
 };
 
+static const char TAG_CHARACTERS[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ', 'f', 't'};
+
 namespace {
 const int CharacterFadeMs = 300;
 const float DegreesPerRadian = 57.29582595825195f;
-const float RadiansPerDegree = 0.0174532778f;
+const float RadiansPerDegree = 0.017453279f;
 const float FeetPerMeter = 3.28f;
 const unsigned int DistanceTagRefreshMs = 500;
 const EPersonAnimType FallForward = static_cast<EPersonAnimType>(14);
@@ -321,56 +323,80 @@ void CUnitBody::AvoidObstacles()
         vec3 edge = obstacle.m_points[1] - obstacle.m_points[0];
         vec3 middle = (obstacle.m_points[0] + obstacle.m_points[1]) * 0.5f;
         vec3 outward(edge.m_y, -edge.m_x, 0.0f);
-        if (outward.Dot(middle - m_position) < 0.0f) {
+        // the original turns the normal away from the wall middle (negates when the dot is positive)
+        if (outward.Dot(middle - m_position) > 0.0f) {
             outward = outward * -1.0f;
         }
         BlockAngles(blocked, static_cast<int>(GetYawAngle(outward)), 88);
     }
-    m_staticObstacles.setSize(0);
-    m_dynamicObstacles.setSize(0);
-    if (m_speed <= 0.0f) {
-        return;
-    }
+    // Original 0xdad64: the search sets "found" before testing each side, so the rotation below is
+    // never applied (original bug, kept). Units are not turned by obstacle avoidance.
     int heading = WrapDegrees(static_cast<int>(GetYawAngle(m_direction)));
-    if (!blocked[heading]) {
-        return;
-    }
-    for (int degrees = 1; degrees < 180; ++degrees) {
+    bool found = false;
+    bool positive = true;
+    int degrees = 0;
+    while (degrees < 180) {
+        found = true;
         if (!blocked[WrapDegrees(heading + degrees)]) {
-            AdditionalRotate(static_cast<float>(degrees));
-            return;
+            positive = true;
+            break;
         }
         if (!blocked[WrapDegrees(heading - degrees)]) {
-            AdditionalRotate(-static_cast<float>(degrees));
-            return;
+            positive = false;
+            break;
         }
+        degrees++;
+    }
+    if (degrees == 180) {
+        degrees = 0;
+        found = false;
+        positive = true;
+    }
+    m_staticObstacles.setSize(0);
+    m_dynamicObstacles.setSize(0);
+    if (!found && degrees != 0) {
+        float rotation = static_cast<float>(degrees);
+        if (!positive) {
+            rotation = -rotation;
+        }
+        AdditionalRotate(rotation);
     }
 }
 
+// Original 0xdb0c4: turn half way along the shorter arc; the yaw stays below 360. A zero direction
+// gives a NaN target, which UpdatePosition then skips (original behaviour).
 void CUnitBody::UpdateAngle(int)
 {
-    if (m_direction.m_x == 0.0f && m_direction.m_y == 0.0f) {
-        return;
-    }
-    float yaw = GetYawAngle(m_direction);
-    float delta = yaw - m_yaw;
-    if (delta > 180.0f) {
-        delta -= 360.0f;
-    } else if (delta < -180.0f) {
-        delta += 360.0f;
-    }
-    if (fabsf(delta) > 5.0f) {
-        m_yaw += delta * 0.5f;
+    float targetYaw = GetYawAngle(m_direction);
+    float target = targetYaw + 180.0f;
+    float current = m_yaw + 180.0f;
+    float absDiff = fabs(current - target);
+    float wrapped = 360.0f - absDiff;
+    if (absDiff <= 5.0f || wrapped <= 5.0f) {
+        m_yaw = targetYaw;
     } else {
+        float step = absDiff < wrapped ? absDiff : wrapped;
+        step = step * 0.5f;
+        if (current > target) {
+            step = -step;
+        }
+        if (absDiff - wrapped > 0.0) {
+            step = -step;
+        }
+        float yaw = m_yaw + step;
+        if (yaw > 360.0f) {
+            yaw += -360.0f;
+        }
         m_yaw = yaw;
     }
     m_moved = true;
 }
 
+// Original 0xdb190: skip NaN positions / yaw, then report the new position to the squad.
 void CUnitBody::UpdatePosition(int elapsed)
 {
     CalculateStep(elapsed);
-    if (m_model == NULL) {
+    if (isnan(m_position.m_x) || isnan(m_position.m_y) || isnan(m_position.m_z) || isnan(m_yaw)) {
         return;
     }
     SwerveHelper::Transform transform(CSwerve::GetInstance()->m_swerve);
@@ -378,7 +404,12 @@ void CUnitBody::UpdatePosition(int elapsed)
     float orientation[4] = {m_yaw, 0.0f, 0.0f, 1.0f};
     transform.postRotate(orientation);
     m_model.setTransform(transform);
+    transform.Clear();
     m_moved = false;
+    CSquad* squad = m_unit->m_squad;
+    if (squad != NULL) {
+        squad->NoticeUnitParams(m_unit);
+    }
 }
 
 void CUnitBody::UpdateHealthBar()
@@ -415,7 +446,7 @@ void CUnitBody::UpdateAnimation(int elapsed)
         }
     }
     // CSwerveGame+0x24a suppresses the skin animation.
-    if (!reinterpret_cast<const bool&>(GetApp()->m_helper->m_swerveGame->m_reserved24a) && animate) {
+    if (!GetApp()->m_helper->m_swerveGame->m_preSimulatingUnits && animate) {
         // Low-end devices animate the skin every third frame only (idle excepted).
         if (App::m_platformType != 0 || (++m_field178 == 3 && (m_field178 = 0, type != 0))) {
             m_skin->animate();
@@ -477,7 +508,10 @@ ICRenderSurface* CUnitBody::CreateDistanceTagSurface()
         {ICRenderSurface::InitParam_End, 0}
     };
     CSur* target = new CSur();
-    target->CRenderSurface_OGLES_Texture::Initialize(surfaceDesc);
+    if (!target->CRenderSurface_OGLES_Texture::Initialize(surfaceDesc)) {
+        delete target;
+        return NULL;
+    }
     return target;
 }
 
@@ -485,17 +519,21 @@ void CUnitBody::InitDistanceTag()
 {
     CSwerveGame* game = GetApp()->m_helper->m_swerveGame;
     CFont* font = CFontMgr::GetInstance()->GetFont(19);
-    if (font == NULL || game->m_tagImages.m_count != 0 || ICGraphics::GetInstance()->GetTargetSurface() == NULL) {
+    if (font == NULL || ICGraphics::GetInstance()->GetTargetSurface() == NULL) {
         return;
     }
-    ICRenderSurface* target = CreateDistanceTagSurface();
-    if (target == NULL) {
-        return;
-    }
-    const char* glyphs = "0123456789 ft";
-    for (const char* current = glyphs; *current != '\0'; ++current) {
-        char character[] = {*current, '\0'};
-        XString glyph(character);
+    ICRenderSurface* target = NULL;
+    for (unsigned int index = 0; index < sizeof(TAG_CHARACTERS); ++index) {
+        XString glyph(TAG_CHARACTERS[index]);
+        if (game->GetTagImage(glyph) != NULL) {
+            continue;
+        }
+        if (target == NULL) {
+            target = CreateDistanceTagSurface();
+            if (target == NULL) {
+                return;
+            }
+        }
         unsigned char* pixels = NULL;
         int width = 0;
         int height = 0;
@@ -520,9 +558,10 @@ void CUnitBody::UpdateDistanceTag()
     CSwerveGame* game = GetApp()->m_helper->m_swerveGame;
     int distance = static_cast<int>(game->GetDistanceToUnit(m_unit) * FeetPerMeter);
     if (distance != m_distanceTagValue || m_distanceTag == NULL) {
-        m_distanceTagValue = distance;
         m_distanceTagTime = now;
-        SetDistanceTag(distance);
+        if (SetDistanceTag(distance)) {
+            m_distanceTagValue = distance;
+        }
     }
 }
 
@@ -566,11 +605,11 @@ void CUnitBody::CombineCharImages(unsigned char** pixels, int* width, int* heigh
     *height = fullHeight;
 }
 
-void CUnitBody::SetDistanceTag(int distance)
+bool CUnitBody::SetDistanceTag(int distance)
 {
     Group mount(m_model.find(DGHelper::getSwerveID(CVisualCharacterType::m_pBodyDummyName)));
     if (mount == NULL) {
-        return;
+        return false;
     }
     InitDistanceTag();
     unsigned char* pixels = NULL;
@@ -578,22 +617,33 @@ void CUnitBody::SetDistanceTag(int distance)
     int height = 0;
     CombineCharImages(&pixels, &width, &height, XString::Format(L"%d ft", distance));
     if (pixels == NULL) {
-        return;
+        return false;
     }
     Node sprite = SwerveHelper::CreateSprite(pixels, width, height);
     delete[] pixels;
     if (sprite == NULL) {
-        return;
+        return false;
     }
-    if (m_distanceTag != NULL) {
-        mount.removeChild(m_distanceTag);
+    SwerveHelper::Transform transform = SwerveHelper::NewTransform();
+    if (transform == NULL) {
+        return false;
+    }
+    transform.setIdentity();
+    CSwerveGame* game = GetApp()->m_helper->m_swerveGame;
+    if (game->m_world != NULL) {
+        sprite.getTransformTo(game->m_world, transform);
     }
     const float position[] = {0.0f, 0.0f, 3.2f};
     const float scale[] = {1.0f, 0.6f, 1.0f};
-    sprite.setTranslation(position);
-    sprite.setScale(scale);
+    transform.postTranslate(position);
+    transform.postScale(scale);
+    sprite.setTransform(transform);
+    if (m_distanceTag != NULL) {
+        mount.removeChild(m_distanceTag);
+    }
     mount.addChild(sprite);
     m_distanceTag = sprite;
+    return true;
 }
 
 void CUnitBody::OnTagged(bool known)
@@ -714,46 +764,44 @@ void CUnitBody::SetMovementParam(const vec3& target, float speed)
     m_moved = true;
 }
 
+// Original 0xdba48 (from the decompilation): fixed 1.4 m range; very close units only halve the
+// speed, otherwise the unit turns away by -(cone + 2 * angle). The direction is scaled by
+// InvSqrt(m_speed) as in the original.
 void CUnitBody::AvoidCollision(CUnitBody* other)
 {
-    if (m_speed <= 0.0f) {
-        return;
-    }
-    vec3 separation = other->m_position - m_position;
-    float distanceSq = separation.LengthSqr();
-    float radius = GetRadius() + other->GetRadius();
-    if (distanceSq <= 0.0f || distanceSq >= radius * radius) {
-        return;
-    }
-    float distance = sqrtf(distanceSq);
-    float toward = m_direction.Dot(separation) / distance;
-    if (toward <= 0.0f) {
-        return;
-    }
-    if (distance <= 0.5f) {
-        m_speed *= toward;
-        return;
-    }
-    vec3 velocity = m_direction * m_speed - other->m_direction * other->m_speed;
-    float cross = velocity.m_x * separation.m_y - velocity.m_y * separation.m_x;
-    float along = velocity.m_x * separation.m_x + velocity.m_y * separation.m_y;
-    if (along <= 0.0f) {
-        return;
-    }
-    float relativeAngle = atan2f(cross, along) * DegreesPerRadian;
-    float avoidanceAngle = atanf(radius / distance) * DegreesPerRadian;
-    if (fabsf(relativeAngle) < avoidanceAngle) {
-        if (relativeAngle < 0.0f) {
-            AdditionalRotate(relativeAngle + avoidanceAngle + 0.5f);
-        } else {
-            AdditionalRotate(relativeAngle - avoidanceAngle - 0.5f);
+    float dx = other->m_position.m_x - m_position.m_x;
+    float dy = other->m_position.m_y - m_position.m_y;
+    float dz = other->m_position.m_z - m_position.m_z;
+    float planarSq = dx * dx + dy * dy;
+    float distance = MathLib::InvSqrt(planarSq) * (planarSq + dz * dz);
+    if (distance < 1.4) {
+        float speed = m_speed;
+        float approach = dx * (m_direction.m_x * speed) + dy * (m_direction.m_y * speed)
+            + dz * (m_direction.m_z * speed);
+        if (approach > 0.0f) {
+            if (distance > 0.5f) {
+                float scale = MathLib::InvSqrt(m_speed);
+                float vx = m_direction.m_x * m_speed - other->m_direction.m_x * other->m_speed;
+                float vy = m_direction.m_y * m_speed - other->m_direction.m_y * other->m_speed;
+                float vz = m_direction.m_z * m_speed - other->m_direction.m_z * other->m_speed;
+                float velocityScale = MathLib::InvSqrt(vx * vx + vy * vy + vz * vz);
+                float cosine = dx * scale * (vx * velocityScale) + dy * scale * (vy * velocityScale)
+                    + dz * scale * (vz * velocityScale);
+                float angle = static_cast<float>(acos(cosine) * 57.29582595825195);
+                float cone = static_cast<float>(atan(1.4 / distance) * 57.29582595825195);
+                if (angle < cone && -cone < angle) {
+                    AdditionalRotate(-(cone + angle) - angle);
+                }
+            } else {
+                m_speed = speed * 0.5f;
+            }
         }
     }
 }
 
 void CUnitBody::AdditionalRotate(float degrees)
 {
-    float radians = degrees * 0.017453292f;
+    float radians = degrees * RadiansPerDegree;
     float sine = static_cast<float>(sin(radians));
     float cosine = static_cast<float>(cos(radians));
     float x = m_direction.m_x;
@@ -960,7 +1008,7 @@ void CUnitBody::ShowWeapon(bool show)
 void CUnitBody::ShowBulletMuzzleFlash()
 {
     if (m_shotFlash != NULL) {
-        m_shotFlash->Start(0.0f, 1.0f, 0.0f, 1.0f, 1.0f);
+        m_shotFlash->Start(0.0f, 1.0f, 0.0f, 0.0f, 1.0f);
     }
 }
 
@@ -1005,102 +1053,101 @@ void CUnitBody::CalculateStep(int elapsed)
     }
 }
 
+// Original 0xdc6bc: a new RayIntersection per pick. A hit beyond maximumDistance returns without
+// restoring the picking flag (original bug, kept).
 bool CUnitBody::Pick(float x, float y, float maximumDistance, Camera& camera, EHitType& type)
 {
-    if (m_model == NULL || m_spreadIntersection == NULL) {
-        return false;
-    }
     typedef int (*GetPicking)(IQueryInterface*, unsigned char*);
-    unsigned char picking = 0;
-    CKMethod<GetPicking>(m_model.m_interface, 0x94)(m_model.m_interface, &picking);
-    m_model.setPickingEnable(true);
-    DGHelper* helper = GetApp()->m_helper;
-    float relativeX = x / helper->m_screenWidth;
-    float relativeY = y / helper->m_screenHeight;
-    bool hit = m_model.pick(-1, relativeX, relativeY, camera, m_spreadIntersection) != 0;
-    if (hit) {
-        m_pickDistance = m_spreadIntersection.getDistance();
-        hit = maximumDistance <= 0.0f || m_pickDistance <= maximumDistance;
-        if (hit) {
-            m_spreadIntersection.getRay(m_pickRay);
-            m_hitDistance = m_pickDistance;
-            type = HitBody;
-            DefineBodyZones(&type, relativeX, relativeY, camera);
-        }
-    }
-    m_model.setPickingEnable(picking != 0);
-    return hit;
-}
-
-bool CUnitBody::SpreadPick(Camera& camera, Group& collision, EHitType& type)
-{
-    if (m_model == NULL || m_spreadIntersection == NULL) {
-        return false;
-    }
-    const float rays[][4] = {
-        {0.0f, 0.0f, 0.0f, 0.0f},
-        {1.5f, 1.0f, 0.0f, 0.0f}, {-1.5f, 1.0f, 0.0f, 0.0f},
-        {1.5f, 0.0f, 1.0f, 0.0f}, {-1.5f, 0.0f, 1.0f, 0.0f}
-    };
-    typedef int (*GetPicking)(IQueryInterface*, unsigned char*);
-    unsigned char previous = 0;
+    unsigned char previous;
     CKMethod<GetPicking>(m_model.m_interface, 0x94)(m_model.m_interface, &previous);
     m_model.setPickingEnable(true);
+    int screenWidth = static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenWidth;
+    int screenHeight = static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenHeight;
+    RayIntersection intersection(CSwerve::GetInstance()->m_swerve);
+    float relativeX = x / screenWidth;
+    float relativeY = y / screenHeight;
     bool hit = false;
-    m_pickDistance = -1.0f;
-    for (unsigned int index = 0; index < sizeof(rays) / sizeof(rays[0]); ++index) {
-        const float* ray = rays[index];
-        if (PickWithAngleAndCollisionGeometry(camera, collision, ray[0], ray[1], ray[2], ray[3],
-                                              m_spreadIntersection, type)) {
-            hit = true;
+    if (m_model.pick(-1, relativeX, relativeY, camera, intersection)) {
+        float distance = intersection.getDistance();
+        m_pickDistance = distance;
+        if (maximumDistance > 0.0f && distance > maximumDistance) {
+            return false;
         }
+        intersection.getRay(m_pickRay);
+        m_hitDistance = intersection.getDistance();
+        type = HitBody;
+        hit = true;
+        DefineBodyZones(&type, relativeX, relativeY, camera);
     }
     m_model.setPickingEnable(previous != 0);
     return hit;
+}
+
+// Original 0xdc868: five rays through one new RayIntersection; m_pickDistance is not reset here.
+bool CUnitBody::SpreadPick(Camera& camera, Group& collision, EHitType& type)
+{
+    typedef int (*GetPicking)(IQueryInterface*, unsigned char*);
+    unsigned char previous;
+    CKMethod<GetPicking>(m_model.m_interface, 0x94)(m_model.m_interface, &previous);
+    m_model.setPickingEnable(true);
+    RayIntersection intersection(CSwerve::GetInstance()->m_swerve);
+    bool center = PickWithAngleAndCollisionGeometry(camera, collision, 0.0f, 0.0f, 0.0f, 0.0f, intersection, type);
+    bool right = PickWithAngleAndCollisionGeometry(camera, collision, 1.5f, 1.0f, 0.0f, 0.0f, intersection, type);
+    bool left = PickWithAngleAndCollisionGeometry(camera, collision, -1.5f, 1.0f, 0.0f, 0.0f, intersection, type);
+    bool up = PickWithAngleAndCollisionGeometry(camera, collision, 1.5f, 0.0f, 1.0f, 0.0f, intersection, type);
+    bool down = PickWithAngleAndCollisionGeometry(camera, collision, -1.5f, 0.0f, 1.0f, 0.0f, intersection, type);
+    m_model.setPickingEnable(previous != 0);
+    return right | center | left | up | down;
 }
 
 bool CUnitBody::PickWithAngleAndCollisionGeometry(Camera& camera, Group& collision, float angle,
                                                  float axisX, float axisY, float axisZ,
                                                  RayIntersection intersection, EHitType& type)
 {
-    if (!SwerveHelper::PickWithAngle(m_model, camera, angle, axisX, axisY, axisZ, intersection)) {
+    if (SwerveHelper::PickWithAngle(m_model, camera, angle, axisX, axisY, axisZ, intersection) != true) {
         return false;
     }
     float distance = intersection.getDistance();
-    if (m_pickDistance >= 0.0f && distance >= m_pickDistance) {
-        return false;
-    }
-    float ray[6];
-    intersection.getRay(ray);
-    if (SwerveHelper::PickWithAngle(collision, camera, angle, axisX, axisY, axisZ, intersection)
+    if (SwerveHelper::PickWithAngle(collision, camera, angle, axisX, axisY, axisZ, intersection) == true
         && intersection.getDistance() < distance) {
         return false;
     }
-    memcpy(m_pickRay, ray, sizeof(m_pickRay));
-    m_pickDistance = distance;
-    m_hitDistance = distance;
-    type = HitBody;
-    if (SwerveHelper::PickWithAngle(m_bodyArmorZone, camera, angle, axisX, axisY, axisZ, intersection)
-        || SwerveHelper::PickWithAngle(m_headArmorZone, camera, angle, axisX, axisY, axisZ, intersection)) {
+    // Original: ray and distance are read after the collision pick (it may have replaced the hit).
+    intersection.getRay(m_pickRay);
+    m_hitDistance = intersection.getDistance();
+    if ((m_bodyArmorZone != NULL
+         && SwerveHelper::PickWithAngle(m_bodyArmorZone, camera, angle, axisX, axisY, axisZ, intersection))
+        || (m_headArmorZone != NULL
+            && SwerveHelper::PickWithAngle(m_headArmorZone, camera, angle, axisX, axisY, axisZ, intersection))) {
         type = HitArmor;
-    } else if (SwerveHelper::PickWithAngle(m_headZone, camera, angle, axisX, axisY, axisZ, intersection)) {
-        type = HitHead;
-    } else if (SwerveHelper::PickWithAngle(m_vitalZone, camera, angle, axisX, axisY, axisZ, intersection)) {
-        type = HitVital;
+        return true;
     }
+    if (m_headZone != NULL && SwerveHelper::PickWithAngle(m_headZone, camera, angle, axisX, axisY, axisZ, intersection)) {
+        type = HitHead;
+        return true;
+    }
+    if (m_vitalZone != NULL
+        && SwerveHelper::PickWithAngle(m_vitalZone, camera, angle, axisX, axisY, axisZ, intersection)) {
+        type = HitVital;
+        return true;
+    }
+    type = HitBody;
     return true;
 }
 
 vec3 CUnitBody::GetAutoAimPointPosition()
 {
+    // Original: the head zone's world position, with no fallback.
+    vec3 position;
+    SwerveHelper::Transform transform = SwerveHelper::NewTransform();
     CSwerveGame* game = GetApp()->m_helper->m_swerveGame;
-    if (m_headZone != NULL) {
-        SwerveHelper::Transform transform = GetApp()->m_helper->m_transform;
-        if (m_headZone.getTransformTo(game->m_world, transform)) {
-            return SwerveHelper::GetTranslation(transform);
-        }
-    }
-    return m_position + vec3(0.0f, 0.0f, GetHeight());
+    m_headZone.getTransformTo(game->m_world, transform);
+    float matrix[16];
+    transform.get(matrix);
+    position.m_x = matrix[3];
+    position.m_y = matrix[7];
+    position.m_z = matrix[11];
+    return position;
 }
 
 void CUnitBody::eventListener(const AnimationEvent& event, AnimationInstance* instance)

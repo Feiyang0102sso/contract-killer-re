@@ -38,7 +38,7 @@ public:
     /** Text encodings. */  // added by b034x
     enum MimeType {  // added by b034x
         MimeType_Char = 0x00025e62,     // char string  // added by b034x
-        MimeType_WChar = 0x00215e62,    // wchar_t string  // added by b034x
+        MimeType_WChar = 0x02515e62,    // wchar_t string  // added by b034x
         MimeType_StrChar = 0x64365e6e,  // CStrChar  // added by b034x
         MimeType_StrWChar = 0x43735eb4, // CStrWChar  // added by b034x
         MimeType_Utf8 = 0xf686aadc      // UTF-8 bytes  // added by b034x

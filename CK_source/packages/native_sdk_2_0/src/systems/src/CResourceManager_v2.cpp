@@ -118,8 +118,18 @@ unsigned char CResourceManager_v2::GetStream(const char* name, CInputStream& str
 
     // a loose file in the application folder wins over the archives
     wchar_t path[0x100];
-    wcscpy(path, m_appPath.m_string);
-    mbstowcs(path + m_appPath.m_length, name, strlen(name) + 1);
+    const size_t pathCapacity = sizeof(path) / sizeof(path[0]);
+    const size_t prefixLength = m_appPath.m_length;
+    if (prefixLength >= pathCapacity) {
+        return found;
+    }
+    if (prefixLength != 0) {
+        wmemcpy(path, m_appPath.m_string, prefixLength);
+    }
+    const size_t nameCapacity = pathCapacity - prefixLength;
+    if (mbstowcs(path + prefixLength, name, nameCapacity) >= nameCapacity) {
+        return found;
+    }
     if (!ICFileMgr::GetInstance()->Exists(path)) {
         return found;
     }
@@ -138,7 +148,9 @@ unsigned char CResourceManager_v2::GetStream(const char* name, CInputStream& str
     }
     // an archive file: remember where it comes from
     mimeType = MimeType_BigFile;
-    *bigFileElement = NULL;
+    if (bigFileElement != NULL) {
+        *bigFileElement = NULL;
+    }
     CResourceDataBlockFileAccess::GetInstance()->m_path = path;
     return 1;
 }

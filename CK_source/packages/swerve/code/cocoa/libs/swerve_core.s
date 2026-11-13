@@ -2305,6 +2305,7 @@ __ZN21CssAlignTargetManager11GetInstanceEv:
 	.long	0xe59f1058
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_22cfd0:
 	.long	0xe1a05000
 	.long	0xe5802000
 	.long	0xe5804008
@@ -2312,6 +2313,7 @@ __ZN21CssAlignTargetManager11GetInstanceEv:
 	.long	0xe5804010
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_22cfec:
 	.long	0xe5853004
 	.long	0xeb012762
 	.long	0xe1a01005
@@ -2325,8 +2327,8 @@ __ZN21CssAlignTargetManager11GetInstanceEv:
 	.long	0xeb0129d2
 	.long	0xe5900028
 	.long	0xe8bd80b0
-	.long	0x0011859c
-	.long	0x00118590
+	.long	Lswv_34556c - Lswv_22cfd0
+	.long	Lswv_34557c - Lswv_22cfec
 	.globl	__ZN21CssAlignTargetManager19SetAlignmentInArrayEP7CssNodePKS0_
 	.private_extern	__ZN21CssAlignTargetManager19SetAlignmentInArrayEP7CssNodePKS0_
 __ZN21CssAlignTargetManager19SetAlignmentInArrayEP7CssNodePKS0_:
@@ -2534,7 +2536,9 @@ __ZN21CssAlignTargetManager19SetAlignmentInArrayEP7CssNodePKS0_:
 	.long	0xe59f12a0
 	.long	0xe08f900c
 	.long	0xe08fe001
+Lswv_22d358:
 	.long	0xe2898008
+Lswv_22d35c:
 	.long	0xe28eb008
 	.long	0xe1a04000
 	.long	0xe5808000
@@ -2700,8 +2704,8 @@ __ZN21CssAlignTargetManager19SetAlignmentInArrayEP7CssNodePKS0_:
 	.long	0xe12fff35
 	.long	0xe594c010
 	.long	0xeaffffd9
-	.long	0x00118244
-	.long	0x00118250
+	.long	Lswv_34559c - Lswv_22d358
+	.long	Lswv_3455ac - Lswv_22d35c
 	.globl	__ZN21CssAlignTargetManager19RegisterAlignedNodeEP7CssNode
 	.private_extern	__ZN21CssAlignTargetManager19RegisterAlignedNodeEP7CssNode
 __ZN21CssAlignTargetManager19RegisterAlignedNodeEP7CssNode:
@@ -2728,13 +2732,14 @@ __ZN21CssAlignTargetManager19RegisterAlignedNodeEP7CssNode:
 	.globl	__ZN21CssAlignTargetManagerD0Ev
 	.private_extern	__ZN21CssAlignTargetManagerD0Ev
 __ZN21CssAlignTargetManagerD0Ev:
-swv_22d648:
+Lswv_22d648:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe59f10b4
 	.long	0xe1a05000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_22d660:
 	.long	0xe5853000
 	.long	0xe595300c
 	.long	0xe3530000
@@ -2758,6 +2763,7 @@ swv_22d648:
 	.long	0xe59f1058
 	.long	0xe08f0001
 	.long	0xe280e008
+Lswv_22d6bc:
 	.long	0xe5950008
 	.long	0xe585e004
 	.long	0xe3500000
@@ -2770,7 +2776,7 @@ swv_22d648:
 	.long	0xe1a00005
 	.long	0xe79f2009
 	.long	0xe2823008
-swv_22d6ec:
+Lswv_22d6ec:
 	.long	0xe5853004
 	.long	0xeb0127d1
 	.long	0xe8bd80f0
@@ -2779,19 +2785,20 @@ swv_22d6ec:
 	.long	0x0afffff5
 	.long	0xeb0127d4
 	.long	0xeafffff3
-	.long	0x00117f0c
-	.long	0x00117ec0
-	.long	swv_got_0 - swv_22d6ec
+	.long	Lswv_34556c - Lswv_22d660
+	.long	Lswv_34557c - Lswv_22d6bc
+	.long	swv_got_0 - Lswv_22d6ec
 	.globl	__ZN21CssAlignTargetManagerD1Ev
 	.private_extern	__ZN21CssAlignTargetManagerD1Ev
 __ZN21CssAlignTargetManagerD1Ev:
-swv_22d718:
+Lswv_22d718:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe59f10ac
 	.long	0xe1a05000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_22d730:
 	.long	0xe5853000
 	.long	0xe595300c
 	.long	0xe3530000
@@ -2815,6 +2822,7 @@ swv_22d718:
 	.long	0xe59f2050
 	.long	0xe08f1002
 	.long	0xe2810008
+Lswv_22d78c:
 	.long	0xe5850004
 	.long	0xe5950008
 	.long	0xe3500000
@@ -2826,7 +2834,7 @@ swv_22d718:
 	.long	0xe59fc028
 	.long	0xe79f900c
 	.long	0xe2893008
-swv_22d7b8:
+Lswv_22d7b8:
 	.long	0xe5853004
 	.long	0xe8bd80f0
 	.long	0xe5950010
@@ -2834,13 +2842,13 @@ swv_22d7b8:
 	.long	0x0afffff7
 	.long	0xeb0127a2
 	.long	0xeafffff5
-	.long	0x00117e3c
-	.long	0x00117df0
-	.long	swv_got_0 - swv_22d7b8
+	.long	Lswv_34556c - Lswv_22d730
+	.long	Lswv_34557c - Lswv_22d78c
+	.long	swv_got_0 - Lswv_22d7b8
 	.globl	__ZN8CssArrayIP7CssNodeE7DestroyEPv
 	.private_extern	__ZN8CssArrayIP7CssNodeE7DestroyEPv
 __ZN8CssArrayIP7CssNodeE7DestroyEPv:
-swv_22d7e0:
+Lswv_22d7e0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -2850,7 +2858,7 @@ swv_22d7e0:
 	.globl	__ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEE7DestroyEPv
 	.private_extern	__ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEE7DestroyEPv
 __ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEE7DestroyEPv:
-swv_22d7f8:
+Lswv_22d7f8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -2860,13 +2868,14 @@ swv_22d7f8:
 	.globl	__ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEED1Ev
 	.private_extern	__ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEED1Ev
 __ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEED1Ev:
-swv_22d810:
+Lswv_22d810:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_22d828:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -2878,7 +2887,7 @@ swv_22d810:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_22d854:
+Lswv_22d854:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -2886,12 +2895,12 @@ swv_22d854:
 	.long	0x0afffff7
 	.long	0xeb01277b
 	.long	0xeafffff5
-	.long	0x00117d54
-	.long	swv_got_0 - swv_22d854
+	.long	Lswv_34557c - Lswv_22d828
+	.long	swv_got_0 - Lswv_22d854
 	.globl	__ZN8CssArrayIP7CssNodeE8AllocateEi
 	.private_extern	__ZN8CssArrayIP7CssNodeE8AllocateEi
 __ZN8CssArrayIP7CssNodeE8AllocateEi:
-swv_22d878:
+Lswv_22d878:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -2901,7 +2910,7 @@ swv_22d878:
 	.globl	__ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEE8AllocateEi
 	.private_extern	__ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEE8AllocateEi
 __ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEE8AllocateEi:
-swv_22d890:
+Lswv_22d890:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -2911,7 +2920,7 @@ swv_22d890:
 	.globl	__ZN8CssArrayIP7CssNodeE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIP7CssNodeE9CopyArrayEPvS3_i
 __ZN8CssArrayIP7CssNodeE9CopyArrayEPvS3_i:
-swv_22d8a8:
+Lswv_22d8a8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -3072,7 +3081,7 @@ swv_22d8a8:
 	.globl	__ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEE9CopyArrayEPvS4_i
 	.private_extern	__ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEE9CopyArrayEPvS4_i
 __ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEE9CopyArrayEPvS4_i:
-swv_22db1c:
+Lswv_22db1c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -3233,13 +3242,14 @@ swv_22db1c:
 	.globl	__ZN8CssArrayIP7CssNodeED0Ev
 	.private_extern	__ZN8CssArrayIP7CssNodeED0Ev
 __ZN8CssArrayIP7CssNodeED0Ev:
-swv_22dd90:
+Lswv_22dd90:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_22dda8:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -3252,7 +3262,7 @@ swv_22dd90:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_22ddd8:
+Lswv_22ddd8:
 	.long	0xe5849000
 	.long	0xeb012616
 	.long	0xe8bd8090
@@ -3261,18 +3271,19 @@ swv_22ddd8:
 	.long	0x0afffff5
 	.long	0xeb012619
 	.long	0xeafffff3
-	.long	0x00117804
-	.long	swv_got_0 - swv_22ddd8
+	.long	Lswv_3455ac - Lswv_22dda8
+	.long	swv_got_0 - Lswv_22ddd8
 	.globl	__ZN8CssArrayIP7CssNodeED1Ev
 	.private_extern	__ZN8CssArrayIP7CssNodeED1Ev
 __ZN8CssArrayIP7CssNodeED1Ev:
-swv_22de00:
+Lswv_22de00:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_22de18:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -3284,7 +3295,7 @@ swv_22de00:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_22de44:
+Lswv_22de44:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -3292,18 +3303,19 @@ swv_22de44:
 	.long	0x0afffff7
 	.long	0xeb0125ff
 	.long	0xeafffff5
-	.long	0x00117794
-	.long	swv_got_0 - swv_22de44
+	.long	Lswv_3455ac - Lswv_22de18
+	.long	swv_got_0 - Lswv_22de44
 	.globl	__ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEED0Ev
 	.private_extern	__ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEED0Ev
 __ZN8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEED0Ev:
-swv_22de68:
+Lswv_22de68:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_22de80:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -3316,7 +3328,7 @@ swv_22de68:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_22deb0:
+Lswv_22deb0:
 	.long	0xe5849000
 	.long	0xeb0125e0
 	.long	0xe8bd8090
@@ -3325,18 +3337,19 @@ swv_22deb0:
 	.long	0x0afffff5
 	.long	0xeb0125e3
 	.long	0xeafffff3
-	.long	0x001176fc
-	.long	swv_got_0 - swv_22deb0
+	.long	Lswv_34557c - Lswv_22de80
+	.long	swv_got_0 - Lswv_22deb0
 	.globl	__ZN21CssAlignTargetManager14CssAlignTargetD1Ev
 	.private_extern	__ZN21CssAlignTargetManager14CssAlignTargetD1Ev
 __ZN21CssAlignTargetManager14CssAlignTargetD1Ev:
-swv_22ded8:
+Lswv_22ded8:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe59f10b4
 	.long	0xe1a05000
 	.long	0xe08f0001
 	.long	0xe5951004
+Lswv_22def0:
 	.long	0xe2803008
 	.long	0xe5853000
 	.long	0xe3510000
@@ -3362,6 +3375,7 @@ swv_22ded8:
 	.long	0xe59f2050
 	.long	0xe08f1002
 	.long	0xe2810008
+Lswv_22df54:
 	.long	0xe5850008
 	.long	0xe595000c
 	.long	0xe3500000
@@ -3373,7 +3387,7 @@ swv_22ded8:
 	.long	0xe59f0028
 	.long	0xe79f3000
 	.long	0xe283c008
-swv_22df80:
+Lswv_22df80:
 	.long	0xe585c008
 	.long	0xe8bd80b0
 	.long	0xe5950014
@@ -3381,19 +3395,20 @@ swv_22df80:
 	.long	0x0afffff7
 	.long	0xeb0125b0
 	.long	0xeafffff5
-	.long	0x001176ac
-	.long	0x00117658
-	.long	swv_got_0 - swv_22df80
+	.long	Lswv_34559c - Lswv_22def0
+	.long	Lswv_3455ac - Lswv_22df54
+	.long	swv_got_0 - Lswv_22df80
 	.globl	__ZN21CssAlignTargetManager14CssAlignTargetD0Ev
 	.private_extern	__ZN21CssAlignTargetManager14CssAlignTargetD0Ev
 __ZN21CssAlignTargetManager14CssAlignTargetD0Ev:
-swv_22dfa8:
+Lswv_22dfa8:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe59f10bc
 	.long	0xe1a05000
 	.long	0xe08f0001
 	.long	0xe5951004
+Lswv_22dfc0:
 	.long	0xe2803008
 	.long	0xe5853000
 	.long	0xe3510000
@@ -3419,6 +3434,7 @@ swv_22dfa8:
 	.long	0xe59f1058
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_22e024:
 	.long	0xe595000c
 	.long	0xe5853008
 	.long	0xe3500000
@@ -3431,7 +3447,7 @@ swv_22dfa8:
 	.long	0xe1a00005
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_22e054:
+Lswv_22e054:
 	.long	0xe5859008
 	.long	0xeb012577
 	.long	0xe8bd80b0
@@ -3440,9 +3456,9 @@ swv_22e054:
 	.long	0x0afffff5
 	.long	0xeb01257a
 	.long	0xeafffff3
-	.long	0x001175dc
-	.long	0x00117588
-	.long	swv_got_0 - swv_22e054
+	.long	Lswv_34559c - Lswv_22dfc0
+	.long	Lswv_3455ac - Lswv_22e024
+	.long	swv_got_0 - Lswv_22e054
 	.globl	__ZN22CssAnimationController8IsActiveEi
 	.private_extern	__ZN22CssAnimationController8IsActiveEi
 __ZN22CssAnimationController8IsActiveEi:
@@ -3508,7 +3524,7 @@ __ZN22CssAnimationController17SetActiveIntervalEii:
 	.globl	__ZN22CssAnimationController11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN22CssAnimationController11SerializeInER27CssSerializeBufferObjectsIn
 __ZN22CssAnimationController11SerializeInER27CssSerializeBufferObjectsIn:
-swv_22e130:
+Lswv_22e130:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe1a05001
@@ -3549,13 +3565,13 @@ swv_22e130:
 	.globl	__ZThn4_N22CssAnimationControllerD0Ev
 	.private_extern	__ZThn4_N22CssAnimationControllerD0Ev
 __ZThn4_N22CssAnimationControllerD0Ev:
-swv_22e1c4:
+Lswv_22e1c4:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN22CssAnimationControllerD0Ev
 	.private_extern	__ZN22CssAnimationControllerD0Ev
 __ZN22CssAnimationControllerD0Ev:
-swv_22e1cc:
+Lswv_22e1cc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fe02c
@@ -3563,7 +3579,9 @@ swv_22e1cc:
 	.long	0xe1a04000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_22e1e8:
 	.long	0xe28c9008
+Lswv_22e1ec:
 	.long	0xe2813034
 	.long	0xe5809000
 	.long	0xe5803004
@@ -3571,32 +3589,34 @@ swv_22e1cc:
 	.long	0xe1a00004
 	.long	0xeb01250d
 	.long	0xe8bd8090
-	.long	0x001173e4
-	.long	0x001173e0
+	.long	Lswv_3455cc - Lswv_22e1e8
+	.long	Lswv_3455cc - Lswv_22e1ec
 	.globl	__ZThn4_N22CssAnimationControllerD1Ev
 	.private_extern	__ZThn4_N22CssAnimationControllerD1Ev
 __ZThn4_N22CssAnimationControllerD1Ev:
-swv_22e210:
+Lswv_22e210:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN22CssAnimationControllerD1Ev
 	.private_extern	__ZN22CssAnimationControllerD1Ev
 __ZN22CssAnimationControllerD1Ev:
-swv_22e218:
+Lswv_22e218:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59fe020
 	.long	0xe59f2020
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_22e230:
 	.long	0xe28c9008
+Lswv_22e234:
 	.long	0xe2813034
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xeb0088f9
 	.long	0xe8bd8080
-	.long	0x0011739c
-	.long	0x00117398
+	.long	Lswv_3455cc - Lswv_22e230
+	.long	Lswv_3455cc - Lswv_22e234
 	.globl	__ZN22CssAnimationControllerC1Ev
 	.private_extern	__ZN22CssAnimationControllerC1Ev
 __ZN22CssAnimationControllerC1Ev:
@@ -3608,7 +3628,9 @@ __ZN22CssAnimationControllerC1Ev:
 	.long	0xe59f2040
 	.long	0xe08f900c
 	.long	0xe08f0002
+Lswv_22e270:
 	.long	0xe2891034
+Lswv_22e274:
 	.long	0xe2803008
 	.long	0xe3a02000
 	.long	0xe3a00000
@@ -3622,8 +3644,8 @@ __ZN22CssAnimationControllerC1Ev:
 	.long	0xe5843030
 	.long	0xe5843034
 	.long	0xe8bd8090
-	.long	0x0011735c
-	.long	0x00117358
+	.long	Lswv_3455cc - Lswv_22e270
+	.long	Lswv_3455cc - Lswv_22e274
 	.globl	__ZNK22CssAnimationController11GetPositionEi
 	.private_extern	__ZNK22CssAnimationController11GetPositionEi
 __ZNK22CssAnimationController11GetPositionEi:
@@ -3738,7 +3760,7 @@ __ZNK22CssAnimationController17GetPositionLoopedEii:
 	.globl	__ZN11CssObject3D11AnimateRefsEiii
 	.private_extern	__ZN11CssObject3D11AnimateRefsEiii
 __ZN11CssObject3D11AnimateRefsEiii:
-swv_22e454:
+Lswv_22e454:
 	.long	0xe24dd008
 	.long	0xe1a00002
 	.long	0xe28dd008
@@ -3746,19 +3768,19 @@ swv_22e454:
 	.globl	__ZThn4_NK22CssAnimationController4TypeEv
 	.private_extern	__ZThn4_NK22CssAnimationController4TypeEv
 __ZThn4_NK22CssAnimationController4TypeEv:
-swv_22e464:
+Lswv_22e464:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK22CssAnimationController4TypeEv
 	.private_extern	__ZNK22CssAnimationController4TypeEv
 __ZNK22CssAnimationController4TypeEv:
-swv_22e46c:
+Lswv_22e46c:
 	.long	0xe3a00001
 	.long	0xe12fff1e
 	.globl	__ZNK22CssAnimationController5CloneEv
 	.private_extern	__ZNK22CssAnimationController5CloneEv
 __ZNK22CssAnimationController5CloneEv:
-swv_22e474:
+Lswv_22e474:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe3a01000
@@ -3772,7 +3794,9 @@ swv_22e474:
 	.long	0xe3a03000
 	.long	0xe08f2009
 	.long	0xe08fe000
+Lswv_22e4a8:
 	.long	0xe28ec008
+Lswv_22e4ac:
 	.long	0xe2821034
 	.long	0xe3a0e5fe
 	.long	0xe584c000
@@ -3807,8 +3831,8 @@ swv_22e474:
 	.long	0xeb012239
 	.long	0xe1a00004
 	.long	0xe8bd80b0
-	.long	0x00117124
-	.long	0x00117120
+	.long	Lswv_3455cc - Lswv_22e4a8
+	.long	Lswv_3455cc - Lswv_22e4ac
 	.globl	__Z22real_roundnearestclampfii
 	.private_extern	__Z22real_roundnearestclampfii
 __Z22real_roundnearestclampfii:
@@ -3901,7 +3925,9 @@ __ZN17CssAnimationTrackC1Ev:
 	.long	0xe59f9030
 	.long	0xe08f3000
 	.long	0xe08f2009
+Lswv_22e688:
 	.long	0xe3a00000
+Lswv_22e68c:
 	.long	0xe283c008
 	.long	0xe2821034
 	.long	0xe28030ff
@@ -3911,8 +3937,8 @@ __ZN17CssAnimationTrackC1Ev:
 	.long	0xe5840024
 	.long	0xe5843028
 	.long	0xe8bd8090
-	.long	0x00116f84
-	.long	0x00116f80
+	.long	Lswv_34560c - Lswv_22e688
+	.long	Lswv_34560c - Lswv_22e68c
 	.globl	__ZN17CssAnimationTrack9ConstructEP19CssKeyframeSequencei
 	.private_extern	__ZN17CssAnimationTrack9ConstructEP19CssKeyframeSequencei
 __ZN17CssAnimationTrack9ConstructEP19CssKeyframeSequencei:
@@ -3945,6 +3971,7 @@ __ZN17CssAnimationTrack9ConstructEP19CssKeyframeSequencei:
 	.long	0xe1a00108
 	.long	0xe08f900c
 	.long	0x01a02006
+Lswv_22e72c:
 	.long	0x12462004
 	.long	0xe5852020
 	.long	0xe0802009
@@ -3961,18 +3988,18 @@ __ZN17CssAnimationTrack9ConstructEP19CssKeyframeSequencei:
 	.long	0xe59f0008
 	.long	0xeb012405
 	.long	0xeafffffa
-	.long	0x000c800c
+	.long	Lswv_2f6738 - Lswv_22e72c
 	.long	0xfffffaeb
 	.globl	__ZThn4_N17CssAnimationTrackD0Ev
 	.private_extern	__ZThn4_N17CssAnimationTrackD0Ev
 __ZThn4_N17CssAnimationTrackD0Ev:
-swv_22e774:
+Lswv_22e774:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN17CssAnimationTrackD0Ev
 	.private_extern	__ZN17CssAnimationTrackD0Ev
 __ZN17CssAnimationTrackD0Ev:
-swv_22e77c:
+Lswv_22e77c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc088
@@ -3980,9 +4007,11 @@ swv_22e77c:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_22e798:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803034
+Lswv_22e7a4:
 	.long	0xe5940020
 	.long	0xe5843004
 	.long	0xe3500000
@@ -4011,18 +4040,18 @@ swv_22e77c:
 	.long	0xe1a00004
 	.long	0xeb01238a
 	.long	0xe8bd8090
-	.long	0x00116e74
-	.long	0x00116e68
+	.long	Lswv_34560c - Lswv_22e798
+	.long	Lswv_34560c - Lswv_22e7a4
 	.globl	__ZThn4_N17CssAnimationTrackD1Ev
 	.private_extern	__ZThn4_N17CssAnimationTrackD1Ev
 __ZThn4_N17CssAnimationTrackD1Ev:
-swv_22e81c:
+Lswv_22e81c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN17CssAnimationTrackD1Ev
 	.private_extern	__ZN17CssAnimationTrackD1Ev
 __ZN17CssAnimationTrackD1Ev:
-swv_22e824:
+Lswv_22e824:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc080
@@ -4030,9 +4059,11 @@ swv_22e824:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_22e840:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803034
+Lswv_22e84c:
 	.long	0xe5940020
 	.long	0xe5843004
 	.long	0xe3500000
@@ -4059,8 +4090,8 @@ swv_22e824:
 	.long	0xe1a00004
 	.long	0xeb00875e
 	.long	0xe8bd8090
-	.long	0x00116dcc
-	.long	0x00116dc0
+	.long	Lswv_34560c - Lswv_22e840
+	.long	Lswv_34560c - Lswv_22e84c
 	.globl	__ZN17CssAnimationTrack13SetControllerEP22CssAnimationController
 	.private_extern	__ZN17CssAnimationTrack13SetControllerEP22CssAnimationController
 __ZN17CssAnimationTrack13SetControllerEP22CssAnimationController:
@@ -4093,7 +4124,7 @@ __ZN17CssAnimationTrack13SetControllerEP22CssAnimationController:
 	.globl	__ZN17CssAnimationTrack11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN17CssAnimationTrack11SerializeInER27CssSerializeBufferObjectsIn
 __ZN17CssAnimationTrack11SerializeInER27CssSerializeBufferObjectsIn:
-swv_22e924:
+Lswv_22e924:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -4167,6 +4198,7 @@ swv_22e924:
 	.long	0xe1a01109
 	.long	0xe08f200c
 	.long	0xe0813002
+Lswv_22ea48:
 	.long	0xe51333fc
 	.long	0xe3730001
 	.long	0x0a000004
@@ -4187,24 +4219,24 @@ swv_22e924:
 	.long	0xe59f0008
 	.long	0xeb01233a
 	.long	0xeaffffe6
-	.long	0x000c7cf0
+	.long	Lswv_2f6738 - Lswv_22ea48
 	.long	0xfffffb4e
 	.globl	__ZThn4_NK17CssAnimationTrack4TypeEv
 	.private_extern	__ZThn4_NK17CssAnimationTrack4TypeEv
 __ZThn4_NK17CssAnimationTrack4TypeEv:
-swv_22eaa0:
+Lswv_22eaa0:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK17CssAnimationTrack4TypeEv
 	.private_extern	__ZNK17CssAnimationTrack4TypeEv
 __ZNK17CssAnimationTrack4TypeEv:
-swv_22eaa8:
+Lswv_22eaa8:
 	.long	0xe3a00002
 	.long	0xe12fff1e
 	.globl	__ZN17CssAnimationTrack7GetpRefEi
 	.private_extern	__ZN17CssAnimationTrack7GetpRefEi
 __ZN17CssAnimationTrack7GetpRefEi:
-swv_22eab0:
+Lswv_22eab0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe24dd008
@@ -4229,7 +4261,7 @@ swv_22eab0:
 	.globl	__ZNK17CssAnimationTrack5CloneEv
 	.private_extern	__ZNK17CssAnimationTrack5CloneEv
 __ZNK17CssAnimationTrack5CloneEv:
-swv_22eb04:
+Lswv_22eb04:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe3a01000
@@ -4243,7 +4275,9 @@ swv_22eb04:
 	.long	0xe3a01000
 	.long	0xe08fe003
 	.long	0xe08f5009
+Lswv_22eb38:
 	.long	0xe2852034
+Lswv_22eb3c:
 	.long	0xe28ec008
 	.long	0xe5842004
 	.long	0xe584c000
@@ -4310,18 +4344,18 @@ swv_22eb04:
 	.long	0xeb012075
 	.long	0xe1a00004
 	.long	0xe8bd80f0
-	.long	0x00116ad4
-	.long	0x00116ad0
+	.long	Lswv_34560c - Lswv_22eb38
+	.long	Lswv_34560c - Lswv_22eb3c
 	.globl	__ZThn4_NK13CssAppearance4TypeEv
 	.private_extern	__ZThn4_NK13CssAppearance4TypeEv
 __ZThn4_NK13CssAppearance4TypeEv:
-swv_22ec4c:
+Lswv_22ec4c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK13CssAppearance4TypeEv
 	.private_extern	__ZNK13CssAppearance4TypeEv
 __ZNK13CssAppearance4TypeEv:
-swv_22ec54:
+Lswv_22ec54:
 	.long	0xe3a00003
 	.long	0xe12fff1e
 	.globl	__ZN13CssAppearanceC1Ev
@@ -4336,7 +4370,9 @@ __ZN13CssAppearanceC1Ev:
 	.long	0xe3a00000
 	.long	0xe08f3001
 	.long	0xe08f900c
+Lswv_22ec80:
 	.long	0xe283e008
+Lswv_22ec84:
 	.long	0xe2892034
 	.long	0xe584e000
 	.long	0xe5842004
@@ -4353,8 +4389,8 @@ __ZN13CssAppearanceC1Ev:
 	.long	0xe584103c
 	.long	0xe580303c
 	.long	0xe8bd8090
-	.long	0x001169cc
-	.long	0x001169c8
+	.long	Lswv_34564c - Lswv_22ec80
+	.long	Lswv_34564c - Lswv_22ec84
 	.globl	__ZN13CssAppearanceD2Ev
 	.private_extern	__ZN13CssAppearanceD2Ev
 __ZN13CssAppearanceD2Ev:
@@ -4365,9 +4401,11 @@ __ZN13CssAppearanceD2Ev:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_22ece8:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803034
+Lswv_22ecf4:
 	.long	0xe5940024
 	.long	0xe5843004
 	.long	0xe3500000
@@ -4438,29 +4476,29 @@ __ZN13CssAppearanceD2Ev:
 	.long	0xe1a00004
 	.long	0xeb008608
 	.long	0xe8bd8090
-	.long	0x00116964
-	.long	0x00116958
+	.long	Lswv_34564c - Lswv_22ece8
+	.long	Lswv_34564c - Lswv_22ecf4
 	.globl	__ZThn4_N13CssAppearanceD1Ev
 	.private_extern	__ZThn4_N13CssAppearanceD1Ev
 __ZThn4_N13CssAppearanceD1Ev:
-swv_22ee14:
+Lswv_22ee14:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN13CssAppearanceD1Ev
 	.private_extern	__ZN13CssAppearanceD1Ev
 __ZN13CssAppearanceD1Ev:
-swv_22ee1c:
+Lswv_22ee1c:
 	.long	0xeaffffaa
 	.globl	__ZThn4_N13CssAppearanceD0Ev
 	.private_extern	__ZThn4_N13CssAppearanceD0Ev
 __ZThn4_N13CssAppearanceD0Ev:
-swv_22ee20:
+Lswv_22ee20:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN13CssAppearanceD0Ev
 	.private_extern	__ZN13CssAppearanceD0Ev
 __ZN13CssAppearanceD0Ev:
-swv_22ee28:
+Lswv_22ee28:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc138
@@ -4468,9 +4506,11 @@ swv_22ee28:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_22ee44:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803034
+Lswv_22ee50:
 	.long	0xe5940024
 	.long	0xe5843004
 	.long	0xe3500000
@@ -4543,8 +4583,8 @@ swv_22ee28:
 	.long	0xe1a00004
 	.long	0xeb0121b3
 	.long	0xe8bd8090
-	.long	0x00116808
-	.long	0x001167fc
+	.long	Lswv_34564c - Lswv_22ee44
+	.long	Lswv_34564c - Lswv_22ee50
 	.globl	__ZN13CssAppearance11SetMaterialEP11CssMaterial
 	.private_extern	__ZN13CssAppearance11SetMaterialEP11CssMaterial
 __ZN13CssAppearance11SetMaterialEP11CssMaterial:
@@ -4647,7 +4687,7 @@ __ZN13CssAppearance10SetTextureEiP12CssTexture2D:
 	.globl	__ZN13CssAppearance11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN13CssAppearance11SerializeInER27CssSerializeBufferObjectsIn
 __ZN13CssAppearance11SerializeInER27CssSerializeBufferObjectsIn:
-swv_22f0e0:
+Lswv_22f0e0:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -5214,7 +5254,7 @@ __ZN13CssAppearance6SetFogEP6CssFog:
 	.globl	__ZN13CssAppearance7GetpRefEi
 	.private_extern	__ZN13CssAppearance7GetpRefEi
 __ZN13CssAppearance7GetpRefEi:
-swv_22f994:
+Lswv_22f994:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe24dd018
@@ -5241,7 +5281,7 @@ swv_22f994:
 	.globl	__ZN13CssAppearance11AnimateRefsEiii
 	.private_extern	__ZN13CssAppearance11AnimateRefsEiii
 __ZN13CssAppearance11AnimateRefsEiii:
-swv_22f9f0:
+Lswv_22f9f0:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe24dd010
@@ -5293,7 +5333,7 @@ swv_22f9f0:
 	.globl	__ZNK13CssAppearance5CloneEv
 	.private_extern	__ZNK13CssAppearance5CloneEv
 __ZNK13CssAppearance5CloneEv:
-swv_22fab0:
+Lswv_22fab0:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe3a01000
@@ -5308,7 +5348,9 @@ swv_22fab0:
 	.long	0xe5845020
 	.long	0xe08fc00e
 	.long	0xe08f0001
+Lswv_22fae8:
 	.long	0xe2803008
+Lswv_22faec:
 	.long	0xe28c9034
 	.long	0xe8840208
 	.long	0xe5845024
@@ -5473,8 +5515,8 @@ swv_22fab0:
 	.long	0xeb011c27
 	.long	0xe1a00004
 	.long	0xe8bd80f0
-	.long	0x00115b64
-	.long	0x00115b60
+	.long	Lswv_34564c - Lswv_22fae8
+	.long	Lswv_34564c - Lswv_22faec
 	.globl	__ZN10CssArchiveC1Ev
 	.private_extern	__ZN10CssArchiveC1Ev
 __ZN10CssArchiveC1Ev:
@@ -5482,13 +5524,14 @@ __ZN10CssArchiveC1Ev:
 	.long	0xe3a02000
 	.long	0xe08f1009
 	.long	0xe2813008
+Lswv_22fd94:
 	.long	0xe5802004
 	.long	0xe5803000
 	.long	0xe5802008
 	.long	0xe580200c
 	.long	0xe5802010
 	.long	0xe12fff1e
-	.long	0x001158f8
+	.long	Lswv_34568c - Lswv_22fd94
 	.globl	_archive_enumInit
 	.private_extern	_archive_enumInit
 _archive_enumInit:
@@ -5528,6 +5571,7 @@ _archive_create:
 	.long	0xe3a02000
 	.long	0xe08f1009
 	.long	0xe2813008
+Lswv_22fe28:
 	.long	0xe1a01004
 	.long	0xe5803000
 	.long	0xe1a05000
@@ -5543,17 +5587,18 @@ _archive_create:
 	.long	0x112fff33
 	.long	0xe1a00004
 	.long	0xe8bd80b0
-	.long	0x00115864
+	.long	Lswv_34568c - Lswv_22fe28
 	.globl	__ZN10CssArchiveD0Ev
 	.private_extern	__ZN10CssArchiveD0Ev
 __ZN10CssArchiveD0Ev:
-swv_22fe68:
+Lswv_22fe68:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_22fe80:
 	.long	0xe5940008
 	.long	0xe5843000
 	.long	0xe3500000
@@ -5572,17 +5617,18 @@ swv_22fe68:
 	.long	0xe1a00004
 	.long	0xeb011de1
 	.long	0xe8bd8090
-	.long	0x0011580c
+	.long	Lswv_34568c - Lswv_22fe80
 	.globl	__ZN10CssArchiveD1Ev
 	.private_extern	__ZN10CssArchiveD1Ev
 __ZN10CssArchiveD1Ev:
-swv_22fecc:
+Lswv_22fecc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1048
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_22fee4:
 	.long	0xe5940008
 	.long	0xe5843000
 	.long	0xe3500000
@@ -5599,7 +5645,7 @@ swv_22fecc:
 	.long	0x08bd8090
 	.long	0xeb011dca
 	.long	0xe8bd8090
-	.long	0x001157a8
+	.long	Lswv_34568c - Lswv_22fee4
 	.globl	__ZN10CssArchive17OpenArchiveMemberEPKcPjPP16CssArchiveMember
 	.private_extern	__ZN10CssArchive17OpenArchiveMemberEPKcPjPP16CssArchiveMember
 __ZN10CssArchive17OpenArchiveMemberEPKcPjPP16CssArchiveMember:
@@ -6104,7 +6150,9 @@ __ZN10CssArchive11OpenArchiveEPKc:
 	.long	0xe59f9408
 	.long	0xe08fb00c
 	.long	0xe08f6009
+Lswv_2306d8:
 	.long	0xe28ba008
+Lswv_2306dc:
 	.long	0xe286501c
 	.long	0xe58d0014
 	.long	0xe5808004
@@ -6145,7 +6193,9 @@ __ZN10CssArchive11OpenArchiveEPKc:
 	.long	0xe59f336c
 	.long	0xe08fc00e
 	.long	0xe08f1003
+Lswv_23077c:
 	.long	0xe28c901c
+Lswv_230780:
 	.long	0xe2814008
 	.long	0xe5809008
 	.long	0xe5804000
@@ -6175,6 +6225,7 @@ __ZN10CssArchive11OpenArchiveEPKc:
 	.long	0xe59d1018
 	.long	0xe08f2000
 	.long	0xe2823008
+Lswv_2307f4:
 	.long	0xe5813000
 	.long	0xeb011960
 	.long	0xe59d1018
@@ -6195,6 +6246,7 @@ __ZN10CssArchive11OpenArchiveEPKc:
 	.long	0xe1a00006
 	.long	0xe08f1002
 	.long	0xe3a0200c
+Lswv_230844:
 	bl	_swvStrNCmp
 	.long	0xe3500000
 	.long	0x1a00008e
@@ -6360,12 +6412,12 @@ __ZN10CssArchive11OpenArchiveEPKc:
 	.long	0xeb011b2b
 	.long	0xeaffff12
 	.long	0xfffffaec
-	.long	0x00114fc8
-	.long	0x00114fc4
-	.long	0x00114f48
-	.long	0x00114f44
-	.long	0x00114ef4
-	.long	0x000c5f4c
+	.long	Lswv_3456a0 - Lswv_2306d8
+	.long	Lswv_3456a0 - Lswv_2306dc
+	.long	Lswv_3456c4 - Lswv_23077c
+	.long	Lswv_3456c4 - Lswv_230780
+	.long	Lswv_3456e8 - Lswv_2307f4
+	.long	Lswv_2f6790 - Lswv_230844
 	.long	0xfffffb4e
 	.long	0xfffffbb3
 	.globl	_archive_openArchive
@@ -6396,19 +6448,19 @@ _archive_openArchive:
 	.globl	__ZNK11CssRefCount4TypeEv
 	.private_extern	__ZNK11CssRefCount4TypeEv
 __ZNK11CssRefCount4TypeEv:
-swv_230b50:
+Lswv_230b50:
 	.long	0xe3a00000
 	.long	0xe12fff1e
 	.globl	__ZNK10CssArchive4TypeEv
 	.private_extern	__ZNK10CssArchive4TypeEv
 __ZNK10CssArchive4TypeEv:
-swv_230b58:
+Lswv_230b58:
 	.long	0xe3a0001f
 	.long	0xe12fff1e
 	.globl	__ZN8CssArrayIhE8AllocateEi
 	.private_extern	__ZN8CssArrayIhE8AllocateEi
 __ZN8CssArrayIhE8AllocateEi:
-swv_230b60:
+Lswv_230b60:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00001
@@ -6418,13 +6470,13 @@ swv_230b60:
 	.globl	__ZThn8_N14CssFileManagerD0Ev
 	.private_extern	__ZThn8_N14CssFileManagerD0Ev
 __ZThn8_N14CssFileManagerD0Ev:
-swv_230b78:
+Lswv_230b78:
 	.long	0xe2400008
 	.long	0xeaffffff
 	.globl	__ZN14CssFileManagerD0Ev
 	.private_extern	__ZN14CssFileManagerD0Ev
 __ZN14CssFileManagerD0Ev:
-swv_230b80:
+Lswv_230b80:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fe030
@@ -6432,7 +6484,9 @@ swv_230b80:
 	.long	0xe1a04000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_230b9c:
 	.long	0xe28c9008
+Lswv_230ba0:
 	.long	0xe281301c
 	.long	0xe5809000
 	.long	0xe5803008
@@ -6441,43 +6495,45 @@ swv_230b80:
 	.long	0xe1a00004
 	.long	0xeb011a9f
 	.long	0xe8bd8090
-	.long	0x00114b04
-	.long	0x00114b00
+	.long	Lswv_3456a0 - Lswv_230b9c
+	.long	Lswv_3456a0 - Lswv_230ba0
 	.globl	__ZThn8_N14CssFileManagerD1Ev
 	.private_extern	__ZThn8_N14CssFileManagerD1Ev
 __ZThn8_N14CssFileManagerD1Ev:
-swv_230bc8:
+Lswv_230bc8:
 	.long	0xe2400008
 	.long	0xeaffffff
 	.globl	__ZN14CssFileManagerD1Ev
 	.private_extern	__ZN14CssFileManagerD1Ev
 __ZN14CssFileManagerD1Ev:
-swv_230bd0:
+Lswv_230bd0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59fe024
 	.long	0xe59f2024
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_230be8:
 	.long	0xe28c9008
+Lswv_230bec:
 	.long	0xe281301c
 	.long	0xe5809000
 	.long	0xe5803008
 	.long	0xe590000c
 	bl	_swvFileManagerRelease
 	.long	0xe8bd8080
-	.long	0x00114ab8
-	.long	0x00114ab4
+	.long	Lswv_3456a0 - Lswv_230be8
+	.long	Lswv_3456a0 - Lswv_230bec
 	.globl	__ZThn8_N7CssFileD0Ev
 	.private_extern	__ZThn8_N7CssFileD0Ev
 __ZThn8_N7CssFileD0Ev:
-swv_230c0c:
+Lswv_230c0c:
 	.long	0xe2400008
 	.long	0xeaffffff
 	.globl	__ZN7CssFileD0Ev
 	.private_extern	__ZN7CssFileD0Ev
 __ZN7CssFileD0Ev:
-swv_230c14:
+Lswv_230c14:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fe030
@@ -6485,7 +6541,9 @@ swv_230c14:
 	.long	0xe1a04000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_230c30:
 	.long	0xe28c9008
+Lswv_230c34:
 	.long	0xe281301c
 	.long	0xe5809000
 	.long	0xe5803008
@@ -6494,37 +6552,39 @@ swv_230c14:
 	.long	0xe1a00004
 	.long	0xeb011a7a
 	.long	0xe8bd8090
-	.long	0x00114a94
-	.long	0x00114a90
+	.long	Lswv_3456c4 - Lswv_230c30
+	.long	Lswv_3456c4 - Lswv_230c34
 	.globl	__ZThn8_N7CssFileD1Ev
 	.private_extern	__ZThn8_N7CssFileD1Ev
 __ZThn8_N7CssFileD1Ev:
-swv_230c5c:
+Lswv_230c5c:
 	.long	0xe2400008
 	.long	0xeaffffff
 	.globl	__ZN7CssFileD1Ev
 	.private_extern	__ZN7CssFileD1Ev
 __ZN7CssFileD1Ev:
-swv_230c64:
+Lswv_230c64:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59fe024
 	.long	0xe59f2024
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_230c7c:
 	.long	0xe28c9008
+Lswv_230c80:
 	.long	0xe281301c
 	.long	0xe5809000
 	.long	0xe5803008
 	.long	0xe590000c
 	bl	_swvFileRelease
 	.long	0xe8bd8080
-	.long	0x00114a48
-	.long	0x00114a44
+	.long	Lswv_3456c4 - Lswv_230c7c
+	.long	Lswv_3456c4 - Lswv_230c80
 	.globl	__ZN8CssArrayIhE7DestroyEPv
 	.private_extern	__ZN8CssArrayIhE7DestroyEPv
 __ZN8CssArrayIhE7DestroyEPv:
-swv_230ca0:
+Lswv_230ca0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -6534,13 +6594,14 @@ swv_230ca0:
 	.globl	__ZN8CssArrayIhED1Ev
 	.private_extern	__ZN8CssArrayIhED1Ev
 __ZN8CssArrayIhED1Ev:
-swv_230cb8:
+Lswv_230cb8:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_230cd0:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -6552,7 +6613,7 @@ swv_230cb8:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_230cfc:
+Lswv_230cfc:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -6560,12 +6621,12 @@ swv_230cfc:
 	.long	0x0afffff7
 	.long	0xeb011a51
 	.long	0xeafffff5
-	.long	0x00114a18
-	.long	swv_got_0 - swv_230cfc
+	.long	Lswv_3456e8 - Lswv_230cd0
+	.long	swv_got_0 - Lswv_230cfc
 	.globl	__ZN8CssArrayIhE9CopyArrayEPvS1_i
 	.private_extern	__ZN8CssArrayIhE9CopyArrayEPvS1_i
 __ZN8CssArrayIhE9CopyArrayEPvS1_i:
-swv_230d20:
+Lswv_230d20:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a00002
@@ -6721,13 +6782,14 @@ swv_230d20:
 	.globl	__ZN8CssArrayIhED0Ev
 	.private_extern	__ZN8CssArrayIhED0Ev
 __ZN8CssArrayIhED0Ev:
-swv_230f80:
+Lswv_230f80:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_230f98:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -6740,7 +6802,7 @@ swv_230f80:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_230fc8:
+Lswv_230fc8:
 	.long	0xe5849000
 	.long	0xeb01199a
 	.long	0xe8bd8090
@@ -6749,8 +6811,8 @@ swv_230fc8:
 	.long	0x0afffff5
 	.long	0xeb01199d
 	.long	0xeafffff3
-	.long	0x00114750
-	.long	swv_got_0 - swv_230fc8
+	.long	Lswv_3456e8 - Lswv_230f98
+	.long	swv_got_0 - Lswv_230fc8
 	.globl	__ZN16CssArchiveMemberC1Ev
 	.private_extern	__ZN16CssArchiveMemberC1Ev
 __ZN16CssArchiveMemberC1Ev:
@@ -6758,11 +6820,12 @@ __ZN16CssArchiveMemberC1Ev:
 	.long	0xe3a02000
 	.long	0xe08f1009
 	.long	0xe2813008
+Lswv_231000:
 	.long	0xe5802004
 	.long	0xe5803000
 	.long	0xe5802008
 	.long	0xe12fff1e
-	.long	0x00114708
+	.long	Lswv_345708 - Lswv_231000
 	.globl	__ZN16CssArchiveMember10initializeEP7CssFilejj
 	.private_extern	__ZN16CssArchiveMember10initializeEP7CssFilejj
 __ZN16CssArchiveMember10initializeEP7CssFilejj:
@@ -6832,6 +6895,7 @@ _archivemember_create:
 	.long	0xe3a02000
 	.long	0xe08f1009
 	.long	0xe2813008
+Lswv_2310f8:
 	.long	0xe1a01004
 	.long	0xe5803000
 	.long	0xe1a05000
@@ -6845,17 +6909,18 @@ _archivemember_create:
 	.long	0x112fff33
 	.long	0xe1a00004
 	.long	0xe8bd80b0
-	.long	0x00114610
+	.long	Lswv_345708 - Lswv_2310f8
 	.globl	__ZN16CssArchiveMemberD0Ev
 	.private_extern	__ZN16CssArchiveMemberD0Ev
 __ZN16CssArchiveMemberD0Ev:
-swv_231130:
+Lswv_231130:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1040
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_231148:
 	.long	0xe5940008
 	.long	0xe5843000
 	.long	0xe3500000
@@ -6870,14 +6935,15 @@ swv_231130:
 	.long	0xe1a00004
 	.long	0xeb011933
 	.long	0xe8bd8090
-	.long	0x001145c0
+	.long	Lswv_345708 - Lswv_231148
 	.globl	__ZN16CssArchiveMemberD1Ev
 	.private_extern	__ZN16CssArchiveMemberD1Ev
 __ZN16CssArchiveMemberD1Ev:
-swv_231184:
+Lswv_231184:
 	.long	0xe59f2034
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_231190:
 	.long	0xe5803000
 	.long	0xe5900008
 	.long	0xe3500000
@@ -6890,7 +6956,7 @@ swv_231184:
 	.long	0xe5903000
 	.long	0xe5933004
 	.long	0xe12fff13
-	.long	0x00114578
+	.long	Lswv_345708 - Lswv_231190
 	.globl	_archivemember_read
 	.private_extern	_archivemember_read
 _archivemember_read:
@@ -6931,7 +6997,7 @@ _archivemember_read:
 	.globl	__ZNK16CssArchiveMember4TypeEv
 	.private_extern	__ZNK16CssArchiveMember4TypeEv
 __ZNK16CssArchiveMember4TypeEv:
-swv_23124c:
+Lswv_23124c:
 	.long	0xe3a00020
 	.long	0xe12fff1e
 	.globl	__ZN12CssArrayBase7ReserveEi
@@ -7019,7 +7085,7 @@ __ZN12CssArrayBase15cActualElementsEii:
 	.globl	__ZN12CssArrayBase14SetStorageSizeEii
 	.private_extern	__ZN12CssArrayBase14SetStorageSizeEii
 __ZN12CssArrayBase14SetStorageSizeEii:
-swv_231378:
+Lswv_231378:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -7130,30 +7196,32 @@ __ZN12CssArrayBase7CompactEv:
 	.globl	__ZN12CssArrayBaseD0Ev
 	.private_extern	__ZN12CssArrayBaseD0Ev
 __ZN12CssArrayBaseD0Ev:
-swv_23150c:
+Lswv_23150c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59f2010
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_231520:
 	.long	0xe5803000
 	.long	0xeb011844
 	.long	0xe8bd8080
-	.long	0x001141fc
+	.long	Lswv_34571c - Lswv_231520
 	.globl	__ZN12CssArrayBaseD1Ev
 	.private_extern	__ZN12CssArrayBaseD1Ev
 __ZN12CssArrayBaseD1Ev:
-swv_231530:
+Lswv_231530:
 	.long	0xe59f200c
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_23153c:
 	.long	0xe5803000
 	.long	0xe12fff1e
-	.long	0x001141e0
+	.long	Lswv_34571c - Lswv_23153c
 	.globl	__ZN13CssBackground11SetPropertyEiiPf
 	.private_extern	__ZN13CssBackground11SetPropertyEiiPf
 __ZN13CssBackground11SetPropertyEiiPf:
-swv_231548:
+Lswv_231548:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe300c102
@@ -7267,7 +7335,7 @@ swv_231548:
 	.globl	__ZNK13CssBackground21HasAnimatablePropertyEi
 	.private_extern	__ZNK13CssBackground21HasAnimatablePropertyEi
 __ZNK13CssBackground21HasAnimatablePropertyEi:
-swv_231700:
+Lswv_231700:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe3a0201a
@@ -7281,7 +7349,7 @@ swv_231700:
 	.globl	__ZN13CssBackground11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN13CssBackground11SerializeInER27CssSerializeBufferObjectsIn
 __ZN13CssBackground11SerializeInER27CssSerializeBufferObjectsIn:
-swv_231728:
+Lswv_231728:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -7371,19 +7439,19 @@ swv_231728:
 	.globl	__ZThn4_NK13CssBackground4TypeEv
 	.private_extern	__ZThn4_NK13CssBackground4TypeEv
 __ZThn4_NK13CssBackground4TypeEv:
-swv_231880:
+Lswv_231880:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK13CssBackground4TypeEv
 	.private_extern	__ZNK13CssBackground4TypeEv
 __ZNK13CssBackground4TypeEv:
-swv_231888:
+Lswv_231888:
 	.long	0xe3a00004
 	.long	0xe12fff1e
 	.globl	__ZN13CssBackground7GetpRefEi
 	.private_extern	__ZN13CssBackground7GetpRefEi
 __ZN13CssBackground7GetpRefEi:
-swv_231890:
+Lswv_231890:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe24dd004
@@ -7403,13 +7471,13 @@ swv_231890:
 	.globl	__ZThn4_N13CssBackgroundD0Ev
 	.private_extern	__ZThn4_N13CssBackgroundD0Ev
 __ZThn4_N13CssBackgroundD0Ev:
-swv_2318d0:
+Lswv_2318d0:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN13CssBackgroundD0Ev
 	.private_extern	__ZN13CssBackgroundD0Ev
 __ZN13CssBackgroundD0Ev:
-swv_2318d8:
+Lswv_2318d8:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc05c
@@ -7417,9 +7485,11 @@ swv_2318d8:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_2318f4:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803034
+Lswv_231900:
 	.long	0xe5940024
 	.long	0xe5843004
 	.long	0xe3500000
@@ -7437,18 +7507,18 @@ swv_2318d8:
 	.long	0xe1a00004
 	.long	0xeb01173e
 	.long	0xe8bd8090
-	.long	0x00113e48
-	.long	0x00113e3c
+	.long	Lswv_34573c - Lswv_2318f4
+	.long	Lswv_34573c - Lswv_231900
 	.globl	__ZThn4_N13CssBackgroundD1Ev
 	.private_extern	__ZThn4_N13CssBackgroundD1Ev
 __ZThn4_N13CssBackgroundD1Ev:
-swv_23194c:
+Lswv_23194c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN13CssBackgroundD1Ev
 	.private_extern	__ZN13CssBackgroundD1Ev
 __ZN13CssBackgroundD1Ev:
-swv_231954:
+Lswv_231954:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc054
@@ -7456,9 +7526,11 @@ swv_231954:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_231970:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803034
+Lswv_23197c:
 	.long	0xe5940024
 	.long	0xe5843004
 	.long	0xe3500000
@@ -7474,12 +7546,12 @@ swv_231954:
 	.long	0xe1a00004
 	.long	0xeb007b1d
 	.long	0xe8bd8090
-	.long	0x00113dcc
-	.long	0x00113dc0
+	.long	Lswv_34573c - Lswv_231970
+	.long	Lswv_34573c - Lswv_23197c
 	.globl	__ZNK13CssBackground5CloneEv
 	.private_extern	__ZNK13CssBackground5CloneEv
 __ZNK13CssBackground5CloneEv:
-swv_2319c0:
+Lswv_2319c0:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe3a01000
@@ -7493,7 +7565,9 @@ swv_2319c0:
 	.long	0xe3a09000
 	.long	0xe08fe003
 	.long	0xe08f1002
+Lswv_2319f4:
 	.long	0xe2896020
+Lswv_2319f8:
 	.long	0xe3a02000
 	.long	0xe28ec034
 	.long	0xe5842030
@@ -7562,8 +7636,8 @@ swv_2319c0:
 	.long	0xeb0114c4
 	.long	0xe1a00004
 	.long	0xe8bd80f0
-	.long	0x00113d48
-	.long	0x00113d44
+	.long	Lswv_34573c - Lswv_2319f4
+	.long	Lswv_34573c - Lswv_2319f8
 	.globl	__ZN13CssBrewLoader15allBlocksLoadedEv
 	.private_extern	__ZN13CssBrewLoader15allBlocksLoadedEv
 __ZN13CssBrewLoader15allBlocksLoadedEv:
@@ -7617,7 +7691,9 @@ __ZN13CssBrewLoaderC1Ev:
 	.long	0xe3a02000
 	.long	0xe08f3001
 	.long	0xe08f1009
+Lswv_231bc0:
 	.long	0xe283c008
+Lswv_231bc4:
 	.long	0xe281301c
 	.long	0xe5802008
 	.long	0xe580c000
@@ -7630,18 +7706,18 @@ __ZN13CssBrewLoaderC1Ev:
 	.long	0xe5802020
 	.long	0xe5802024
 	.long	0xe12fff1e
-	.long	0x00113bbc
-	.long	0x00113bb8
+	.long	Lswv_34577c - Lswv_231bc0
+	.long	Lswv_34577c - Lswv_231bc4
 	.globl	__ZThn4_N13CssBrewLoaderD0Ev
 	.private_extern	__ZThn4_N13CssBrewLoaderD0Ev
 __ZThn4_N13CssBrewLoaderD0Ev:
-swv_231bfc:
+Lswv_231bfc:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN13CssBrewLoaderD0Ev
 	.private_extern	__ZN13CssBrewLoaderD0Ev
 __ZN13CssBrewLoaderD0Ev:
-swv_231c04:
+Lswv_231c04:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc078
@@ -7649,9 +7725,11 @@ swv_231c04:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_231c20:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe280301c
+Lswv_231c2c:
 	.long	0xe594000c
 	.long	0xe5843004
 	.long	0xe3500000
@@ -7676,18 +7754,18 @@ swv_231c04:
 	.long	0xe1a00004
 	.long	0xeb01166c
 	.long	0xe8bd8090
-	.long	0x00113b5c
-	.long	0x00113b50
+	.long	Lswv_34577c - Lswv_231c20
+	.long	Lswv_34577c - Lswv_231c2c
 	.globl	__ZThn4_N13CssBrewLoaderD1Ev
 	.private_extern	__ZThn4_N13CssBrewLoaderD1Ev
 __ZThn4_N13CssBrewLoaderD1Ev:
-swv_231c94:
+Lswv_231c94:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN13CssBrewLoaderD1Ev
 	.private_extern	__ZN13CssBrewLoaderD1Ev
 __ZN13CssBrewLoaderD1Ev:
-swv_231c9c:
+Lswv_231c9c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc074
@@ -7695,9 +7773,11 @@ swv_231c9c:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_231cb8:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe280301c
+Lswv_231cc4:
 	.long	0xe594000c
 	.long	0xe5843004
 	.long	0xe3500000
@@ -7721,8 +7801,8 @@ swv_231c9c:
 	.long	0xe5923004
 	.long	0xe8bd4090
 	.long	0xe12fff13
-	.long	0x00113ac4
-	.long	0x00113ab8
+	.long	Lswv_34577c - Lswv_231cb8
+	.long	Lswv_34577c - Lswv_231cc4
 	.globl	__ZN13CssBrewLoader18requiredBufferSizeEP17CssResourceLoader
 	.private_extern	__ZN13CssBrewLoader18requiredBufferSizeEP17CssResourceLoader
 __ZN13CssBrewLoader18requiredBufferSizeEP17CssResourceLoader:
@@ -7780,9 +7860,11 @@ __ZN13CssBrewLoader18requiredBufferSizeEP17CssResourceLoader:
 	.long	0xe59f3068
 	.long	0xe08fe003
 	.long	0xe28ec008
+Lswv_231e00:
 	.long	0xe5804004
 	.long	0xe08f4009
 	.long	0xe284201c
+Lswv_231e0c:
 	.long	0xe2804008
 	.long	0xe1a06000
 	.long	0xe580c000
@@ -7804,8 +7886,8 @@ __ZN13CssBrewLoader18requiredBufferSizeEP17CssResourceLoader:
 	.long	0xeb011649
 	.long	0xe1a00006
 	.long	0xeaffffc4
-	.long	0x001138b8
-	.long	0x001138c4
+	.long	Lswv_3456c4 - Lswv_231e0c
+	.long	Lswv_3456c4 - Lswv_231e00
 	.long	0xfffffaec
 	.globl	__ZN13CssBrewLoader10loadBufferEjPKhj
 	.private_extern	__ZN13CssBrewLoader10loadBufferEjPKhj
@@ -7886,7 +7968,9 @@ __ZN13CssBrewLoader10loadBufferEjPKhj:
 	.long	0xe59fe0bc
 	.long	0xe08f2006
 	.long	0xe08fc00e
+Lswv_231f9c:
 	.long	0xe28c9008
+Lswv_231fa0:
 	.long	0xe1a04000
 	.long	0xe2846008
 	.long	0xe5809000
@@ -7931,8 +8015,8 @@ __ZN13CssBrewLoader10loadBufferEjPKhj:
 	.long	0xe2400004
 	.long	0xeb0115cc
 	.long	0xeaffffe1
-	.long	0x00113704
-	.long	0x00113700
+	.long	Lswv_3456a0 - Lswv_231f9c
+	.long	Lswv_3456a0 - Lswv_231fa0
 	.long	0xfffffaec
 	.globl	__ZN13CssBrewLoader10initializeEPKc
 	.private_extern	__ZN13CssBrewLoader10initializeEPKc
@@ -7953,7 +8037,7 @@ __ZN13CssBrewLoader10initializeEPKc:
 	.long	0xe3a02007
 	.long	0xe08f0000
 	.long	0xe588400c
-swv_23209c:
+Lswv_23209c:
 	bl	_swvStrNCmp
 	.long	0xe2506000
 	.long	0x1a00004c
@@ -7972,6 +8056,7 @@ swv_23209c:
 	.long	0xe245b007
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_2320e4:
 	.long	0xe1a04000
 	.long	0xe8800048
 	.long	0xe5806008
@@ -8042,7 +8127,9 @@ swv_23209c:
 	.long	0xe3a06000
 	.long	0xe08f5003
 	.long	0xe08fc00e
+Lswv_2321fc:
 	.long	0xe28c901c
+Lswv_232200:
 	.long	0xe1a04000
 	.long	0xe5806004
 	.long	0xe2850008
@@ -8081,10 +8168,10 @@ swv_23209c:
 	.long	0xe3000103
 	.long	0xeb01153a
 	.long	0xeaffff89
-	.long	swv_2de798 - swv_23209c
-	.long	0x001136c0
-	.long	0x001134a4
-	.long	0x001134a0
+	.long	Lswv_2de798 - Lswv_23209c
+	.long	Lswv_3457a4 - Lswv_2320e4
+	.long	Lswv_3456a0 - Lswv_2321fc
+	.long	Lswv_3456a0 - Lswv_232200
 	.globl	__ZN13CssBrewLoader9loadNamedEPKcj
 	.private_extern	__ZN13CssBrewLoader9loadNamedEPKcj
 __ZN13CssBrewLoader9loadNamedEPKcj:
@@ -8230,7 +8317,9 @@ __ZN13CssBrewLoader13readNextBlockEP17CssResourceLoader:
 	.long	0xe59f9064
 	.long	0xe08fe003
 	.long	0xe08f2009
+Lswv_2324d4:
 	.long	0xe2821008
+Lswv_2324d8:
 	.long	0xe5805004
 	.long	0xe28e501c
 	.long	0xe5805008
@@ -8253,25 +8342,25 @@ __ZN13CssBrewLoader13readNextBlockEP17CssResourceLoader:
 	.long	0xe59f000c
 	.long	0xeb011494
 	.long	0xeaffffb6
-	.long	0x001131f0
-	.long	0x001131ec
+	.long	Lswv_3456c4 - Lswv_2324d4
+	.long	Lswv_3456c4 - Lswv_2324d8
 	.long	0xfffffaec
 	.globl	__ZThn4_NK13CssBrewLoader4TypeEv
 	.private_extern	__ZThn4_NK13CssBrewLoader4TypeEv
 __ZThn4_NK13CssBrewLoader4TypeEv:
-swv_23253c:
+Lswv_23253c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK13CssBrewLoader4TypeEv
 	.private_extern	__ZNK13CssBrewLoader4TypeEv
 __ZNK13CssBrewLoader4TypeEv:
-swv_232544:
+Lswv_232544:
 	.long	0xe3a00021
 	.long	0xe12fff1e
 	.globl	__ZN8CssArrayIcE9CopyArrayEPvS1_i
 	.private_extern	__ZN8CssArrayIcE9CopyArrayEPvS1_i
 __ZN8CssArrayIcE9CopyArrayEPvS1_i:
-swv_23254c:
+Lswv_23254c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a00002
@@ -8427,7 +8516,7 @@ swv_23254c:
 	.globl	__ZN8CssArrayIcE8AllocateEi
 	.private_extern	__ZN8CssArrayIcE8AllocateEi
 __ZN8CssArrayIcE8AllocateEi:
-swv_2327ac:
+Lswv_2327ac:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00001
@@ -8437,7 +8526,7 @@ swv_2327ac:
 	.globl	__ZN8CssArrayIcE7DestroyEPv
 	.private_extern	__ZN8CssArrayIcE7DestroyEPv
 __ZN8CssArrayIcE7DestroyEPv:
-swv_2327c4:
+Lswv_2327c4:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -8447,13 +8536,14 @@ swv_2327c4:
 	.globl	__ZN8CssArrayIcED1Ev
 	.private_extern	__ZN8CssArrayIcED1Ev
 __ZN8CssArrayIcED1Ev:
-swv_2327dc:
+Lswv_2327dc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2327f4:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -8465,7 +8555,7 @@ swv_2327dc:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_232820:
+Lswv_232820:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -8473,18 +8563,19 @@ swv_232820:
 	.long	0x0afffff7
 	.long	0xeb011388
 	.long	0xeafffff5
-	.long	0x00112fb0
-	.long	swv_got_0 - swv_232820
+	.long	Lswv_3457a4 - Lswv_2327f4
+	.long	swv_got_0 - Lswv_232820
 	.globl	__ZN8CssArrayIcED0Ev
 	.private_extern	__ZN8CssArrayIcED0Ev
 __ZN8CssArrayIcED0Ev:
-swv_232844:
+Lswv_232844:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_23285c:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -8497,7 +8588,7 @@ swv_232844:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_23288c:
+Lswv_23288c:
 	.long	0xe5849000
 	.long	0xeb011369
 	.long	0xe8bd8090
@@ -8506,8 +8597,8 @@ swv_23288c:
 	.long	0x0afffff5
 	.long	0xeb01136c
 	.long	0xeafffff3
-	.long	0x00112f48
-	.long	swv_got_0 - swv_23288c
+	.long	Lswv_3457a4 - Lswv_23285c
+	.long	swv_got_0 - Lswv_23288c
 	.globl	__ZN9CssCamera11SetParallelEffff
 	.private_extern	__ZN9CssCamera11SetParallelEffff
 __ZN9CssCamera11SetParallelEffff:
@@ -8539,7 +8630,7 @@ __ZN9CssCamera14SetPerspectiveEffff:
 	.globl	__ZNK9CssCamera19SetMatrixCacheDirtyEv
 	.private_extern	__ZNK9CssCamera19SetMatrixCacheDirtyEv
 __ZNK9CssCamera19SetMatrixCacheDirtyEv:
-swv_23290c:
+Lswv_23290c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a04000
@@ -8550,7 +8641,7 @@ swv_23290c:
 	.globl	__ZN9CssCamera11SetPropertyEiiPf
 	.private_extern	__ZN9CssCamera11SetPropertyEiiPf
 __ZN9CssCamera11SetPropertyEiiPf:
-swv_232928:
+Lswv_232928:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3510f42
@@ -8620,7 +8711,7 @@ swv_232928:
 	.globl	__ZNK9CssCamera21HasAnimatablePropertyEi
 	.private_extern	__ZNK9CssCamera21HasAnimatablePropertyEi
 __ZNK9CssCamera21HasAnimatablePropertyEi:
-swv_232a30:
+Lswv_232a30:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe3a02c13
@@ -8827,8 +8918,10 @@ __ZN9CssCameraC1Ev:
 	.long	0xe3a0c030
 	.long	0xe08f2009
 	.long	0xe2821008
+Lswv_232d2c:
 	.long	0xe08f3000
 	.long	0xe5841000
+Lswv_232d34:
 	.long	0xe28400a4
 	.long	0xe3a0103f
 	.long	0xe283e044
@@ -8848,14 +8941,14 @@ __ZN9CssCameraC1Ev:
 	.long	0xe58400f4
 	.long	0xe58430f8
 	.long	0xe8bd8090
-	.long	0x00112a98
-	.long	0x00112a90
+	.long	Lswv_3457c4 - Lswv_232d2c
+	.long	Lswv_3457c4 - Lswv_232d34
 	.long	0x42652ee1
 	.long	0xbf800000
 	.globl	__ZN9CssCamera11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN9CssCamera11SerializeInER27CssSerializeBufferObjectsIn
 __ZN9CssCamera11SerializeInER27CssSerializeBufferObjectsIn:
-swv_232d90:
+Lswv_232d90:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe24dd008
@@ -9012,55 +9105,57 @@ __ZNK9CssCamera13GetProjectionEP12CssTransform:
 	.globl	__ZN7CssNode8SetScopeEi
 	.private_extern	__ZN7CssNode8SetScopeEi
 __ZN7CssNode8SetScopeEi:
-swv_232fdc:
+Lswv_232fdc:
 	.long	0xe5801030
 	.long	0xe12fff1e
 	.globl	__ZThn4_NK9CssCamera4TypeEv
 	.private_extern	__ZThn4_NK9CssCamera4TypeEv
 __ZThn4_NK9CssCamera4TypeEv:
-swv_232fe4:
+Lswv_232fe4:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK9CssCamera4TypeEv
 	.private_extern	__ZNK9CssCamera4TypeEv
 __ZNK9CssCamera4TypeEv:
-swv_232fec:
+Lswv_232fec:
 	.long	0xe3a00005
 	.long	0xe12fff1e
 	.globl	__ZThn4_N9CssCameraD1Ev
 	.private_extern	__ZThn4_N9CssCameraD1Ev
 __ZThn4_N9CssCameraD1Ev:
-swv_232ff4:
+Lswv_232ff4:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN9CssCameraD1Ev
 	.private_extern	__ZN9CssCameraD1Ev
 __ZN9CssCameraD1Ev:
-swv_232ffc:
+Lswv_232ffc:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59fe020
 	.long	0xe59f2020
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_233014:
 	.long	0xe28c9008
+Lswv_233018:
 	.long	0xe2813044
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xeb0067dc
 	.long	0xe8bd8080
-	.long	0x001127b0
-	.long	0x001127ac
+	.long	Lswv_3457c4 - Lswv_233014
+	.long	Lswv_3457c4 - Lswv_233018
 	.globl	__ZThn4_N9CssCameraD0Ev
 	.private_extern	__ZThn4_N9CssCameraD0Ev
 __ZThn4_N9CssCameraD0Ev:
-swv_233034:
+Lswv_233034:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN9CssCameraD0Ev
 	.private_extern	__ZN9CssCameraD0Ev
 __ZN9CssCameraD0Ev:
-swv_23303c:
+Lswv_23303c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fe02c
@@ -9068,7 +9163,9 @@ swv_23303c:
 	.long	0xe1a04000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_233058:
 	.long	0xe28c9008
+Lswv_23305c:
 	.long	0xe2813044
 	.long	0xe5809000
 	.long	0xe5803004
@@ -9076,12 +9173,12 @@ swv_23303c:
 	.long	0xe1a00004
 	.long	0xeb011171
 	.long	0xe8bd8090
-	.long	0x0011276c
-	.long	0x00112768
+	.long	Lswv_3457c4 - Lswv_233058
+	.long	Lswv_3457c4 - Lswv_23305c
 	.globl	__ZNK9CssCamera5CloneEv
 	.private_extern	__ZNK9CssCamera5CloneEv
 __ZNK9CssCamera5CloneEv:
-swv_233080:
+Lswv_233080:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -9099,7 +9196,9 @@ swv_233080:
 	.long	0xe586409c
 	.long	0xe08f1002
 	.long	0xe08f8009
+Lswv_2330c4:
 	.long	0xe2810044
+Lswv_2330c8:
 	.long	0xe3a0103f
 	.long	0xe5860004
 	.long	0xe28600a4
@@ -9235,8 +9334,8 @@ swv_233080:
 	.long	0xeb006751
 	.long	0xe1a08005
 	.long	0xeaffffc3
-	.long	0x00112700
-	.long	0x001126fc
+	.long	Lswv_3457c4 - Lswv_2330c4
+	.long	Lswv_3457c4 - Lswv_2330c8
 	.long	0x42652ee1
 	.long	0xbf800000
 	.globl	__ZN23CssCleanupStackInstance3PopEP13CssHeapObject
@@ -9294,7 +9393,9 @@ __ZN23CssCleanupStackInstanceC1Ev:
 	.long	0xe59f9030
 	.long	0xe08f2003
 	.long	0xe08f1009
+Lswv_2333ac:
 	.long	0xe282c008
+Lswv_2333b0:
 	.long	0xe2813008
 	.long	0xe3a02000
 	.long	0xe580c000
@@ -9304,8 +9405,8 @@ __ZN23CssCleanupStackInstanceC1Ev:
 	.long	0xe5803004
 	.long	0xe5c02014
 	.long	0xe12fff1e
-	.long	0x00112468
-	.long	0x00112474
+	.long	Lswv_345814 - Lswv_2333ac
+	.long	Lswv_345824 - Lswv_2333b0
 	.globl	__ZN23CssCleanupStackInstance4PushEP13CssHeapObject
 	.private_extern	__ZN23CssCleanupStackInstance4PushEP13CssHeapObject
 __ZN23CssCleanupStackInstance4PushEP13CssHeapObject:
@@ -9371,7 +9472,7 @@ __ZN23CssCleanupStackInstance7CleanupEv:
 	.globl	__ZN8CssArrayIP13CssHeapObjectE7DestroyEPv
 	.private_extern	__ZN8CssArrayIP13CssHeapObjectE7DestroyEPv
 __ZN8CssArrayIP13CssHeapObjectE7DestroyEPv:
-swv_2334bc:
+Lswv_2334bc:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -9381,13 +9482,14 @@ swv_2334bc:
 	.globl	__ZN8CssArrayIP13CssHeapObjectED1Ev
 	.private_extern	__ZN8CssArrayIP13CssHeapObjectED1Ev
 __ZN8CssArrayIP13CssHeapObjectED1Ev:
-swv_2334d4:
+Lswv_2334d4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2334ec:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -9399,7 +9501,7 @@ swv_2334d4:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_233518:
+Lswv_233518:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -9407,12 +9509,12 @@ swv_233518:
 	.long	0x0afffff7
 	.long	0xeb01104a
 	.long	0xeafffff5
-	.long	0x00112338
-	.long	swv_got_0 - swv_233518
+	.long	Lswv_345824 - Lswv_2334ec
+	.long	swv_got_0 - Lswv_233518
 	.globl	__ZN8CssArrayIP13CssHeapObjectE8AllocateEi
 	.private_extern	__ZN8CssArrayIP13CssHeapObjectE8AllocateEi
 __ZN8CssArrayIP13CssHeapObjectE8AllocateEi:
-swv_23353c:
+Lswv_23353c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -9422,7 +9524,7 @@ swv_23353c:
 	.globl	__ZN8CssArrayIP13CssHeapObjectE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIP13CssHeapObjectE9CopyArrayEPvS3_i
 __ZN8CssArrayIP13CssHeapObjectE9CopyArrayEPvS3_i:
-swv_233554:
+Lswv_233554:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -9583,13 +9685,14 @@ swv_233554:
 	.globl	__ZN8CssArrayIP13CssHeapObjectED0Ev
 	.private_extern	__ZN8CssArrayIP13CssHeapObjectED0Ev
 __ZN8CssArrayIP13CssHeapObjectED0Ev:
-swv_2337c8:
+Lswv_2337c8:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2337e0:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -9602,7 +9705,7 @@ swv_2337c8:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_233810:
+Lswv_233810:
 	.long	0xe5849000
 	.long	0xeb010f88
 	.long	0xe8bd8090
@@ -9611,12 +9714,12 @@ swv_233810:
 	.long	0x0afffff5
 	.long	0xeb010f8b
 	.long	0xeafffff3
-	.long	0x00112044
-	.long	swv_got_0 - swv_233810
+	.long	Lswv_345824 - Lswv_2337e0
+	.long	swv_got_0 - Lswv_233810
 	.globl	__ZN8CssStackIP13CssHeapObjectED0Ev
 	.private_extern	__ZN8CssStackIP13CssHeapObjectED0Ev
 __ZN8CssStackIP13CssHeapObjectED0Ev:
-swv_233838:
+Lswv_233838:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc068
@@ -9624,9 +9727,11 @@ swv_233838:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_233854:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_233860:
 	.long	0xe5940008
 	.long	0xe5843004
 	.long	0xe3500000
@@ -9638,7 +9743,7 @@ swv_233838:
 	.long	0xe59f1030
 	.long	0xe79f0001
 	.long	0xe2803008
-swv_23388c:
+Lswv_23388c:
 	.long	0xe1a00004
 	.long	0xe5843004
 	.long	0xeb010f68
@@ -9648,13 +9753,13 @@ swv_23388c:
 	.long	0x0afffff5
 	.long	0xeb010f6b
 	.long	0xeafffff3
-	.long	0x00111fc0
-	.long	0x00111fc4
-	.long	swv_got_0 - swv_23388c
+	.long	Lswv_345814 - Lswv_233854
+	.long	Lswv_345824 - Lswv_233860
+	.long	swv_got_0 - Lswv_23388c
 	.globl	__ZN8CssStackIP13CssHeapObjectED1Ev
 	.private_extern	__ZN8CssStackIP13CssHeapObjectED1Ev
 __ZN8CssStackIP13CssHeapObjectED1Ev:
-swv_2338bc:
+Lswv_2338bc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc060
@@ -9662,9 +9767,11 @@ swv_2338bc:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_2338d8:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2338e4:
 	.long	0xe5940008
 	.long	0xe5843004
 	.long	0xe3500000
@@ -9676,7 +9783,7 @@ swv_2338bc:
 	.long	0xe59f2028
 	.long	0xe79f1002
 	.long	0xe2810008
-swv_233910:
+Lswv_233910:
 	.long	0xe5840004
 	.long	0xe8bd8090
 	.long	0xe5940010
@@ -9684,9 +9791,9 @@ swv_233910:
 	.long	0x0afffff7
 	.long	0xeb010f4c
 	.long	0xeafffff5
-	.long	0x00111f3c
-	.long	0x00111f40
-	.long	swv_got_0 - swv_233910
+	.long	Lswv_345814 - Lswv_2338d8
+	.long	Lswv_345824 - Lswv_2338e4
+	.long	swv_got_0 - Lswv_233910
 	.globl	__ZNK8CssColor14GetPackedRGBA8Ev
 	.private_extern	__ZNK8CssColor14GetPackedRGBA8Ev
 __ZNK8CssColor14GetPackedRGBA8Ev:
@@ -9837,19 +9944,19 @@ __ZN8CssColor10FixedScaleEl:
 	.globl	__ZThn4_NK18CssCompositingMode4TypeEv
 	.private_extern	__ZThn4_NK18CssCompositingMode4TypeEv
 __ZThn4_NK18CssCompositingMode4TypeEv:
-swv_233b3c:
+Lswv_233b3c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK18CssCompositingMode4TypeEv
 	.private_extern	__ZNK18CssCompositingMode4TypeEv
 __ZNK18CssCompositingMode4TypeEv:
-swv_233b44:
+Lswv_233b44:
 	.long	0xe3a00006
 	.long	0xe12fff1e
 	.globl	__ZN18CssCompositingMode11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN18CssCompositingMode11SerializeInER27CssSerializeBufferObjectsIn
 __ZN18CssCompositingMode11SerializeInER27CssSerializeBufferObjectsIn:
-swv_233b4c:
+Lswv_233b4c:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe1a04001
@@ -9898,7 +10005,9 @@ __ZN18CssCompositingModeC1Ev:
 	.long	0xe59fc048
 	.long	0xe08f0001
 	.long	0xe08f900c
+Lswv_233c00:
 	.long	0xe3a01001
+Lswv_233c04:
 	.long	0xe2803008
 	.long	0xe2892034
 	.long	0xe2810043
@@ -9914,18 +10023,18 @@ __ZN18CssCompositingModeC1Ev:
 	.long	0xe584302c
 	.long	0xe5843030
 	.long	0xe8bd8090
-	.long	0x00111c44
-	.long	0x00111c40
+	.long	Lswv_345844 - Lswv_233c00
+	.long	Lswv_345844 - Lswv_233c04
 	.globl	__ZThn4_N18CssCompositingModeD0Ev
 	.private_extern	__ZThn4_N18CssCompositingModeD0Ev
 __ZThn4_N18CssCompositingModeD0Ev:
-swv_233c48:
+Lswv_233c48:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN18CssCompositingModeD0Ev
 	.private_extern	__ZN18CssCompositingModeD0Ev
 __ZN18CssCompositingModeD0Ev:
-swv_233c50:
+Lswv_233c50:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fe02c
@@ -9933,7 +10042,9 @@ swv_233c50:
 	.long	0xe1a04000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_233c6c:
 	.long	0xe28c9008
+Lswv_233c70:
 	.long	0xe2813034
 	.long	0xe5809000
 	.long	0xe5803004
@@ -9941,36 +10052,38 @@ swv_233c50:
 	.long	0xe1a00004
 	.long	0xeb010e6c
 	.long	0xe8bd8090
-	.long	0x00111bd8
-	.long	0x00111bd4
+	.long	Lswv_345844 - Lswv_233c6c
+	.long	Lswv_345844 - Lswv_233c70
 	.globl	__ZThn4_N18CssCompositingModeD1Ev
 	.private_extern	__ZThn4_N18CssCompositingModeD1Ev
 __ZThn4_N18CssCompositingModeD1Ev:
-swv_233c94:
+Lswv_233c94:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN18CssCompositingModeD1Ev
 	.private_extern	__ZN18CssCompositingModeD1Ev
 __ZN18CssCompositingModeD1Ev:
-swv_233c9c:
+Lswv_233c9c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59fe020
 	.long	0xe59f2020
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_233cb4:
 	.long	0xe28c9008
+Lswv_233cb8:
 	.long	0xe2813034
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xeb007258
 	.long	0xe8bd8080
-	.long	0x00111b90
-	.long	0x00111b8c
+	.long	Lswv_345844 - Lswv_233cb4
+	.long	Lswv_345844 - Lswv_233cb8
 	.globl	__ZNK18CssCompositingMode5CloneEv
 	.private_extern	__ZNK18CssCompositingMode5CloneEv
 __ZNK18CssCompositingMode5CloneEv:
-swv_233cd4:
+Lswv_233cd4:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe3a01000
@@ -9984,7 +10097,9 @@ swv_233cd4:
 	.long	0xe3a02001
 	.long	0xe08fc00e
 	.long	0xe08f3001
+Lswv_233d08:
 	.long	0xe28c9034
+Lswv_233d0c:
 	.long	0xe2821043
 	.long	0xe5849004
 	.long	0xe5c42020
@@ -10025,24 +10140,24 @@ swv_233cd4:
 	.long	0xeb010c1b
 	.long	0xe1a00004
 	.long	0xe8bd80b0
-	.long	0x00111b3c
-	.long	0x00111b38
+	.long	Lswv_345844 - Lswv_233d08
+	.long	Lswv_345844 - Lswv_233d0c
 	.globl	__ZThn4_NK20CssCompressedImage2D4TypeEv
 	.private_extern	__ZThn4_NK20CssCompressedImage2D4TypeEv
 __ZThn4_NK20CssCompressedImage2D4TypeEv:
-swv_233db4:
+Lswv_233db4:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK20CssCompressedImage2D4TypeEv
 	.private_extern	__ZNK20CssCompressedImage2D4TypeEv
 __ZNK20CssCompressedImage2D4TypeEv:
-swv_233dbc:
+Lswv_233dbc:
 	.long	0xe3a00019
 	.long	0xe12fff1e
 	.globl	__ZNK20CssCompressedImage2D10GetbOpaqueEv
 	.private_extern	__ZNK20CssCompressedImage2D10GetbOpaqueEv
 __ZNK20CssCompressedImage2D10GetbOpaqueEv:
-swv_233dc4:
+Lswv_233dc4:
 	.long	0xe5d00075
 	.long	0xe12fff1e
 	.globl	__ZN20CssCompressedImage2D14AddMipMapLevelEiiPKh
@@ -10104,7 +10219,7 @@ __ZN20CssCompressedImage2D14AddMipMapLevelEiiPKh:
 	.globl	__ZN20CssCompressedImage2D11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN20CssCompressedImage2D11SerializeInER27CssSerializeBufferObjectsIn
 __ZN20CssCompressedImage2D11SerializeInER27CssSerializeBufferObjectsIn:
-swv_233ea0:
+Lswv_233ea0:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -10278,7 +10393,7 @@ swv_233ea0:
 	.globl	__ZN20CssCompressedImage2D9ConstructEibiiiiPKh
 	.private_extern	__ZN20CssCompressedImage2D9ConstructEibiiiiPKh
 __ZN20CssCompressedImage2D9ConstructEibiiiiPKh:
-swv_234148:
+Lswv_234148:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -10359,11 +10474,14 @@ __ZN20CssCompressedImage2DC1Ev:
 	.long	0xe59f303c
 	.long	0xe08f1002
 	.long	0xe2810008
+Lswv_23427c:
 	.long	0xe59f1034
 	.long	0xe08fc003
 	.long	0xe5840000
+Lswv_234288:
 	.long	0xe08f0001
 	.long	0xe28c905c
+Lswv_234290:
 	.long	0xe2803008
 	.long	0xe3a02000
 	.long	0xe5849004
@@ -10372,19 +10490,19 @@ __ZN20CssCompressedImage2DC1Ev:
 	.long	0xe5842088
 	.long	0xe584307c
 	.long	0xe8bd8090
-	.long	0x00111608
-	.long	0x001115fc
-	.long	0x0011165c
+	.long	Lswv_345884 - Lswv_23427c
+	.long	Lswv_345884 - Lswv_234288
+	.long	Lswv_3458ec - Lswv_234290
 	.globl	__ZThn4_N20CssCompressedImage2DD0Ev
 	.private_extern	__ZThn4_N20CssCompressedImage2DD0Ev
 __ZThn4_N20CssCompressedImage2DD0Ev:
-swv_2342bc:
+Lswv_2342bc:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN20CssCompressedImage2DD0Ev
 	.private_extern	__ZN20CssCompressedImage2DD0Ev
 __ZN20CssCompressedImage2DD0Ev:
-swv_2342c4:
+Lswv_2342c4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1080
@@ -10393,11 +10511,14 @@ swv_2342c4:
 	.long	0xe59fc07c
 	.long	0xe08f3000
 	.long	0xe08f0001
+Lswv_2342e4:
 	.long	0xe283e008
+Lswv_2342e8:
 	.long	0xe2803008
 	.long	0xe5940080
 	.long	0xe08f900c
 	.long	0xe289205c
+Lswv_2342f8:
 	.long	0xe3500000
 	.long	0xe584e000
 	.long	0xe5842004
@@ -10411,7 +10532,7 @@ swv_2342c4:
 	.long	0xe1a00004
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_23432c:
+Lswv_23432c:
 	.long	0xe584207c
 	.long	0xeb00247f
 	.long	0xe1a00004
@@ -10422,20 +10543,20 @@ swv_23432c:
 	.long	0x0afffff3
 	.long	0xeb010cc2
 	.long	0xeafffff1
-	.long	0x00111604
-	.long	0x001115a0
-	.long	0x0011158c
-	.long	swv_got_0 - swv_23432c
+	.long	Lswv_3458ec - Lswv_2342e8
+	.long	Lswv_345884 - Lswv_2342e4
+	.long	Lswv_345884 - Lswv_2342f8
+	.long	swv_got_0 - Lswv_23432c
 	.globl	__ZThn4_N20CssCompressedImage2DD1Ev
 	.private_extern	__ZThn4_N20CssCompressedImage2DD1Ev
 __ZThn4_N20CssCompressedImage2DD1Ev:
-swv_234364:
+Lswv_234364:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN20CssCompressedImage2DD1Ev
 	.private_extern	__ZN20CssCompressedImage2DD1Ev
 __ZN20CssCompressedImage2DD1Ev:
-swv_23436c:
+Lswv_23436c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1078
@@ -10444,11 +10565,14 @@ swv_23436c:
 	.long	0xe59fc074
 	.long	0xe08f3000
 	.long	0xe08f0001
+Lswv_23438c:
 	.long	0xe283e008
+Lswv_234390:
 	.long	0xe2803008
 	.long	0xe5940080
 	.long	0xe08f900c
 	.long	0xe289205c
+Lswv_2343a0:
 	.long	0xe3500000
 	.long	0xe584e000
 	.long	0xe5842004
@@ -10462,7 +10586,7 @@ swv_23436c:
 	.long	0xe1a00004
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_2343d4:
+Lswv_2343d4:
 	.long	0xe584207c
 	.long	0xeb002455
 	.long	0xe8bd8090
@@ -10471,14 +10595,14 @@ swv_2343d4:
 	.long	0x0afffff5
 	.long	0xeb010c9a
 	.long	0xeafffff3
-	.long	0x0011155c
-	.long	0x001114f8
-	.long	0x001114e4
-	.long	swv_got_0 - swv_2343d4
+	.long	Lswv_3458ec - Lswv_234390
+	.long	Lswv_345884 - Lswv_23438c
+	.long	Lswv_345884 - Lswv_2343a0
+	.long	swv_got_0 - Lswv_2343d4
 	.globl	__ZN8CssArrayIiE9CopyArrayEPvS1_i
 	.private_extern	__ZN8CssArrayIiE9CopyArrayEPvS1_i
 __ZN8CssArrayIiE9CopyArrayEPvS1_i:
-swv_234404:
+Lswv_234404:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -10639,7 +10763,7 @@ swv_234404:
 	.globl	__ZN8CssArrayIiE7DestroyEPv
 	.private_extern	__ZN8CssArrayIiE7DestroyEPv
 __ZN8CssArrayIiE7DestroyEPv:
-swv_234678:
+Lswv_234678:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -10649,13 +10773,14 @@ swv_234678:
 	.globl	__ZN8CssArrayIiED1Ev
 	.private_extern	__ZN8CssArrayIiED1Ev
 __ZN8CssArrayIiED1Ev:
-swv_234690:
+Lswv_234690:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2346a8:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -10667,7 +10792,7 @@ swv_234690:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_2346d4:
+Lswv_2346d4:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -10675,12 +10800,12 @@ swv_2346d4:
 	.long	0x0afffff7
 	.long	0xeb010bdb
 	.long	0xeafffff5
-	.long	0x00111244
-	.long	swv_got_0 - swv_2346d4
+	.long	Lswv_3458ec - Lswv_2346a8
+	.long	swv_got_0 - Lswv_2346d4
 	.globl	__ZN8CssArrayIiE8AllocateEi
 	.private_extern	__ZN8CssArrayIiE8AllocateEi
 __ZN8CssArrayIiE8AllocateEi:
-swv_2346f8:
+Lswv_2346f8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -10690,13 +10815,14 @@ swv_2346f8:
 	.globl	__ZN8CssArrayIiED0Ev
 	.private_extern	__ZN8CssArrayIiED0Ev
 __ZN8CssArrayIiED0Ev:
-swv_234710:
+Lswv_234710:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_234728:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -10709,7 +10835,7 @@ swv_234710:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_234758:
+Lswv_234758:
 	.long	0xe5849000
 	.long	0xeb010bb6
 	.long	0xe8bd8090
@@ -10718,12 +10844,12 @@ swv_234758:
 	.long	0x0afffff5
 	.long	0xeb010bb9
 	.long	0xeafffff3
-	.long	0x001111c4
-	.long	swv_got_0 - swv_234758
+	.long	Lswv_3458ec - Lswv_234728
+	.long	swv_got_0 - Lswv_234758
 	.globl	__ZNK20CssCompressedImage2D5CloneEv
 	.private_extern	__ZNK20CssCompressedImage2D5CloneEv
 __ZNK20CssCompressedImage2D5CloneEv:
-swv_234780:
+Lswv_234780:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe3a01000
@@ -10738,8 +10864,11 @@ swv_234780:
 	.long	0xe3a09000
 	.long	0xe08fe003
 	.long	0xe08f1002
+Lswv_2347b8:
 	.long	0xe08f2005
+Lswv_2347bc:
 	.long	0xe2810008
+Lswv_2347c0:
 	.long	0xe28ec05c
 	.long	0xe2821008
 	.long	0xe584c004
@@ -10775,9 +10904,9 @@ swv_234780:
 	.long	0xeb010973
 	.long	0xe1a00004
 	.long	0xe8bd80f0
-	.long	0x0011112c
-	.long	0x001110cc
-	.long	0x001110c8
+	.long	Lswv_3458ec - Lswv_2347c0
+	.long	Lswv_345884 - Lswv_2347b8
+	.long	Lswv_345884 - Lswv_2347bc
 	.long	0xfffffaec
 	.globl	__ZN13CssDecompress9ConstructEP14CssSerializeIn
 	.private_extern	__ZN13CssDecompress9ConstructEP14CssSerializeIn
@@ -10787,48 +10916,52 @@ __ZN13CssDecompress9ConstructEP14CssSerializeIn:
 	.globl	__ZN13CssDecompressD0Ev
 	.private_extern	__ZN13CssDecompressD0Ev
 __ZN13CssDecompressD0Ev:
-swv_234864:
+Lswv_234864:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59f2010
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_234878:
 	.long	0xe5803000
 	.long	0xeb010b6e
 	.long	0xe8bd8080
-	.long	0x00111094
+	.long	Lswv_34590c - Lswv_234878
 	.globl	__ZN13CssDecompressD1Ev
 	.private_extern	__ZN13CssDecompressD1Ev
 __ZN13CssDecompressD1Ev:
-swv_234888:
+Lswv_234888:
 	.long	0xe59f200c
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_234894:
 	.long	0xe5803000
 	.long	0xe12fff1e
-	.long	0x00111078
+	.long	Lswv_34590c - Lswv_234894
 	.globl	__ZN13CssDecompressD2Ev
 	.private_extern	__ZN13CssDecompressD2Ev
 __ZN13CssDecompressD2Ev:
 	.long	0xe59f200c
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_2348ac:
 	.long	0xe5803000
 	.long	0xe12fff1e
-	.long	0x00111060
+	.long	Lswv_34590c - Lswv_2348ac
 	.globl	__ZN13CssDecompressC2Ev
 	.private_extern	__ZN13CssDecompressC2Ev
 __ZN13CssDecompressC2Ev:
 	.long	0xe59f200c
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_2348c4:
 	.long	0xe5803000
 	.long	0xe12fff1e
-	.long	0x00111048
+	.long	Lswv_34590c - Lswv_2348c4
 	.globl	__ZN17CssDecompressNone10DecompressEPKvj
 	.private_extern	__ZN17CssDecompressNone10DecompressEPKvj
 __ZN17CssDecompressNone10DecompressEPKvj:
-swv_2348d0:
+Lswv_2348d0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe5900004
@@ -10839,32 +10972,34 @@ swv_2348d0:
 	.globl	__ZN17CssDecompressNoneD0Ev
 	.private_extern	__ZN17CssDecompressNoneD0Ev
 __ZN17CssDecompressNoneD0Ev:
-swv_2348ec:
+Lswv_2348ec:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f201c
 	.long	0xe1a04000
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_234904:
 	.long	0xe5803000
 	.long	0xebffffe4
 	.long	0xe1a00004
 	.long	0xeb010b49
 	.long	0xe8bd8090
-	.long	0x00111020
+	.long	Lswv_345924 - Lswv_234904
 	.globl	__ZN17CssDecompressNoneD1Ev
 	.private_extern	__ZN17CssDecompressNoneD1Ev
 __ZN17CssDecompressNoneD1Ev:
-swv_23491c:
+Lswv_23491c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59f2010
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_234930:
 	.long	0xe5803000
 	.long	0xebffffd9
 	.long	0xe8bd8080
-	.long	0x00110ff4
+	.long	Lswv_345924 - Lswv_234930
 	.globl	__ZN17CssDecompressNone6CreateEP14CssSerializeIn
 	.private_extern	__ZN17CssDecompressNone6CreateEP14CssSerializeIn
 __ZN17CssDecompressNone6CreateEP14CssSerializeIn:
@@ -10881,6 +11016,7 @@ __ZN17CssDecompressNone6CreateEP14CssSerializeIn:
 	.long	0xe5843008
 	.long	0xe08f1002
 	.long	0xe2810008
+Lswv_234974:
 	.long	0xe5840000
 	.long	0xeb010900
 	.long	0xe1a01004
@@ -10893,17 +11029,17 @@ __ZN17CssDecompressNone6CreateEP14CssSerializeIn:
 	.long	0xeb01091d
 	.long	0xe1a00004
 	.long	0xe8bd80b0
-	.long	0x00110fb0
+	.long	Lswv_345924 - Lswv_234974
 	.globl	__ZN17CssDecompressNone19CompressedBytesReadEv
 	.private_extern	__ZN17CssDecompressNone19CompressedBytesReadEv
 __ZN17CssDecompressNone19CompressedBytesReadEv:
-swv_2349a8:
+Lswv_2349a8:
 	.long	0xe5900008
 	.long	0xe12fff1e
 	.globl	__ZN17CssDecompressZLib10DecompressEPKvj
 	.private_extern	__ZN17CssDecompressZLib10DecompressEPKvj
 __ZN17CssDecompressZLib10DecompressEPKvj:
-swv_2349b0:
+Lswv_2349b0:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -10937,7 +11073,7 @@ swv_2349b0:
 	.globl	__ZN17CssDecompressZLibD0Ev
 	.private_extern	__ZN17CssDecompressZLibD0Ev
 __ZN17CssDecompressZLibD0Ev:
-swv_234a28:
+Lswv_234a28:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe59f2050
@@ -10945,6 +11081,7 @@ swv_234a28:
 	.long	0xe2804008
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_234a44:
 	.long	0xe5803000
 	.long	0xe2800008
 	bl	_swvDecompressOnDataEnd
@@ -10962,11 +11099,11 @@ swv_234a28:
 	.long	0xe1a00005
 	.long	0xeb010aed
 	.long	0xe8bd80b0
-	.long	0x00110ef8
+	.long	Lswv_34593c - Lswv_234a44
 	.globl	__ZN17CssDecompressZLibD1Ev
 	.private_extern	__ZN17CssDecompressZLibD1Ev
 __ZN17CssDecompressZLibD1Ev:
-swv_234a8c:
+Lswv_234a8c:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe59f2040
@@ -10974,6 +11111,7 @@ swv_234a8c:
 	.long	0xe2804008
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_234aa8:
 	.long	0xe5803000
 	.long	0xe2800008
 	bl	_swvDecompressOnDataEnd
@@ -10987,7 +11125,7 @@ swv_234a8c:
 	.long	0xe1a00005
 	.long	0xebffff71
 	.long	0xe8bd80b0
-	.long	0x00110e94
+	.long	Lswv_34593c - Lswv_234aa8
 	.globl	__ZN17CssDecompressZLib6CreateEP14CssSerializeIn
 	.private_extern	__ZN17CssDecompressZLib6CreateEP14CssSerializeIn
 __ZN17CssDecompressZLib6CreateEP14CssSerializeIn:
@@ -11004,6 +11142,7 @@ __ZN17CssDecompressZLib6CreateEP14CssSerializeIn:
 	.long	0xe5843008
 	.long	0xe08f1002
 	.long	0xe584300c
+Lswv_234b14:
 	.long	0xe2810008
 	.long	0xe5840000
 	.long	0xeb010897
@@ -11026,12 +11165,12 @@ __ZN17CssDecompressZLib6CreateEP14CssSerializeIn:
 	.long	0xeb0108ab
 	.long	0xe1a00004
 	.long	0xe8bd80f0
-	.long	0x00110e28
+	.long	Lswv_34593c - Lswv_234b14
 	.long	0x5a4c4942
 	.globl	__ZN17CssDecompressZLib19CompressedBytesReadEv
 	.private_extern	__ZN17CssDecompressZLib19CompressedBytesReadEv
 __ZN17CssDecompressZLib19CompressedBytesReadEv:
-swv_234b74:
+Lswv_234b74:
 	.long	0xe590000c
 	.long	0xe12fff1e
 	.globl	__ZN9CssEngine12UninitializeEv
@@ -11163,35 +11302,38 @@ __ZNK13CssFileHeader10HeaderByteEj:
 	.globl	__ZN13CssFileHeaderD0Ev
 	.private_extern	__ZN13CssFileHeaderD0Ev
 __ZN13CssFileHeaderD0Ev:
-swv_234d50:
+Lswv_234d50:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59f2010
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_234d64:
 	.long	0xe5803000
 	.long	0xeb010a33
 	.long	0xe8bd8080
-	.long	0x00110bf0
+	.long	Lswv_345954 - Lswv_234d64
 	.globl	__ZN13CssFileHeaderD1Ev
 	.private_extern	__ZN13CssFileHeaderD1Ev
 __ZN13CssFileHeaderD1Ev:
-swv_234d74:
+Lswv_234d74:
 	.long	0xe59f200c
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_234d80:
 	.long	0xe5803000
 	.long	0xe12fff1e
-	.long	0x00110bd4
+	.long	Lswv_345954 - Lswv_234d80
 	.globl	__ZN13CssFileHeaderD2Ev
 	.private_extern	__ZN13CssFileHeaderD2Ev
 __ZN13CssFileHeaderD2Ev:
 	.long	0xe59f200c
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_234d98:
 	.long	0xe5803000
 	.long	0xe12fff1e
-	.long	0x00110bbc
+	.long	Lswv_345954 - Lswv_234d98
 	.globl	__ZN13CssFileHeaderC2EPKhj
 	.private_extern	__ZN13CssFileHeaderC2EPKhj
 __ZN13CssFileHeaderC2EPKhj:
@@ -11199,39 +11341,42 @@ __ZN13CssFileHeaderC2EPKhj:
 	.long	0xe5801004
 	.long	0xe08f900c
 	.long	0xe2893008
+Lswv_234db4:
 	.long	0xe5802008
 	.long	0xe5803000
 	.long	0xe12fff1e
-	.long	0x00110ba0
+	.long	Lswv_345954 - Lswv_234db4
 	.globl	__ZN16CssFileHeaderM3GD0Ev
 	.private_extern	__ZN16CssFileHeaderM3GD0Ev
 __ZN16CssFileHeaderM3GD0Ev:
-swv_234dc4:
+Lswv_234dc4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f201c
 	.long	0xe1a04000
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_234ddc:
 	.long	0xe5803000
 	.long	0xebffffe9
 	.long	0xe1a00004
 	.long	0xeb010a13
 	.long	0xe8bd8090
-	.long	0x00110b88
+	.long	Lswv_345964 - Lswv_234ddc
 	.globl	__ZN16CssFileHeaderM3GD1Ev
 	.private_extern	__ZN16CssFileHeaderM3GD1Ev
 __ZN16CssFileHeaderM3GD1Ev:
-swv_234df4:
+Lswv_234df4:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59f2010
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_234e08:
 	.long	0xe5803000
 	.long	0xebffffde
 	.long	0xe8bd8080
-	.long	0x00110b5c
+	.long	Lswv_345964 - Lswv_234e08
 	.globl	__ZN16CssFileHeaderM3GC1Ev
 	.private_extern	__ZN16CssFileHeaderM3GC1Ev
 __ZN16CssFileHeaderM3GC1Ev:
@@ -11241,43 +11386,47 @@ __ZN16CssFileHeaderM3GC1Ev:
 	.long	0xe1a04000
 	.long	0xe08f1002
 	.long	0xe3a0200c
+Lswv_234e30:
 	.long	0xebffffdb
 	.long	0xe59f1010
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_234e40:
 	.long	0xe5843000
 	.long	0xe8bd8090
-	.long	0x000c196c
-	.long	0x00110b24
+	.long	Lswv_2f679c - Lswv_234e30
+	.long	Lswv_345964 - Lswv_234e40
 	.globl	__ZN16CssFileHeaderSWVD0Ev
 	.private_extern	__ZN16CssFileHeaderSWVD0Ev
 __ZN16CssFileHeaderSWVD0Ev:
-swv_234e50:
+Lswv_234e50:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f201c
 	.long	0xe1a04000
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_234e68:
 	.long	0xe5803000
 	.long	0xebffffc6
 	.long	0xe1a00004
 	.long	0xeb0109f0
 	.long	0xe8bd8090
-	.long	0x00110b0c
+	.long	Lswv_345974 - Lswv_234e68
 	.globl	__ZN16CssFileHeaderSWVD1Ev
 	.private_extern	__ZN16CssFileHeaderSWVD1Ev
 __ZN16CssFileHeaderSWVD1Ev:
-swv_234e80:
+Lswv_234e80:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59f2010
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_234e94:
 	.long	0xe5803000
 	.long	0xebffffbb
 	.long	0xe8bd8080
-	.long	0x00110ae0
+	.long	Lswv_345974 - Lswv_234e94
 	.globl	__ZN16CssFileHeaderSWVC1Ev
 	.private_extern	__ZN16CssFileHeaderSWVC1Ev
 __ZN16CssFileHeaderSWVC1Ev:
@@ -11287,14 +11436,16 @@ __ZN16CssFileHeaderSWVC1Ev:
 	.long	0xe1a04000
 	.long	0xe08f1002
 	.long	0xe3a0200c
+Lswv_234ebc:
 	.long	0xebffffb8
 	.long	0xe59f1010
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_234ecc:
 	.long	0xe5843000
 	.long	0xe8bd8090
-	.long	0x000c18ec
-	.long	0x00110aa8
+	.long	Lswv_2f67a8 - Lswv_234ebc
+	.long	Lswv_345974 - Lswv_234ecc
 	.globl	__Z23g_float_reciprocal_sqrtf
 	.private_extern	__Z23g_float_reciprocal_sqrtf
 __Z23g_float_reciprocal_sqrtf:
@@ -11457,6 +11608,7 @@ __Z18g_fixed_reciprocall:
 	.long	0xe59f10a4
 	.long	0xe08f3001
 	.long	0xe7930100
+Lswv_23511c:
 	.long	0xe3a03002
 	.long	0xe1a00310
 	.long	0xe35e0000
@@ -11483,6 +11635,7 @@ __Z18g_fixed_reciprocall:
 	.long	0xe2809001
 	.long	0xe08f200c
 	.long	0xe792c100
+Lswv_235184:
 	.long	0xe7920109
 	.long	0xe20390ff
 	.long	0xe241301e
@@ -11497,8 +11650,8 @@ __Z18g_fixed_reciprocall:
 	.long	0xe35e0000
 	.long	0x12600000
 	.long	0xe8bd8080
-	.long	0x000c16a8
-	.long	0x000c1640
+	.long	Lswv_2f67c4 - Lswv_23511c
+	.long	Lswv_2f67c4 - Lswv_235184
 	.globl	__Z12g_fixed_atanl
 	.private_extern	__Z12g_fixed_atanl
 __Z12g_fixed_atanl:
@@ -11534,6 +11687,7 @@ __Z12g_fixed_atanl:
 	.long	0xe20380ff
 	.long	0xe08fb00e
 	.long	0xe261301e
+Lswv_235244:
 	.long	0xe79bc100
 	.long	0xe79b910a
 	.long	0xe3a02002
@@ -11692,6 +11846,7 @@ __Z12g_fixed_atanl:
 	.long	0xe59de004
 	.long	0xe08f3000
 	.long	0xe59d2000
+Lswv_2354bc:
 	.long	0xe7939101
 	.long	0xe35e0001
 	.long	0xc26cc000
@@ -11701,9 +11856,9 @@ __Z12g_fixed_atanl:
 	.long	0xe247d018
 	.long	0xe8bd0d00
 	.long	0xe8bd80f0
-	.long	0x000c1580
+	.long	Lswv_2f67c4 - Lswv_235244
 	.long	0xffff2995
-	.long	0x000c12f8
+	.long	Lswv_2f67b4 - Lswv_2354bc
 	.globl	__Z13g_fixed_atan2ll
 	.private_extern	__Z13g_fixed_atan2ll
 __Z13g_fixed_atan2ll:
@@ -11885,13 +12040,13 @@ __Z12g_fixed_sqrtl:
 	.globl	__ZThn4_NK6CssFog4TypeEv
 	.private_extern	__ZThn4_NK6CssFog4TypeEv
 __ZThn4_NK6CssFog4TypeEv:
-swv_23579c:
+Lswv_23579c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK6CssFog4TypeEv
 	.private_extern	__ZNK6CssFog4TypeEv
 __ZNK6CssFog4TypeEv:
-swv_2357a4:
+Lswv_2357a4:
 	.long	0xe3a00007
 	.long	0xe12fff1e
 	.globl	__ZN6CssFog9SetLinearEff
@@ -11903,7 +12058,7 @@ __ZN6CssFog9SetLinearEff:
 	.globl	__ZN6CssFog11SetPropertyEiiPf
 	.private_extern	__ZN6CssFog11SetPropertyEiiPf
 __ZN6CssFog11SetPropertyEiiPf:
-swv_2357b8:
+Lswv_2357b8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2419c01
@@ -12007,7 +12162,7 @@ swv_2357b8:
 	.globl	__ZNK6CssFog21HasAnimatablePropertyEi
 	.private_extern	__ZNK6CssFog21HasAnimatablePropertyEi
 __ZNK6CssFog21HasAnimatablePropertyEi:
-swv_235948:
+Lswv_235948:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe3012128
@@ -12021,7 +12176,7 @@ swv_235948:
 	.globl	__ZN6CssFog11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN6CssFog11SerializeInER27CssSerializeBufferObjectsIn
 __ZN6CssFog11SerializeInER27CssSerializeBufferObjectsIn:
-swv_235970:
+Lswv_235970:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe24dd008
@@ -12081,7 +12236,9 @@ __ZN6CssFogC1Ev:
 	.long	0xe59f1040
 	.long	0xe08fc003
 	.long	0xe08f0001
+Lswv_235a50:
 	.long	0xe28c9034
+Lswv_235a54:
 	.long	0xe2802008
 	.long	0xe3a01000
 	.long	0xe5842000
@@ -12095,18 +12252,18 @@ __ZN6CssFogC1Ev:
 	.long	0xe584202c
 	.long	0xe5843030
 	.long	0xe8bd8090
-	.long	0x0010ff34
-	.long	0x0010ff30
+	.long	Lswv_345984 - Lswv_235a50
+	.long	Lswv_345984 - Lswv_235a54
 	.globl	__ZThn4_N6CssFogD0Ev
 	.private_extern	__ZThn4_N6CssFogD0Ev
 __ZThn4_N6CssFogD0Ev:
-swv_235a90:
+Lswv_235a90:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN6CssFogD0Ev
 	.private_extern	__ZN6CssFogD0Ev
 __ZN6CssFogD0Ev:
-swv_235a98:
+Lswv_235a98:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fe02c
@@ -12114,7 +12271,9 @@ swv_235a98:
 	.long	0xe1a04000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_235ab4:
 	.long	0xe28c9008
+Lswv_235ab8:
 	.long	0xe2813034
 	.long	0xe5809000
 	.long	0xe5803004
@@ -12122,36 +12281,38 @@ swv_235a98:
 	.long	0xe1a00004
 	.long	0xeb0106da
 	.long	0xe8bd8090
-	.long	0x0010fed0
-	.long	0x0010fecc
+	.long	Lswv_345984 - Lswv_235ab4
+	.long	Lswv_345984 - Lswv_235ab8
 	.globl	__ZThn4_N6CssFogD1Ev
 	.private_extern	__ZThn4_N6CssFogD1Ev
 __ZThn4_N6CssFogD1Ev:
-swv_235adc:
+Lswv_235adc:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN6CssFogD1Ev
 	.private_extern	__ZN6CssFogD1Ev
 __ZN6CssFogD1Ev:
-swv_235ae4:
+Lswv_235ae4:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59fe020
 	.long	0xe59f2020
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_235afc:
 	.long	0xe28c9008
+Lswv_235b00:
 	.long	0xe2813034
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xeb006ac6
 	.long	0xe8bd8080
-	.long	0x0010fe88
-	.long	0x0010fe84
+	.long	Lswv_345984 - Lswv_235afc
+	.long	Lswv_345984 - Lswv_235b00
 	.globl	__ZNK6CssFog5CloneEv
 	.private_extern	__ZNK6CssFog5CloneEv
 __ZNK6CssFog5CloneEv:
-swv_235b1c:
+Lswv_235b1c:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe3a01000
@@ -12165,7 +12326,9 @@ swv_235b1c:
 	.long	0xe3a03000
 	.long	0xe08f2009
 	.long	0xe08fe000
+Lswv_235b50:
 	.long	0xe2821034
+Lswv_235b54:
 	.long	0xe5843020
 	.long	0xe28ec008
 	.long	0xe5841004
@@ -12198,8 +12361,8 @@ swv_235b1c:
 	.long	0xeb010491
 	.long	0xe1a00004
 	.long	0xe8bd80b0
-	.long	0x0010fe34
-	.long	0x0010fe30
+	.long	Lswv_345984 - Lswv_235b50
+	.long	Lswv_345984 - Lswv_235b54
 	.globl	__ZN13CssGraphics3D20UpdateBackBufferDataEPt
 	.private_extern	__ZN13CssGraphics3D20UpdateBackBufferDataEPt
 __ZN13CssGraphics3D20UpdateBackBufferDataEPt:
@@ -12322,7 +12485,9 @@ __ZN13CssGraphics3DC2Ev:
 	.long	0xe3a01000
 	.long	0xe08f9002
 	.long	0xe08fc00e
+Lswv_235d70:
 	.long	0xe5801008
+Lswv_235d74:
 	.long	0xe2893008
 	.long	0xe28c201c
 	.long	0xe5803000
@@ -12367,8 +12532,10 @@ __ZN13CssGraphics3DC2Ev:
 	.long	0xe59fe088
 	.long	0xe08f900c
 	.long	0xe2893008
+Lswv_235e24:
 	.long	0xe08fc00e
 	.long	0xe58030c4
+Lswv_235e2c:
 	.long	0xe1a04000
 	.long	0xe28c9008
 	.long	0xe5c020e4
@@ -12397,10 +12564,10 @@ __ZN13CssGraphics3DC2Ev:
 	.long	0xe5843110
 	.long	0xe247d004
 	.long	0xe8bd8090
-	.long	0x0010fc54
-	.long	0x0010fc50
-	.long	0x0010fbe8
-	.long	0x0010fbc0
+	.long	Lswv_3459c4 - Lswv_235d70
+	.long	Lswv_3459c4 - Lswv_235d74
+	.long	Lswv_345a0c - Lswv_235e24
+	.long	Lswv_3459ec - Lswv_235e2c
 	.globl	__ZN13CssGraphics3D15GLDeferredStateEbPK13CssBackground
 	.private_extern	__ZN13CssGraphics3D15GLDeferredStateEbPK13CssBackground
 __ZN13CssGraphics3D15GLDeferredStateEbPK13CssBackground:
@@ -14122,7 +14289,9 @@ __ZN13CssGraphics3DD2Ev:
 	.long	0xe1a05000
 	.long	0xe08fc003
 	.long	0xe08f1002
+Lswv_2378d0:
 	.long	0xe28c9008
+Lswv_2378d4:
 	.long	0xe5809000
 	.long	0xe281001c
 	.long	0xe5850004
@@ -14187,6 +14356,7 @@ __ZN13CssGraphics3DD2Ev:
 	.long	0xe59f30ac
 	.long	0xe08fc003
 	.long	0xe28c0008
+Lswv_2379d4:
 	.long	0xe58500d4
 	.long	0xe59500d8
 	.long	0xe3500000
@@ -14200,9 +14370,10 @@ __ZN13CssGraphics3DD2Ev:
 	.long	0xe59f1080
 	.long	0xe08f9000
 	.long	0xe59500c8
+Lswv_237a08:
 	.long	0xe79f3001
 	.long	0xe283c008
-swv_237a10:
+Lswv_237a10:
 	.long	0xe3500000
 	.long	0xe2892008
 	.long	0xe585c0d4
@@ -14215,7 +14386,7 @@ swv_237a10:
 	.long	0xe59fc04c
 	.long	0xe79f000c
 	.long	0xe2809008
-swv_237a40:
+Lswv_237a40:
 	.long	0xe58590c4
 	.long	0xe8bd80b0
 	.long	0xe59500e0
@@ -14229,33 +14400,33 @@ swv_237a40:
 	.long	0x0afffff1
 	.long	0xeb00fefa
 	.long	0xeaffffef
-	.long	0x0010e0f4
-	.long	0x0010e0f0
-	.long	0x0010e018
-	.long	0x0010e004
-	.long	swv_got_0 - swv_237a10
-	.long	swv_got_0 - swv_237a40
+	.long	Lswv_3459c4 - Lswv_2378d0
+	.long	Lswv_3459c4 - Lswv_2378d4
+	.long	Lswv_3459ec - Lswv_2379d4
+	.long	Lswv_345a0c - Lswv_237a08
+	.long	swv_got_0 - Lswv_237a10
+	.long	swv_got_0 - Lswv_237a40
 	.globl	__ZThn4_N13CssGraphics3DD1Ev
 	.private_extern	__ZThn4_N13CssGraphics3DD1Ev
 __ZThn4_N13CssGraphics3DD1Ev:
-swv_237a8c:
+Lswv_237a8c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN13CssGraphics3DD1Ev
 	.private_extern	__ZN13CssGraphics3DD1Ev
 __ZN13CssGraphics3DD1Ev:
-swv_237a94:
+Lswv_237a94:
 	.long	0xeaffff86
 	.globl	__ZThn4_N13CssGraphics3DD0Ev
 	.private_extern	__ZThn4_N13CssGraphics3DD0Ev
 __ZThn4_N13CssGraphics3DD0Ev:
-swv_237a98:
+Lswv_237a98:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN13CssGraphics3DD0Ev
 	.private_extern	__ZN13CssGraphics3DD0Ev
 __ZN13CssGraphics3DD0Ev:
-swv_237aa0:
+Lswv_237aa0:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe59fe1b8
@@ -14263,7 +14434,9 @@ swv_237aa0:
 	.long	0xe1a05000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_237abc:
 	.long	0xe28c9008
+Lswv_237ac0:
 	.long	0xe5809000
 	.long	0xe281001c
 	.long	0xe5850004
@@ -14328,6 +14501,7 @@ swv_237aa0:
 	.long	0xe59fc0b4
 	.long	0xe08f900c
 	.long	0xe2890008
+Lswv_237bc0:
 	.long	0xe58500d4
 	.long	0xe59500d8
 	.long	0xe3500000
@@ -14341,11 +14515,12 @@ swv_237aa0:
 	.long	0xe59f2088
 	.long	0xe79f900c
 	.long	0xe2890008
-swv_237bf4:
+Lswv_237bf4:
 	.long	0xe58500d4
 	.long	0xe59500c8
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_237c04:
 	.long	0xe3500000
 	.long	0xe58530c4
 	.long	0x0a000000
@@ -14357,7 +14532,7 @@ swv_237bf4:
 	.long	0xe1a00005
 	.long	0xe79f1002
 	.long	0xe2813008
-swv_237c30:
+Lswv_237c30:
 	.long	0xe58530c4
 	.long	0xeb00fe80
 	.long	0xe8bd80b0
@@ -14372,12 +14547,12 @@ swv_237c30:
 	.long	0x0affffef
 	.long	0xeb00fe7d
 	.long	0xeaffffed
-	.long	0x0010df08
-	.long	0x0010df04
-	.long	0x0010de2c
-	.long	swv_got_0 - swv_237bf4
-	.long	0x0010de08
-	.long	swv_got_0 - swv_237c30
+	.long	Lswv_3459c4 - Lswv_237abc
+	.long	Lswv_3459c4 - Lswv_237ac0
+	.long	Lswv_3459ec - Lswv_237bc0
+	.long	swv_got_0 - Lswv_237bf4
+	.long	Lswv_345a0c - Lswv_237c04
+	.long	swv_got_0 - Lswv_237c30
 	.globl	__ZN13CssGraphics3D14SetOrientationENS_14EssOrientationE
 	.private_extern	__ZN13CssGraphics3D14SetOrientationENS_14EssOrientationE
 __ZN13CssGraphics3D14SetOrientationENS_14EssOrientationE:
@@ -14708,19 +14883,19 @@ __ZN13CssGraphics3D17SetBackBufferDataEiiiPt:
 	.globl	__ZThn4_NK13CssGraphics3D4TypeEv
 	.private_extern	__ZThn4_NK13CssGraphics3D4TypeEv
 __ZThn4_NK13CssGraphics3D4TypeEv:
-swv_238160:
+Lswv_238160:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK13CssGraphics3D4TypeEv
 	.private_extern	__ZNK13CssGraphics3D4TypeEv
 __ZNK13CssGraphics3D4TypeEv:
-swv_238168:
+Lswv_238168:
 	.long	0xe3a0001b
 	.long	0xe12fff1e
 	.globl	__ZN8CssArrayIP8CssLightE7DestroyEPv
 	.private_extern	__ZN8CssArrayIP8CssLightE7DestroyEPv
 __ZN8CssArrayIP8CssLightE7DestroyEPv:
-swv_238170:
+Lswv_238170:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -14730,13 +14905,14 @@ swv_238170:
 	.globl	__ZN8CssArrayIP8CssLightED1Ev
 	.private_extern	__ZN8CssArrayIP8CssLightED1Ev
 __ZN8CssArrayIP8CssLightED1Ev:
-swv_238188:
+Lswv_238188:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2381a0:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -14748,7 +14924,7 @@ swv_238188:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_2381cc:
+Lswv_2381cc:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -14756,12 +14932,12 @@ swv_2381cc:
 	.long	0x0afffff7
 	.long	0xeb00fd1d
 	.long	0xeafffff5
-	.long	0x0010d86c
-	.long	swv_got_0 - swv_2381cc
+	.long	Lswv_345a0c - Lswv_2381a0
+	.long	swv_got_0 - Lswv_2381cc
 	.globl	__ZN8CssArrayIP8CssLightE8AllocateEi
 	.private_extern	__ZN8CssArrayIP8CssLightE8AllocateEi
 __ZN8CssArrayIP8CssLightE8AllocateEi:
-swv_2381f0:
+Lswv_2381f0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -14771,7 +14947,7 @@ swv_2381f0:
 	.globl	__ZN8CssArrayI9CssMatrixE8AllocateEi
 	.private_extern	__ZN8CssArrayI9CssMatrixE8AllocateEi
 __ZN8CssArrayI9CssMatrixE8AllocateEi:
-swv_238208:
+Lswv_238208:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a04001
@@ -14846,7 +15022,7 @@ swv_238208:
 	.globl	__ZN8CssArrayIP8CssLightE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIP8CssLightE9CopyArrayEPvS3_i
 __ZN8CssArrayIP8CssLightE9CopyArrayEPvS3_i:
-swv_238324:
+Lswv_238324:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -15007,7 +15183,7 @@ swv_238324:
 	.globl	__ZN8CssArrayI9CssMatrixE9CopyArrayEPvS2_i
 	.private_extern	__ZN8CssArrayI9CssMatrixE9CopyArrayEPvS2_i
 __ZN8CssArrayI9CssMatrixE9CopyArrayEPvS2_i:
-swv_238598:
+Lswv_238598:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -15236,7 +15412,7 @@ swv_238598:
 	.globl	__ZN8CssArrayI9CssMatrixE7DestroyEPv
 	.private_extern	__ZN8CssArrayI9CssMatrixE7DestroyEPv
 __ZN8CssArrayI9CssMatrixE7DestroyEPv:
-swv_23891c:
+Lswv_23891c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe3510000
@@ -15247,13 +15423,14 @@ swv_23891c:
 	.globl	__ZN8CssArrayI9CssMatrixED0Ev
 	.private_extern	__ZN8CssArrayI9CssMatrixED0Ev
 __ZN8CssArrayI9CssMatrixED0Ev:
-swv_238938:
+Lswv_238938:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1060
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_238950:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -15267,7 +15444,7 @@ swv_238938:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_238984:
+Lswv_238984:
 	.long	0xe5849000
 	.long	0xeb00fb2b
 	.long	0xe8bd8090
@@ -15277,18 +15454,19 @@ swv_238984:
 	.long	0xe2400004
 	.long	0xeb00fb2d
 	.long	0xeafffff2
-	.long	0x0010d09c
-	.long	swv_got_0 - swv_238984
+	.long	Lswv_3459ec - Lswv_238950
+	.long	swv_got_0 - Lswv_238984
 	.globl	__ZN8CssArrayIP8CssLightED0Ev
 	.private_extern	__ZN8CssArrayIP8CssLightED0Ev
 __ZN8CssArrayIP8CssLightED0Ev:
-swv_2389b0:
+Lswv_2389b0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2389c8:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -15301,7 +15479,7 @@ swv_2389b0:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_2389f8:
+Lswv_2389f8:
 	.long	0xe5849000
 	.long	0xeb00fb0e
 	.long	0xe8bd8090
@@ -15310,18 +15488,19 @@ swv_2389f8:
 	.long	0x0afffff5
 	.long	0xeb00fb11
 	.long	0xeafffff3
-	.long	0x0010d044
-	.long	swv_got_0 - swv_2389f8
+	.long	Lswv_345a0c - Lswv_2389c8
+	.long	swv_got_0 - Lswv_2389f8
 	.globl	__ZN8CssArrayI9CssMatrixED1Ev
 	.private_extern	__ZN8CssArrayI9CssMatrixED1Ev
 __ZN8CssArrayI9CssMatrixED1Ev:
-swv_238a20:
+Lswv_238a20:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_238a38:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -15334,7 +15513,7 @@ swv_238a20:
 	.long	0xe59f3028
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_238a68:
+Lswv_238a68:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -15343,8 +15522,8 @@ swv_238a68:
 	.long	0xe2400004
 	.long	0xeb00faf5
 	.long	0xeafffff4
-	.long	0x0010cfb4
-	.long	swv_got_0 - swv_238a68
+	.long	Lswv_3459ec - Lswv_238a38
+	.long	swv_got_0 - Lswv_238a68
 	.globl	__ZNK8CssGroup13GetChildCountEv
 	.private_extern	__ZNK8CssGroup13GetChildCountEv
 __ZNK8CssGroup13GetChildCountEv:
@@ -15411,7 +15590,7 @@ __ZN8CssGroup8AddChildEP7CssNode:
 	.globl	__ZN8CssGroup11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN8CssGroup11SerializeInER27CssSerializeBufferObjectsIn
 __ZN8CssGroup11SerializeInER27CssSerializeBufferObjectsIn:
-swv_238b74:
+Lswv_238b74:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -15566,12 +15745,14 @@ __ZN8CssGroupC1Ev:
 	.long	0xe59f1018
 	.long	0xe08f900c
 	.long	0xe08f0001
+Lswv_238dd0:
 	.long	0xe2892008
+Lswv_238dd4:
 	.long	0xe2803044
 	.long	0xe884000c
 	.long	0xe8bd8090
-	.long	0x0010cc5c
-	.long	0x0010cc58
+	.long	Lswv_345a2c - Lswv_238dd0
+	.long	Lswv_345a2c - Lswv_238dd4
 	.globl	__ZN8CssGroupC2Ev
 	.private_extern	__ZN8CssGroupC2Ev
 __ZN8CssGroupC2Ev:
@@ -15585,22 +15766,24 @@ __ZN8CssGroupC2Ev:
 	.long	0xe59f1018
 	.long	0xe08f900c
 	.long	0xe08f0001
+Lswv_238e10:
 	.long	0xe2892008
+Lswv_238e14:
 	.long	0xe2803044
 	.long	0xe884000c
 	.long	0xe8bd8090
-	.long	0x0010cc1c
-	.long	0x0010cc18
+	.long	Lswv_345a2c - Lswv_238e10
+	.long	Lswv_345a2c - Lswv_238e14
 	.globl	__ZThn4_N8CssGroupD0Ev
 	.private_extern	__ZThn4_N8CssGroupD0Ev
 __ZThn4_N8CssGroupD0Ev:
-swv_238e28:
+Lswv_238e28:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN8CssGroupD0Ev
 	.private_extern	__ZN8CssGroupD0Ev
 __ZN8CssGroupD0Ev:
-swv_238e30:
+Lswv_238e30:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fe02c
@@ -15608,7 +15791,9 @@ swv_238e30:
 	.long	0xe1a04000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_238e4c:
 	.long	0xe28c9008
+Lswv_238e50:
 	.long	0xe2813044
 	.long	0xe5809000
 	.long	0xe5803004
@@ -15616,32 +15801,34 @@ swv_238e30:
 	.long	0xe1a00004
 	.long	0xeb00f9f4
 	.long	0xe8bd8090
-	.long	0x0010cbe0
-	.long	0x0010cbdc
+	.long	Lswv_345a2c - Lswv_238e4c
+	.long	Lswv_345a2c - Lswv_238e50
 	.globl	__ZThn4_N8CssGroupD1Ev
 	.private_extern	__ZThn4_N8CssGroupD1Ev
 __ZThn4_N8CssGroupD1Ev:
-swv_238e74:
+Lswv_238e74:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN8CssGroupD1Ev
 	.private_extern	__ZN8CssGroupD1Ev
 __ZN8CssGroupD1Ev:
-swv_238e7c:
+Lswv_238e7c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59fe020
 	.long	0xe59f2020
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_238e94:
 	.long	0xe28c9008
+Lswv_238e98:
 	.long	0xe2813044
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xeb00503c
 	.long	0xe8bd8080
-	.long	0x0010cb98
-	.long	0x0010cb94
+	.long	Lswv_345a2c - Lswv_238e94
+	.long	Lswv_345a2c - Lswv_238e98
 	.globl	__ZN8CssGroupD2Ev
 	.private_extern	__ZN8CssGroupD2Ev
 __ZN8CssGroupD2Ev:
@@ -15651,18 +15838,20 @@ __ZN8CssGroupD2Ev:
 	.long	0xe59f2020
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_238ecc:
 	.long	0xe28c9008
+Lswv_238ed0:
 	.long	0xe2813044
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xeb00502e
 	.long	0xe8bd8080
-	.long	0x0010cb60
-	.long	0x0010cb5c
+	.long	Lswv_345a2c - Lswv_238ecc
+	.long	Lswv_345a2c - Lswv_238ed0
 	.globl	__ZN8CssGroup11AnimateRefsEiii
 	.private_extern	__ZN8CssGroup11AnimateRefsEiii
 __ZN8CssGroup11AnimateRefsEiii:
-swv_238eec:
+Lswv_238eec:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -15718,7 +15907,7 @@ __ZN8CssGroup11RemoveChildEP7CssNode:
 	.globl	__ZN8CssGroup7GetpRefEi
 	.private_extern	__ZN8CssGroup7GetpRefEi
 __ZN8CssGroup7GetpRefEi:
-swv_238fb0:
+Lswv_238fb0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c000
@@ -16339,19 +16528,19 @@ __ZN8CssGroup4PickEiffP9CssCameraP18CssRayIntersection:
 	.globl	__ZThn4_NK8CssGroup4TypeEv
 	.private_extern	__ZThn4_NK8CssGroup4TypeEv
 __ZThn4_NK8CssGroup4TypeEv:
-swv_239930:
+Lswv_239930:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK8CssGroup4TypeEv
 	.private_extern	__ZNK8CssGroup4TypeEv
 __ZNK8CssGroup4TypeEv:
-swv_239938:
+Lswv_239938:
 	.long	0xe3a00009
 	.long	0xe12fff1e
 	.globl	__ZNK8CssGroup5CloneEv
 	.private_extern	__ZNK8CssGroup5CloneEv
 __ZNK8CssGroup5CloneEv:
-swv_239940:
+Lswv_239940:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0500
@@ -16368,7 +16557,9 @@ swv_239940:
 	.long	0xe59f019c
 	.long	0xe08fc00e
 	.long	0xe08f4000
+Lswv_239980:
 	.long	0xe2843008
+Lswv_239984:
 	.long	0xe28c9044
 	.long	0xe8880208
 	.long	0xeb00f4fb
@@ -16469,12 +16660,12 @@ swv_239940:
 	.long	0xe1a01008
 	.long	0xeb004d44
 	.long	0xeaffffd5
-	.long	0x0010c0ac
-	.long	0x0010c0a8
+	.long	Lswv_345a2c - Lswv_239980
+	.long	Lswv_345a2c - Lswv_239984
 	.globl	__ZN15CssHeaderObject11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN15CssHeaderObject11SerializeInER27CssSerializeBufferObjectsIn
 __ZN15CssHeaderObject11SerializeInER27CssSerializeBufferObjectsIn:
-swv_239b1c:
+Lswv_239b1c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe1a06000
@@ -16511,12 +16702,15 @@ __ZN15CssHeaderObjectC1Ev:
 	.long	0xe3a09000
 	.long	0xe08fc003
 	.long	0xe28c2008
+Lswv_239ba0:
 	.long	0xe5802000
 	.long	0xe59f203c
 	.long	0xe08f3001
 	.long	0xe283c01c
+Lswv_239bb0:
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_239bb8:
 	.long	0xe5809008
 	.long	0xe580c004
 	.long	0xe5c0900c
@@ -16527,19 +16721,19 @@ __ZN15CssHeaderObjectC1Ev:
 	.long	0xe5809024
 	.long	0xe5803018
 	.long	0xe12fff1e
-	.long	0x0010bedc
-	.long	0x0010becc
-	.long	0x0010bb30
+	.long	Lswv_345a7c - Lswv_239ba0
+	.long	Lswv_345a7c - Lswv_239bb0
+	.long	Lswv_3456e8 - Lswv_239bb8
 	.globl	__ZThn4_N15CssHeaderObjectD0Ev
 	.private_extern	__ZThn4_N15CssHeaderObjectD0Ev
 __ZThn4_N15CssHeaderObjectD0Ev:
-swv_239bec:
+Lswv_239bec:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN15CssHeaderObjectD0Ev
 	.private_extern	__ZN15CssHeaderObjectD0Ev
 __ZN15CssHeaderObjectD0Ev:
-swv_239bf4:
+Lswv_239bf4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1098
@@ -16548,11 +16742,14 @@ swv_239bf4:
 	.long	0xe59fc094
 	.long	0xe08f3000
 	.long	0xe08f0001
+Lswv_239c14:
 	.long	0xe283e008
+Lswv_239c18:
 	.long	0xe2803008
 	.long	0xe594001c
 	.long	0xe08f900c
 	.long	0xe289201c
+Lswv_239c28:
 	.long	0xe3500000
 	.long	0xe584e000
 	.long	0xe5842004
@@ -16567,9 +16764,11 @@ swv_239bf4:
 	.long	0xe59fc054
 	.long	0xe79f2009
 	.long	0xe08f3000
-swv_239c60:
+Lswv_239c60:
 	.long	0xe08f900c
+Lswv_239c64:
 	.long	0xe1a00004
+Lswv_239c68:
 	.long	0xe2821008
 	.long	0xe283e008
 	.long	0xe289201c
@@ -16583,22 +16782,22 @@ swv_239c60:
 	.long	0x0affffed
 	.long	0xeb00f670
 	.long	0xeaffffeb
-	.long	0x0010bad0
-	.long	0x0010be68
-	.long	0x0010be54
-	.long	swv_got_0 - swv_239c60
-	.long	0x0010be40
-	.long	0x0010be3c
+	.long	Lswv_3456e8 - Lswv_239c18
+	.long	Lswv_345a7c - Lswv_239c14
+	.long	Lswv_345a7c - Lswv_239c28
+	.long	swv_got_0 - Lswv_239c60
+	.long	Lswv_345aa4 - Lswv_239c64
+	.long	Lswv_345aa4 - Lswv_239c68
 	.globl	__ZThn4_N15CssHeaderObjectD1Ev
 	.private_extern	__ZThn4_N15CssHeaderObjectD1Ev
 __ZThn4_N15CssHeaderObjectD1Ev:
-swv_239cb4:
+Lswv_239cb4:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN15CssHeaderObjectD1Ev
 	.private_extern	__ZN15CssHeaderObjectD1Ev
 __ZN15CssHeaderObjectD1Ev:
-swv_239cbc:
+Lswv_239cbc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f108c
@@ -16606,13 +16805,16 @@ swv_239cbc:
 	.long	0xe59fc088
 	.long	0xe08f0001
 	.long	0xe59f1084
+Lswv_239cd8:
 	.long	0xe2803008
 	.long	0xe5843000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_239ce8:
 	.long	0xe594001c
 	.long	0xe08f900c
 	.long	0xe289201c
+Lswv_239cf4:
 	.long	0xe3500000
 	.long	0xe5842004
 	.long	0xe5843018
@@ -16625,11 +16827,13 @@ swv_239cbc:
 	.long	0xe59f2048
 	.long	0xe79fc003
 	.long	0xe59f3044
-swv_239d24:
+Lswv_239d24:
 	.long	0xe28c9008
 	.long	0xe08f1002
 	.long	0xe08fc003
+Lswv_239d30:
 	.long	0xe5849018
+Lswv_239d34:
 	.long	0xe2810008
 	.long	0xe28c901c
 	.long	0xe8840201
@@ -16639,73 +16843,77 @@ swv_239d24:
 	.long	0x0afffff0
 	.long	0xeb00f641
 	.long	0xeaffffee
-	.long	0x0010bda4
-	.long	0x0010bd88
-	.long	0x0010ba00
-	.long	swv_got_0 - swv_239d24
-	.long	0x0010bd74
-	.long	0x0010bd70
+	.long	Lswv_345a7c - Lswv_239cd8
+	.long	Lswv_345a7c - Lswv_239cf4
+	.long	Lswv_3456e8 - Lswv_239ce8
+	.long	swv_got_0 - Lswv_239d24
+	.long	Lswv_345aa4 - Lswv_239d30
+	.long	Lswv_345aa4 - Lswv_239d34
 	.globl	__ZThn4_N15IssSerializableD0Ev
 	.private_extern	__ZThn4_N15IssSerializableD0Ev
 __ZThn4_N15IssSerializableD0Ev:
-swv_239d70:
+Lswv_239d70:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN15IssSerializableD0Ev
 	.private_extern	__ZN15IssSerializableD0Ev
 __ZN15IssSerializableD0Ev:
-swv_239d78:
+Lswv_239d78:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59fe020
 	.long	0xe59f2020
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_239d90:
 	.long	0xe28c9008
+Lswv_239d94:
 	.long	0xe281301c
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xeb00f625
 	.long	0xe8bd8080
-	.long	0x0010bd14
-	.long	0x0010bd10
+	.long	Lswv_345aa4 - Lswv_239d90
+	.long	Lswv_345aa4 - Lswv_239d94
 	.globl	__ZThn4_N15IssSerializableD1Ev
 	.private_extern	__ZThn4_N15IssSerializableD1Ev
 __ZThn4_N15IssSerializableD1Ev:
-swv_239db0:
+Lswv_239db0:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN15IssSerializableD1Ev
 	.private_extern	__ZN15IssSerializableD1Ev
 __ZN15IssSerializableD1Ev:
-swv_239db8:
+Lswv_239db8:
 	.long	0xe59f301c
 	.long	0xe59f201c
 	.long	0xe08fc003
 	.long	0xe08f1002
+Lswv_239dc8:
 	.long	0xe28c9008
+Lswv_239dcc:
 	.long	0xe281301c
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xe12fff1e
-	.long	0x0010bcdc
-	.long	0x0010bcd8
+	.long	Lswv_345aa4 - Lswv_239dc8
+	.long	Lswv_345aa4 - Lswv_239dcc
 	.globl	__ZThn4_NK10CssImage2D4TypeEv
 	.private_extern	__ZThn4_NK10CssImage2D4TypeEv
 __ZThn4_NK10CssImage2D4TypeEv:
-swv_239de4:
+Lswv_239de4:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK10CssImage2D4TypeEv
 	.private_extern	__ZNK10CssImage2D4TypeEv
 __ZNK10CssImage2D4TypeEv:
-swv_239dec:
+Lswv_239dec:
 	.long	0xe3a0000a
 	.long	0xe12fff1e
 	.globl	__ZNK10CssImage2D10GetbOpaqueEv
 	.private_extern	__ZNK10CssImage2D10GetbOpaqueEv
 __ZNK10CssImage2D10GetbOpaqueEv:
-swv_239df4:
+Lswv_239df4:
 	.long	0xe5900070
 	.long	0xe3500061
 	.long	0x13500063
@@ -17281,14 +17489,18 @@ __ZN10CssImage2DC2Ev:
 	.long	0xe59f20a4
 	.long	0xe08f1009
 	.long	0xe59f90a0
+Lswv_23a69c:
 	.long	0xe08fc002
 	.long	0xe59f209c
+Lswv_23a6a4:
 	.long	0xe2810008
 	.long	0xe08f1009
 	.long	0xe28c3058
+Lswv_23a6b0:
 	.long	0xe5840000
 	.long	0xe08fc002
 	.long	0xe2810008
+Lswv_23a6bc:
 	.long	0xe3a01063
 	.long	0xe5840020
 	.long	0xe2410064
@@ -17320,14 +17532,14 @@ __ZN10CssImage2DC2Ev:
 	.long	0xe5c4206d
 	.long	0xe5c4306c
 	.long	0xe8bd8090
-	.long	0x0010b430
-	.long	0x0010b428
-	.long	0x0010b038
-	.long	0x0010b474
+	.long	Lswv_345acc - Lswv_23a69c
+	.long	Lswv_345acc - Lswv_23a6a4
+	.long	Lswv_3456e8 - Lswv_23a6b0
+	.long	Lswv_345b30 - Lswv_23a6bc
 	.globl	__ZNK10CssImage2D10GetpPixelsEv
 	.private_extern	__ZNK10CssImage2D10GetpPixelsEv
 __ZNK10CssImage2D10GetpPixelsEv:
-swv_23a748:
+Lswv_23a748:
 	.long	0xe5903034
 	.long	0xe3730001
 	.long	0x15900024
@@ -17532,7 +17744,7 @@ __ZNK10CssImage2D12GetbGLReloadEii:
 	.globl	__ZN10CssImage2D9ConstructEiiiiiPKh
 	.private_extern	__ZN10CssImage2D9ConstructEiiiiiPKh
 __ZN10CssImage2D9ConstructEiiiiiPKh:
-swv_23aa18:
+Lswv_23aa18:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0500
@@ -17582,13 +17794,13 @@ swv_23aa18:
 	.globl	__ZNK10CssImage2D8GetWidthEv
 	.private_extern	__ZNK10CssImage2D8GetWidthEv
 __ZNK10CssImage2D8GetWidthEv:
-swv_23aad0:
+Lswv_23aad0:
 	.long	0xe5900040
 	.long	0xe12fff1e
 	.globl	__ZNK10CssImage2D9GetHeightEv
 	.private_extern	__ZNK10CssImage2D9GetHeightEv
 __ZNK10CssImage2D9GetHeightEv:
-swv_23aad8:
+Lswv_23aad8:
 	.long	0xe5900044
 	.long	0xe12fff1e
 	.globl	__ZNK10CssImage2D14GetpTilePixelsEii
@@ -17627,7 +17839,7 @@ __ZNK10CssImage2D14GetpTilePixelsEii:
 	.globl	__ZNK10CssImage2D6CommitEv
 	.private_extern	__ZNK10CssImage2D6CommitEv
 __ZNK10CssImage2D6CommitEv:
-swv_23ab58:
+Lswv_23ab58:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe24dd07c
@@ -19253,6 +19465,7 @@ __ZNK10CssImage2D11UnpalettizeEv:
 	.long	0xe59f0168
 	.long	0xe08fe000
 	.long	0xe28e2008
+Lswv_23c48c:
 	.long	0xe58b2000
 	.long	0xeb00ea3a
 	.long	0xe1a0100b
@@ -19342,7 +19555,7 @@ __ZNK10CssImage2D11UnpalettizeEv:
 	.long	0xe59f0008
 	.long	0xeb00ec64
 	.long	0xeaffff80
-	.long	0x0010925c
+	.long	Lswv_3456e8 - Lswv_23c48c
 	.long	0xfffffaec
 	.globl	__ZN10CssImage2DC1Ev
 	.private_extern	__ZN10CssImage2DC1Ev
@@ -19355,14 +19568,18 @@ __ZN10CssImage2DC1Ev:
 	.long	0xe59f20a4
 	.long	0xe08f1009
 	.long	0xe59f90a0
+Lswv_23c618:
 	.long	0xe08fc002
 	.long	0xe59f209c
+Lswv_23c620:
 	.long	0xe2810008
 	.long	0xe08f1009
 	.long	0xe28c3058
+Lswv_23c62c:
 	.long	0xe5840000
 	.long	0xe08fc002
 	.long	0xe2810008
+Lswv_23c638:
 	.long	0xe3a01063
 	.long	0xe5840020
 	.long	0xe2410064
@@ -19394,20 +19611,20 @@ __ZN10CssImage2DC1Ev:
 	.long	0xe5c4206d
 	.long	0xe5c4306c
 	.long	0xe8bd8090
-	.long	0x001094b4
-	.long	0x001094ac
-	.long	0x001090bc
-	.long	0x001094f8
+	.long	Lswv_345acc - Lswv_23c618
+	.long	Lswv_345acc - Lswv_23c620
+	.long	Lswv_3456e8 - Lswv_23c62c
+	.long	Lswv_345b30 - Lswv_23c638
 	.globl	__ZThn4_N10CssImage2DD0Ev
 	.private_extern	__ZThn4_N10CssImage2DD0Ev
 __ZThn4_N10CssImage2DD0Ev:
-swv_23c6c4:
+Lswv_23c6c4:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN10CssImage2DD0Ev
 	.private_extern	__ZN10CssImage2DD0Ev
 __ZN10CssImage2DD0Ev:
-swv_23c6cc:
+Lswv_23c6cc:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -19416,9 +19633,11 @@ swv_23c6cc:
 	.long	0xe1a06000
 	.long	0xe08f8009
 	.long	0xe2882008
+Lswv_23c6ec:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803058
+Lswv_23c6f8:
 	.long	0xe5863004
 	.long	0xeb00fad4
 	.long	0xe5d6206c
@@ -19469,6 +19688,7 @@ swv_23c6cc:
 	.long	0xe3500000
 	.long	0xe08f3009
 	.long	0xe283e008
+Lswv_23c7c0:
 	.long	0xe586e054
 	.long	0x0a000027
 	.long	0xe5101004
@@ -19482,8 +19702,10 @@ swv_23c6cc:
 	.long	0xe59f01d0
 	.long	0xe08f5008
 	.long	0xe2858008
+Lswv_23c7f4:
 	.long	0xe08f5000
 	.long	0xea000005
+Lswv_23c7fc:
 	.long	0xe5960058
 	.long	0xe5959000
 	.long	0xe1500004
@@ -19518,11 +19740,12 @@ swv_23c6cc:
 	.long	0xe59fe148
 	.long	0xe79f3009
 	.long	0xe2830008
-swv_23c884:
+Lswv_23c884:
 	.long	0xe5860054
 	.long	0xe5960024
 	.long	0xe08f200e
 	.long	0xe2821008
+Lswv_23c894:
 	.long	0xe3500000
 	.long	0xe5861020
 	.long	0x0a000000
@@ -19534,7 +19757,7 @@ swv_23c884:
 	.long	0xe1a00006
 	.long	0xe79f200e
 	.long	0xe2821008
-swv_23c8c0:
+Lswv_23c8c0:
 	.long	0xe5861020
 	.long	0xeb004f58
 	.long	0xe1a00006
@@ -19555,8 +19778,10 @@ swv_23c8c0:
 	.long	0xe59f00c8
 	.long	0xe08f5008
 	.long	0xe2858008
+Lswv_23c910:
 	.long	0xe08f5000
 	.long	0xea000005
+Lswv_23c918:
 	.long	0xe5960060
 	.long	0xe595c000
 	.long	0xe1500004
@@ -19595,20 +19820,20 @@ swv_23c8c0:
 	.long	0xeb0100bb
 	.long	0xe5960058
 	.long	0xeaffff7f
-	.long	0x001093e0
-	.long	0x001093d4
-	.long	0x00109370
-	.long	0x00108ef4
-	.long	0x000baa08
-	.long	swv_got_0 - swv_23c884
-	.long	0x00108e54
-	.long	swv_got_0 - swv_23c8c0
-	.long	0x00108dd8
-	.long	0x000ba8ec
+	.long	Lswv_345acc - Lswv_23c6ec
+	.long	Lswv_345acc - Lswv_23c6f8
+	.long	Lswv_345b30 - Lswv_23c7c0
+	.long	Lswv_3456e8 - Lswv_23c7f4
+	.long	swv_got_0 - Lswv_23c7fc
+	.long	swv_got_0 - Lswv_23c884
+	.long	Lswv_3456e8 - Lswv_23c894
+	.long	swv_got_0 - Lswv_23c8c0
+	.long	Lswv_3456e8 - Lswv_23c910
+	.long	swv_got_0 - Lswv_23c918
 	.globl	__ZN10CssImage2D9ConstructENS_9EssFormatEiiiPKh
 	.private_extern	__ZN10CssImage2D9ConstructENS_9EssFormatEiiiPKh
 __ZN10CssImage2D9ConstructENS_9EssFormatEiiiPKh:
-swv_23c9d8:
+Lswv_23c9d8:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -19741,7 +19966,7 @@ __ZNK10CssImage2D7SetSizeEii:
 	.globl	__ZN10CssImage2D11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN10CssImage2D11SerializeInER27CssSerializeBufferObjectsIn
 __ZN10CssImage2D11SerializeInER27CssSerializeBufferObjectsIn:
-swv_23cbd0:
+Lswv_23cbd0:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -20072,7 +20297,7 @@ swv_23cbd0:
 	.globl	__ZN10CssImage2D9ConstructENS_9EssFormatEiiiPKhiS2_
 	.private_extern	__ZN10CssImage2D9ConstructENS_9EssFormatEiiiPKhiS2_
 __ZN10CssImage2D9ConstructENS_9EssFormatEiiiPKhiS2_:
-swv_23d0ec:
+Lswv_23d0ec:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -20298,7 +20523,7 @@ swv_23d0ec:
 	.globl	__ZN10CssImage2D9ConstructENS_9EssFormatEiib
 	.private_extern	__ZN10CssImage2D9ConstructENS_9EssFormatEiib
 __ZN10CssImage2D9ConstructENS_9EssFormatEiib:
-swv_23d464:
+Lswv_23d464:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0500
@@ -20362,9 +20587,11 @@ __ZN10CssImage2DD2Ev:
 	.long	0xe1a06000
 	.long	0xe08f8009
 	.long	0xe2882008
+Lswv_23d554:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803058
+Lswv_23d560:
 	.long	0xe5863004
 	.long	0xeb00f73a
 	.long	0xe5d6206c
@@ -20415,6 +20642,7 @@ __ZN10CssImage2DD2Ev:
 	.long	0xe3500000
 	.long	0xe08f3009
 	.long	0xe283e008
+Lswv_23d628:
 	.long	0xe586e054
 	.long	0x0a000027
 	.long	0xe5101004
@@ -20428,8 +20656,10 @@ __ZN10CssImage2DD2Ev:
 	.long	0xe59f01c8
 	.long	0xe08f5008
 	.long	0xe2858008
+Lswv_23d65c:
 	.long	0xe08f5000
 	.long	0xea000005
+Lswv_23d664:
 	.long	0xe5960058
 	.long	0xe5959000
 	.long	0xe1500004
@@ -20464,11 +20694,12 @@ __ZN10CssImage2DD2Ev:
 	.long	0xe59fe140
 	.long	0xe79f3009
 	.long	0xe2830008
-swv_23d6ec:
+Lswv_23d6ec:
 	.long	0xe5860054
 	.long	0xe5960024
 	.long	0xe08f200e
 	.long	0xe2821008
+Lswv_23d6fc:
 	.long	0xe3500000
 	.long	0xe5861020
 	.long	0x0a000000
@@ -20480,7 +20711,7 @@ swv_23d6ec:
 	.long	0xe1a00006
 	.long	0xe79f200e
 	.long	0xe2821008
-swv_23d728:
+Lswv_23d728:
 	.long	0xe5861020
 	.long	0xeb004bbe
 	.long	0xe8bd0100
@@ -20499,8 +20730,10 @@ swv_23d728:
 	.long	0xe59f00c8
 	.long	0xe08f5008
 	.long	0xe2858008
+Lswv_23d770:
 	.long	0xe08f5000
 	.long	0xea000005
+Lswv_23d778:
 	.long	0xe5960060
 	.long	0xe595c000
 	.long	0xe1500004
@@ -20539,31 +20772,31 @@ swv_23d728:
 	.long	0xeb00fd23
 	.long	0xe5960058
 	.long	0xeaffff81
-	.long	0x00108578
-	.long	0x0010856c
-	.long	0x00108508
-	.long	0x0010808c
-	.long	0x000b9ba0
-	.long	swv_got_0 - swv_23d6ec
-	.long	0x00107fec
-	.long	swv_got_0 - swv_23d728
-	.long	0x00107f78
-	.long	0x000b9a8c
+	.long	Lswv_345acc - Lswv_23d554
+	.long	Lswv_345acc - Lswv_23d560
+	.long	Lswv_345b30 - Lswv_23d628
+	.long	Lswv_3456e8 - Lswv_23d65c
+	.long	swv_got_0 - Lswv_23d664
+	.long	swv_got_0 - Lswv_23d6ec
+	.long	Lswv_3456e8 - Lswv_23d6fc
+	.long	swv_got_0 - Lswv_23d728
+	.long	Lswv_3456e8 - Lswv_23d770
+	.long	swv_got_0 - Lswv_23d778
 	.globl	__ZThn4_N10CssImage2DD1Ev
 	.private_extern	__ZThn4_N10CssImage2DD1Ev
 __ZThn4_N10CssImage2DD1Ev:
-swv_23d838:
+Lswv_23d838:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN10CssImage2DD1Ev
 	.private_extern	__ZN10CssImage2DD1Ev
 __ZN10CssImage2DD1Ev:
-swv_23d840:
+Lswv_23d840:
 	.long	0xeaffff3b
 	.globl	__ZN8CssArrayIN10CssImage2D7CssTileEE8AllocateEi
 	.private_extern	__ZN8CssArrayIN10CssImage2D7CssTileEE8AllocateEi
 __ZN8CssArrayIN10CssImage2D7CssTileEE8AllocateEi:
-swv_23d844:
+Lswv_23d844:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe1a04001
@@ -20582,6 +20815,7 @@ swv_23d844:
 	.long	0xe3a02000
 	.long	0xe08fe009
 	.long	0xe28e9008
+Lswv_23d88c:
 	.long	0xe3a0e001
 	.long	0xe15e0004
 	.long	0xe20c3001
@@ -20650,11 +20884,11 @@ swv_23d844:
 	.long	0x1affffe0
 	.long	0xe1a00005
 	.long	0xe8bd80b0
-	.long	0x00107e5c
+	.long	Lswv_3456e8 - Lswv_23d88c
 	.globl	__ZN8CssArrayIN10CssImage2D7CssTileEE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIN10CssImage2D7CssTileEE9CopyArrayEPvS3_i
 __ZN8CssArrayIN10CssImage2D7CssTileEE9CopyArrayEPvS3_i:
-swv_23d9a0:
+Lswv_23d9a0:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -20884,7 +21118,7 @@ swv_23d9a0:
 	.globl	__ZNK10CssImage2D5CloneEv
 	.private_extern	__ZNK10CssImage2D5CloneEv
 __ZNK10CssImage2D5CloneEv:
-swv_23dd28:
+Lswv_23dd28:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe3a01000
@@ -20898,13 +21132,17 @@ swv_23dd28:
 	.long	0xe59fc0cc
 	.long	0xe08f2000
 	.long	0xe282e008
+Lswv_23dd5c:
 	.long	0xe584e000
 	.long	0xe59fe0c0
 	.long	0xe08f0001
 	.long	0xe08f900c
+Lswv_23dd6c:
 	.long	0xe3a01063
+Lswv_23dd70:
 	.long	0xe08fc00e
 	.long	0xe2802008
+Lswv_23dd78:
 	.long	0xe2410064
 	.long	0xe2893058
 	.long	0xe5842020
@@ -20946,14 +21184,14 @@ swv_23dd28:
 	.long	0xeb00e3ff
 	.long	0xe1a00004
 	.long	0xe8bd80b0
-	.long	0x00107d70
-	.long	0x0010797c
-	.long	0x00107d5c
-	.long	0x00107db8
+	.long	Lswv_345acc - Lswv_23dd5c
+	.long	Lswv_3456e8 - Lswv_23dd6c
+	.long	Lswv_345acc - Lswv_23dd70
+	.long	Lswv_345b30 - Lswv_23dd78
 	.globl	__ZN8CssArrayIN10CssImage2D7CssTileEE7DestroyEPv
 	.private_extern	__ZN8CssArrayIN10CssImage2D7CssTileEE7DestroyEPv
 __ZN8CssArrayIN10CssImage2D7CssTileEE7DestroyEPv:
-swv_23de2c:
+Lswv_23de2c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -20971,6 +21209,7 @@ swv_23de2c:
 	.long	0xe2404028
 	.long	0xe08fa00b
 	.long	0xe28ab008
+Lswv_23de70:
 	.long	0xe500b028
 	.long	0xe5100024
 	.long	0xe24c5028
@@ -20979,6 +21218,7 @@ swv_23de2c:
 	.long	0xe1a091a5
 	.long	0xe08fa00e
 	.long	0xe2095001
+Lswv_23de90:
 	.long	0x0a000000
 	.long	0xeb00e5f0
 	.long	0xe5943008
@@ -21045,12 +21285,12 @@ swv_23de2c:
 	.long	0x0affffc4
 	.long	0xeb00e5b1
 	.long	0xeaffffc2
-	.long	0x00107878
-	.long	0x000b9374
+	.long	Lswv_3456e8 - Lswv_23de70
+	.long	swv_got_0 - Lswv_23de90
 	.globl	__ZN8CssArrayIN10CssImage2D7CssTileEED0Ev
 	.private_extern	__ZN8CssArrayIN10CssImage2D7CssTileEED0Ev
 __ZN8CssArrayIN10CssImage2D7CssTileEED0Ev:
-swv_23dfa0:
+Lswv_23dfa0:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -21058,6 +21298,7 @@ swv_23dfa0:
 	.long	0xe1a05000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_23dfbc:
 	.long	0xe5950004
 	.long	0xe5853000
 	.long	0xe3500000
@@ -21073,8 +21314,10 @@ swv_23dfa0:
 	.long	0xe59fe15c
 	.long	0xe08f6008
 	.long	0xe2868008
+Lswv_23dff8:
 	.long	0xe08f600e
 	.long	0xea000005
+Lswv_23e000:
 	.long	0xe5961000
 	.long	0xe2810008
 	.long	0xe5840000
@@ -21109,7 +21352,7 @@ swv_23dfa0:
 	.long	0xe1a00005
 	.long	0xe79f200e
 	.long	0xe282c008
-swv_23e088:
+Lswv_23e088:
 	.long	0xe585c000
 	.long	0xeb00e56a
 	.long	0xe8bd0100
@@ -21128,8 +21371,10 @@ swv_23e088:
 	.long	0xe59f3090
 	.long	0xe08f6008
 	.long	0xe2868008
+Lswv_23e0d0:
 	.long	0xe08f6003
 	.long	0xea000005
+Lswv_23e0d8:
 	.long	0xe595000c
 	.long	0xe5969000
 	.long	0xe1500004
@@ -21158,16 +21403,16 @@ swv_23e088:
 	.long	0xe2400004
 	.long	0xeb00e545
 	.long	0xeaffffcb
-	.long	0x00107b74
-	.long	0x001076f0
-	.long	0x000b9204
-	.long	swv_got_0 - swv_23e088
-	.long	0x00107618
-	.long	0x000b912c
+	.long	Lswv_345b30 - Lswv_23dfbc
+	.long	Lswv_3456e8 - Lswv_23dff8
+	.long	swv_got_0 - Lswv_23e000
+	.long	swv_got_0 - Lswv_23e088
+	.long	Lswv_3456e8 - Lswv_23e0d0
+	.long	swv_got_0 - Lswv_23e0d8
 	.globl	__ZN8CssArrayIN10CssImage2D7CssTileEED1Ev
 	.private_extern	__ZN8CssArrayIN10CssImage2D7CssTileEED1Ev
 __ZN8CssArrayIN10CssImage2D7CssTileEED1Ev:
-swv_23e160:
+Lswv_23e160:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -21175,6 +21420,7 @@ swv_23e160:
 	.long	0xe1a05000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_23e17c:
 	.long	0xe5950004
 	.long	0xe5853000
 	.long	0xe3500000
@@ -21190,8 +21436,10 @@ swv_23e160:
 	.long	0xe59fe154
 	.long	0xe08f6008
 	.long	0xe2868008
+Lswv_23e1b8:
 	.long	0xe08f600e
 	.long	0xea000005
+Lswv_23e1c0:
 	.long	0xe5961000
 	.long	0xe2810008
 	.long	0xe5840000
@@ -21225,7 +21473,7 @@ swv_23e160:
 	.long	0xe59f30cc
 	.long	0xe79f2003
 	.long	0xe282c008
-swv_23e244:
+Lswv_23e244:
 	.long	0xe585c000
 	.long	0xe8bd0100
 	.long	0xe8bd80f0
@@ -21243,8 +21491,10 @@ swv_23e244:
 	.long	0xe59f3090
 	.long	0xe08f6008
 	.long	0xe2868008
+Lswv_23e288:
 	.long	0xe08f6003
 	.long	0xea000005
+Lswv_23e290:
 	.long	0xe595000c
 	.long	0xe5969000
 	.long	0xe1500004
@@ -21273,16 +21523,16 @@ swv_23e244:
 	.long	0xe2400004
 	.long	0xeb00e4d7
 	.long	0xeaffffcd
-	.long	0x001079b4
-	.long	0x00107530
-	.long	0x000b9044
-	.long	swv_got_0 - swv_23e244
-	.long	0x00107460
-	.long	0x000b8f74
+	.long	Lswv_345b30 - Lswv_23e17c
+	.long	Lswv_3456e8 - Lswv_23e1b8
+	.long	swv_got_0 - Lswv_23e1c0
+	.long	swv_got_0 - Lswv_23e244
+	.long	Lswv_3456e8 - Lswv_23e288
+	.long	swv_got_0 - Lswv_23e290
 	.globl	__ZN14CssIndexBuffer11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN14CssIndexBuffer11SerializeInER27CssSerializeBufferObjectsIn
 __ZN14CssIndexBuffer11SerializeInER27CssSerializeBufferObjectsIn:
-swv_23e318:
+Lswv_23e318:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xeb004441
@@ -21298,25 +21548,27 @@ __ZN14CssIndexBufferC2Ev:
 	.long	0xe59f2024
 	.long	0xe08fc003
 	.long	0xe08f1002
+Lswv_23e348:
 	.long	0xe28c9008
+Lswv_23e34c:
 	.long	0xe2810038
 	.long	0xe3a03000
 	.long	0xe5849000
 	.long	0xe5840004
 	.long	0xe5843020
 	.long	0xe8bd8090
-	.long	0x00107808
-	.long	0x00107804
+	.long	Lswv_345b50 - Lswv_23e348
+	.long	Lswv_345b50 - Lswv_23e34c
 	.globl	__ZThn4_N14CssIndexBufferD0Ev
 	.private_extern	__ZThn4_N14CssIndexBufferD0Ev
 __ZThn4_N14CssIndexBufferD0Ev:
-swv_23e36c:
+Lswv_23e36c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN14CssIndexBufferD0Ev
 	.private_extern	__ZN14CssIndexBufferD0Ev
 __ZN14CssIndexBufferD0Ev:
-swv_23e374:
+Lswv_23e374:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fe02c
@@ -21324,7 +21576,9 @@ swv_23e374:
 	.long	0xe1a04000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_23e390:
 	.long	0xe28c9008
+Lswv_23e394:
 	.long	0xe2813038
 	.long	0xe5809000
 	.long	0xe5803004
@@ -21332,32 +21586,34 @@ swv_23e374:
 	.long	0xe1a00004
 	.long	0xeb00e4a3
 	.long	0xe8bd8090
-	.long	0x001077c0
-	.long	0x001077bc
+	.long	Lswv_345b50 - Lswv_23e390
+	.long	Lswv_345b50 - Lswv_23e394
 	.globl	__ZThn4_N14CssIndexBufferD1Ev
 	.private_extern	__ZThn4_N14CssIndexBufferD1Ev
 __ZThn4_N14CssIndexBufferD1Ev:
-swv_23e3b8:
+Lswv_23e3b8:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN14CssIndexBufferD1Ev
 	.private_extern	__ZN14CssIndexBufferD1Ev
 __ZN14CssIndexBufferD1Ev:
-swv_23e3c0:
+Lswv_23e3c0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59fe020
 	.long	0xe59f2020
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_23e3d8:
 	.long	0xe28c9008
+Lswv_23e3dc:
 	.long	0xe2813038
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xeb00488f
 	.long	0xe8bd8080
-	.long	0x00107778
-	.long	0x00107774
+	.long	Lswv_345b50 - Lswv_23e3d8
+	.long	Lswv_345b50 - Lswv_23e3dc
 	.globl	__ZN14CssIndexBufferD2Ev
 	.private_extern	__ZN14CssIndexBufferD2Ev
 __ZN14CssIndexBufferD2Ev:
@@ -21367,18 +21623,20 @@ __ZN14CssIndexBufferD2Ev:
 	.long	0xe59f2020
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_23e410:
 	.long	0xe28c9008
+Lswv_23e414:
 	.long	0xe2813038
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xeb004881
 	.long	0xe8bd8080
-	.long	0x00107740
-	.long	0x0010773c
+	.long	Lswv_345b50 - Lswv_23e410
+	.long	Lswv_345b50 - Lswv_23e414
 	.globl	__ZNK11CssObject3D5CloneEv
 	.private_extern	__ZNK11CssObject3D5CloneEv
 __ZNK11CssObject3D5CloneEv:
-swv_23e430:
+Lswv_23e430:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe3a01000
@@ -22116,10 +22374,13 @@ __ZN19CssKeyframeSequenceC1Ev:
 	.long	0xe59f306c
 	.long	0xe08f0001
 	.long	0xe59f1068
+Lswv_23ef78:
 	.long	0xe08fc003
 	.long	0xe2802034
+Lswv_23ef80:
 	.long	0xe08f0001
 	.long	0xe28c9008
+Lswv_23ef88:
 	.long	0xe3a030b0
 	.long	0xe5842004
 	.long	0xe283c010
@@ -22141,9 +22402,9 @@ __ZN19CssKeyframeSequenceC1Ev:
 	.long	0xe5842040
 	.long	0xe5c43050
 	.long	0xe8bd8090
-	.long	0x00106c1c
-	.long	0x00106c14
-	.long	0x00106c4c
+	.long	Lswv_345b94 - Lswv_23ef78
+	.long	Lswv_345b94 - Lswv_23ef80
+	.long	Lswv_345bd4 - Lswv_23ef88
 	.globl	__ZN19CssKeyframeSequence9ConstructEiiNS_16EssInterpolationE
 	.private_extern	__ZN19CssKeyframeSequence9ConstructEiiNS_16EssInterpolationE
 __ZN19CssKeyframeSequence9ConstructEiiNS_16EssInterpolationE:
@@ -23756,7 +24017,7 @@ __ZNK19CssKeyframeSequence16GetWeightedValueEiPK17CssAnimationTrackiPff:
 	.globl	__ZN19CssKeyframeSequence11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN19CssKeyframeSequence11SerializeInER27CssSerializeBufferObjectsIn
 __ZN19CssKeyframeSequence11SerializeInER27CssSerializeBufferObjectsIn:
-swv_2408dc:
+Lswv_2408dc:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -23897,6 +24158,7 @@ swv_2408dc:
 	.long	0xe3a04000
 	.long	0xe08f1002
 	.long	0xe281a008
+Lswv_240b0c:
 	.long	0xe1a0b000
 	.long	0xe5804004
 	.long	0xe5804008
@@ -24059,18 +24321,18 @@ swv_2408dc:
 	.long	0x477fff00
 	.long	0x437f0000
 	.long	0xfffffbb3
-	.long	0x001050c8
+	.long	Lswv_345bd4 - Lswv_240b0c
 	.long	0xfffffb4e
 	.globl	__ZThn4_N19CssKeyframeSequenceD0Ev
 	.private_extern	__ZThn4_N19CssKeyframeSequenceD0Ev
 __ZThn4_N19CssKeyframeSequenceD0Ev:
-swv_240d9c:
+Lswv_240d9c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN19CssKeyframeSequenceD0Ev
 	.private_extern	__ZN19CssKeyframeSequenceD0Ev
 __ZN19CssKeyframeSequenceD0Ev:
-swv_240da4:
+Lswv_240da4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1080
@@ -24079,11 +24341,14 @@ swv_240da4:
 	.long	0xe59fc07c
 	.long	0xe08f3000
 	.long	0xe08f0001
+Lswv_240dc4:
 	.long	0xe283e008
+Lswv_240dc8:
 	.long	0xe2803008
 	.long	0xe5940044
 	.long	0xe08f900c
 	.long	0xe2892034
+Lswv_240dd8:
 	.long	0xe3500000
 	.long	0xe584e000
 	.long	0xe5842004
@@ -24097,7 +24362,7 @@ swv_240da4:
 	.long	0xe1a00004
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_240e0c:
+Lswv_240e0c:
 	.long	0xe5842040
 	.long	0xeb003e05
 	.long	0xe1a00004
@@ -24108,20 +24373,20 @@ swv_240e0c:
 	.long	0x0afffff3
 	.long	0xeb00da0a
 	.long	0xeafffff1
-	.long	0x00104e0c
-	.long	0x00104dd0
-	.long	0x00104dbc
-	.long	swv_got_0 - swv_240e0c
+	.long	Lswv_345bd4 - Lswv_240dc8
+	.long	Lswv_345b94 - Lswv_240dc4
+	.long	Lswv_345b94 - Lswv_240dd8
+	.long	swv_got_0 - Lswv_240e0c
 	.globl	__ZThn4_N19CssKeyframeSequenceD1Ev
 	.private_extern	__ZThn4_N19CssKeyframeSequenceD1Ev
 __ZThn4_N19CssKeyframeSequenceD1Ev:
-swv_240e44:
+Lswv_240e44:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN19CssKeyframeSequenceD1Ev
 	.private_extern	__ZN19CssKeyframeSequenceD1Ev
 __ZN19CssKeyframeSequenceD1Ev:
-swv_240e4c:
+Lswv_240e4c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1078
@@ -24130,11 +24395,14 @@ swv_240e4c:
 	.long	0xe59fc074
 	.long	0xe08f3000
 	.long	0xe08f0001
+Lswv_240e6c:
 	.long	0xe283e008
+Lswv_240e70:
 	.long	0xe2803008
 	.long	0xe5940044
 	.long	0xe08f900c
 	.long	0xe2892034
+Lswv_240e80:
 	.long	0xe3500000
 	.long	0xe584e000
 	.long	0xe5842004
@@ -24148,7 +24416,7 @@ swv_240e4c:
 	.long	0xe1a00004
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_240eb4:
+Lswv_240eb4:
 	.long	0xe5842040
 	.long	0xeb003ddb
 	.long	0xe8bd8090
@@ -24157,26 +24425,26 @@ swv_240eb4:
 	.long	0x0afffff5
 	.long	0xeb00d9e2
 	.long	0xeafffff3
-	.long	0x00104d64
-	.long	0x00104d28
-	.long	0x00104d14
-	.long	swv_got_0 - swv_240eb4
+	.long	Lswv_345bd4 - Lswv_240e70
+	.long	Lswv_345b94 - Lswv_240e6c
+	.long	Lswv_345b94 - Lswv_240e80
+	.long	swv_got_0 - Lswv_240eb4
 	.globl	__ZThn4_NK19CssKeyframeSequence4TypeEv
 	.private_extern	__ZThn4_NK19CssKeyframeSequence4TypeEv
 __ZThn4_NK19CssKeyframeSequence4TypeEv:
-swv_240ee4:
+Lswv_240ee4:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK19CssKeyframeSequence4TypeEv
 	.private_extern	__ZNK19CssKeyframeSequence4TypeEv
 __ZNK19CssKeyframeSequence4TypeEv:
-swv_240eec:
+Lswv_240eec:
 	.long	0xe3a00013
 	.long	0xe12fff1e
 	.globl	__ZN8CssArrayIfE7DestroyEPv
 	.private_extern	__ZN8CssArrayIfE7DestroyEPv
 __ZN8CssArrayIfE7DestroyEPv:
-swv_240ef4:
+Lswv_240ef4:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -24186,7 +24454,7 @@ swv_240ef4:
 	.globl	__ZN8CssArrayIfE8AllocateEi
 	.private_extern	__ZN8CssArrayIfE8AllocateEi
 __ZN8CssArrayIfE8AllocateEi:
-swv_240f0c:
+Lswv_240f0c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -24196,7 +24464,7 @@ swv_240f0c:
 	.globl	__ZN8CssArrayIfE9CopyArrayEPvS1_i
 	.private_extern	__ZN8CssArrayIfE9CopyArrayEPvS1_i
 __ZN8CssArrayIfE9CopyArrayEPvS1_i:
-swv_240f24:
+Lswv_240f24:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -24385,13 +24653,14 @@ swv_240f24:
 	.globl	__ZN8CssArrayIfED1Ev
 	.private_extern	__ZN8CssArrayIfED1Ev
 __ZN8CssArrayIfED1Ev:
-swv_241208:
+Lswv_241208:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_241220:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -24403,7 +24672,7 @@ swv_241208:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_24124c:
+Lswv_24124c:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -24411,18 +24680,19 @@ swv_24124c:
 	.long	0x0afffff7
 	.long	0xeb00d8fd
 	.long	0xeafffff5
-	.long	0x001049b4
-	.long	swv_got_0 - swv_24124c
+	.long	Lswv_345bd4 - Lswv_241220
+	.long	swv_got_0 - Lswv_24124c
 	.globl	__ZN8CssArrayIfED0Ev
 	.private_extern	__ZN8CssArrayIfED0Ev
 __ZN8CssArrayIfED0Ev:
-swv_241270:
+Lswv_241270:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_241288:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -24435,7 +24705,7 @@ swv_241270:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_2412b8:
+Lswv_2412b8:
 	.long	0xe5849000
 	.long	0xeb00d8de
 	.long	0xe8bd8090
@@ -24444,12 +24714,12 @@ swv_2412b8:
 	.long	0x0afffff5
 	.long	0xeb00d8e1
 	.long	0xeafffff3
-	.long	0x0010494c
-	.long	swv_got_0 - swv_2412b8
+	.long	Lswv_345bd4 - Lswv_241288
+	.long	swv_got_0 - Lswv_2412b8
 	.globl	__ZNK19CssKeyframeSequence5CloneEv
 	.private_extern	__ZNK19CssKeyframeSequence5CloneEv
 __ZNK19CssKeyframeSequence5CloneEv:
-swv_2412e0:
+Lswv_2412e0:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe3a01000
@@ -24461,12 +24731,15 @@ swv_2412e0:
 	.long	0xeb003282
 	.long	0xe08f2006
 	.long	0xe2821008
+Lswv_24130c:
 	.long	0xe59f0108
 	.long	0xe59f2108
 	.long	0xe5841000
 	.long	0xe08f3000
 	.long	0xe08f1002
+Lswv_241320:
 	.long	0xe283e034
+Lswv_241324:
 	.long	0xe3a0c0b0
 	.long	0xe3a03000
 	.long	0xe28c9010
@@ -24528,9 +24801,9 @@ swv_2412e0:
 	.long	0xeb00d680
 	.long	0xe1a00004
 	.long	0xe8bd80f0
-	.long	0x00104888
-	.long	0x00104874
-	.long	0x001048b0
+	.long	Lswv_345b94 - Lswv_24130c
+	.long	Lswv_345b94 - Lswv_241320
+	.long	Lswv_345bd4 - Lswv_241324
 	.globl	__ZN8CssLight8SetColorEj
 	.private_extern	__ZN8CssLight8SetColorEj
 __ZN8CssLight8SetColorEj:
@@ -24570,7 +24843,7 @@ __ZN8CssLight15SetSpotExponentEf:
 	.globl	__ZN8CssLight8SetScopeEi
 	.private_extern	__ZN8CssLight8SetScopeEi
 __ZN8CssLight8SetScopeEi:
-swv_241478:
+Lswv_241478:
 	.long	0xe3a03001
 	.long	0xe5801030
 	.long	0xe5c030bc
@@ -24578,7 +24851,7 @@ swv_241478:
 	.globl	__ZN8CssLight11SetPropertyEiiPf
 	.private_extern	__ZN8CssLight11SetPropertyEiiPf
 __ZN8CssLight11SetPropertyEiiPf:
-swv_241488:
+Lswv_241488:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2419c01
@@ -24715,7 +24988,7 @@ swv_241488:
 	.globl	__ZNK8CssLight21HasAnimatablePropertyEi
 	.private_extern	__ZNK8CssLight21HasAnimatablePropertyEi
 __ZNK8CssLight21HasAnimatablePropertyEi:
-swv_24169c:
+Lswv_24169c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59f2018
@@ -24761,7 +25034,7 @@ __ZN8CssLight14SetAttenuationEfff:
 	.globl	__ZN8CssLight11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN8CssLight11SerializeInER27CssSerializeBufferObjectsIn
 __ZN8CssLight11SerializeInER27CssSerializeBufferObjectsIn:
-swv_241738:
+Lswv_241738:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe1a05001
@@ -24852,7 +25125,7 @@ swv_241738:
 	.globl	__ZNK8CssLight19SetMatrixCacheDirtyEv
 	.private_extern	__ZNK8CssLight19SetMatrixCacheDirtyEv
 __ZNK8CssLight19SetMatrixCacheDirtyEv:
-swv_241894:
+Lswv_241894:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a04000
@@ -24863,7 +25136,7 @@ swv_241894:
 	.globl	__ZN8CssLight19SetRenderingEnabledEb
 	.private_extern	__ZN8CssLight19SetRenderingEnabledEb
 __ZN8CssLight19SetRenderingEnabledEb:
-swv_2418b0:
+Lswv_2418b0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe6ef1071
@@ -24875,49 +25148,51 @@ swv_2418b0:
 	.globl	__ZThn4_NK8CssLight4TypeEv
 	.private_extern	__ZThn4_NK8CssLight4TypeEv
 __ZThn4_NK8CssLight4TypeEv:
-swv_2418d0:
+Lswv_2418d0:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK8CssLight4TypeEv
 	.private_extern	__ZNK8CssLight4TypeEv
 __ZNK8CssLight4TypeEv:
-swv_2418d8:
+Lswv_2418d8:
 	.long	0xe3a0000c
 	.long	0xe12fff1e
 	.globl	__ZThn4_N8CssLightD1Ev
 	.private_extern	__ZThn4_N8CssLightD1Ev
 __ZThn4_N8CssLightD1Ev:
-swv_2418e0:
+Lswv_2418e0:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN8CssLightD1Ev
 	.private_extern	__ZN8CssLightD1Ev
 __ZN8CssLightD1Ev:
-swv_2418e8:
+Lswv_2418e8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59fe020
 	.long	0xe59f2020
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_241900:
 	.long	0xe28c9008
+Lswv_241904:
 	.long	0xe2813044
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xeb002da1
 	.long	0xe8bd8080
-	.long	0x001042f4
-	.long	0x001042f0
+	.long	Lswv_345bf4 - Lswv_241900
+	.long	Lswv_345bf4 - Lswv_241904
 	.globl	__ZThn4_N8CssLightD0Ev
 	.private_extern	__ZThn4_N8CssLightD0Ev
 __ZThn4_N8CssLightD0Ev:
-swv_241920:
+Lswv_241920:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN8CssLightD0Ev
 	.private_extern	__ZN8CssLightD0Ev
 __ZN8CssLightD0Ev:
-swv_241928:
+Lswv_241928:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fe02c
@@ -24925,7 +25200,9 @@ swv_241928:
 	.long	0xe1a04000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_241944:
 	.long	0xe28c9008
+Lswv_241948:
 	.long	0xe2813044
 	.long	0xe5809000
 	.long	0xe5803004
@@ -24933,12 +25210,12 @@ swv_241928:
 	.long	0xe1a00004
 	.long	0xeb00d736
 	.long	0xe8bd8090
-	.long	0x001042b0
-	.long	0x001042ac
+	.long	Lswv_345bf4 - Lswv_241944
+	.long	Lswv_345bf4 - Lswv_241948
 	.globl	__ZNK8CssLight5CloneEv
 	.private_extern	__ZNK8CssLight5CloneEv
 __ZNK8CssLight5CloneEv:
-swv_24196c:
+Lswv_24196c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0500
@@ -24954,8 +25231,10 @@ swv_24196c:
 	.long	0xe59fc214
 	.long	0xe08f2005
 	.long	0xe3a03081
+Lswv_2419a8:
 	.long	0xe08f900c
 	.long	0xe243e080
+Lswv_2419b0:
 	.long	0xe3a0c5fe
 	.long	0xe58830b8
 	.long	0xe588c0ac
@@ -25084,25 +25363,25 @@ swv_24196c:
 	.long	0xe1a01008
 	.long	0xeb002d1d
 	.long	0xeaffffc7
-	.long	0x0010424c
+	.long	Lswv_345bf4 - Lswv_2419a8
 	.long	0x42340000
-	.long	0x00104244
+	.long	Lswv_345bf4 - Lswv_2419b0
 	.globl	__ZThn4_NK11CssMaterial4TypeEv
 	.private_extern	__ZThn4_NK11CssMaterial4TypeEv
 __ZThn4_NK11CssMaterial4TypeEv:
-swv_241bbc:
+Lswv_241bbc:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK11CssMaterial4TypeEv
 	.private_extern	__ZNK11CssMaterial4TypeEv
 __ZNK11CssMaterial4TypeEv:
-swv_241bc4:
+Lswv_241bc4:
 	.long	0xe3a0000d
 	.long	0xe12fff1e
 	.globl	__ZNK11CssMaterial21HasAnimatablePropertyEi
 	.private_extern	__ZNK11CssMaterial21HasAnimatablePropertyEi
 __ZNK11CssMaterial21HasAnimatablePropertyEi:
-swv_241bcc:
+Lswv_241bcc:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59f2018
@@ -25117,7 +25396,7 @@ swv_241bcc:
 	.globl	__ZN11CssMaterial11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN11CssMaterial11SerializeInER27CssSerializeBufferObjectsIn
 __ZN11CssMaterial11SerializeInER27CssSerializeBufferObjectsIn:
-swv_241bf8:
+Lswv_241bf8:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe1a04001
@@ -25209,7 +25488,7 @@ __ZNK11CssMaterial8GetColorENS_14EssColorTargetE:
 	.globl	__ZN11CssMaterial11SetPropertyEiiPf
 	.private_extern	__ZN11CssMaterial11SetPropertyEiiPf
 __ZN11CssMaterial11SetPropertyEiiPf:
-swv_241d40:
+Lswv_241d40:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe241cc01
@@ -25478,37 +25757,39 @@ swv_241d40:
 	.globl	__ZThn4_N11CssMaterialD1Ev
 	.private_extern	__ZThn4_N11CssMaterialD1Ev
 __ZThn4_N11CssMaterialD1Ev:
-swv_242164:
+Lswv_242164:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN11CssMaterialD1Ev
 	.private_extern	__ZN11CssMaterialD1Ev
 __ZN11CssMaterialD1Ev:
-swv_24216c:
+Lswv_24216c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59fe020
 	.long	0xe59f2020
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_242184:
 	.long	0xe28c9008
+Lswv_242188:
 	.long	0xe2813034
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xeb003924
 	.long	0xe8bd8080
-	.long	0x00103ac0
-	.long	0x00103abc
+	.long	Lswv_345c44 - Lswv_242184
+	.long	Lswv_345c44 - Lswv_242188
 	.globl	__ZThn4_N11CssMaterialD0Ev
 	.private_extern	__ZThn4_N11CssMaterialD0Ev
 __ZThn4_N11CssMaterialD0Ev:
-swv_2421a4:
+Lswv_2421a4:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN11CssMaterialD0Ev
 	.private_extern	__ZN11CssMaterialD0Ev
 __ZN11CssMaterialD0Ev:
-swv_2421ac:
+Lswv_2421ac:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fe02c
@@ -25516,7 +25797,9 @@ swv_2421ac:
 	.long	0xe1a04000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_2421c8:
 	.long	0xe28c9008
+Lswv_2421cc:
 	.long	0xe2813034
 	.long	0xe5809000
 	.long	0xe5803004
@@ -25524,12 +25807,12 @@ swv_2421ac:
 	.long	0xe1a00004
 	.long	0xeb00d515
 	.long	0xe8bd8090
-	.long	0x00103a7c
-	.long	0x00103a78
+	.long	Lswv_345c44 - Lswv_2421c8
+	.long	Lswv_345c44 - Lswv_2421cc
 	.globl	__ZNK11CssMaterial5CloneEv
 	.private_extern	__ZNK11CssMaterial5CloneEv
 __ZNK11CssMaterial5CloneEv:
-swv_2421f0:
+Lswv_2421f0:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe3a01000
@@ -25543,8 +25826,10 @@ swv_2421f0:
 	.long	0xe59f109c
 	.long	0xe08f0003
 	.long	0xe59f3098
+Lswv_242224:
 	.long	0xe08f900c
 	.long	0xe2892034
+Lswv_24222c:
 	.long	0xe280e008
 	.long	0xe5842004
 	.long	0xe5843024
@@ -25579,8 +25864,8 @@ swv_2421f0:
 	.long	0xeb00d2d9
 	.long	0xe1a00004
 	.long	0xe8bd80b0
-	.long	0x00103a20
-	.long	0x00103a18
+	.long	Lswv_345c44 - Lswv_242224
+	.long	Lswv_345c44 - Lswv_24222c
 	.long	0x00333333
 	.long	0xffcccccc
 	.globl	__Z13ss_quick_fabsRKf
@@ -29273,19 +29558,19 @@ __ZN14CssMemoryError11LeaveIfNullEPv:
 	.globl	__ZThn4_NK7CssMesh4TypeEv
 	.private_extern	__ZThn4_NK7CssMesh4TypeEv
 __ZThn4_NK7CssMesh4TypeEv:
-swv_245b28:
+Lswv_245b28:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK7CssMesh4TypeEv
 	.private_extern	__ZNK7CssMesh4TypeEv
 __ZNK7CssMesh4TypeEv:
-swv_245b30:
+Lswv_245b30:
 	.long	0xe3a0000e
 	.long	0xe12fff1e
 	.globl	__ZNK7CssMesh15GetVertexBufferEv
 	.private_extern	__ZNK7CssMesh15GetVertexBufferEv
 __ZNK7CssMesh15GetVertexBufferEv:
-swv_245b38:
+Lswv_245b38:
 	.long	0xe590009c
 	.long	0xe12fff1e
 	.globl	__ZNK7CssMesh13GetAppearanceEi
@@ -29574,14 +29859,18 @@ __ZN7CssMeshC2Ev:
 	.long	0xe59f305c
 	.long	0xe08f1009
 	.long	0xe08fc003
+Lswv_245f88:
 	.long	0xe281004c
+Lswv_245f8c:
 	.long	0xe59f3050
 	.long	0xe59f1050
 	.long	0xe28c2008
 	.long	0xe5840004
 	.long	0xe08fc003
 	.long	0xe08f0001
+Lswv_245fa4:
 	.long	0xe5842000
+Lswv_245fa8:
 	.long	0xe2803008
 	.long	0xe28c2008
 	.long	0xe3a09000
@@ -29595,14 +29884,14 @@ __ZN7CssMeshC2Ev:
 	.long	0xe58490bc
 	.long	0xe58430b0
 	.long	0xe8bd8090
-	.long	0x000ffcfc
-	.long	0x000ffcf8
-	.long	0x000ffd58
-	.long	0x000ffd34
+	.long	Lswv_345c84 - Lswv_245f88
+	.long	Lswv_345c84 - Lswv_245f8c
+	.long	Lswv_345cfc - Lswv_245fa4
+	.long	Lswv_345cdc - Lswv_245fa8
 	.globl	__ZN7CssMesh11AnimateRefsEiii
 	.private_extern	__ZN7CssMesh11AnimateRefsEiii
 __ZN7CssMesh11AnimateRefsEiii:
-swv_245fec:
+Lswv_245fec:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -29745,7 +30034,7 @@ __ZNK7CssMesh14GetIndexBufferEi:
 	.globl	__ZNK7CssMesh17UpdatePickDetailsER18CssRayIntersectionRK11CssPickData
 	.private_extern	__ZNK7CssMesh17UpdatePickDetailsER18CssRayIntersectionRK11CssPickData
 __ZNK7CssMesh17UpdatePickDetailsER18CssRayIntersectionRK11CssPickData:
-swv_24620c:
+Lswv_24620c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -30316,14 +30605,18 @@ __ZN7CssMeshC1Ev:
 	.long	0xe59f305c
 	.long	0xe08f1009
 	.long	0xe08fc003
+Lswv_246ae8:
 	.long	0xe281004c
+Lswv_246aec:
 	.long	0xe59f3050
 	.long	0xe59f1050
 	.long	0xe28c2008
 	.long	0xe5840004
 	.long	0xe08fc003
 	.long	0xe08f0001
+Lswv_246b04:
 	.long	0xe5842000
+Lswv_246b08:
 	.long	0xe2803008
 	.long	0xe28c2008
 	.long	0xe3a09000
@@ -30337,10 +30630,10 @@ __ZN7CssMeshC1Ev:
 	.long	0xe58490bc
 	.long	0xe58430b0
 	.long	0xe8bd8090
-	.long	0x000ff19c
-	.long	0x000ff198
-	.long	0x000ff1f8
-	.long	0x000ff1d4
+	.long	Lswv_345c84 - Lswv_246ae8
+	.long	Lswv_345c84 - Lswv_246aec
+	.long	Lswv_345cfc - Lswv_246b04
+	.long	Lswv_345cdc - Lswv_246b08
 	.globl	__ZN7CssMesh13SetAppearanceEiP13CssAppearance
 	.private_extern	__ZN7CssMesh13SetAppearanceEiP13CssAppearance
 __ZN7CssMesh13SetAppearanceEiP13CssAppearance:
@@ -30386,7 +30679,7 @@ __ZN7CssMesh13SetAppearanceEiP13CssAppearance:
 	.globl	__ZN7CssMesh11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN7CssMesh11SerializeInER27CssSerializeBufferObjectsIn
 __ZN7CssMesh11SerializeInER27CssSerializeBufferObjectsIn:
-swv_246be8:
+Lswv_246be8:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -30528,13 +30821,13 @@ swv_246be8:
 	.globl	__ZThn4_N7CssMeshD0Ev
 	.private_extern	__ZThn4_N7CssMeshD0Ev
 __ZThn4_N7CssMeshD0Ev:
-swv_246e10:
+Lswv_246e10:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN7CssMeshD0Ev
 	.private_extern	__ZN7CssMeshD0Ev
 __ZN7CssMeshD0Ev:
-swv_246e18:
+Lswv_246e18:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe59fc1d8
@@ -30542,9 +30835,11 @@ swv_246e18:
 	.long	0xe1a05000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_246e34:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe280304c
+Lswv_246e40:
 	.long	0xe595009c
 	.long	0xe5853004
 	.long	0xe3500000
@@ -30616,6 +30911,7 @@ swv_246e18:
 	.long	0xe3530000
 	.long	0xe08f900c
 	.long	0xe2890008
+Lswv_246f5c:
 	.long	0xe58500b0
 	.long	0x0a000002
 	.long	0xe1a00003
@@ -30627,10 +30923,11 @@ swv_246e18:
 	.long	0xe59f108c
 	.long	0xe79f0009
 	.long	0xe2802008
-swv_246f88:
+Lswv_246f88:
 	.long	0xe59500a4
 	.long	0xe08f3001
 	.long	0xe283e008
+Lswv_246f94:
 	.long	0xe3500000
 	.long	0xe58520b0
 	.long	0xe585e0a0
@@ -30643,7 +30940,7 @@ swv_246f88:
 	.long	0xe1a00005
 	.long	0xe79f3001
 	.long	0xe283e008
-swv_246fc4:
+Lswv_246fc4:
 	.long	0xe585e0a0
 	.long	0xeb0017f3
 	.long	0xe1a00005
@@ -30659,12 +30956,12 @@ swv_246fc4:
 	.long	0x0affffee
 	.long	0xeb00c197
 	.long	0xeaffffec
-	.long	0x000fee50
-	.long	0x000fee44
-	.long	0x000fed80
-	.long	swv_got_0 - swv_246f88
-	.long	0x000fed68
-	.long	swv_got_0 - swv_246fc4
+	.long	Lswv_345c84 - Lswv_246e34
+	.long	Lswv_345c84 - Lswv_246e40
+	.long	Lswv_345cdc - Lswv_246f5c
+	.long	swv_got_0 - Lswv_246f88
+	.long	Lswv_345cfc - Lswv_246f94
+	.long	swv_got_0 - Lswv_246fc4
 	.globl	__ZN7CssMeshD2Ev
 	.private_extern	__ZN7CssMeshD2Ev
 __ZN7CssMeshD2Ev:
@@ -30675,9 +30972,11 @@ __ZN7CssMeshD2Ev:
 	.long	0xe1a05000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_247034:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe280304c
+Lswv_247040:
 	.long	0xe595009c
 	.long	0xe5853004
 	.long	0xe3500000
@@ -30749,6 +31048,7 @@ __ZN7CssMeshD2Ev:
 	.long	0xe3530000
 	.long	0xe08f900c
 	.long	0xe2890008
+Lswv_24715c:
 	.long	0xe58500b0
 	.long	0x0a000002
 	.long	0xe1a00003
@@ -30760,10 +31060,11 @@ __ZN7CssMeshD2Ev:
 	.long	0xe59f1084
 	.long	0xe79f0009
 	.long	0xe2802008
-swv_247188:
+Lswv_247188:
 	.long	0xe59500a4
 	.long	0xe08f3001
 	.long	0xe283e008
+Lswv_247194:
 	.long	0xe3500000
 	.long	0xe58520b0
 	.long	0xe585e0a0
@@ -30776,7 +31077,7 @@ swv_247188:
 	.long	0xe1a00005
 	.long	0xe79f3001
 	.long	0xe283e008
-swv_2471c4:
+Lswv_2471c4:
 	.long	0xe585e0a0
 	.long	0xeb001773
 	.long	0xe8bd80b0
@@ -30790,27 +31091,27 @@ swv_2471c4:
 	.long	0x0afffff0
 	.long	0xeb00c119
 	.long	0xeaffffee
-	.long	0x000fec50
-	.long	0x000fec44
-	.long	0x000feb80
-	.long	swv_got_0 - swv_247188
-	.long	0x000feb68
-	.long	swv_got_0 - swv_2471c4
+	.long	Lswv_345c84 - Lswv_247034
+	.long	Lswv_345c84 - Lswv_247040
+	.long	Lswv_345cdc - Lswv_24715c
+	.long	swv_got_0 - Lswv_247188
+	.long	Lswv_345cfc - Lswv_247194
+	.long	swv_got_0 - Lswv_2471c4
 	.globl	__ZThn4_N7CssMeshD1Ev
 	.private_extern	__ZThn4_N7CssMeshD1Ev
 __ZThn4_N7CssMeshD1Ev:
-swv_247210:
+Lswv_247210:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN7CssMeshD1Ev
 	.private_extern	__ZN7CssMeshD1Ev
 __ZN7CssMeshD1Ev:
-swv_247218:
+Lswv_247218:
 	.long	0xeaffff7e
 	.globl	__ZNK7CssMesh24GetRenderingVertexBufferEb
 	.private_extern	__ZNK7CssMesh24GetRenderingVertexBufferEb
 __ZNK7CssMesh24GetRenderingVertexBufferEb:
-swv_24721c:
+Lswv_24721c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe24dd004
@@ -30830,7 +31131,7 @@ swv_24721c:
 	.globl	__ZN7CssMesh7GetpRefEi
 	.private_extern	__ZN7CssMesh7GetpRefEi
 __ZN7CssMesh7GetpRefEi:
-swv_24725c:
+Lswv_24725c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe24dd014
@@ -30858,7 +31159,7 @@ swv_24725c:
 	.globl	__ZN8CssArrayIP14CssIndexBufferE7DestroyEPv
 	.private_extern	__ZN8CssArrayIP14CssIndexBufferE7DestroyEPv
 __ZN8CssArrayIP14CssIndexBufferE7DestroyEPv:
-swv_2472bc:
+Lswv_2472bc:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -30868,7 +31169,7 @@ swv_2472bc:
 	.globl	__ZN8CssArrayIP13CssAppearanceE7DestroyEPv
 	.private_extern	__ZN8CssArrayIP13CssAppearanceE7DestroyEPv
 __ZN8CssArrayIP13CssAppearanceE7DestroyEPv:
-swv_2472d4:
+Lswv_2472d4:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -30878,13 +31179,14 @@ swv_2472d4:
 	.globl	__ZN8CssArrayIP14CssIndexBufferED1Ev
 	.private_extern	__ZN8CssArrayIP14CssIndexBufferED1Ev
 __ZN8CssArrayIP14CssIndexBufferED1Ev:
-swv_2472ec:
+Lswv_2472ec:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_247304:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -30896,7 +31198,7 @@ swv_2472ec:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_247330:
+Lswv_247330:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -30904,12 +31206,12 @@ swv_247330:
 	.long	0x0afffff7
 	.long	0xeb00c0c4
 	.long	0xeafffff5
-	.long	0x000fe9f8
-	.long	swv_got_0 - swv_247330
+	.long	Lswv_345cfc - Lswv_247304
+	.long	swv_got_0 - Lswv_247330
 	.globl	__ZN8CssArrayIP14CssIndexBufferE8AllocateEi
 	.private_extern	__ZN8CssArrayIP14CssIndexBufferE8AllocateEi
 __ZN8CssArrayIP14CssIndexBufferE8AllocateEi:
-swv_247354:
+Lswv_247354:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -30919,7 +31221,7 @@ swv_247354:
 	.globl	__ZN8CssArrayIP13CssAppearanceE8AllocateEi
 	.private_extern	__ZN8CssArrayIP13CssAppearanceE8AllocateEi
 __ZN8CssArrayIP13CssAppearanceE8AllocateEi:
-swv_24736c:
+Lswv_24736c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -30929,7 +31231,7 @@ swv_24736c:
 	.globl	__ZN8CssArrayIP13CssAppearanceE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIP13CssAppearanceE9CopyArrayEPvS3_i
 __ZN8CssArrayIP13CssAppearanceE9CopyArrayEPvS3_i:
-swv_247384:
+Lswv_247384:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -31090,7 +31392,7 @@ swv_247384:
 	.globl	__ZN8CssArrayIP14CssIndexBufferE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIP14CssIndexBufferE9CopyArrayEPvS3_i
 __ZN8CssArrayIP14CssIndexBufferE9CopyArrayEPvS3_i:
-swv_2475f8:
+Lswv_2475f8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -31251,13 +31553,14 @@ swv_2475f8:
 	.globl	__ZN8CssArrayIP13CssAppearanceED0Ev
 	.private_extern	__ZN8CssArrayIP13CssAppearanceED0Ev
 __ZN8CssArrayIP13CssAppearanceED0Ev:
-swv_24786c:
+Lswv_24786c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_247884:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -31270,7 +31573,7 @@ swv_24786c:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_2478b4:
+Lswv_2478b4:
 	.long	0xe5849000
 	.long	0xeb00bf5f
 	.long	0xe8bd8090
@@ -31279,18 +31582,19 @@ swv_2478b4:
 	.long	0x0afffff5
 	.long	0xeb00bf62
 	.long	0xeafffff3
-	.long	0x000fe458
-	.long	swv_got_0 - swv_2478b4
+	.long	Lswv_345cdc - Lswv_247884
+	.long	swv_got_0 - Lswv_2478b4
 	.globl	__ZN8CssArrayIP13CssAppearanceED1Ev
 	.private_extern	__ZN8CssArrayIP13CssAppearanceED1Ev
 __ZN8CssArrayIP13CssAppearanceED1Ev:
-swv_2478dc:
+Lswv_2478dc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2478f4:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -31302,7 +31606,7 @@ swv_2478dc:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_247920:
+Lswv_247920:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -31310,18 +31614,19 @@ swv_247920:
 	.long	0x0afffff7
 	.long	0xeb00bf48
 	.long	0xeafffff5
-	.long	0x000fe3e8
-	.long	swv_got_0 - swv_247920
+	.long	Lswv_345cdc - Lswv_2478f4
+	.long	swv_got_0 - Lswv_247920
 	.globl	__ZN8CssArrayIP14CssIndexBufferED0Ev
 	.private_extern	__ZN8CssArrayIP14CssIndexBufferED0Ev
 __ZN8CssArrayIP14CssIndexBufferED0Ev:
-swv_247944:
+Lswv_247944:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_24795c:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -31334,7 +31639,7 @@ swv_247944:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_24798c:
+Lswv_24798c:
 	.long	0xe5849000
 	.long	0xeb00bf29
 	.long	0xe8bd8090
@@ -31343,12 +31648,12 @@ swv_24798c:
 	.long	0x0afffff5
 	.long	0xeb00bf2c
 	.long	0xeafffff3
-	.long	0x000fe3a0
-	.long	swv_got_0 - swv_24798c
+	.long	Lswv_345cfc - Lswv_24795c
+	.long	swv_got_0 - Lswv_24798c
 	.globl	__ZNK7CssMesh5CloneEv
 	.private_extern	__ZNK7CssMesh5CloneEv
 __ZNK7CssMesh5CloneEv:
-swv_2479b4:
+Lswv_2479b4:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -31365,9 +31670,13 @@ swv_2479b4:
 	.long	0xe59f9ad4
 	.long	0xe08fa00c
 	.long	0xe08f6003
+Lswv_2479f4:
 	.long	0xe08f5009
+Lswv_2479f8:
 	.long	0xe08f0001
+Lswv_2479fc:
 	.long	0xe286e008
+Lswv_247a00:
 	.long	0xe28a9008
 	.long	0xe588e0a0
 	.long	0xe58890b0
@@ -32054,26 +32363,26 @@ swv_2479b4:
 	.long	0xeb0012dc
 	.long	0xe1a06005
 	.long	0xeafffd97
-	.long	0x000fe2e8
-	.long	0x000fe304
-	.long	0x000fe284
-	.long	0x000fe288
+	.long	Lswv_345cdc - Lswv_2479f4
+	.long	Lswv_345cfc - Lswv_2479f8
+	.long	Lswv_345c84 - Lswv_247a00
+	.long	Lswv_345c84 - Lswv_2479fc
 	.globl	__ZThn4_NK15CssMorphingMesh4TypeEv
 	.private_extern	__ZThn4_NK15CssMorphingMesh4TypeEv
 __ZThn4_NK15CssMorphingMesh4TypeEv:
-swv_2484c8:
+Lswv_2484c8:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK15CssMorphingMesh4TypeEv
 	.private_extern	__ZNK15CssMorphingMesh4TypeEv
 __ZNK15CssMorphingMesh4TypeEv:
-swv_2484d0:
+Lswv_2484d0:
 	.long	0xe3a0000f
 	.long	0xe12fff1e
 	.globl	__ZN15CssMorphingMesh11SetPropertyEiiPf
 	.private_extern	__ZN15CssMorphingMesh11SetPropertyEiiPf
 __ZN15CssMorphingMesh11SetPropertyEiiPf:
-swv_2484d8:
+Lswv_2484d8:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe300c10a
@@ -32087,7 +32396,7 @@ swv_2484d8:
 	.globl	__ZNK15CssMorphingMesh21HasAnimatablePropertyEi
 	.private_extern	__ZNK15CssMorphingMesh21HasAnimatablePropertyEi
 __ZNK15CssMorphingMesh21HasAnimatablePropertyEi:
-swv_248500:
+Lswv_248500:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe24130ff
@@ -32290,7 +32599,7 @@ __ZN15CssMorphingMesh9ConstructEP15CssVertexBufferiPKP11CssRefCountP14CssIndexBu
 	.globl	__ZN15CssMorphingMesh11AnimateRefsEiii
 	.private_extern	__ZN15CssMorphingMesh11AnimateRefsEiii
 __ZN15CssMorphingMesh11AnimateRefsEiii:
-swv_248804:
+Lswv_248804:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -32665,7 +32974,7 @@ __ZN15CssMorphingMesh13GetWeightsRefEPiPPf:
 	.globl	__ZN15CssMorphingMesh11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN15CssMorphingMesh11SerializeInER27CssSerializeBufferObjectsIn
 __ZN15CssMorphingMesh11SerializeInER27CssSerializeBufferObjectsIn:
-swv_248dac:
+Lswv_248dac:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -32760,11 +33069,14 @@ __ZN15CssMorphingMeshC1Ev:
 	.long	0xe59f0080
 	.long	0xe08f9002
 	.long	0xe2891008
+Lswv_248f18:
 	.long	0xe59f9078
 	.long	0xe08f3000
 	.long	0xe5841000
+Lswv_248f24:
 	.long	0xe08f1009
 	.long	0xe283c04c
+Lswv_248f2c:
 	.long	0xe2810008
 	.long	0xe59f3064
 	.long	0xe59f1064
@@ -32772,7 +33084,9 @@ __ZN15CssMorphingMeshC1Ev:
 	.long	0xe58400c8
 	.long	0xe08fc003
 	.long	0xe08f0001
+Lswv_248f48:
 	.long	0xe28c9008
+Lswv_248f4c:
 	.long	0xe2803008
 	.long	0xe3a02001
 	.long	0xe5c420c0
@@ -32790,11 +33104,11 @@ __ZN15CssMorphingMeshC1Ev:
 	.long	0xe58420f4
 	.long	0xe58430e8
 	.long	0xe8bd8090
-	.long	0x000fce04
-	.long	0x000fcdf8
-	.long	0x000fc9c0
-	.long	0x000fce2c
-	.long	0x000fcc88
+	.long	Lswv_345d1c - Lswv_248f18
+	.long	Lswv_345d1c - Lswv_248f24
+	.long	Lswv_3458ec - Lswv_248f2c
+	.long	Lswv_345d74 - Lswv_248f48
+	.long	Lswv_345bd4 - Lswv_248f4c
 	.globl	__ZN15CssMorphingMeshD2Ev
 	.private_extern	__ZN15CssMorphingMeshD2Ev
 __ZN15CssMorphingMeshD2Ev:
@@ -32805,9 +33119,11 @@ __ZN15CssMorphingMeshD2Ev:
 	.long	0xe1a05000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_248fc0:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe280304c
+Lswv_248fcc:
 	.long	0xe59500c4
 	.long	0xe5853004
 	.long	0xe3500000
@@ -32849,6 +33165,7 @@ __ZN15CssMorphingMeshD2Ev:
 	.long	0xe59f00fc
 	.long	0xe08f3000
 	.long	0xe59500ec
+Lswv_249070:
 	.long	0xe283e008
 	.long	0xe585e0e8
 	.long	0xe3500000
@@ -32861,9 +33178,10 @@ __ZN15CssMorphingMeshD2Ev:
 	.long	0xe59fc0d4
 	.long	0xe79f3000
 	.long	0xe59500dc
-swv_2490a0:
+Lswv_2490a0:
 	.long	0xe08f900c
 	.long	0xe283e008
+Lswv_2490a8:
 	.long	0xe3500000
 	.long	0xe2892008
 	.long	0xe585e0e8
@@ -32877,9 +33195,10 @@ swv_2490a0:
 	.long	0xe59fc0a0
 	.long	0xe79f3000
 	.long	0xe59500cc
-swv_2490dc:
+Lswv_2490dc:
 	.long	0xe08f900c
 	.long	0xe283e008
+Lswv_2490e4:
 	.long	0xe3500000
 	.long	0xe2892008
 	.long	0xe585e0d8
@@ -32893,7 +33212,7 @@ swv_2490dc:
 	.long	0xe1a00005
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_249118:
+Lswv_249118:
 	.long	0xe58520c8
 	.long	0xebfff7bd
 	.long	0xe8bd80b0
@@ -32912,35 +33231,35 @@ swv_249118:
 	.long	0x0affffdc
 	.long	0xeb00b93f
 	.long	0xeaffffda
-	.long	0x000fcd5c
-	.long	0x000fcd50
-	.long	0x000fcb64
-	.long	swv_got_0 - swv_2490a0
-	.long	0x000fcccc
-	.long	swv_got_0 - swv_2490dc
-	.long	0x000fc808
-	.long	swv_got_0 - swv_249118
+	.long	Lswv_345d1c - Lswv_248fc0
+	.long	Lswv_345d1c - Lswv_248fcc
+	.long	Lswv_345bd4 - Lswv_249070
+	.long	swv_got_0 - Lswv_2490a0
+	.long	Lswv_345d74 - Lswv_2490a8
+	.long	swv_got_0 - Lswv_2490dc
+	.long	Lswv_3458ec - Lswv_2490e4
+	.long	swv_got_0 - Lswv_249118
 	.globl	__ZThn4_N15CssMorphingMeshD1Ev
 	.private_extern	__ZThn4_N15CssMorphingMeshD1Ev
 __ZThn4_N15CssMorphingMeshD1Ev:
-swv_249180:
+Lswv_249180:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN15CssMorphingMeshD1Ev
 	.private_extern	__ZN15CssMorphingMeshD1Ev
 __ZN15CssMorphingMeshD1Ev:
-swv_249188:
+Lswv_249188:
 	.long	0xeaffff85
 	.globl	__ZThn4_N15CssMorphingMeshD0Ev
 	.private_extern	__ZThn4_N15CssMorphingMeshD0Ev
 __ZThn4_N15CssMorphingMeshD0Ev:
-swv_24918c:
+Lswv_24918c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN15CssMorphingMeshD0Ev
 	.private_extern	__ZN15CssMorphingMeshD0Ev
 __ZN15CssMorphingMeshD0Ev:
-swv_249194:
+Lswv_249194:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe59fc1b4
@@ -32948,9 +33267,11 @@ swv_249194:
 	.long	0xe1a05000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_2491b0:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe280304c
+Lswv_2491bc:
 	.long	0xe59500c4
 	.long	0xe5853004
 	.long	0xe3500000
@@ -32992,6 +33313,7 @@ swv_249194:
 	.long	0xe59f0104
 	.long	0xe08f3000
 	.long	0xe59500ec
+Lswv_249260:
 	.long	0xe283e008
 	.long	0xe585e0e8
 	.long	0xe3500000
@@ -33004,9 +33326,10 @@ swv_249194:
 	.long	0xe59fc0dc
 	.long	0xe79f3000
 	.long	0xe59500dc
-swv_249290:
+Lswv_249290:
 	.long	0xe08f900c
 	.long	0xe283e008
+Lswv_249298:
 	.long	0xe3500000
 	.long	0xe2892008
 	.long	0xe585e0e8
@@ -33020,9 +33343,10 @@ swv_249290:
 	.long	0xe59fc0a8
 	.long	0xe79f3000
 	.long	0xe59500cc
-swv_2492cc:
+Lswv_2492cc:
 	.long	0xe08f900c
 	.long	0xe283e008
+Lswv_2492d4:
 	.long	0xe3500000
 	.long	0xe2892008
 	.long	0xe585e0d8
@@ -33036,7 +33360,7 @@ swv_2492cc:
 	.long	0xe1a00005
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_249308:
+Lswv_249308:
 	.long	0xe58520c8
 	.long	0xebfff741
 	.long	0xe1a00005
@@ -33057,14 +33381,14 @@ swv_249308:
 	.long	0x0affffda
 	.long	0xeb00b8c1
 	.long	0xeaffffd8
-	.long	0x000fcb6c
-	.long	0x000fcb60
-	.long	0x000fc974
-	.long	swv_got_0 - swv_249290
-	.long	0x000fcadc
-	.long	swv_got_0 - swv_2492cc
-	.long	0x000fc618
-	.long	swv_got_0 - swv_249308
+	.long	Lswv_345d1c - Lswv_2491b0
+	.long	Lswv_345d1c - Lswv_2491bc
+	.long	Lswv_345bd4 - Lswv_249260
+	.long	swv_got_0 - Lswv_249290
+	.long	Lswv_345d74 - Lswv_249298
+	.long	swv_got_0 - Lswv_2492cc
+	.long	Lswv_3458ec - Lswv_2492d4
+	.long	swv_got_0 - Lswv_249308
 	.globl	__ZNK15CssMorphingMesh21GetMorphedVertexArrayENS_18EssVertexArrayTypeE
 	.private_extern	__ZNK15CssMorphingMesh21GetMorphedVertexArrayENS_18EssVertexArrayTypeE
 __ZNK15CssMorphingMesh21GetMorphedVertexArrayENS_18EssVertexArrayTypeE:
@@ -33978,7 +34302,7 @@ __ZNK15CssMorphingMesh21GetMorphedVertexArrayENS_18EssVertexArrayTypeE:
 	.globl	__ZNK15CssMorphingMesh24GetRenderingVertexBufferEb
 	.private_extern	__ZNK15CssMorphingMesh24GetRenderingVertexBufferEb
 __ZNK15CssMorphingMesh24GetRenderingVertexBufferEb:
-swv_24a1a4:
+Lswv_24a1a4:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -34426,7 +34750,7 @@ swv_24a1a4:
 	.globl	__ZN15CssMorphingMesh7GetpRefEi
 	.private_extern	__ZN15CssMorphingMesh7GetpRefEi
 __ZN15CssMorphingMesh7GetpRefEi:
-swv_24a894:
+Lswv_24a894:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe24dd01c
@@ -34469,7 +34793,7 @@ swv_24a894:
 	.globl	__ZN8CssArrayIP15CssVertexBufferE7DestroyEPv
 	.private_extern	__ZN8CssArrayIP15CssVertexBufferE7DestroyEPv
 __ZN8CssArrayIP15CssVertexBufferE7DestroyEPv:
-swv_24a930:
+Lswv_24a930:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -34479,7 +34803,7 @@ swv_24a930:
 	.globl	__ZN8CssArrayIP15CssVertexBufferE8AllocateEi
 	.private_extern	__ZN8CssArrayIP15CssVertexBufferE8AllocateEi
 __ZN8CssArrayIP15CssVertexBufferE8AllocateEi:
-swv_24a948:
+Lswv_24a948:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -34489,7 +34813,7 @@ swv_24a948:
 	.globl	__ZN8CssArrayIP15CssVertexBufferE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIP15CssVertexBufferE9CopyArrayEPvS3_i
 __ZN8CssArrayIP15CssVertexBufferE9CopyArrayEPvS3_i:
-swv_24a960:
+Lswv_24a960:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -34650,13 +34974,14 @@ swv_24a960:
 	.globl	__ZN8CssArrayIP15CssVertexBufferED0Ev
 	.private_extern	__ZN8CssArrayIP15CssVertexBufferED0Ev
 __ZN8CssArrayIP15CssVertexBufferED0Ev:
-swv_24abd4:
+Lswv_24abd4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_24abec:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -34669,7 +34994,7 @@ swv_24abd4:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_24ac1c:
+Lswv_24ac1c:
 	.long	0xe5849000
 	.long	0xeb00b285
 	.long	0xe8bd8090
@@ -34678,18 +35003,19 @@ swv_24ac1c:
 	.long	0x0afffff5
 	.long	0xeb00b288
 	.long	0xeafffff3
-	.long	0x000fb188
-	.long	swv_got_0 - swv_24ac1c
+	.long	Lswv_345d74 - Lswv_24abec
+	.long	swv_got_0 - Lswv_24ac1c
 	.globl	__ZN8CssArrayIP15CssVertexBufferED1Ev
 	.private_extern	__ZN8CssArrayIP15CssVertexBufferED1Ev
 __ZN8CssArrayIP15CssVertexBufferED1Ev:
-swv_24ac44:
+Lswv_24ac44:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_24ac5c:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -34701,7 +35027,7 @@ swv_24ac44:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_24ac88:
+Lswv_24ac88:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -34709,8 +35035,8 @@ swv_24ac88:
 	.long	0x0afffff7
 	.long	0xeb00b26e
 	.long	0xeafffff5
-	.long	0x000fb118
-	.long	swv_got_0 - swv_24ac88
+	.long	Lswv_345d74 - Lswv_24ac5c
+	.long	swv_got_0 - Lswv_24ac88
 	.globl	__ZN7CssMesh11CloneHelperERKS_
 	.private_extern	__ZN7CssMesh11CloneHelperERKS_
 __ZN7CssMesh11CloneHelperERKS_:
@@ -35381,7 +35707,7 @@ __ZN7CssMesh11CloneHelperERKS_:
 	.globl	__ZNK15CssMorphingMesh5CloneEv
 	.private_extern	__ZNK15CssMorphingMesh5CloneEv
 __ZNK15CssMorphingMesh5CloneEv:
-swv_24b70c:
+Lswv_24b70c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0500
@@ -35395,8 +35721,10 @@ swv_24b70c:
 	.long	0xe59fc540
 	.long	0xe08f2004
 	.long	0xe282104c
+Lswv_24b740:
 	.long	0xe08f900c
 	.long	0xe2898008
+Lswv_24b748:
 	.long	0xe5851004
 	.long	0xe59f952c
 	.long	0xe59f152c
@@ -35405,9 +35733,12 @@ swv_24b70c:
 	.long	0xe3a00001
 	.long	0xe08fe003
 	.long	0xe08f8009
+Lswv_24b768:
 	.long	0xe5c500c0
+Lswv_24b76c:
 	.long	0xe08f0001
 	.long	0xe3a02000
+Lswv_24b774:
 	.long	0xe28ec008
 	.long	0xe2803008
 	.long	0xe58520c4
@@ -35729,11 +36060,11 @@ swv_24b70c:
 	.long	0xe5803008
 	.long	0x1affffcc
 	.long	0xeaffffc7
-	.long	0x000fa5dc
-	.long	0x000fa5d4
-	.long	0x000fa608
-	.long	0x000fa460
-	.long	0x000fa184
+	.long	Lswv_345d1c - Lswv_24b740
+	.long	Lswv_345d1c - Lswv_24b748
+	.long	Lswv_345d74 - Lswv_24b76c
+	.long	Lswv_345bd4 - Lswv_24b774
+	.long	Lswv_3458ec - Lswv_24b768
 	.globl	__ZN7CssNode17SetPickingEnabledEb
 	.private_extern	__ZN7CssNode17SetPickingEnabledEb
 __ZN7CssNode17SetPickingEnabledEb:
@@ -35858,7 +36189,7 @@ __ZNK7CssNode19GetWorldMatrixScaleEv:
 	.globl	__ZNK7CssNode17UpdatePickDetailsER18CssRayIntersectionRK11CssPickData
 	.private_extern	__ZNK7CssNode17UpdatePickDetailsER18CssRayIntersectionRK11CssPickData
 __ZNK7CssNode17UpdatePickDetailsER18CssRayIntersectionRK11CssPickData:
-swv_24be1c:
+Lswv_24be1c:
 	.long	0xe12fff1e
 	.globl	__ZNK7CssNode14GetMatrixWorldEv
 	.private_extern	__ZNK7CssNode14GetMatrixWorldEv
@@ -35924,7 +36255,7 @@ __ZNK7CssNode18GetAlignmentTargetENS_23EssOrientationReferenceE:
 	.globl	__ZNK7CssNode21HasAnimatablePropertyEi
 	.private_extern	__ZNK7CssNode21HasAnimatablePropertyEi
 __ZNK7CssNode21HasAnimatablePropertyEi:
-swv_24befc:
+Lswv_24befc:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59f2018
@@ -35939,7 +36270,7 @@ swv_24befc:
 	.globl	__ZN7CssNode19SetRenderingEnabledEb
 	.private_extern	__ZN7CssNode19SetRenderingEnabledEb
 __ZN7CssNode19SetRenderingEnabledEb:
-swv_24bf28:
+Lswv_24bf28:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe5d02041
@@ -36203,8 +36534,10 @@ __ZN7CssNodeC2Ev:
 	.long	0xe59f1064
 	.long	0xe08f200c
 	.long	0xe2829008
+Lswv_24c314:
 	.long	0xe08f0001
 	.long	0xe5849000
+Lswv_24c31c:
 	.long	0xe3a09000
 	.long	0xe289100b
 	.long	0xe2803040
@@ -36226,8 +36559,8 @@ __ZN7CssNodeC2Ev:
 	.long	0xe5843094
 	.long	0xe5843098
 	.long	0xe8bd8090
-	.long	0x000f9a80
-	.long	0x000f9a78
+	.long	Lswv_345d94 - Lswv_24c314
+	.long	Lswv_345d94 - Lswv_24c31c
 	.globl	__ZNK7CssNode21GetAlignmentReferenceENS_23EssOrientationReferenceE
 	.private_extern	__ZNK7CssNode21GetAlignmentReferenceENS_23EssOrientationReferenceE
 __ZNK7CssNode21GetAlignmentReferenceENS_23EssOrientationReferenceE:
@@ -36256,7 +36589,7 @@ __ZNK7CssNode21GetAlignmentReferenceENS_23EssOrientationReferenceE:
 	.globl	__ZN7CssNode11SetPropertyEiiPf
 	.private_extern	__ZN7CssNode11SetPropertyEiiPf
 __ZN7CssNode11SetPropertyEiiPf:
-swv_24c3d0:
+Lswv_24c3d0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe300c10d
@@ -36318,7 +36651,7 @@ swv_24c3d0:
 	.globl	__ZN7CssNode11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN7CssNode11SerializeInER27CssSerializeBufferObjectsIn
 __ZN7CssNode11SerializeInER27CssSerializeBufferObjectsIn:
-swv_24c4b8:
+Lswv_24c4b8:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0500
@@ -36798,7 +37131,7 @@ __ZNK7CssNode19SetWorldMatrixCacheERK9CssMatrix:
 	.globl	__ZNK7CssNode19SetMatrixCacheDirtyEv
 	.private_extern	__ZNK7CssNode19SetMatrixCacheDirtyEv
 __ZNK7CssNode19SetMatrixCacheDirtyEv:
-swv_24cc04:
+Lswv_24cc04:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe5d03020
@@ -37003,13 +37336,13 @@ __ZN7CssNode6UnLinkEv:
 	.globl	__ZThn4_N7CssNodeD0Ev
 	.private_extern	__ZThn4_N7CssNodeD0Ev
 __ZThn4_N7CssNodeD0Ev:
-swv_24cf10:
+Lswv_24cf10:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN7CssNodeD0Ev
 	.private_extern	__ZN7CssNodeD0Ev
 __ZN7CssNodeD0Ev:
-swv_24cf18:
+Lswv_24cf18:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f306c
@@ -37017,8 +37350,10 @@ swv_24cf18:
 	.long	0xe1a04000
 	.long	0xe08fe003
 	.long	0xe5903028
+Lswv_24cf34:
 	.long	0xe08f2009
 	.long	0xe28ec008
+Lswv_24cf3c:
 	.long	0xe3530000
 	.long	0xe2821040
 	.long	0xe580c000
@@ -37041,8 +37376,8 @@ swv_24cf18:
 	.long	0xe1a00004
 	.long	0xeb00a9aa
 	.long	0xe8bd8090
-	.long	0x000f8e60
-	.long	0x000f8e58
+	.long	Lswv_345d94 - Lswv_24cf34
+	.long	Lswv_345d94 - Lswv_24cf3c
 	.globl	__ZN7CssNodeD2Ev
 	.private_extern	__ZN7CssNodeD2Ev
 __ZN7CssNodeD2Ev:
@@ -37053,8 +37388,10 @@ __ZN7CssNodeD2Ev:
 	.long	0xe1a04000
 	.long	0xe08fe003
 	.long	0xe5903028
+Lswv_24cfb8:
 	.long	0xe08f2009
 	.long	0xe28ec008
+Lswv_24cfc0:
 	.long	0xe3530000
 	.long	0xe2821040
 	.long	0xe580c000
@@ -37075,18 +37412,18 @@ __ZN7CssNodeD2Ev:
 	.long	0xe1a00004
 	.long	0xeb00597e
 	.long	0xe8bd8090
-	.long	0x000f8ddc
-	.long	0x000f8dd4
+	.long	Lswv_345d94 - Lswv_24cfb8
+	.long	Lswv_345d94 - Lswv_24cfc0
 	.globl	__ZThn4_N7CssNodeD1Ev
 	.private_extern	__ZThn4_N7CssNodeD1Ev
 __ZThn4_N7CssNodeD1Ev:
-swv_24d018:
+Lswv_24d018:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN7CssNodeD1Ev
 	.private_extern	__ZN7CssNodeD1Ev
 __ZN7CssNodeD1Ev:
-swv_24d020:
+Lswv_24d020:
 	.long	0xeaffffdd
 	.globl	__ZN7CssNode18LinkAsFirstChildOfEPS_
 	.private_extern	__ZN7CssNode18LinkAsFirstChildOfEPS_
@@ -37941,7 +38278,9 @@ __ZN11CssObject3DC2Ev:
 	.long	0xe3a02000
 	.long	0xe08f1009
 	.long	0xe08f900c
+Lswv_24dd24:
 	.long	0xe2813008
+Lswv_24dd28:
 	.long	0xe2891030
 	.long	0xe5803000
 	.long	0xe3e03000
@@ -37952,8 +38291,8 @@ __ZN11CssObject3DC2Ev:
 	.long	0xe5803018
 	.long	0xe580201c
 	.long	0xe12fff1e
-	.long	0x000f80bc
-	.long	0x000f80b8
+	.long	Lswv_345de0 - Lswv_24dd24
+	.long	Lswv_345de0 - Lswv_24dd28
 	.globl	__ZN11CssObject3DC1Ev
 	.private_extern	__ZN11CssObject3DC1Ev
 __ZN11CssObject3DC1Ev:
@@ -37962,7 +38301,9 @@ __ZN11CssObject3DC1Ev:
 	.long	0xe3a02000
 	.long	0xe08f1009
 	.long	0xe08f900c
+Lswv_24dd6c:
 	.long	0xe2813008
+Lswv_24dd70:
 	.long	0xe2891030
 	.long	0xe5803000
 	.long	0xe3e03000
@@ -37973,8 +38314,8 @@ __ZN11CssObject3DC1Ev:
 	.long	0xe5803018
 	.long	0xe580201c
 	.long	0xe12fff1e
-	.long	0x000f8074
-	.long	0x000f8070
+	.long	Lswv_345de0 - Lswv_24dd6c
+	.long	Lswv_345de0 - Lswv_24dd70
 	.globl	__ZN11CssObject3D17RegisterFinalizerEPv
 	.private_extern	__ZN11CssObject3D17RegisterFinalizerEPv
 __ZN11CssObject3D17RegisterFinalizerEPv:
@@ -37990,13 +38331,13 @@ __ZNK11CssObject3D22GetAnimationTrackCountEv:
 	.globl	__ZNK11CssObject3D21HasAnimatablePropertyEi
 	.private_extern	__ZNK11CssObject3D21HasAnimatablePropertyEi
 __ZNK11CssObject3D21HasAnimatablePropertyEi:
-swv_24ddb8:
+Lswv_24ddb8:
 	.long	0xe3a00000
 	.long	0xe12fff1e
 	.globl	__ZN11CssObject3D11SetPropertyEiiPf
 	.private_extern	__ZN11CssObject3D11SetPropertyEiiPf
 __ZN11CssObject3D11SetPropertyEiiPf:
-swv_24ddc0:
+Lswv_24ddc0:
 	.long	0xe12fff1e
 	.globl	__ZN11CssObject3D4FindEi
 	.private_extern	__ZN11CssObject3D4FindEi
@@ -38478,6 +38819,7 @@ __ZN11CssObject3D17AddAnimationTrackEP17CssAnimationTrack:
 	.long	0xe59f304c
 	.long	0xe08fc003
 	.long	0xe28c9008
+Lswv_24e514:
 	.long	0xe5804004
 	.long	0xe5804008
 	.long	0xe580400c
@@ -38488,6 +38830,7 @@ __ZN11CssObject3D17AddAnimationTrackEP17CssAnimationTrack:
 	.long	0xe5809000
 	.long	0xe08f2004
 	.long	0xe2821008
+Lswv_24e53c:
 	.long	0xe1a04000
 	.long	0xe5801010
 	.long	0xe5850010
@@ -38496,8 +38839,8 @@ __ZN11CssObject3D17AddAnimationTrackEP17CssAnimationTrack:
 	.long	0xeb00a48a
 	.long	0xeaffffd5
 	.long	0xfffffaeb
-	.long	0x000f7908
-	.long	0x000f73b0
+	.long	Lswv_345e1c - Lswv_24e514
+	.long	Lswv_3458ec - Lswv_24e53c
 	.globl	__ZN11CssObject3D20RemoveUserParametersEv
 	.private_extern	__ZN11CssObject3D20RemoveUserParametersEv
 __ZN11CssObject3D20RemoveUserParametersEv:
@@ -38974,6 +39317,7 @@ __ZN11CssObject3D16SetUserParameterEiiPKh:
 	.long	0xe59f4028
 	.long	0xe08f2004
 	.long	0xe2821008
+Lswv_24eca4:
 	.long	0xe8800042
 	.long	0xe5806008
 	.long	0xe580600c
@@ -38983,7 +39327,7 @@ __ZN11CssObject3D16SetUserParameterEiiPKh:
 	.long	0xebff8974
 	.long	0xe1a01006
 	.long	0xeaffffd1
-	.long	0x000f7198
+	.long	Lswv_345e3c - Lswv_24eca4
 	.globl	__ZN11CssObject3D13GetReferencesEiPP11CssRefCount
 	.private_extern	__ZN11CssObject3D13GetReferencesEiPP11CssRefCount
 __ZN11CssObject3D13GetReferencesEiPP11CssRefCount:
@@ -39465,7 +39809,7 @@ __ZN11CssObject3D7AnimateEii:
 	.globl	__ZN11CssObject3D11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN11CssObject3D11SerializeInER27CssSerializeBufferObjectsIn
 __ZN11CssObject3D11SerializeInER27CssSerializeBufferObjectsIn:
-swv_24f42c:
+Lswv_24f42c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -39623,6 +39967,7 @@ swv_24f42c:
 	.long	0xe3a04000
 	.long	0xe08f900c
 	.long	0xe2891008
+Lswv_24f6a0:
 	.long	0xe5804004
 	.long	0xe5804008
 	.long	0xe580400c
@@ -39788,11 +40133,11 @@ swv_24f42c:
 	.long	0xe58dc004
 	.long	0x1affffdd
 	.long	0xeaffff50
-	.long	0x000f679c
+	.long	Lswv_345e3c - Lswv_24f6a0
 	.globl	__ZN11CssObject3D7GetpRefEi
 	.private_extern	__ZN11CssObject3D7GetpRefEi
 __ZN11CssObject3D7GetpRefEi:
-swv_24f938:
+Lswv_24f938:
 	.long	0xe5903010
 	.long	0xe3530000
 	.long	0x0a000005
@@ -39983,6 +40328,7 @@ __ZN11CssObject3D19CssAnimTrackManagerD1Ev:
 	.long	0xe59f009c
 	.long	0xe08f3000
 	.long	0xe5950014
+Lswv_24fc0c:
 	.long	0xe283c008
 	.long	0xe585c010
 	.long	0xe3500000
@@ -39995,10 +40341,11 @@ __ZN11CssObject3D19CssAnimTrackManagerD1Ev:
 	.long	0xe59fc074
 	.long	0xe79f0001
 	.long	0xe2803008
-swv_24fc3c:
+Lswv_24fc3c:
 	.long	0xe5950004
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_24fc48:
 	.long	0xe3500000
 	.long	0xe5853010
 	.long	0xe5852000
@@ -40010,7 +40357,7 @@ swv_24fc3c:
 	.long	0xe59f3040
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_24fc74:
+Lswv_24fc74:
 	.long	0xe5859000
 	.long	0xe8bd80b0
 	.long	0xe595001c
@@ -40023,10 +40370,10 @@ swv_24fc74:
 	.long	0x0afffff2
 	.long	0xeb009e6e
 	.long	0xeafffff0
-	.long	0x000f5ce0
-	.long	swv_got_0 - swv_24fc3c
-	.long	0x000f61d4
-	.long	swv_got_0 - swv_24fc74
+	.long	Lswv_3458ec - Lswv_24fc0c
+	.long	swv_got_0 - Lswv_24fc3c
+	.long	Lswv_345e1c - Lswv_24fc48
+	.long	swv_got_0 - Lswv_24fc74
 	.globl	__ZN11CssObject3D11CloneHelperERKS_
 	.private_extern	__ZN11CssObject3D11CloneHelperERKS_
 __ZN11CssObject3D11CloneHelperERKS_:
@@ -40341,6 +40688,7 @@ __ZN11CssObject3D11CloneHelperERKS_:
 	.long	0xe3a0b000
 	.long	0xe08f6002
 	.long	0xe286e008
+Lswv_250190:
 	.long	0xe580b004
 	.long	0xe580b008
 	.long	0xe580b00c
@@ -40461,17 +40809,17 @@ __ZN11CssObject3D11CloneHelperERKS_:
 	.long	0x1affffb0
 	.long	0xeaffff60
 	.long	0xfffffbb3
-	.long	0x000f5cac
+	.long	Lswv_345e3c - Lswv_250190
 	.globl	__ZThn4_N11CssObject3DD0Ev
 	.private_extern	__ZThn4_N11CssObject3DD0Ev
 __ZThn4_N11CssObject3DD0Ev:
-swv_250374:
+Lswv_250374:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN11CssObject3DD0Ev
 	.private_extern	__ZN11CssObject3DD0Ev
 __ZN11CssObject3DD0Ev:
-swv_25037c:
+Lswv_25037c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0500
@@ -40480,9 +40828,11 @@ swv_25037c:
 	.long	0xe1a05000
 	.long	0xe08f4009
 	.long	0xe2842008
+Lswv_25039c:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803030
+Lswv_2503a8:
 	.long	0xe5853004
 	.long	0xe5953014
 	.long	0xe2530000
@@ -40633,17 +40983,19 @@ swv_25037c:
 	.long	0xe59fe02c
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_250600:
 	.long	0xe08fc00e
 	.long	0xe1a00005
+Lswv_250608:
 	.long	0xe28c901c
 	.long	0xe8850208
 	.long	0xeb009c09
 	.long	0xe8bd0500
 	.long	0xe8bd80f0
-	.long	0x000f5a44
-	.long	0x000f5a38
-	.long	0x000f54a4
-	.long	0x000f549c
+	.long	Lswv_345de0 - Lswv_25039c
+	.long	Lswv_345de0 - Lswv_2503a8
+	.long	Lswv_345aa4 - Lswv_250600
+	.long	Lswv_345aa4 - Lswv_250608
 	.globl	__ZN11CssObject3DD2Ev
 	.private_extern	__ZN11CssObject3DD2Ev
 __ZN11CssObject3DD2Ev:
@@ -40655,9 +41007,11 @@ __ZN11CssObject3DD2Ev:
 	.long	0xe1a05000
 	.long	0xe08f4009
 	.long	0xe2842008
+Lswv_25064c:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803030
+Lswv_250658:
 	.long	0xe5853004
 	.long	0xe5953014
 	.long	0xe2530000
@@ -40808,30 +41162,32 @@ __ZN11CssObject3DD2Ev:
 	.long	0xe59f3024
 	.long	0xe08f1002
 	.long	0xe08fc003
+Lswv_2508b0:
 	.long	0xe2810008
+Lswv_2508b4:
 	.long	0xe28c901c
 	.long	0xe8850201
 	.long	0xe8bd0500
 	.long	0xe8bd80f0
-	.long	0x000f5794
-	.long	0x000f5788
-	.long	0x000f51f4
-	.long	0x000f51f0
+	.long	Lswv_345de0 - Lswv_25064c
+	.long	Lswv_345de0 - Lswv_250658
+	.long	Lswv_345aa4 - Lswv_2508b0
+	.long	Lswv_345aa4 - Lswv_2508b4
 	.globl	__ZThn4_N11CssObject3DD1Ev
 	.private_extern	__ZThn4_N11CssObject3DD1Ev
 __ZThn4_N11CssObject3DD1Ev:
-swv_2508d4:
+Lswv_2508d4:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN11CssObject3DD1Ev
 	.private_extern	__ZN11CssObject3DD1Ev
 __ZN11CssObject3DD1Ev:
-swv_2508dc:
+Lswv_2508dc:
 	.long	0xeaffff52
 	.globl	__ZN8CssArrayIP17CssAnimationTrackE7DestroyEPv
 	.private_extern	__ZN8CssArrayIP17CssAnimationTrackE7DestroyEPv
 __ZN8CssArrayIP17CssAnimationTrackE7DestroyEPv:
-swv_2508e0:
+Lswv_2508e0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -40841,7 +41197,7 @@ swv_2508e0:
 	.globl	__ZN8CssArrayIN11CssObject3D16SssUserParameterEE7DestroyEPv
 	.private_extern	__ZN8CssArrayIN11CssObject3D16SssUserParameterEE7DestroyEPv
 __ZN8CssArrayIN11CssObject3D16SssUserParameterEE7DestroyEPv:
-swv_2508f8:
+Lswv_2508f8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -40851,13 +41207,14 @@ swv_2508f8:
 	.globl	__ZN8CssArrayIP17CssAnimationTrackED1Ev
 	.private_extern	__ZN8CssArrayIP17CssAnimationTrackED1Ev
 __ZN8CssArrayIP17CssAnimationTrackED1Ev:
-swv_250910:
+Lswv_250910:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_250928:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -40869,7 +41226,7 @@ swv_250910:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_250954:
+Lswv_250954:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -40877,12 +41234,12 @@ swv_250954:
 	.long	0x0afffff7
 	.long	0xeb009b3b
 	.long	0xeafffff5
-	.long	0x000f54f4
-	.long	swv_got_0 - swv_250954
+	.long	Lswv_345e1c - Lswv_250928
+	.long	swv_got_0 - Lswv_250954
 	.globl	__ZN8CssArrayIP17CssAnimationTrackE8AllocateEi
 	.private_extern	__ZN8CssArrayIP17CssAnimationTrackE8AllocateEi
 __ZN8CssArrayIP17CssAnimationTrackE8AllocateEi:
-swv_250978:
+Lswv_250978:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -40892,7 +41249,7 @@ swv_250978:
 	.globl	__ZN8CssArrayIN11CssObject3D16SssUserParameterEE8AllocateEi
 	.private_extern	__ZN8CssArrayIN11CssObject3D16SssUserParameterEE8AllocateEi
 __ZN8CssArrayIN11CssObject3D16SssUserParameterEE8AllocateEi:
-swv_250990:
+Lswv_250990:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -40904,7 +41261,7 @@ swv_250990:
 	.globl	__ZN8CssArrayIN11CssObject3D16SssUserParameterEE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIN11CssObject3D16SssUserParameterEE9CopyArrayEPvS3_i
 __ZN8CssArrayIN11CssObject3D16SssUserParameterEE9CopyArrayEPvS3_i:
-swv_2509b0:
+Lswv_2509b0:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe1a0c002
@@ -41130,7 +41487,7 @@ swv_2509b0:
 	.globl	__ZN8CssArrayIP17CssAnimationTrackE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIP17CssAnimationTrackE9CopyArrayEPvS3_i
 __ZN8CssArrayIP17CssAnimationTrackE9CopyArrayEPvS3_i:
-swv_250d28:
+Lswv_250d28:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -41291,13 +41648,14 @@ swv_250d28:
 	.globl	__ZN8CssArrayIN11CssObject3D16SssUserParameterEED0Ev
 	.private_extern	__ZN8CssArrayIN11CssObject3D16SssUserParameterEED0Ev
 __ZN8CssArrayIN11CssObject3D16SssUserParameterEED0Ev:
-swv_250f9c:
+Lswv_250f9c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_250fb4:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -41310,7 +41668,7 @@ swv_250f9c:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_250fe4:
+Lswv_250fe4:
 	.long	0xe5849000
 	.long	0xeb009993
 	.long	0xe8bd8090
@@ -41319,18 +41677,19 @@ swv_250fe4:
 	.long	0x0afffff5
 	.long	0xeb009996
 	.long	0xeafffff3
-	.long	0x000f4e88
-	.long	swv_got_0 - swv_250fe4
+	.long	Lswv_345e3c - Lswv_250fb4
+	.long	swv_got_0 - Lswv_250fe4
 	.globl	__ZN8CssArrayIN11CssObject3D16SssUserParameterEED1Ev
 	.private_extern	__ZN8CssArrayIN11CssObject3D16SssUserParameterEED1Ev
 __ZN8CssArrayIN11CssObject3D16SssUserParameterEED1Ev:
-swv_25100c:
+Lswv_25100c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_251024:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -41342,7 +41701,7 @@ swv_25100c:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_251050:
+Lswv_251050:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -41350,18 +41709,19 @@ swv_251050:
 	.long	0x0afffff7
 	.long	0xeb00997c
 	.long	0xeafffff5
-	.long	0x000f4e18
-	.long	swv_got_0 - swv_251050
+	.long	Lswv_345e3c - Lswv_251024
+	.long	swv_got_0 - Lswv_251050
 	.globl	__ZN8CssArrayIP17CssAnimationTrackED0Ev
 	.private_extern	__ZN8CssArrayIP17CssAnimationTrackED0Ev
 __ZN8CssArrayIP17CssAnimationTrackED0Ev:
-swv_251074:
+Lswv_251074:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_25108c:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -41374,7 +41734,7 @@ swv_251074:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_2510bc:
+Lswv_2510bc:
 	.long	0xe5849000
 	.long	0xeb00995d
 	.long	0xe8bd8090
@@ -41383,8 +41743,8 @@ swv_2510bc:
 	.long	0x0afffff5
 	.long	0xeb009960
 	.long	0xeafffff3
-	.long	0x000f4d90
-	.long	swv_got_0 - swv_2510bc
+	.long	Lswv_345e1c - Lswv_25108c
+	.long	swv_got_0 - Lswv_2510bc
 	.globl	__ZN16CssObjectFactory23RegisterFactoryFunctionE13EssObjectTypePFP15IssSerializablevE
 	.private_extern	__ZN16CssObjectFactory23RegisterFactoryFunctionE13EssObjectTypePFP15IssSerializablevE
 __ZN16CssObjectFactory23RegisterFactoryFunctionE13EssObjectTypePFP15IssSerializablevE:
@@ -41425,7 +41785,7 @@ __ZN16CssObjectFactory12CreateObjectE13EssObjectType:
 	.globl	__ZN16CssObjectFactoryD0Ev
 	.private_extern	__ZN16CssObjectFactoryD0Ev
 __ZN16CssObjectFactoryD0Ev:
-swv_251160:
+Lswv_251160:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe3a03000
@@ -41438,6 +41798,7 @@ swv_251160:
 	.long	0xe28c3001
 	.long	0xe08f2009
 	.long	0xe2821008
+Lswv_251190:
 	.long	0xe780e10c
 	.long	0xe5801000
 	.long	0xe283e001
@@ -41462,11 +41823,11 @@ swv_251160:
 	.long	0xe5801090
 	.long	0xeb009913
 	.long	0xe8bd8080
-	.long	0x000f4ccc
+	.long	Lswv_345e5c - Lswv_251190
 	.globl	__ZN16CssObjectFactoryD1Ev
 	.private_extern	__ZN16CssObjectFactoryD1Ev
 __ZN16CssObjectFactoryD1Ev:
-swv_2511f4:
+Lswv_2511f4:
 	.long	0xe59f907c
 	.long	0xe3a03000
 	.long	0xe5803004
@@ -41474,6 +41835,7 @@ swv_2511f4:
 	.long	0xe283c001
 	.long	0xe08f2009
 	.long	0xe2821008
+Lswv_251210:
 	.long	0xe5801000
 	.long	0xe3a01000
 	.long	0xe7801103
@@ -41500,7 +41862,7 @@ swv_2511f4:
 	.long	0x1affffec
 	.long	0xe5801090
 	.long	0xe12fff1e
-	.long	0x000f4c4c
+	.long	Lswv_345e5c - Lswv_251210
 	.globl	__ZN16CssObjectFactory7DestroyEv
 	.private_extern	__ZN16CssObjectFactory7DestroyEv
 __ZN16CssObjectFactory7DestroyEv:
@@ -41532,6 +41894,7 @@ __ZN16CssObjectFactory6CreateEv:
 	.long	0xe3a0e000
 	.long	0xe08f2009
 	.long	0xe2821008
+Lswv_2512e0:
 	.long	0xe5801000
 	.long	0xe5840000
 	.long	0xe5803004
@@ -41562,7 +41925,7 @@ __ZN16CssObjectFactory6CreateEv:
 	.long	0xe5801090
 	.long	0xeb008fb5
 	.long	0xe8bd8090
-	.long	0x000f4b7c
+	.long	Lswv_345e5c - Lswv_2512e0
 	.globl	__ZN7CssPickC2Ev
 	.private_extern	__ZN7CssPickC2Ev
 __ZN7CssPickC2Ev:
@@ -42399,10 +42762,13 @@ __ZN11CssPickData11GetInstanceEv:
 	.long	0xe59f305c
 	.long	0xe08f2009
 	.long	0xe59f9058
+Lswv_25200c:
 	.long	0xe08fe003
 	.long	0xe2821008
+Lswv_252014:
 	.long	0xe08f2009
 	.long	0xe3a03000
+Lswv_25201c:
 	.long	0xe28ec008
 	.long	0xe8801002
 	.long	0xe580400c
@@ -42420,9 +42786,9 @@ __ZN11CssPickData11GetInstanceEv:
 	.long	0xeb0095c2
 	.long	0xe590002c
 	.long	0xe8bd80b0
-	.long	0x000f3e60
-	.long	0x000f3e68
-	.long	0x000f3e70
+	.long	Lswv_345e6c - Lswv_25200c
+	.long	Lswv_345e7c - Lswv_252014
+	.long	Lswv_345e8c - Lswv_25201c
 	.globl	__ZN7CssPick17PushInternalStateEP11CssPickData
 	.private_extern	__ZN7CssPick17PushInternalStateEP11CssPickData
 __ZN7CssPick17PushInternalStateEP11CssPickData:
@@ -43296,7 +43662,7 @@ __ZN7CssPick8PickNodeEP11CssPickDataPK7CssNode:
 	.globl	__ZN8CssArrayIN11CssPickData10SssPickRayEE8AllocateEi
 	.private_extern	__ZN8CssArrayIN11CssPickData10SssPickRayEE8AllocateEi
 __ZN8CssArrayIN11CssPickData10SssPickRayEE8AllocateEi:
-swv_252de0:
+Lswv_252de0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a04001
@@ -43388,7 +43754,7 @@ swv_252de0:
 	.globl	__ZN8CssArrayIN11CssPickData10SssPickRayEE7DestroyEPv
 	.private_extern	__ZN8CssArrayIN11CssPickData10SssPickRayEE7DestroyEPv
 __ZN8CssArrayIN11CssPickData10SssPickRayEE7DestroyEPv:
-swv_252f40:
+Lswv_252f40:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe3510000
@@ -43399,7 +43765,7 @@ swv_252f40:
 	.globl	__ZN8CssArrayIN11CssPickData10SssPickRayEE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIN11CssPickData10SssPickRayEE9CopyArrayEPvS3_i
 __ZN8CssArrayIN11CssPickData10SssPickRayEE9CopyArrayEPvS3_i:
-swv_252f5c:
+Lswv_252f5c:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe1a0c002
@@ -43665,13 +44031,14 @@ swv_252f5c:
 	.globl	__ZN8CssArrayIN11CssPickData10SssPickRayEED0Ev
 	.private_extern	__ZN8CssArrayIN11CssPickData10SssPickRayEED0Ev
 __ZN8CssArrayIN11CssPickData10SssPickRayEED0Ev:
-swv_253374:
+Lswv_253374:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1060
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_25338c:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -43685,7 +44052,7 @@ swv_253374:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_2533c0:
+Lswv_2533c0:
 	.long	0xe5849000
 	.long	0xeb00909c
 	.long	0xe8bd8090
@@ -43695,12 +44062,12 @@ swv_2533c0:
 	.long	0xe2400004
 	.long	0xeb00909e
 	.long	0xeafffff2
-	.long	0x000f2b00
-	.long	swv_got_0 - swv_2533c0
+	.long	Lswv_345e8c - Lswv_25338c
+	.long	swv_got_0 - Lswv_2533c0
 	.globl	__ZN11CssPickDataD1Ev
 	.private_extern	__ZN11CssPickDataD1Ev
 __ZN11CssPickDataD1Ev:
-swv_2533ec:
+Lswv_2533ec:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1074
@@ -43708,13 +44075,16 @@ swv_2533ec:
 	.long	0xe59fc070
 	.long	0xe08f0001
 	.long	0xe59f106c
+Lswv_253408:
 	.long	0xe2803008
 	.long	0xe5843000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_253418:
 	.long	0xe594000c
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_253424:
 	.long	0xe3500000
 	.long	0xe984000c
 	.long	0x0a000001
@@ -43726,7 +44096,7 @@ swv_2533ec:
 	.long	0xe59f3030
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_253450:
+Lswv_253450:
 	.long	0xe5849008
 	.long	0xe8bd8090
 	.long	0xe5940014
@@ -43735,20 +44105,21 @@ swv_253450:
 	.long	0xe2400004
 	.long	0xeb00907b
 	.long	0xeafffff4
-	.long	0x000f2a64
-	.long	0x000f2a58
-	.long	0x000f2a74
-	.long	swv_got_0 - swv_253450
+	.long	Lswv_345e6c - Lswv_253408
+	.long	Lswv_345e7c - Lswv_253424
+	.long	Lswv_345e8c - Lswv_253418
+	.long	swv_got_0 - Lswv_253450
 	.globl	__ZN8CssArrayIN11CssPickData10SssPickRayEED1Ev
 	.private_extern	__ZN8CssArrayIN11CssPickData10SssPickRayEED1Ev
 __ZN8CssArrayIN11CssPickData10SssPickRayEED1Ev:
-swv_253480:
+Lswv_253480:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_253498:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -43761,7 +44132,7 @@ swv_253480:
 	.long	0xe59f3028
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_2534c8:
+Lswv_2534c8:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -43770,12 +44141,12 @@ swv_2534c8:
 	.long	0xe2400004
 	.long	0xeb00905d
 	.long	0xeafffff4
-	.long	0x000f29f4
-	.long	swv_got_0 - swv_2534c8
+	.long	Lswv_345e8c - Lswv_253498
+	.long	swv_got_0 - Lswv_2534c8
 	.globl	__ZN8CssStackIN11CssPickData10SssPickRayEED1Ev
 	.private_extern	__ZN8CssStackIN11CssPickData10SssPickRayEED1Ev
 __ZN8CssStackIN11CssPickData10SssPickRayEED1Ev:
-swv_2534f0:
+Lswv_2534f0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc068
@@ -43783,9 +44154,11 @@ swv_2534f0:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_25350c:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_253518:
 	.long	0xe5940008
 	.long	0xe5843004
 	.long	0xe3500000
@@ -43798,7 +44171,7 @@ swv_2534f0:
 	.long	0xe59f202c
 	.long	0xe79f1002
 	.long	0xe2810008
-swv_253548:
+Lswv_253548:
 	.long	0xe5840004
 	.long	0xe8bd8090
 	.long	0xe5940010
@@ -43807,13 +44180,13 @@ swv_253548:
 	.long	0xe2400004
 	.long	0xeb00903d
 	.long	0xeafffff4
-	.long	0x000f2970
-	.long	0x000f2974
-	.long	swv_got_0 - swv_253548
+	.long	Lswv_345e7c - Lswv_25350c
+	.long	Lswv_345e8c - Lswv_253518
+	.long	swv_got_0 - Lswv_253548
 	.globl	__ZN8CssStackIN11CssPickData10SssPickRayEED0Ev
 	.private_extern	__ZN8CssStackIN11CssPickData10SssPickRayEED0Ev
 __ZN8CssStackIN11CssPickData10SssPickRayEED0Ev:
-swv_253574:
+Lswv_253574:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc070
@@ -43821,9 +44194,11 @@ swv_253574:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_253590:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_25359c:
 	.long	0xe5940008
 	.long	0xe5843004
 	.long	0xe3500000
@@ -43836,7 +44211,7 @@ swv_253574:
 	.long	0xe59f1034
 	.long	0xe79f0001
 	.long	0xe2803008
-swv_2535cc:
+Lswv_2535cc:
 	.long	0xe1a00004
 	.long	0xe5843004
 	.long	0xeb009018
@@ -43847,13 +44222,13 @@ swv_2535cc:
 	.long	0xe2400004
 	.long	0xeb00901a
 	.long	0xeafffff2
-	.long	0x000f28ec
-	.long	0x000f28f0
-	.long	swv_got_0 - swv_2535cc
+	.long	Lswv_345e7c - Lswv_253590
+	.long	Lswv_345e8c - Lswv_25359c
+	.long	swv_got_0 - Lswv_2535cc
 	.globl	__ZN11CssPickDataD0Ev
 	.private_extern	__ZN11CssPickDataD0Ev
 __ZN11CssPickDataD0Ev:
-swv_253600:
+Lswv_253600:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f107c
@@ -43862,11 +44237,14 @@ swv_253600:
 	.long	0xe59fc078
 	.long	0xe08f3000
 	.long	0xe08f0001
+Lswv_253620:
 	.long	0xe283e008
+Lswv_253624:
 	.long	0xe2803008
 	.long	0xe594000c
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_253634:
 	.long	0xe3500000
 	.long	0xe584e000
 	.long	0xe984000c
@@ -43880,7 +44258,7 @@ swv_253600:
 	.long	0xe1a00004
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_253668:
+Lswv_253668:
 	.long	0xe5842008
 	.long	0xeb008ff2
 	.long	0xe8bd8090
@@ -43890,38 +44268,38 @@ swv_253668:
 	.long	0xe2400004
 	.long	0xeb008ff4
 	.long	0xeafffff2
-	.long	0x000f2868
-	.long	0x000f284c
-	.long	0x000f2848
-	.long	swv_got_0 - swv_253668
+	.long	Lswv_345e8c - Lswv_253624
+	.long	Lswv_345e6c - Lswv_253620
+	.long	Lswv_345e7c - Lswv_253634
+	.long	swv_got_0 - Lswv_253668
 	.globl	__ZThn4_NK14CssPlasmaImage4TypeEv
 	.private_extern	__ZThn4_NK14CssPlasmaImage4TypeEv
 __ZThn4_NK14CssPlasmaImage4TypeEv:
-swv_25369c:
+Lswv_25369c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK14CssPlasmaImage4TypeEv
 	.private_extern	__ZNK14CssPlasmaImage4TypeEv
 __ZNK14CssPlasmaImage4TypeEv:
-swv_2536a4:
+Lswv_2536a4:
 	.long	0xe3a00017
 	.long	0xe12fff1e
 	.globl	__ZThn120_N14CssPlasmaImageD0Ev
 	.private_extern	__ZThn120_N14CssPlasmaImageD0Ev
 __ZThn120_N14CssPlasmaImageD0Ev:
-swv_2536ac:
+Lswv_2536ac:
 	.long	0xe2400078
 	.long	0xea000001
 	.globl	__ZThn4_N14CssPlasmaImageD0Ev
 	.private_extern	__ZThn4_N14CssPlasmaImageD0Ev
 __ZThn4_N14CssPlasmaImageD0Ev:
-swv_2536b4:
+Lswv_2536b4:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN14CssPlasmaImageD0Ev
 	.private_extern	__ZN14CssPlasmaImageD0Ev
 __ZN14CssPlasmaImageD0Ev:
-swv_2536bc:
+Lswv_2536bc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f2064
@@ -43929,10 +44307,13 @@ swv_2536bc:
 	.long	0xe1a04000
 	.long	0xe08f1002
 	.long	0xe59f205c
+Lswv_2536d8:
 	.long	0xe08fc00e
 	.long	0xe2813008
+Lswv_2536e0:
 	.long	0xe08f1002
 	.long	0xe28c9058
+Lswv_2536e8:
 	.long	0xe8800208
 	.long	0xe281306c
 	.long	0xe5803078
@@ -43951,9 +44332,9 @@ swv_2536bc:
 	.long	0xe1a00004
 	.long	0xeb008fc3
 	.long	0xe8bd8090
-	.long	0x000f27d4
-	.long	0x000f27cc
-	.long	0x000f27c4
+	.long	Lswv_345eac - Lswv_2536d8
+	.long	Lswv_345eac - Lswv_2536e0
+	.long	Lswv_345eac - Lswv_2536e8
 	.globl	__ZN14CssPlasmaImageD2Ev
 	.private_extern	__ZN14CssPlasmaImageD2Ev
 __ZN14CssPlasmaImageD2Ev:
@@ -43964,10 +44345,13 @@ __ZN14CssPlasmaImageD2Ev:
 	.long	0xe1a04000
 	.long	0xe08f1002
 	.long	0xe59f2054
+Lswv_253758:
 	.long	0xe08fc00e
 	.long	0xe2813008
+Lswv_253760:
 	.long	0xe08f1002
 	.long	0xe28c9058
+Lswv_253768:
 	.long	0xe8800208
 	.long	0xe281306c
 	.long	0xe5803078
@@ -43984,25 +44368,25 @@ __ZN14CssPlasmaImageD2Ev:
 	.long	0xe1a00004
 	.long	0xebffa763
 	.long	0xe8bd8090
-	.long	0x000f2754
-	.long	0x000f274c
-	.long	0x000f2744
+	.long	Lswv_345eac - Lswv_253758
+	.long	Lswv_345eac - Lswv_253760
+	.long	Lswv_345eac - Lswv_253768
 	.globl	__ZThn120_N14CssPlasmaImageD1Ev
 	.private_extern	__ZThn120_N14CssPlasmaImageD1Ev
 __ZThn120_N14CssPlasmaImageD1Ev:
-swv_2537b4:
+Lswv_2537b4:
 	.long	0xe2400078
 	.long	0xea000001
 	.globl	__ZThn4_N14CssPlasmaImageD1Ev
 	.private_extern	__ZThn4_N14CssPlasmaImageD1Ev
 __ZThn4_N14CssPlasmaImageD1Ev:
-swv_2537bc:
+Lswv_2537bc:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN14CssPlasmaImageD1Ev
 	.private_extern	__ZN14CssPlasmaImageD1Ev
 __ZN14CssPlasmaImageD1Ev:
-swv_2537c4:
+Lswv_2537c4:
 	.long	0xeaffffdc
 	.globl	__ZN14CssPlasmaImageC2Ev
 	.private_extern	__ZN14CssPlasmaImageC2Ev
@@ -44020,8 +44404,11 @@ __ZN14CssPlasmaImageC2Ev:
 	.long	0xe59f0194
 	.long	0xe08f900c
 	.long	0xe08f600e
+Lswv_2537fc:
 	.long	0xe08f2000
+Lswv_253800:
 	.long	0xe28400a0
+Lswv_253804:
 	.long	0xe2823008
 	.long	0xe2891058
 	.long	0xe5843000
@@ -44118,9 +44505,9 @@ __ZN14CssPlasmaImageC2Ev:
 	.long	0xe247d018
 	.long	0xe8bd0d00
 	.long	0xe8bd80f0
-	.long	0x000f26b0
-	.long	0x000f26ac
-	.long	0x000f26a8
+	.long	Lswv_345eac - Lswv_2537fc
+	.long	Lswv_345eac - Lswv_253800
+	.long	Lswv_345eac - Lswv_253804
 	.long	0x31417926
 	.globl	__ZN14CssPlasmaImageC1Ev
 	.private_extern	__ZN14CssPlasmaImageC1Ev
@@ -44259,6 +44646,7 @@ __ZNK14CssPlasmaImage11ReCalculateEv:
 	.long	0xe59f4cc4
 	.long	0xe08f2004
 	.long	0xe2821008
+Lswv_253b94:
 	.long	0xe5801000
 	.long	0xeb008c78
 	.long	0xe59d12f0
@@ -45075,7 +45463,7 @@ __ZNK14CssPlasmaImage11ReCalculateEv:
 	.long	0xe58d8024
 	.long	0xe58dc02c
 	.long	0xea000228
-	.long	0x000f238c
+	.long	Lswv_345f20 - Lswv_253b94
 	.long	0x7d710000
 	.long	0x0019660d
 	.long	0x3c6ef35f
@@ -46136,7 +46524,7 @@ __ZNK14CssPlasmaImage11ReCalculateEv:
 	.globl	__ZN14CssPlasmaImage11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN14CssPlasmaImage11SerializeInER27CssSerializeBufferObjectsIn
 __ZN14CssPlasmaImage11SerializeInER27CssSerializeBufferObjectsIn:
-swv_2558dc:
+Lswv_2558dc:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -47041,12 +47429,12 @@ __ZN14CssPlasmaImage9ConstructEv:
 	.globl	__ZNK14CssPlasmaImage6CommitEv
 	.private_extern	__ZNK14CssPlasmaImage6CommitEv
 __ZNK14CssPlasmaImage6CommitEv:
-swv_2566e4:
+Lswv_2566e4:
 	.long	0xe12fff1e
 	.globl	__ZN8CssArrayIlE7DestroyEPv
 	.private_extern	__ZN8CssArrayIlE7DestroyEPv
 __ZN8CssArrayIlE7DestroyEPv:
-swv_2566e8:
+Lswv_2566e8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -47056,7 +47444,7 @@ swv_2566e8:
 	.globl	__ZN8CssArrayIlE8AllocateEi
 	.private_extern	__ZN8CssArrayIlE8AllocateEi
 __ZN8CssArrayIlE8AllocateEi:
-swv_256700:
+Lswv_256700:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -47066,7 +47454,7 @@ swv_256700:
 	.globl	__ZN8CssArrayIlE9CopyArrayEPvS1_i
 	.private_extern	__ZN8CssArrayIlE9CopyArrayEPvS1_i
 __ZN8CssArrayIlE9CopyArrayEPvS1_i:
-swv_256718:
+Lswv_256718:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -47227,13 +47615,14 @@ swv_256718:
 	.globl	__ZN8CssArrayIlED1Ev
 	.private_extern	__ZN8CssArrayIlED1Ev
 __ZN8CssArrayIlED1Ev:
-swv_25698c:
+Lswv_25698c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2569a4:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -47245,7 +47634,7 @@ swv_25698c:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_2569d0:
+Lswv_2569d0:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -47253,18 +47642,19 @@ swv_2569d0:
 	.long	0x0afffff7
 	.long	0xeb00831c
 	.long	0xeafffff5
-	.long	0x000ef57c
-	.long	swv_got_0 - swv_2569d0
+	.long	Lswv_345f20 - Lswv_2569a4
+	.long	swv_got_0 - Lswv_2569d0
 	.globl	__ZN8CssArrayIlED0Ev
 	.private_extern	__ZN8CssArrayIlED0Ev
 __ZN8CssArrayIlED0Ev:
-swv_2569f4:
+Lswv_2569f4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_256a0c:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -47277,7 +47667,7 @@ swv_2569f4:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_256a3c:
+Lswv_256a3c:
 	.long	0xe5849000
 	.long	0xeb0082fd
 	.long	0xe8bd8090
@@ -47286,12 +47676,12 @@ swv_256a3c:
 	.long	0x0afffff5
 	.long	0xeb008300
 	.long	0xeafffff3
-	.long	0x000ef514
-	.long	swv_got_0 - swv_256a3c
+	.long	Lswv_345f20 - Lswv_256a0c
+	.long	swv_got_0 - Lswv_256a3c
 	.globl	__ZNK14CssPlasmaImage10GetpPixelsEv
 	.private_extern	__ZNK14CssPlasmaImage10GetpPixelsEv
 __ZNK14CssPlasmaImage10GetpPixelsEv:
-swv_256a64:
+Lswv_256a64:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a04000
@@ -47302,7 +47692,7 @@ swv_256a64:
 	.globl	__ZNK14CssPlasmaImage9GetHeightEv
 	.private_extern	__ZNK14CssPlasmaImage9GetHeightEv
 __ZNK14CssPlasmaImage9GetHeightEv:
-swv_256a80:
+Lswv_256a80:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a04000
@@ -47313,7 +47703,7 @@ swv_256a80:
 	.globl	__ZNK14CssPlasmaImage8GetWidthEv
 	.private_extern	__ZNK14CssPlasmaImage8GetWidthEv
 __ZNK14CssPlasmaImage8GetWidthEv:
-swv_256a9c:
+Lswv_256a9c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a04000
@@ -47324,7 +47714,7 @@ swv_256a9c:
 	.globl	__ZNK14CssPlasmaImage5CloneEv
 	.private_extern	__ZNK14CssPlasmaImage5CloneEv
 __ZNK14CssPlasmaImage5CloneEv:
-swv_256ab8:
+Lswv_256ab8:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe3a01000
@@ -47420,13 +47810,13 @@ __ZN14CssPolygonMode27EnablePerspectiveCorrectionEb:
 	.globl	__ZThn4_NK14CssPolygonMode4TypeEv
 	.private_extern	__ZThn4_NK14CssPolygonMode4TypeEv
 __ZThn4_NK14CssPolygonMode4TypeEv:
-swv_256be0:
+Lswv_256be0:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK14CssPolygonMode4TypeEv
 	.private_extern	__ZNK14CssPolygonMode4TypeEv
 __ZNK14CssPolygonMode4TypeEv:
-swv_256be8:
+Lswv_256be8:
 	.long	0xe3a00008
 	.long	0xe12fff1e
 	.globl	__ZN14CssPolygonModeC1Ev
@@ -47440,15 +47830,17 @@ __ZN14CssPolygonModeC1Ev:
 	.long	0xe59f2024
 	.long	0xe08fc003
 	.long	0xe08f1002
+Lswv_256c10:
 	.long	0xe28c9008
+Lswv_256c14:
 	.long	0xe2810034
 	.long	0xe3a030c9
 	.long	0xe5849000
 	.long	0xe5840004
 	.long	0xe5843020
 	.long	0xe8bd8090
-	.long	0x000ef330
-	.long	0x000ef32c
+	.long	Lswv_345f40 - Lswv_256c10
+	.long	Lswv_345f40 - Lswv_256c14
 	.globl	__ZN14CssPolygonMode20SetbTwoSidedLightingEb
 	.private_extern	__ZN14CssPolygonMode20SetbTwoSidedLightingEb
 __ZN14CssPolygonMode20SetbTwoSidedLightingEb:
@@ -47518,7 +47910,7 @@ __ZN14CssPolygonMode10SetShadingENS_10EssShadingE:
 	.globl	__ZN14CssPolygonMode11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN14CssPolygonMode11SerializeInER27CssSerializeBufferObjectsIn
 __ZN14CssPolygonMode11SerializeInER27CssSerializeBufferObjectsIn:
-swv_256d0c:
+Lswv_256d0c:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe1a05001
@@ -47616,13 +48008,13 @@ swv_256d0c:
 	.globl	__ZThn4_N14CssPolygonModeD0Ev
 	.private_extern	__ZThn4_N14CssPolygonModeD0Ev
 __ZThn4_N14CssPolygonModeD0Ev:
-swv_256e84:
+Lswv_256e84:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN14CssPolygonModeD0Ev
 	.private_extern	__ZN14CssPolygonModeD0Ev
 __ZN14CssPolygonModeD0Ev:
-swv_256e8c:
+Lswv_256e8c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fe02c
@@ -47630,7 +48022,9 @@ swv_256e8c:
 	.long	0xe1a04000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_256ea8:
 	.long	0xe28c9008
+Lswv_256eac:
 	.long	0xe2813034
 	.long	0xe5809000
 	.long	0xe5803004
@@ -47638,36 +48032,38 @@ swv_256e8c:
 	.long	0xe1a00004
 	.long	0xeb0081dd
 	.long	0xe8bd8090
-	.long	0x000ef098
-	.long	0x000ef094
+	.long	Lswv_345f40 - Lswv_256ea8
+	.long	Lswv_345f40 - Lswv_256eac
 	.globl	__ZThn4_N14CssPolygonModeD1Ev
 	.private_extern	__ZThn4_N14CssPolygonModeD1Ev
 __ZThn4_N14CssPolygonModeD1Ev:
-swv_256ed0:
+Lswv_256ed0:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN14CssPolygonModeD1Ev
 	.private_extern	__ZN14CssPolygonModeD1Ev
 __ZN14CssPolygonModeD1Ev:
-swv_256ed8:
+Lswv_256ed8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59fe020
 	.long	0xe59f2020
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_256ef0:
 	.long	0xe28c9008
+Lswv_256ef4:
 	.long	0xe2813034
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xebffe5c9
 	.long	0xe8bd8080
-	.long	0x000ef050
-	.long	0x000ef04c
+	.long	Lswv_345f40 - Lswv_256ef0
+	.long	Lswv_345f40 - Lswv_256ef4
 	.globl	__ZNK14CssPolygonMode5CloneEv
 	.private_extern	__ZNK14CssPolygonMode5CloneEv
 __ZNK14CssPolygonMode5CloneEv:
-swv_256f10:
+Lswv_256f10:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe3a01000
@@ -47681,7 +48077,9 @@ swv_256f10:
 	.long	0xe3a030c9
 	.long	0xe08f2009
 	.long	0xe08fe000
+Lswv_256f44:
 	.long	0xe2821034
+Lswv_256f48:
 	.long	0xe28ec008
 	.long	0xe5843020
 	.long	0xe584c000
@@ -47699,8 +48097,8 @@ swv_256f10:
 	.long	0xeb007fa3
 	.long	0xe1a00004
 	.long	0xe8bd80b0
-	.long	0x000eeffc
-	.long	0x000eeff8
+	.long	Lswv_345f40 - Lswv_256f44
+	.long	Lswv_345f40 - Lswv_256f48
 	.globl	__ZN13CssQuaternionaSERKS_
 	.private_extern	__ZN13CssQuaternionaSERKS_
 __ZN13CssQuaternionaSERKS_:
@@ -48593,10 +48991,11 @@ __ZN15CssRandomNumberC2Ev:
 	.long	0xe3a03000
 	.long	0xe08f2009
 	.long	0xe2821008
+Lswv_257cb8:
 	.long	0xe880000a
 	.long	0xe5803008
 	.long	0xe12fff1e
-	.long	0x000ee2c8
+	.long	Lswv_345f80 - Lswv_257cb8
 	.globl	__ZNK15CssRandomNumber6RandomEv
 	.private_extern	__ZNK15CssRandomNumber6RandomEv
 __ZNK15CssRandomNumber6RandomEv:
@@ -48612,51 +49011,54 @@ __ZNK15CssRandomNumber6RandomEv:
 	.globl	__ZN15CssRandomNumberD0Ev
 	.private_extern	__ZN15CssRandomNumberD0Ev
 __ZN15CssRandomNumberD0Ev:
-swv_257cec:
+Lswv_257cec:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59f2010
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_257d00:
 	.long	0xe5803000
 	.long	0xeb007e50
 	.long	0xe8bd8080
-	.long	0x000ee280
+	.long	Lswv_345f80 - Lswv_257d00
 	.globl	__ZN15CssRandomNumberD1Ev
 	.private_extern	__ZN15CssRandomNumberD1Ev
 __ZN15CssRandomNumberD1Ev:
-swv_257d10:
+Lswv_257d10:
 	.long	0xe59f200c
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_257d1c:
 	.long	0xe5803000
 	.long	0xe12fff1e
-	.long	0x000ee264
+	.long	Lswv_345f80 - Lswv_257d1c
 	.globl	__ZN15CssRandomNumberD2Ev
 	.private_extern	__ZN15CssRandomNumberD2Ev
 __ZN15CssRandomNumberD2Ev:
 	.long	0xe59f200c
 	.long	0xe08f1002
 	.long	0xe2813008
+Lswv_257d34:
 	.long	0xe5803000
 	.long	0xe12fff1e
-	.long	0x000ee24c
+	.long	Lswv_345f80 - Lswv_257d34
 	.globl	__ZThn4_NK18CssRayIntersection4TypeEv
 	.private_extern	__ZThn4_NK18CssRayIntersection4TypeEv
 __ZThn4_NK18CssRayIntersection4TypeEv:
-swv_257d40:
+Lswv_257d40:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK18CssRayIntersection4TypeEv
 	.private_extern	__ZNK18CssRayIntersection4TypeEv
 __ZNK18CssRayIntersection4TypeEv:
-swv_257d48:
+Lswv_257d48:
 	.long	0xe3a0001c
 	.long	0xe12fff1e
 	.globl	__ZN18CssRayIntersection11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN18CssRayIntersection11SerializeInER27CssSerializeBufferObjectsIn
 __ZN18CssRayIntersection11SerializeInER27CssSerializeBufferObjectsIn:
-swv_257d50:
+Lswv_257d50:
 	.long	0xe12fff1e
 	.globl	__ZN18CssRayIntersection12UninitializeEv
 	.private_extern	__ZN18CssRayIntersection12UninitializeEv
@@ -48720,7 +49122,9 @@ __ZN18CssRayIntersection11GetInstanceEv:
 	.long	0xe59f2074
 	.long	0xe08f900c
 	.long	0xe08f3002
+Lswv_257e28:
 	.long	0xe283e008
+Lswv_257e2c:
 	.long	0xe3a025fe
 	.long	0xe3a03000
 	.long	0xe2891020
@@ -48747,18 +49151,18 @@ __ZN18CssRayIntersection11GetInstanceEv:
 	.long	0xeb007e35
 	.long	0xe5900030
 	.long	0xe8bd80b0
-	.long	0x000ee168
-	.long	0x000ee164
+	.long	Lswv_345f90 - Lswv_257e28
+	.long	Lswv_345f90 - Lswv_257e2c
 	.globl	__ZThn4_N18CssRayIntersectionD1Ev
 	.private_extern	__ZThn4_N18CssRayIntersectionD1Ev
 __ZThn4_N18CssRayIntersectionD1Ev:
-swv_257e9c:
+Lswv_257e9c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN18CssRayIntersectionD1Ev
 	.private_extern	__ZN18CssRayIntersectionD1Ev
 __ZN18CssRayIntersectionD1Ev:
-swv_257ea4:
+Lswv_257ea4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc06c
@@ -48766,9 +49170,11 @@ swv_257ea4:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_257ec0:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803020
+Lswv_257ecc:
 	.long	0xe594000c
 	.long	0xe5843004
 	.long	0xe3500000
@@ -48785,25 +49191,27 @@ swv_257ea4:
 	.long	0xe59f9024
 	.long	0xe08f3001
 	.long	0xe08f2009
+Lswv_257f0c:
 	.long	0xe283c008
+Lswv_257f10:
 	.long	0xe282001c
 	.long	0xe584c000
 	.long	0xe5840004
 	.long	0xe8bd8090
-	.long	0x000ee0d0
-	.long	0x000ee0c4
-	.long	0x000edb98
-	.long	0x000edb94
+	.long	Lswv_345f90 - Lswv_257ec0
+	.long	Lswv_345f90 - Lswv_257ecc
+	.long	Lswv_345aa4 - Lswv_257f0c
+	.long	Lswv_345aa4 - Lswv_257f10
 	.globl	__ZThn4_N18CssRayIntersectionD0Ev
 	.private_extern	__ZThn4_N18CssRayIntersectionD0Ev
 __ZThn4_N18CssRayIntersectionD0Ev:
-swv_257f30:
+Lswv_257f30:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN18CssRayIntersectionD0Ev
 	.private_extern	__ZN18CssRayIntersectionD0Ev
 __ZN18CssRayIntersectionD0Ev:
-swv_257f38:
+Lswv_257f38:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc074
@@ -48811,9 +49219,11 @@ swv_257f38:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_257f54:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803020
+Lswv_257f60:
 	.long	0xe594000c
 	.long	0xe5843004
 	.long	0xe3500000
@@ -48830,17 +49240,19 @@ swv_257f38:
 	.long	0xe59fe02c
 	.long	0xe08f1002
 	.long	0xe281001c
+Lswv_257fa0:
 	.long	0xe08fc00e
 	.long	0xe5840004
+Lswv_257fa8:
 	.long	0xe1a00004
 	.long	0xe28c9008
 	.long	0xe5849000
 	.long	0xeb007da0
 	.long	0xe8bd8090
-	.long	0x000ee03c
-	.long	0x000ee030
-	.long	0x000edb04
-	.long	0x000edafc
+	.long	Lswv_345f90 - Lswv_257f54
+	.long	Lswv_345f90 - Lswv_257f60
+	.long	Lswv_345aa4 - Lswv_257fa0
+	.long	Lswv_345aa4 - Lswv_257fa8
 	.globl	__ZN12CssRectangle9IntersectERKS_
 	.private_extern	__ZN12CssRectangle9IntersectERKS_
 __ZN12CssRectangle9IntersectERKS_:
@@ -48951,7 +49363,7 @@ __ZN17CssResourceLoader7loadPngEv:
 	.long	0xe1a02008
 	.long	0xe79f0009
 	.long	0xe1a0300d
-swv_258160:
+Lswv_258160:
 	.long	0xe5900000
 	bl	_swvPNGLoadBuffer
 	.long	0xe3500000
@@ -49007,7 +49419,7 @@ swv_258160:
 	bl	_swvMemCpy
 	.long	0xe0855006
 	.long	0xeaffffee
-	.long	swv_got_1 - swv_258160
+	.long	swv_got_1 - Lswv_258160
 	.long	0x00010001
 	.globl	__ZN17CssResourceLoader10initializeEP13CssBrewLoaderPS_jPKh
 	.private_extern	__ZN17CssResourceLoader10initializeEP13CssBrewLoaderPS_jPKh
@@ -49022,6 +49434,7 @@ __ZN17CssResourceLoader10initializeEP13CssBrewLoaderPS_jPKh:
 	.long	0xe3a0e001
 	.long	0xe08f3001
 	.long	0xe58090f0
+Lswv_25826c:
 	.long	0xe5c0e0f4
 	.long	0xe5803108
 	.long	0x0a000008
@@ -49041,7 +49454,7 @@ __ZN17CssResourceLoader10initializeEP13CssBrewLoaderPS_jPKh:
 	.long	0xe3700001
 	.long	0x1afffff6
 	.long	0xe8bd8080
-	.long	0x00086a04
+	.long	Lswv_2dec70 - Lswv_25826c
 	.globl	__ZN17CssResourceLoader10getXRefURIEv
 	.private_extern	__ZN17CssResourceLoader10getXRefURIEv
 __ZN17CssResourceLoader10getXRefURIEv:
@@ -49245,13 +49658,13 @@ __ZN17CssResourceLoader10initializeEP13CssBrewLoaderPS_Pc:
 	.globl	__ZThn4_N17CssResourceLoaderD0Ev
 	.private_extern	__ZThn4_N17CssResourceLoaderD0Ev
 __ZThn4_N17CssResourceLoaderD0Ev:
-swv_2585c4:
+Lswv_2585c4:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN17CssResourceLoaderD0Ev
 	.private_extern	__ZN17CssResourceLoaderD0Ev
 __ZN17CssResourceLoaderD0Ev:
-swv_2585cc:
+Lswv_2585cc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fe0a8
@@ -49259,7 +49672,9 @@ swv_2585cc:
 	.long	0xe1a04000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_2585e8:
 	.long	0xe2813040
+Lswv_2585ec:
 	.long	0xe28c9008
 	.long	0xe5803004
 	.long	0xe5809000
@@ -49298,8 +49713,8 @@ swv_2585cc:
 	.long	0xe1a00004
 	.long	0xeb007bee
 	.long	0xe8bd8090
-	.long	0x000ed9d4
-	.long	0x000ed9d0
+	.long	Lswv_345fbc - Lswv_2585e8
+	.long	Lswv_345fbc - Lswv_2585ec
 	.globl	__ZN17CssResourceLoaderC1Ev
 	.private_extern	__ZN17CssResourceLoaderC1Ev
 __ZN17CssResourceLoaderC1Ev:
@@ -49311,7 +49726,9 @@ __ZN17CssResourceLoaderC1Ev:
 	.long	0xe59f203c
 	.long	0xe08fc003
 	.long	0xe08f1002
+Lswv_2586ac:
 	.long	0xe28c9008
+Lswv_2586b0:
 	.long	0xe2810040
 	.long	0xe3a03000
 	.long	0xe5849000
@@ -49324,8 +49741,8 @@ __ZN17CssResourceLoaderC1Ev:
 	.long	0xe5843100
 	.long	0xe5843108
 	.long	0xe8bd8090
-	.long	0x000ed910
-	.long	0x000ed90c
+	.long	Lswv_345fbc - Lswv_2586ac
+	.long	Lswv_345fbc - Lswv_2586b0
 	.globl	__ZN17CssResourceLoaderD2Ev
 	.private_extern	__ZN17CssResourceLoaderD2Ev
 __ZN17CssResourceLoaderD2Ev:
@@ -49336,7 +49753,9 @@ __ZN17CssResourceLoaderD2Ev:
 	.long	0xe1a04000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_258704:
 	.long	0xe2813040
+Lswv_258708:
 	.long	0xe28c9008
 	.long	0xe5803004
 	.long	0xe5809000
@@ -49373,18 +49792,18 @@ __ZN17CssResourceLoaderD2Ev:
 	.long	0xe1a00004
 	.long	0xeb000c77
 	.long	0xe8bd8090
-	.long	0x000ed8b8
-	.long	0x000ed8b4
+	.long	Lswv_345fbc - Lswv_258704
+	.long	Lswv_345fbc - Lswv_258708
 	.globl	__ZThn4_N17CssResourceLoaderD1Ev
 	.private_extern	__ZThn4_N17CssResourceLoaderD1Ev
 __ZThn4_N17CssResourceLoaderD1Ev:
-swv_2587a0:
+Lswv_2587a0:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN17CssResourceLoaderD1Ev
 	.private_extern	__ZN17CssResourceLoaderD1Ev
 __ZN17CssResourceLoaderD1Ev:
-swv_2587a8:
+Lswv_2587a8:
 	.long	0xeaffffce
 	.globl	__ZN17CssResourceLoader4loadEv
 	.private_extern	__ZN17CssResourceLoader4loadEv
@@ -49438,12 +49857,14 @@ __ZN17CssResourceLoader4loadEv:
 	.long	0xe59f81a0
 	.long	0xe08f6008
 	.long	0xe1a05000
+Lswv_258870:
 	.long	0xeb0008cf
 	.long	0xe59fe194
 	.long	0xe2861040
 	.long	0xe3a06000
 	.long	0xe08fc00e
 	.long	0xe5851004
+Lswv_258888:
 	.long	0xe3a00b01
 	.long	0xe1a01006
 	.long	0xe28c9008
@@ -49541,19 +49962,19 @@ __ZN17CssResourceLoader4loadEv:
 	.long	0xe2450e7d
 	.long	0xeb007b5d
 	.long	0xeaffff8c
-	.long	0x000ed74c
-	.long	0x000ed734
+	.long	Lswv_345fbc - Lswv_258870
+	.long	Lswv_345fbc - Lswv_258888
 	.long	0xfffff826
 	.globl	__ZThn4_NK21CssSerializeObjectsIn4TypeEv
 	.private_extern	__ZThn4_NK21CssSerializeObjectsIn4TypeEv
 __ZThn4_NK21CssSerializeObjectsIn4TypeEv:
-swv_258a18:
+Lswv_258a18:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK21CssSerializeObjectsIn4TypeEv
 	.private_extern	__ZNK21CssSerializeObjectsIn4TypeEv
 __ZNK21CssSerializeObjectsIn4TypeEv:
-swv_258a20:
+Lswv_258a20:
 	.long	0xe3a0001e
 	.long	0xe12fff1e
 	.globl	__ZN27CssSerializeBufferObjectsIn8ReadRealEv
@@ -49743,7 +50164,9 @@ __ZN27CssSerializeBufferObjectsInC1Ev:
 	.long	0xe59f903c
 	.long	0xe08f3002
 	.long	0xe08f1009
+Lswv_258ccc:
 	.long	0xe283c008
+Lswv_258cd0:
 	.long	0xe2812008
 	.long	0xe3a03000
 	.long	0xe580c000
@@ -49756,8 +50179,8 @@ __ZN27CssSerializeBufferObjectsInC1Ev:
 	.long	0xe580301c
 	.long	0xe5803020
 	.long	0xe12fff1e
-	.long	0x000ed33c
-	.long	0x000eca18
+	.long	Lswv_346008 - Lswv_258ccc
+	.long	Lswv_3456e8 - Lswv_258cd0
 	.globl	__ZN27CssSerializeBufferObjectsIn5ResetEjP8CssArrayIP15IssSerializableEPS0_IbE
 	.private_extern	__ZN27CssSerializeBufferObjectsIn5ResetEjP8CssArrayIP15IssSerializableEPS0_IbE
 __ZN27CssSerializeBufferObjectsIn5ResetEjP8CssArrayIP15IssSerializableEPS0_IbE:
@@ -50335,7 +50758,7 @@ __ZN27CssSerializeBufferObjectsIn22ReadGeometryIndexArrayER8CssArrayItEi:
 	.globl	__ZN27CssSerializeBufferObjectsInD0Ev
 	.private_extern	__ZN27CssSerializeBufferObjectsInD0Ev
 __ZN27CssSerializeBufferObjectsInD0Ev:
-swv_259588:
+Lswv_259588:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc068
@@ -50343,9 +50766,11 @@ swv_259588:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_2595a4:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2595b0:
 	.long	0xe5940008
 	.long	0xe5843004
 	.long	0xe3500000
@@ -50357,7 +50782,7 @@ swv_259588:
 	.long	0xe59f1030
 	.long	0xe79f0001
 	.long	0xe2803008
-swv_2595dc:
+Lswv_2595dc:
 	.long	0xe1a00004
 	.long	0xe5843004
 	.long	0xeb007814
@@ -50367,13 +50792,13 @@ swv_2595dc:
 	.long	0x0afffff5
 	.long	0xeb007817
 	.long	0xeafffff3
-	.long	0x000eca64
-	.long	0x000ec138
-	.long	swv_got_0 - swv_2595dc
+	.long	Lswv_346008 - Lswv_2595a4
+	.long	Lswv_3456e8 - Lswv_2595b0
+	.long	swv_got_0 - Lswv_2595dc
 	.globl	__ZN27CssSerializeBufferObjectsInD1Ev
 	.private_extern	__ZN27CssSerializeBufferObjectsInD1Ev
 __ZN27CssSerializeBufferObjectsInD1Ev:
-swv_25960c:
+Lswv_25960c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc060
@@ -50381,9 +50806,11 @@ swv_25960c:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_259628:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_259634:
 	.long	0xe5940008
 	.long	0xe5843004
 	.long	0xe3500000
@@ -50395,7 +50822,7 @@ swv_25960c:
 	.long	0xe59f2028
 	.long	0xe79f1002
 	.long	0xe2810008
-swv_259660:
+Lswv_259660:
 	.long	0xe5840004
 	.long	0xe8bd8090
 	.long	0xe5940010
@@ -50403,9 +50830,9 @@ swv_259660:
 	.long	0x0afffff7
 	.long	0xeb0077f8
 	.long	0xeafffff5
-	.long	0x000ec9e0
-	.long	0x000ec0b4
-	.long	swv_got_0 - swv_259660
+	.long	Lswv_346008 - Lswv_259628
+	.long	Lswv_3456e8 - Lswv_259634
+	.long	swv_got_0 - Lswv_259660
 	.globl	__ZN27CssSerializeBufferObjectsIn20ReadObjectRefImage2DEb
 	.private_extern	__ZN27CssSerializeBufferObjectsIn20ReadObjectRefImage2DEb
 __ZN27CssSerializeBufferObjectsIn20ReadObjectRefImage2DEb:
@@ -51140,7 +51567,7 @@ __ZN27CssSerializeBufferObjectsIn17ReadObjectRefNodeEb:
 	.globl	__ZN14CssSerializeIn7OnErrorENS_8EssErrorE
 	.private_extern	__ZN14CssSerializeIn7OnErrorENS_8EssErrorE
 __ZN14CssSerializeIn7OnErrorENS_8EssErrorE:
-swv_25a1ac:
+Lswv_25a1ac:
 	.long	0xe590300c
 	.long	0xe3a02004
 	.long	0xe3730001
@@ -51150,13 +51577,13 @@ swv_25a1ac:
 	.globl	__ZNK14CssSerializeIn9GetStatusEv
 	.private_extern	__ZNK14CssSerializeIn9GetStatusEv
 __ZNK14CssSerializeIn9GetStatusEv:
-swv_25a1c4:
+Lswv_25a1c4:
 	.long	0xe5900060
 	.long	0xe12fff1e
 	.globl	__ZN14CssSerializeIn9OnDataEndEv
 	.private_extern	__ZN14CssSerializeIn9OnDataEndEv
 __ZN14CssSerializeIn9OnDataEndEv:
-swv_25a1cc:
+Lswv_25a1cc:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe590300c
@@ -51206,7 +51633,7 @@ swv_25a1cc:
 	.globl	__ZN14CssSerializeIn11OnDataStartEb
 	.private_extern	__ZN14CssSerializeIn11OnDataStartEb
 __ZN14CssSerializeIn11OnDataStartEb:
-swv_25a284:
+Lswv_25a284:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe590300c
@@ -51237,13 +51664,13 @@ swv_25a284:
 	.globl	__ZThn4_N14CssSerializeInD0Ev
 	.private_extern	__ZThn4_N14CssSerializeInD0Ev
 __ZThn4_N14CssSerializeInD0Ev:
-swv_25a2f0:
+Lswv_25a2f0:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN14CssSerializeInD0Ev
 	.private_extern	__ZN14CssSerializeInD0Ev
 __ZN14CssSerializeInD0Ev:
-swv_25a2f8:
+Lswv_25a2f8:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc04c
@@ -51251,9 +51678,11 @@ swv_25a2f8:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_25a314:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe280303c
+Lswv_25a320:
 	.long	0xe5940010
 	.long	0xe5843004
 	.long	0xe3500000
@@ -51267,18 +51696,18 @@ swv_25a2f8:
 	.long	0xe1a00004
 	.long	0xeb0074ba
 	.long	0xe8bd8090
-	.long	0x000ebd04
-	.long	0x000ebcf8
+	.long	Lswv_346018 - Lswv_25a314
+	.long	Lswv_346018 - Lswv_25a320
 	.globl	__ZThn4_N14CssSerializeInD1Ev
 	.private_extern	__ZThn4_N14CssSerializeInD1Ev
 __ZThn4_N14CssSerializeInD1Ev:
-swv_25a35c:
+Lswv_25a35c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN14CssSerializeInD1Ev
 	.private_extern	__ZN14CssSerializeInD1Ev
 __ZN14CssSerializeInD1Ev:
-swv_25a364:
+Lswv_25a364:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc044
@@ -51286,9 +51715,11 @@ swv_25a364:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_25a380:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe280303c
+Lswv_25a38c:
 	.long	0xe5940010
 	.long	0xe5843004
 	.long	0xe3500000
@@ -51300,8 +51731,8 @@ swv_25a364:
 	.long	0xe2840044
 	.long	0xebff6a8f
 	.long	0xe8bd8090
-	.long	0x000ebc98
-	.long	0x000ebc8c
+	.long	Lswv_346018 - Lswv_25a380
+	.long	Lswv_346018 - Lswv_25a38c
 	.globl	__ZN14CssSerializeInD2Ev
 	.private_extern	__ZN14CssSerializeInD2Ev
 __ZN14CssSerializeInD2Ev:
@@ -51312,9 +51743,11 @@ __ZN14CssSerializeInD2Ev:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_25a3dc:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe280303c
+Lswv_25a3e8:
 	.long	0xe5940010
 	.long	0xe5843004
 	.long	0xe3500000
@@ -51326,8 +51759,8 @@ __ZN14CssSerializeInD2Ev:
 	.long	0xe2840044
 	.long	0xebff6a78
 	.long	0xe8bd8090
-	.long	0x000ebc3c
-	.long	0x000ebc30
+	.long	Lswv_346018 - Lswv_25a3dc
+	.long	Lswv_346018 - Lswv_25a3e8
 	.globl	__ZN14CssSerializeInC2Ev
 	.private_extern	__ZN14CssSerializeInC2Ev
 __ZN14CssSerializeInC2Ev:
@@ -51338,7 +51771,9 @@ __ZN14CssSerializeInC2Ev:
 	.long	0xe3a04000
 	.long	0xe08f900c
 	.long	0xe08f2003
+Lswv_25a438:
 	.long	0xe1a05000
+Lswv_25a43c:
 	.long	0xe3a03001
 	.long	0xe282e008
 	.long	0xe289103c
@@ -51370,12 +51805,12 @@ __ZN14CssSerializeInC2Ev:
 	.long	0xe5854064
 	.long	0xe5854068
 	.long	0xe8bd80b0
-	.long	0x000ebbe0
-	.long	0x000ebbdc
+	.long	Lswv_346018 - Lswv_25a438
+	.long	Lswv_346018 - Lswv_25a43c
 	.globl	__ZN14CssSerializeIn6OnDataEiPKhii
 	.private_extern	__ZN14CssSerializeIn6OnDataEiPKhii
 __ZN14CssSerializeIn6OnDataEiPKhii:
-swv_25a4c0:
+Lswv_25a4c0:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -51764,7 +52199,7 @@ swv_25a4c0:
 	.globl	__ZN21CssSerializeObjectsIn11BeforeBytesEv
 	.private_extern	__ZN21CssSerializeObjectsIn11BeforeBytesEv
 __ZN21CssSerializeObjectsIn11BeforeBytesEv:
-swv_25aac4:
+Lswv_25aac4:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -51837,7 +52272,9 @@ __ZN21CssSerializeObjectsInC2Ev:
 	.long	0xe2840078
 	.long	0xe08fc003
 	.long	0xe08fe002
+Lswv_25abd8:
 	.long	0xe28c9008
+Lswv_25abdc:
 	.long	0xe28e5040
 	.long	0xe5849000
 	.long	0xe5845004
@@ -51851,10 +52288,13 @@ __ZN21CssSerializeObjectsInC2Ev:
 	.long	0xe58450a0
 	.long	0xe08f0001
 	.long	0xe59f1064
+Lswv_25ac10:
 	.long	0xe2803008
 	.long	0xe08f900c
 	.long	0xe08f0001
+Lswv_25ac1c:
 	.long	0xe584309c
+Lswv_25ac20:
 	.long	0xe2892008
 	.long	0xe2803008
 	.long	0xe58450a4
@@ -51873,15 +52313,15 @@ __ZN21CssSerializeObjectsInC2Ev:
 	.long	0xe58430cc
 	.long	0xe58450dc
 	.long	0xe8bd80b0
-	.long	0x000eb488
-	.long	0x000eb484
-	.long	0x000eb4bc
-	.long	0x000eb490
-	.long	0x000eaccc
+	.long	Lswv_346060 - Lswv_25abd8
+	.long	Lswv_346060 - Lswv_25abdc
+	.long	Lswv_3460cc - Lswv_25ac10
+	.long	Lswv_3460ac - Lswv_25ac1c
+	.long	Lswv_3458ec - Lswv_25ac20
 	.globl	__ZN21CssSerializeObjectsIn16bUnresolvedXREFsEv
 	.private_extern	__ZN21CssSerializeObjectsIn16bUnresolvedXREFsEv
 __ZN21CssSerializeObjectsIn16bUnresolvedXREFsEv:
-swv_25ac7c:
+Lswv_25ac7c:
 	.long	0xe59000d4
 	.long	0xe3500000
 	.long	0xd3a00000
@@ -51951,7 +52391,7 @@ __ZN21CssSerializeObjectsIn11ResolveXREFEP11CssObject3D:
 	.globl	__ZN21CssSerializeObjectsIn10AfterBytesEv
 	.private_extern	__ZN21CssSerializeObjectsIn10AfterBytesEv
 __ZN21CssSerializeObjectsIn10AfterBytesEv:
-swv_25ad6c:
+Lswv_25ad6c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -52464,7 +52904,7 @@ __ZN21CssSerializeObjectsIn19ProcessHeaderObjectEv:
 	.globl	__ZN21CssSerializeObjectsIn18OnDecompressedDataEPKhj
 	.private_extern	__ZN21CssSerializeObjectsIn18OnDecompressedDataEPKhj
 __ZN21CssSerializeObjectsIn18OnDecompressedDataEPKhj:
-swv_25b53c:
+Lswv_25b53c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0500
@@ -52597,13 +53037,13 @@ swv_25b53c:
 	.globl	__ZThn4_N21CssSerializeObjectsInD0Ev
 	.private_extern	__ZThn4_N21CssSerializeObjectsInD0Ev
 __ZThn4_N21CssSerializeObjectsInD0Ev:
-swv_25b740:
+Lswv_25b740:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN21CssSerializeObjectsInD0Ev
 	.private_extern	__ZN21CssSerializeObjectsInD0Ev
 __ZN21CssSerializeObjectsInD0Ev:
-swv_25b748:
+Lswv_25b748:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe59fc1f4
@@ -52611,9 +53051,11 @@ swv_25b748:
 	.long	0xe1a05000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_25b764:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803040
+Lswv_25b770:
 	.long	0xe59500dc
 	.long	0xe5853004
 	.long	0xe3500000
@@ -52649,6 +53091,7 @@ swv_25b748:
 	.long	0xe59fe15c
 	.long	0xe08fc00e
 	.long	0xe28c0008
+Lswv_25b7fc:
 	.long	0xe58500cc
 	.long	0xe59500d0
 	.long	0xe3500000
@@ -52661,11 +53104,12 @@ swv_25b748:
 	.long	0xe59f9134
 	.long	0xe79fc00e
 	.long	0xe28c0008
-swv_25b82c:
+Lswv_25b82c:
 	.long	0xe58500cc
 	.long	0xe59500c0
 	.long	0xe08f2009
 	.long	0xe2821008
+Lswv_25b83c:
 	.long	0xe3500000
 	.long	0xe58510bc
 	.long	0x0a000000
@@ -52677,11 +53121,12 @@ swv_25b82c:
 	.long	0xe59f9100
 	.long	0xe79fc00e
 	.long	0xe28c0008
-swv_25b868:
+Lswv_25b868:
 	.long	0xe58500bc
 	.long	0xe59500b0
 	.long	0xe08f2009
 	.long	0xe2821008
+Lswv_25b878:
 	.long	0xe3500000
 	.long	0xe58510ac
 	.long	0x0a000000
@@ -52693,11 +53138,12 @@ swv_25b868:
 	.long	0xe59f90cc
 	.long	0xe79fc00e
 	.long	0xe28c0008
-swv_25b8a4:
+Lswv_25b8a4:
 	.long	0xe58500ac
 	.long	0xe59500a0
 	.long	0xe08f2009
 	.long	0xe2821008
+Lswv_25b8b4:
 	.long	0xe3500000
 	.long	0xe585109c
 	.long	0x0a000000
@@ -52709,7 +53155,7 @@ swv_25b8a4:
 	.long	0xe2850078
 	.long	0xe79f2009
 	.long	0xe2821008
-swv_25b8e0:
+Lswv_25b8e0:
 	.long	0xe585109c
 	.long	0xebfff748
 	.long	0xe1a00005
@@ -52737,16 +53183,16 @@ swv_25b8e0:
 	.long	0x0affffc4
 	.long	0xeb006f44
 	.long	0xeaffffc2
-	.long	0x000ea8fc
-	.long	0x000ea8f0
-	.long	0x000ea0f0
-	.long	swv_got_0 - swv_25b82c
-	.long	0x000ea0b0
-	.long	swv_got_0 - swv_25b868
-	.long	0x000ea834
-	.long	swv_got_0 - swv_25b8a4
-	.long	0x000ea818
-	.long	swv_got_0 - swv_25b8e0
+	.long	Lswv_346060 - Lswv_25b764
+	.long	Lswv_346060 - Lswv_25b770
+	.long	Lswv_3458ec - Lswv_25b7fc
+	.long	swv_got_0 - Lswv_25b82c
+	.long	Lswv_3458ec - Lswv_25b83c
+	.long	swv_got_0 - Lswv_25b868
+	.long	Lswv_3460ac - Lswv_25b878
+	.long	swv_got_0 - Lswv_25b8a4
+	.long	Lswv_3460cc - Lswv_25b8b4
+	.long	swv_got_0 - Lswv_25b8e0
 	.globl	__ZN21CssSerializeObjectsInD2Ev
 	.private_extern	__ZN21CssSerializeObjectsInD2Ev
 __ZN21CssSerializeObjectsInD2Ev:
@@ -52757,9 +53203,11 @@ __ZN21CssSerializeObjectsInD2Ev:
 	.long	0xe1a05000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_25b990:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803040
+Lswv_25b99c:
 	.long	0xe59500dc
 	.long	0xe5853004
 	.long	0xe3500000
@@ -52795,6 +53243,7 @@ __ZN21CssSerializeObjectsInD2Ev:
 	.long	0xe59fe154
 	.long	0xe08fc00e
 	.long	0xe28c0008
+Lswv_25ba28:
 	.long	0xe58500cc
 	.long	0xe59500d0
 	.long	0xe3500000
@@ -52807,11 +53256,12 @@ __ZN21CssSerializeObjectsInD2Ev:
 	.long	0xe59f912c
 	.long	0xe79fc00e
 	.long	0xe28c0008
-swv_25ba58:
+Lswv_25ba58:
 	.long	0xe58500cc
 	.long	0xe59500c0
 	.long	0xe08f2009
 	.long	0xe2821008
+Lswv_25ba68:
 	.long	0xe3500000
 	.long	0xe58510bc
 	.long	0x0a000000
@@ -52823,11 +53273,12 @@ swv_25ba58:
 	.long	0xe59f90f8
 	.long	0xe79fc00e
 	.long	0xe28c0008
-swv_25ba94:
+Lswv_25ba94:
 	.long	0xe58500bc
 	.long	0xe59500b0
 	.long	0xe08f2009
 	.long	0xe2821008
+Lswv_25baa4:
 	.long	0xe3500000
 	.long	0xe58510ac
 	.long	0x0a000000
@@ -52839,11 +53290,12 @@ swv_25ba94:
 	.long	0xe59f90c4
 	.long	0xe79fc00e
 	.long	0xe28c0008
-swv_25bad0:
+Lswv_25bad0:
 	.long	0xe58500ac
 	.long	0xe59500a0
 	.long	0xe08f2009
 	.long	0xe2821008
+Lswv_25bae0:
 	.long	0xe3500000
 	.long	0xe585109c
 	.long	0x0a000000
@@ -52855,7 +53307,7 @@ swv_25bad0:
 	.long	0xe2850078
 	.long	0xe79f2009
 	.long	0xe2821008
-swv_25bb0c:
+Lswv_25bb0c:
 	.long	0xe585109c
 	.long	0xebfff6bd
 	.long	0xe1a00005
@@ -52881,31 +53333,31 @@ swv_25bb0c:
 	.long	0x0affffc6
 	.long	0xeb006ebb
 	.long	0xeaffffc4
-	.long	0x000ea6d0
-	.long	0x000ea6c4
-	.long	0x000e9ec4
-	.long	swv_got_0 - swv_25ba58
-	.long	0x000e9e84
-	.long	swv_got_0 - swv_25ba94
-	.long	0x000ea608
-	.long	swv_got_0 - swv_25bad0
-	.long	0x000ea5ec
-	.long	swv_got_0 - swv_25bb0c
+	.long	Lswv_346060 - Lswv_25b990
+	.long	Lswv_346060 - Lswv_25b99c
+	.long	Lswv_3458ec - Lswv_25ba28
+	.long	swv_got_0 - Lswv_25ba58
+	.long	Lswv_3458ec - Lswv_25ba68
+	.long	swv_got_0 - Lswv_25ba94
+	.long	Lswv_3460ac - Lswv_25baa4
+	.long	swv_got_0 - Lswv_25bad0
+	.long	Lswv_3460cc - Lswv_25bae0
+	.long	swv_got_0 - Lswv_25bb0c
 	.globl	__ZThn4_N21CssSerializeObjectsInD1Ev
 	.private_extern	__ZThn4_N21CssSerializeObjectsInD1Ev
 __ZThn4_N21CssSerializeObjectsInD1Ev:
-swv_25bb98:
+Lswv_25bb98:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN21CssSerializeObjectsInD1Ev
 	.private_extern	__ZN21CssSerializeObjectsInD1Ev
 __ZN21CssSerializeObjectsInD1Ev:
-swv_25bba0:
+Lswv_25bba0:
 	.long	0xeaffff73
 	.globl	__ZN8CssArrayIP15IssSerializableE7DestroyEPv
 	.private_extern	__ZN8CssArrayIP15IssSerializableE7DestroyEPv
 __ZN8CssArrayIP15IssSerializableE7DestroyEPv:
-swv_25bba4:
+Lswv_25bba4:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -52915,7 +53367,7 @@ swv_25bba4:
 	.globl	__ZN8CssArrayIbE7DestroyEPv
 	.private_extern	__ZN8CssArrayIbE7DestroyEPv
 __ZN8CssArrayIbE7DestroyEPv:
-swv_25bbbc:
+Lswv_25bbbc:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -52925,13 +53377,14 @@ swv_25bbbc:
 	.globl	__ZN8CssArrayIbED1Ev
 	.private_extern	__ZN8CssArrayIbED1Ev
 __ZN8CssArrayIbED1Ev:
-swv_25bbd4:
+Lswv_25bbd4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_25bbec:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -52943,7 +53396,7 @@ swv_25bbd4:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_25bc18:
+Lswv_25bc18:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -52951,12 +53404,12 @@ swv_25bc18:
 	.long	0x0afffff7
 	.long	0xeb006e8a
 	.long	0xeafffff5
-	.long	0x000ea4c0
-	.long	swv_got_0 - swv_25bc18
+	.long	Lswv_3460ac - Lswv_25bbec
+	.long	swv_got_0 - Lswv_25bc18
 	.globl	__ZN8CssArrayIP15IssSerializableE8AllocateEi
 	.private_extern	__ZN8CssArrayIP15IssSerializableE8AllocateEi
 __ZN8CssArrayIP15IssSerializableE8AllocateEi:
-swv_25bc3c:
+Lswv_25bc3c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -52966,7 +53419,7 @@ swv_25bc3c:
 	.globl	__ZN8CssArrayIbE8AllocateEi
 	.private_extern	__ZN8CssArrayIbE8AllocateEi
 __ZN8CssArrayIbE8AllocateEi:
-swv_25bc54:
+Lswv_25bc54:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00001
@@ -52976,7 +53429,7 @@ swv_25bc54:
 	.globl	__ZN8CssArrayIP15IssSerializableE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIP15IssSerializableE9CopyArrayEPvS3_i
 __ZN8CssArrayIP15IssSerializableE9CopyArrayEPvS3_i:
-swv_25bc6c:
+Lswv_25bc6c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -53137,7 +53590,7 @@ swv_25bc6c:
 	.globl	__ZN8CssArrayIbE9CopyArrayEPvS1_i
 	.private_extern	__ZN8CssArrayIbE9CopyArrayEPvS1_i
 __ZN8CssArrayIbE9CopyArrayEPvS1_i:
-swv_25bee0:
+Lswv_25bee0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a00002
@@ -53293,13 +53746,14 @@ swv_25bee0:
 	.globl	__ZN8CssArrayIP15IssSerializableED0Ev
 	.private_extern	__ZN8CssArrayIP15IssSerializableED0Ev
 __ZN8CssArrayIP15IssSerializableED0Ev:
-swv_25c140:
+Lswv_25c140:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_25c158:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -53312,7 +53766,7 @@ swv_25c140:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_25c188:
+Lswv_25c188:
 	.long	0xe5849000
 	.long	0xeb006d2a
 	.long	0xe8bd8090
@@ -53321,18 +53775,19 @@ swv_25c188:
 	.long	0x0afffff5
 	.long	0xeb006d2d
 	.long	0xeafffff3
-	.long	0x000e9f74
-	.long	swv_got_0 - swv_25c188
+	.long	Lswv_3460cc - Lswv_25c158
+	.long	swv_got_0 - Lswv_25c188
 	.globl	__ZN8CssArrayIP15IssSerializableED1Ev
 	.private_extern	__ZN8CssArrayIP15IssSerializableED1Ev
 __ZN8CssArrayIP15IssSerializableED1Ev:
-swv_25c1b0:
+Lswv_25c1b0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_25c1c8:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -53344,7 +53799,7 @@ swv_25c1b0:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_25c1f4:
+Lswv_25c1f4:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -53352,18 +53807,19 @@ swv_25c1f4:
 	.long	0x0afffff7
 	.long	0xeb006d13
 	.long	0xeafffff5
-	.long	0x000e9f04
-	.long	swv_got_0 - swv_25c1f4
+	.long	Lswv_3460cc - Lswv_25c1c8
+	.long	swv_got_0 - Lswv_25c1f4
 	.globl	__ZN8CssArrayIbED0Ev
 	.private_extern	__ZN8CssArrayIbED0Ev
 __ZN8CssArrayIbED0Ev:
-swv_25c218:
+Lswv_25c218:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_25c230:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -53376,7 +53832,7 @@ swv_25c218:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_25c260:
+Lswv_25c260:
 	.long	0xe5849000
 	.long	0xeb006cf4
 	.long	0xe8bd8090
@@ -53385,18 +53841,18 @@ swv_25c260:
 	.long	0x0afffff5
 	.long	0xeb006cf7
 	.long	0xeafffff3
-	.long	0x000e9e7c
-	.long	swv_got_0 - swv_25c260
+	.long	Lswv_3460ac - Lswv_25c230
+	.long	swv_got_0 - Lswv_25c260
 	.globl	__ZThn4_NK14CssSkinnedMesh4TypeEv
 	.private_extern	__ZThn4_NK14CssSkinnedMesh4TypeEv
 __ZThn4_NK14CssSkinnedMesh4TypeEv:
-swv_25c288:
+Lswv_25c288:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK14CssSkinnedMesh4TypeEv
 	.private_extern	__ZNK14CssSkinnedMesh4TypeEv
 __ZNK14CssSkinnedMesh4TypeEv:
-swv_25c290:
+Lswv_25c290:
 	.long	0xe3a00010
 	.long	0xe12fff1e
 	.globl	__ZNK14CssSkinnedMesh12SetScaleBiasEfRK11CssVector3D
@@ -54068,7 +54524,7 @@ __ZN14CssSkinnedMesh12AddTransformEP7CssNodeiii:
 	.globl	__ZN14CssSkinnedMesh11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN14CssSkinnedMesh11SerializeInER27CssSerializeBufferObjectsIn
 __ZN14CssSkinnedMesh11SerializeInER27CssSerializeBufferObjectsIn:
-swv_25ccac:
+Lswv_25ccac:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -54318,6 +54774,7 @@ __ZNK14CssSkinnedMesh7PrepareEv:
 	.long	0xe58d501c
 	.long	0xe08f800a
 	.long	0xe58d1010
+Lswv_25d084:
 	.long	0xe58d8000
 	.long	0xe59dc000
 	.long	0xe59b30dc
@@ -54923,7 +55380,7 @@ __ZNK14CssSkinnedMesh7PrepareEv:
 	.long	0xe12fff34
 	.long	0xe59b10f4
 	.long	0xeafffd75
-	.long	0x00099f44
+	.long	Lswv_2f6fc8 - Lswv_25d084
 	.long	0xfffffaec
 	.long	0xfffffefa
 	.globl	__ZNK14CssSkinnedMesh22ComputeIntArrayNormalsEP14CssVertexArrayPKS0_ii
@@ -55972,13 +56429,13 @@ __ZNK14CssSkinnedMesh27ComputePreScaledMatVerticesEi:
 	.globl	__ZThn4_N14CssSkinnedMeshD0Ev
 	.private_extern	__ZThn4_N14CssSkinnedMeshD0Ev
 __ZThn4_N14CssSkinnedMeshD0Ev:
-swv_25ea14:
+Lswv_25ea14:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN14CssSkinnedMeshD0Ev
 	.private_extern	__ZN14CssSkinnedMeshD0Ev
 __ZN14CssSkinnedMeshD0Ev:
-swv_25ea1c:
+Lswv_25ea1c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc204
@@ -55986,9 +56443,11 @@ swv_25ea1c:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_25ea38:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe280304c
+Lswv_25ea44:
 	.long	0xe5940114
 	.long	0xe5843004
 	.long	0xe3500000
@@ -56004,6 +56463,7 @@ swv_25ea1c:
 	.long	0xe59f21bc
 	.long	0xe08f1002
 	.long	0xe2810008
+Lswv_25ea80:
 	.long	0xe5840118
 	.long	0xe594011c
 	.long	0xe3500000
@@ -56017,11 +56477,12 @@ swv_25ea1c:
 	.long	0xe59f3190
 	.long	0xe79f1002
 	.long	0xe2810008
-swv_25eab4:
+Lswv_25eab4:
 	.long	0xe5840118
 	.long	0xe5940100
 	.long	0xe08fe003
 	.long	0xe28ec008
+Lswv_25eac4:
 	.long	0xe3500000
 	.long	0xe584c0fc
 	.long	0x0a000000
@@ -56033,11 +56494,12 @@ swv_25eab4:
 	.long	0xe59f315c
 	.long	0xe79f1002
 	.long	0xe2810008
-swv_25eaf0:
+Lswv_25eaf0:
 	.long	0xe58400fc
 	.long	0xe59400f0
 	.long	0xe08fe003
 	.long	0xe28ec008
+Lswv_25eb00:
 	.long	0xe3500000
 	.long	0xe584c0ec
 	.long	0x0a000001
@@ -56050,11 +56512,12 @@ swv_25eaf0:
 	.long	0xe59f3124
 	.long	0xe79f1002
 	.long	0xe2810008
-swv_25eb30:
+Lswv_25eb30:
 	.long	0xe58400ec
 	.long	0xe59400d8
 	.long	0xe08fe003
 	.long	0xe28ec008
+Lswv_25eb40:
 	.long	0xe3500000
 	.long	0xe584c0d4
 	.long	0x0a000000
@@ -56066,11 +56529,12 @@ swv_25eb30:
 	.long	0xe59f30f0
 	.long	0xe79f1002
 	.long	0xe2810008
-swv_25eb6c:
+Lswv_25eb6c:
 	.long	0xe58400d4
 	.long	0xe59400c8
 	.long	0xe08fe003
 	.long	0xe28ec008
+Lswv_25eb7c:
 	.long	0xe3500000
 	.long	0xe584c0c4
 	.long	0x0a000001
@@ -56083,7 +56547,7 @@ swv_25eb6c:
 	.long	0xe1a00004
 	.long	0xe79fe003
 	.long	0xe28ec008
-swv_25ebac:
+Lswv_25ebac:
 	.long	0xe584c0c4
 	.long	0xebffa118
 	.long	0xe1a00004
@@ -56117,18 +56581,18 @@ swv_25ebac:
 	.long	0x0affffad
 	.long	0xeb00628b
 	.long	0xeaffffab
-	.long	0x000e76b4
-	.long	0x000e76a8
-	.long	0x000e7744
-	.long	swv_got_0 - swv_25eab4
-	.long	0x000e76e0
-	.long	swv_got_0 - swv_25eaf0
-	.long	0x000e7684
-	.long	swv_got_0 - swv_25eb30
-	.long	0x000e7624
-	.long	swv_got_0 - swv_25eb6c
-	.long	0x000e75c8
-	.long	swv_got_0 - swv_25ebac
+	.long	Lswv_3460ec - Lswv_25ea38
+	.long	Lswv_3460ec - Lswv_25ea44
+	.long	Lswv_3461c4 - Lswv_25ea80
+	.long	swv_got_0 - Lswv_25eab4
+	.long	Lswv_3461a4 - Lswv_25eac4
+	.long	swv_got_0 - Lswv_25eaf0
+	.long	Lswv_346184 - Lswv_25eb00
+	.long	swv_got_0 - Lswv_25eb30
+	.long	Lswv_346164 - Lswv_25eb40
+	.long	swv_got_0 - Lswv_25eb6c
+	.long	Lswv_346144 - Lswv_25eb7c
+	.long	swv_got_0 - Lswv_25ebac
 	.globl	__ZN14CssSkinnedMeshD2Ev
 	.private_extern	__ZN14CssSkinnedMeshD2Ev
 __ZN14CssSkinnedMeshD2Ev:
@@ -56139,9 +56603,11 @@ __ZN14CssSkinnedMeshD2Ev:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_25ec7c:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe280304c
+Lswv_25ec88:
 	.long	0xe5940114
 	.long	0xe5843004
 	.long	0xe3500000
@@ -56157,6 +56623,7 @@ __ZN14CssSkinnedMeshD2Ev:
 	.long	0xe59f21b4
 	.long	0xe08f1002
 	.long	0xe2810008
+Lswv_25ecc4:
 	.long	0xe5840118
 	.long	0xe594011c
 	.long	0xe3500000
@@ -56170,11 +56637,12 @@ __ZN14CssSkinnedMeshD2Ev:
 	.long	0xe59f3188
 	.long	0xe79f1002
 	.long	0xe2810008
-swv_25ecf8:
+Lswv_25ecf8:
 	.long	0xe5840118
 	.long	0xe5940100
 	.long	0xe08fe003
 	.long	0xe28ec008
+Lswv_25ed08:
 	.long	0xe3500000
 	.long	0xe584c0fc
 	.long	0x0a000000
@@ -56186,11 +56654,12 @@ swv_25ecf8:
 	.long	0xe59f3154
 	.long	0xe79f1002
 	.long	0xe2810008
-swv_25ed34:
+Lswv_25ed34:
 	.long	0xe58400fc
 	.long	0xe59400f0
 	.long	0xe08fe003
 	.long	0xe28ec008
+Lswv_25ed44:
 	.long	0xe3500000
 	.long	0xe584c0ec
 	.long	0x0a000001
@@ -56203,11 +56672,12 @@ swv_25ed34:
 	.long	0xe59f311c
 	.long	0xe79f1002
 	.long	0xe2810008
-swv_25ed74:
+Lswv_25ed74:
 	.long	0xe58400ec
 	.long	0xe59400d8
 	.long	0xe08fe003
 	.long	0xe28ec008
+Lswv_25ed84:
 	.long	0xe3500000
 	.long	0xe584c0d4
 	.long	0x0a000000
@@ -56219,11 +56689,12 @@ swv_25ed74:
 	.long	0xe59f30e8
 	.long	0xe79f1002
 	.long	0xe2810008
-swv_25edb0:
+Lswv_25edb0:
 	.long	0xe58400d4
 	.long	0xe59400c8
 	.long	0xe08fe003
 	.long	0xe28ec008
+Lswv_25edc0:
 	.long	0xe3500000
 	.long	0xe584c0c4
 	.long	0x0a000001
@@ -56236,7 +56707,7 @@ swv_25edb0:
 	.long	0xe1a00004
 	.long	0xe79fe003
 	.long	0xe28ec008
-swv_25edf0:
+Lswv_25edf0:
 	.long	0xe584c0c4
 	.long	0xebffa087
 	.long	0xe8bd8090
@@ -56268,28 +56739,28 @@ swv_25edf0:
 	.long	0x0affffaf
 	.long	0xeb0061fc
 	.long	0xeaffffad
-	.long	0x000e7470
-	.long	0x000e7464
-	.long	0x000e7500
-	.long	swv_got_0 - swv_25ecf8
-	.long	0x000e749c
-	.long	swv_got_0 - swv_25ed34
-	.long	0x000e7440
-	.long	swv_got_0 - swv_25ed74
-	.long	0x000e73e0
-	.long	swv_got_0 - swv_25edb0
-	.long	0x000e7384
-	.long	swv_got_0 - swv_25edf0
+	.long	Lswv_3460ec - Lswv_25ec7c
+	.long	Lswv_3460ec - Lswv_25ec88
+	.long	Lswv_3461c4 - Lswv_25ecc4
+	.long	swv_got_0 - Lswv_25ecf8
+	.long	Lswv_3461a4 - Lswv_25ed08
+	.long	swv_got_0 - Lswv_25ed34
+	.long	Lswv_346184 - Lswv_25ed44
+	.long	swv_got_0 - Lswv_25ed74
+	.long	Lswv_346164 - Lswv_25ed84
+	.long	swv_got_0 - Lswv_25edb0
+	.long	Lswv_346144 - Lswv_25edc0
+	.long	swv_got_0 - Lswv_25edf0
 	.globl	__ZThn4_N14CssSkinnedMeshD1Ev
 	.private_extern	__ZThn4_N14CssSkinnedMeshD1Ev
 __ZThn4_N14CssSkinnedMeshD1Ev:
-swv_25ee9c:
+Lswv_25ee9c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN14CssSkinnedMeshD1Ev
 	.private_extern	__ZN14CssSkinnedMeshD1Ev
 __ZN14CssSkinnedMeshD1Ev:
-swv_25eea4:
+Lswv_25eea4:
 	.long	0xeaffff6d
 	.globl	__ZNK14CssSkinnedMesh26GetTransformedVertexBufferEb
 	.private_extern	__ZNK14CssSkinnedMesh26GetTransformedVertexBufferEb
@@ -56561,7 +57032,7 @@ __ZNK14CssSkinnedMesh26GetTransformedVertexBufferEb:
 	.globl	__ZN14CssSkinnedMesh7GetpRefEi
 	.private_extern	__ZN14CssSkinnedMesh7GetpRefEi
 __ZN14CssSkinnedMesh7GetpRefEi:
-swv_25f2c8:
+Lswv_25f2c8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe24dd018
@@ -56598,7 +57069,7 @@ swv_25f2c8:
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEE7DestroyEPv
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEE7DestroyEPv
 __ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEE7DestroyEPv:
-swv_25f34c:
+Lswv_25f34c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -56608,7 +57079,7 @@ swv_25f34c:
 	.globl	__ZN8CssArrayItE7DestroyEPv
 	.private_extern	__ZN8CssArrayItE7DestroyEPv
 __ZN8CssArrayItE7DestroyEPv:
-swv_25f364:
+Lswv_25f364:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -56618,7 +57089,7 @@ swv_25f364:
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEE8AllocateEi
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEE8AllocateEi
 __ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEE8AllocateEi:
-swv_25f37c:
+Lswv_25f37c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a04001
@@ -56715,7 +57186,7 @@ swv_25f37c:
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEE8AllocateEi
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEE8AllocateEi
 __ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEE8AllocateEi:
-swv_25f4f0:
+Lswv_25f4f0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -56727,7 +57198,7 @@ swv_25f4f0:
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEE8AllocateEi
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEE8AllocateEi
 __ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEE8AllocateEi:
-swv_25f510:
+Lswv_25f510:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a00381
@@ -56806,7 +57277,7 @@ swv_25f510:
 	.globl	__ZN8CssArrayItE8AllocateEi
 	.private_extern	__ZN8CssArrayItE8AllocateEi
 __ZN8CssArrayItE8AllocateEi:
-swv_25f63c:
+Lswv_25f63c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00081
@@ -56816,7 +57287,7 @@ swv_25f63c:
 	.globl	__ZN8CssArrayI11CssVector3DE8AllocateEi
 	.private_extern	__ZN8CssArrayI11CssVector3DE8AllocateEi
 __ZN8CssArrayI11CssVector3DE8AllocateEi:
-swv_25f654:
+Lswv_25f654:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a04001
@@ -56923,7 +57394,7 @@ swv_25f654:
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEE9CopyArrayEPvS3_i
 __ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEE9CopyArrayEPvS3_i:
-swv_25f7f0:
+Lswv_25f7f0:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe1a0c002
@@ -57149,7 +57620,7 @@ swv_25f7f0:
 	.globl	__ZN8CssArrayItE9CopyArrayEPvS1_i
 	.private_extern	__ZN8CssArrayItE9CopyArrayEPvS1_i
 __ZN8CssArrayItE9CopyArrayEPvS1_i:
-swv_25fb68:
+Lswv_25fb68:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00002
@@ -57310,7 +57781,7 @@ swv_25fb68:
 	.globl	__ZN8CssArrayI11CssVector3DE7DestroyEPv
 	.private_extern	__ZN8CssArrayI11CssVector3DE7DestroyEPv
 __ZN8CssArrayI11CssVector3DE7DestroyEPv:
-swv_25fddc:
+Lswv_25fddc:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe3510000
@@ -57321,7 +57792,7 @@ swv_25fddc:
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEE7DestroyEPv
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEE7DestroyEPv
 __ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEE7DestroyEPv:
-swv_25fdf8:
+Lswv_25fdf8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe3510000
@@ -57332,7 +57803,7 @@ swv_25fdf8:
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEE7DestroyEPv
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEE7DestroyEPv
 __ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEE7DestroyEPv:
-swv_25fe14:
+Lswv_25fe14:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe3510000
@@ -57343,7 +57814,7 @@ swv_25fe14:
 	.globl	__ZN14CssSkinnedMesh11AnimateRefsEiii
 	.private_extern	__ZN14CssSkinnedMesh11AnimateRefsEiii
 __ZN14CssSkinnedMesh11AnimateRefsEiii:
-swv_25fe30:
+Lswv_25fe30:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -57371,7 +57842,7 @@ swv_25fe30:
 	.globl	__ZN8CssArrayI11CssVector3DE9CopyArrayEPvS2_i
 	.private_extern	__ZN8CssArrayI11CssVector3DE9CopyArrayEPvS2_i
 __ZN8CssArrayI11CssVector3DE9CopyArrayEPvS2_i:
-swv_25fe90:
+Lswv_25fe90:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe1a0e002
@@ -57673,7 +58144,7 @@ swv_25fe90:
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEE9CopyArrayEPvS3_i
 __ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEE9CopyArrayEPvS3_i:
-swv_260338:
+Lswv_260338:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -57864,13 +58335,14 @@ swv_260338:
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEED0Ev
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEED0Ev
 __ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEED0Ev:
-swv_260624:
+Lswv_260624:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_26063c:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -57883,7 +58355,7 @@ swv_260624:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_26066c:
+Lswv_26066c:
 	.long	0xe5849000
 	.long	0xeb005bf1
 	.long	0xe8bd8090
@@ -57892,18 +58364,19 @@ swv_26066c:
 	.long	0x0afffff5
 	.long	0xeb005bf4
 	.long	0xeafffff3
-	.long	0x000e5b28
-	.long	swv_got_0 - swv_26066c
+	.long	Lswv_346164 - Lswv_26063c
+	.long	swv_got_0 - Lswv_26066c
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEED1Ev
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEED1Ev
 __ZN8CssArrayIN14CssSkinnedMesh11SssBoneDataEED1Ev:
-swv_260694:
+Lswv_260694:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2606ac:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -57915,7 +58388,7 @@ swv_260694:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_2606d8:
+Lswv_2606d8:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -57923,18 +58396,19 @@ swv_2606d8:
 	.long	0x0afffff7
 	.long	0xeb005bda
 	.long	0xeafffff5
-	.long	0x000e5ab8
-	.long	swv_got_0 - swv_2606d8
+	.long	Lswv_346164 - Lswv_2606ac
+	.long	swv_got_0 - Lswv_2606d8
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEED0Ev
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEED0Ev
 __ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEED0Ev:
-swv_2606fc:
+Lswv_2606fc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1060
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_260714:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -57948,7 +58422,7 @@ swv_2606fc:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_260748:
+Lswv_260748:
 	.long	0xe5849000
 	.long	0xeb005bba
 	.long	0xe8bd8090
@@ -57958,18 +58432,19 @@ swv_260748:
 	.long	0xe2400004
 	.long	0xeb005bbc
 	.long	0xeafffff2
-	.long	0x000e5a30
-	.long	swv_got_0 - swv_260748
+	.long	Lswv_346144 - Lswv_260714
+	.long	swv_got_0 - Lswv_260748
 	.globl	__ZN8CssArrayItED1Ev
 	.private_extern	__ZN8CssArrayItED1Ev
 __ZN8CssArrayItED1Ev:
-swv_260774:
+Lswv_260774:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_26078c:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -57981,7 +58456,7 @@ swv_260774:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_2607b8:
+Lswv_2607b8:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -57989,18 +58464,19 @@ swv_2607b8:
 	.long	0x0afffff7
 	.long	0xeb005ba2
 	.long	0xeafffff5
-	.long	0x000e5a18
-	.long	swv_got_0 - swv_2607b8
+	.long	Lswv_3461a4 - Lswv_26078c
+	.long	swv_got_0 - Lswv_2607b8
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEED0Ev
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEED0Ev
 __ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEED0Ev:
-swv_2607dc:
+Lswv_2607dc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1060
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2607f4:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -58014,7 +58490,7 @@ swv_2607dc:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_260828:
+Lswv_260828:
 	.long	0xe5849000
 	.long	0xeb005b82
 	.long	0xe8bd8090
@@ -58024,18 +58500,19 @@ swv_260828:
 	.long	0xe2400004
 	.long	0xeb005b84
 	.long	0xeafffff2
-	.long	0x000e5990
-	.long	swv_got_0 - swv_260828
+	.long	Lswv_346184 - Lswv_2607f4
+	.long	swv_got_0 - Lswv_260828
 	.globl	__ZN8CssArrayItED0Ev
 	.private_extern	__ZN8CssArrayItED0Ev
 __ZN8CssArrayItED0Ev:
-swv_260854:
+Lswv_260854:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_26086c:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -58048,7 +58525,7 @@ swv_260854:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_26089c:
+Lswv_26089c:
 	.long	0xe5849000
 	.long	0xeb005b65
 	.long	0xe8bd8090
@@ -58057,18 +58534,19 @@ swv_26089c:
 	.long	0x0afffff5
 	.long	0xeb005b68
 	.long	0xeafffff3
-	.long	0x000e5938
-	.long	swv_got_0 - swv_26089c
+	.long	Lswv_3461a4 - Lswv_26086c
+	.long	swv_got_0 - Lswv_26089c
 	.globl	__ZN8CssArrayI11CssVector3DED0Ev
 	.private_extern	__ZN8CssArrayI11CssVector3DED0Ev
 __ZN8CssArrayI11CssVector3DED0Ev:
-swv_2608c4:
+Lswv_2608c4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1060
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2608dc:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -58082,7 +58560,7 @@ swv_2608c4:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_260910:
+Lswv_260910:
 	.long	0xe5849000
 	.long	0xeb005b48
 	.long	0xe8bd8090
@@ -58092,12 +58570,12 @@ swv_260910:
 	.long	0xe2400004
 	.long	0xeb005b4a
 	.long	0xeafffff2
-	.long	0x000e58e8
-	.long	swv_got_0 - swv_260910
+	.long	Lswv_3461c4 - Lswv_2608dc
+	.long	swv_got_0 - Lswv_260910
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEE9CopyArrayEPvS3_i
 __ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEE9CopyArrayEPvS3_i:
-swv_26093c:
+Lswv_26093c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -58329,13 +58807,14 @@ swv_26093c:
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEED1Ev
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEED1Ev
 __ZN8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEED1Ev:
-swv_260ccc:
+Lswv_260ccc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_260ce4:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -58348,7 +58827,7 @@ swv_260ccc:
 	.long	0xe59f3028
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_260d14:
+Lswv_260d14:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -58357,18 +58836,19 @@ swv_260d14:
 	.long	0xe2400004
 	.long	0xeb005a4a
 	.long	0xeafffff4
-	.long	0x000e54a0
-	.long	swv_got_0 - swv_260d14
+	.long	Lswv_346184 - Lswv_260ce4
+	.long	swv_got_0 - Lswv_260d14
 	.globl	__ZN8CssArrayI11CssVector3DED1Ev
 	.private_extern	__ZN8CssArrayI11CssVector3DED1Ev
 __ZN8CssArrayI11CssVector3DED1Ev:
-swv_260d3c:
+Lswv_260d3c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_260d54:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -58381,7 +58861,7 @@ swv_260d3c:
 	.long	0xe59f3028
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_260d84:
+Lswv_260d84:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -58390,18 +58870,19 @@ swv_260d84:
 	.long	0xe2400004
 	.long	0xeb005a2e
 	.long	0xeafffff4
-	.long	0x000e5470
-	.long	swv_got_0 - swv_260d84
+	.long	Lswv_3461c4 - Lswv_260d54
+	.long	swv_got_0 - Lswv_260d84
 	.globl	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEED1Ev
 	.private_extern	__ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEED1Ev
 __ZN8CssArrayIN14CssSkinnedMesh11SssBoneNodeEED1Ev:
-swv_260dac:
+Lswv_260dac:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_260dc4:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -58414,7 +58895,7 @@ swv_260dac:
 	.long	0xe59f3028
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_260df4:
+Lswv_260df4:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -58423,12 +58904,12 @@ swv_260df4:
 	.long	0xe2400004
 	.long	0xeb005a12
 	.long	0xeafffff4
-	.long	0x000e5380
-	.long	swv_got_0 - swv_260df4
+	.long	Lswv_346144 - Lswv_260dc4
+	.long	swv_got_0 - Lswv_260df4
 	.globl	__ZNK14CssSkinnedMesh5CloneEv
 	.private_extern	__ZNK14CssSkinnedMesh5CloneEv
 __ZNK14CssSkinnedMesh5CloneEv:
-swv_260e1c:
+Lswv_260e1c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -58444,16 +58925,21 @@ swv_260e1c:
 	.long	0xe59f2230
 	.long	0xe08fc003
 	.long	0xe08f3000
+Lswv_260e58:
 	.long	0xe28c9008
+Lswv_260e5c:
 	.long	0xe283c008
 	.long	0xe5849000
 	.long	0xe59f321c
 	.long	0xe59f921c
 	.long	0xe08f1002
 	.long	0xe584c0c4
+Lswv_260e74:
 	.long	0xe08f2009
 	.long	0xe08fc003
+Lswv_260e7c:
 	.long	0xe281e04c
+Lswv_260e80:
 	.long	0xe28c9008
 	.long	0xe2821008
 	.long	0xe59fc200
@@ -58463,7 +58949,9 @@ swv_260e1c:
 	.long	0xe58490ec
 	.long	0xe08f1002
 	.long	0xe08f900c
+Lswv_260ea4:
 	.long	0xe2892008
+Lswv_260ea8:
 	.long	0xe3a03001
 	.long	0xe5842118
 	.long	0xe584e004
@@ -58581,24 +59069,24 @@ swv_260e1c:
 	.long	0xe1a00004
 	.long	0xebffecd8
 	.long	0xeaffffbf
-	.long	0x000e5294
-	.long	0x000e52e8
-	.long	0x000e5278
-	.long	0x000e5304
-	.long	0x000e52e8
-	.long	0x000e531c
+	.long	Lswv_3460ec - Lswv_260e58
+	.long	Lswv_346144 - Lswv_260e5c
+	.long	Lswv_3460ec - Lswv_260e74
+	.long	Lswv_346184 - Lswv_260e80
+	.long	Lswv_346164 - Lswv_260e7c
+	.long	Lswv_3461c4 - Lswv_260ea8
 	.long	0x7b4097ce
-	.long	0x000e5300
+	.long	Lswv_3461a4 - Lswv_260ea4
 	.globl	__ZNK14CssSkinnedMesh24GetRenderingVertexBufferEb
 	.private_extern	__ZNK14CssSkinnedMesh24GetRenderingVertexBufferEb
 __ZNK14CssSkinnedMesh24GetRenderingVertexBufferEb:
-swv_26109c:
+Lswv_26109c:
 	.long	0xe6ef1071
 	.long	0xeafff780
 	.globl	__ZN9CssSprite11SetPropertyEiiPf
 	.private_extern	__ZN9CssSprite11SetPropertyEiiPf
 __ZN9CssSprite11SetPropertyEiiPf:
-swv_2610a4:
+Lswv_2610a4:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -58635,7 +59123,7 @@ swv_2610a4:
 	.globl	__ZNK9CssSprite21HasAnimatablePropertyEi
 	.private_extern	__ZNK9CssSprite21HasAnimatablePropertyEi
 __ZNK9CssSprite21HasAnimatablePropertyEi:
-swv_261128:
+Lswv_261128:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe24130ff
@@ -58806,13 +59294,13 @@ __ZNK9CssSprite17CalcCropRectangleERlS0_S0_S0_:
 	.globl	__ZThn4_N9CssSpriteD0Ev
 	.private_extern	__ZThn4_N9CssSpriteD0Ev
 __ZThn4_N9CssSpriteD0Ev:
-swv_2613ac:
+Lswv_2613ac:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN9CssSpriteD0Ev
 	.private_extern	__ZN9CssSpriteD0Ev
 __ZN9CssSpriteD0Ev:
-swv_2613b4:
+Lswv_2613b4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc088
@@ -58820,9 +59308,11 @@ swv_2613b4:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_2613d0:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803044
+Lswv_2613dc:
 	.long	0xe59400ac
 	.long	0xe5843004
 	.long	0xe3500000
@@ -58851,18 +59341,18 @@ swv_2613b4:
 	.long	0xe1a00004
 	.long	0xeb00587c
 	.long	0xe8bd8090
-	.long	0x000e4e14
-	.long	0x000e4e08
+	.long	Lswv_3461e4 - Lswv_2613d0
+	.long	Lswv_3461e4 - Lswv_2613dc
 	.globl	__ZThn4_N9CssSpriteD1Ev
 	.private_extern	__ZThn4_N9CssSpriteD1Ev
 __ZThn4_N9CssSpriteD1Ev:
-swv_261454:
+Lswv_261454:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN9CssSpriteD1Ev
 	.private_extern	__ZN9CssSpriteD1Ev
 __ZN9CssSpriteD1Ev:
-swv_26145c:
+Lswv_26145c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc080
@@ -58870,9 +59360,11 @@ swv_26145c:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_261478:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803044
+Lswv_261484:
 	.long	0xe59400ac
 	.long	0xe5843004
 	.long	0xe3500000
@@ -58899,12 +59391,12 @@ swv_26145c:
 	.long	0xe1a00004
 	.long	0xebffaeac
 	.long	0xe8bd8090
-	.long	0x000e4d6c
-	.long	0x000e4d60
+	.long	Lswv_3461e4 - Lswv_261478
+	.long	Lswv_3461e4 - Lswv_261484
 	.globl	__ZN9CssSprite11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN9CssSprite11SerializeInER27CssSerializeBufferObjectsIn
 __ZN9CssSprite11SerializeInER27CssSerializeBufferObjectsIn:
-swv_2614f4:
+Lswv_2614f4:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -59085,19 +59577,19 @@ __ZN9CssSprite9SetpImageEP10CssImage2D:
 	.globl	__ZThn4_NK9CssSprite4TypeEv
 	.private_extern	__ZThn4_NK9CssSprite4TypeEv
 __ZThn4_NK9CssSprite4TypeEv:
-swv_2617ac:
+Lswv_2617ac:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK9CssSprite4TypeEv
 	.private_extern	__ZNK9CssSprite4TypeEv
 __ZNK9CssSprite4TypeEv:
-swv_2617b4:
+Lswv_2617b4:
 	.long	0xe3a00012
 	.long	0xe12fff1e
 	.globl	__ZN9CssSprite7GetpRefEi
 	.private_extern	__ZN9CssSprite7GetpRefEi
 __ZN9CssSprite7GetpRefEi:
-swv_2617bc:
+Lswv_2617bc:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe24dd008
@@ -59122,7 +59614,7 @@ swv_2617bc:
 	.globl	__ZN9CssSprite11AnimateRefsEiii
 	.private_extern	__ZN9CssSprite11AnimateRefsEiii
 __ZN9CssSprite11AnimateRefsEiii:
-swv_261810:
+Lswv_261810:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe24dd004
@@ -59141,7 +59633,7 @@ swv_261810:
 	.globl	__ZNK9CssSprite5CloneEv
 	.private_extern	__ZNK9CssSprite5CloneEv
 __ZNK9CssSprite5CloneEv:
-swv_26184c:
+Lswv_26184c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -59158,7 +59650,9 @@ swv_26184c:
 	.long	0xe588609c
 	.long	0xe08fb00c
 	.long	0xe08f4003
+Lswv_26188c:
 	.long	0xe284e008
+Lswv_261890:
 	.long	0xe28b9044
 	.long	0xe588e000
 	.long	0xe5889004
@@ -59322,8 +59816,8 @@ swv_26184c:
 	.long	0xe1a01008
 	.long	0xebffad42
 	.long	0xeaffff9d
-	.long	0x000e4958
-	.long	0x000e4954
+	.long	Lswv_3461e4 - Lswv_26188c
+	.long	Lswv_3461e4 - Lswv_261890
 	.globl	__ZN11CssStageset9ConstructEiiiPKh
 	.private_extern	__ZN11CssStageset9ConstructEiiiPKh
 __ZN11CssStageset9ConstructEiiiPKh:
@@ -59393,7 +59887,7 @@ __ZN11CssStageset9ConstructEii:
 	.globl	__ZN11CssStageset11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN11CssStageset11SerializeInER27CssSerializeBufferObjectsIn
 __ZN11CssStageset11SerializeInER27CssSerializeBufferObjectsIn:
-swv_261c14:
+Lswv_261c14:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -59554,7 +60048,7 @@ swv_261c14:
 	.globl	__ZN11CssStageset3SetEiiiiiPKh
 	.private_extern	__ZN11CssStageset3SetEiiiiiPKh
 __ZN11CssStageset3SetEiiiiiPKh:
-swv_261e88:
+Lswv_261e88:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -59771,24 +60265,24 @@ swv_261e88:
 	.globl	__ZThn4_NK11CssStageset4TypeEv
 	.private_extern	__ZThn4_NK11CssStageset4TypeEv
 __ZThn4_NK11CssStageset4TypeEv:
-swv_2621dc:
+Lswv_2621dc:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK11CssStageset4TypeEv
 	.private_extern	__ZNK11CssStageset4TypeEv
 __ZNK11CssStageset4TypeEv:
-swv_2621e4:
+Lswv_2621e4:
 	.long	0xe3a00018
 	.long	0xe12fff1e
 	.globl	__ZNK11CssStageset6CommitEv
 	.private_extern	__ZNK11CssStageset6CommitEv
 __ZNK11CssStageset6CommitEv:
-swv_2621ec:
+Lswv_2621ec:
 	.long	0xe12fff1e
 	.globl	__ZNK11CssStageset5CloneEv
 	.private_extern	__ZNK11CssStageset5CloneEv
 __ZNK11CssStageset5CloneEv:
-swv_2621f0:
+Lswv_2621f0:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe3a01000
@@ -59802,8 +60296,11 @@ swv_2621f0:
 	.long	0xe59f00c8
 	.long	0xe08f2006
 	.long	0xe08f6009
+Lswv_262224:
 	.long	0xe08f3000
+Lswv_262228:
 	.long	0xe3a0c000
+Lswv_26222c:
 	.long	0xe283e05c
 	.long	0xe584c07c
 	.long	0xe3a03001
@@ -59849,19 +60346,19 @@ swv_2621f0:
 	.long	0xeb0052ce
 	.long	0xe1a00004
 	.long	0xe8bd80f0
-	.long	0x000e4010
-	.long	0x000e3f7c
-	.long	0x000e4008
+	.long	Lswv_346234 - Lswv_262224
+	.long	Lswv_3461a4 - Lswv_262228
+	.long	Lswv_346234 - Lswv_26222c
 	.globl	__ZThn4_N11CssStagesetD1Ev
 	.private_extern	__ZThn4_N11CssStagesetD1Ev
 __ZThn4_N11CssStagesetD1Ev:
-swv_2622ec:
+Lswv_2622ec:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN11CssStagesetD1Ev
 	.private_extern	__ZN11CssStagesetD1Ev
 __ZN11CssStagesetD1Ev:
-swv_2622f4:
+Lswv_2622f4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1078
@@ -59870,11 +60367,14 @@ swv_2622f4:
 	.long	0xe59fc074
 	.long	0xe08f3000
 	.long	0xe08f0001
+Lswv_262314:
 	.long	0xe283e008
+Lswv_262318:
 	.long	0xe2803008
 	.long	0xe594007c
 	.long	0xe08f900c
 	.long	0xe289205c
+Lswv_262328:
 	.long	0xe3500000
 	.long	0xe584e000
 	.long	0xe5842004
@@ -59888,7 +60388,7 @@ swv_2622f4:
 	.long	0xe1a00004
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_26235c:
+Lswv_26235c:
 	.long	0xe5842078
 	.long	0xebff6c73
 	.long	0xe8bd8090
@@ -59897,20 +60397,20 @@ swv_26235c:
 	.long	0x0afffff5
 	.long	0xeb0054b8
 	.long	0xeafffff3
-	.long	0x000e3e8c
-	.long	0x000e3f20
-	.long	0x000e3f0c
-	.long	swv_got_0 - swv_26235c
+	.long	Lswv_3461a4 - Lswv_262318
+	.long	Lswv_346234 - Lswv_262314
+	.long	Lswv_346234 - Lswv_262328
+	.long	swv_got_0 - Lswv_26235c
 	.globl	__ZThn4_N11CssStagesetD0Ev
 	.private_extern	__ZThn4_N11CssStagesetD0Ev
 __ZThn4_N11CssStagesetD0Ev:
-swv_26238c:
+Lswv_26238c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN11CssStagesetD0Ev
 	.private_extern	__ZN11CssStagesetD0Ev
 __ZN11CssStagesetD0Ev:
-swv_262394:
+Lswv_262394:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1080
@@ -59919,11 +60419,14 @@ swv_262394:
 	.long	0xe59fc07c
 	.long	0xe08f3000
 	.long	0xe08f0001
+Lswv_2623b4:
 	.long	0xe283e008
+Lswv_2623b8:
 	.long	0xe2803008
 	.long	0xe594007c
 	.long	0xe08f900c
 	.long	0xe289205c
+Lswv_2623c8:
 	.long	0xe3500000
 	.long	0xe584e000
 	.long	0xe5842004
@@ -59937,7 +60440,7 @@ swv_262394:
 	.long	0xe1a00004
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_2623fc:
+Lswv_2623fc:
 	.long	0xe5842078
 	.long	0xebff6c4b
 	.long	0xe1a00004
@@ -59948,10 +60451,10 @@ swv_2623fc:
 	.long	0x0afffff3
 	.long	0xeb00548e
 	.long	0xeafffff1
-	.long	0x000e3dec
-	.long	0x000e3e80
-	.long	0x000e3e6c
-	.long	swv_got_0 - swv_2623fc
+	.long	Lswv_3461a4 - Lswv_2623b8
+	.long	Lswv_346234 - Lswv_2623b4
+	.long	Lswv_346234 - Lswv_2623c8
+	.long	swv_got_0 - Lswv_2623fc
 	.globl	__ZN10CssStaticsD1Ev
 	.private_extern	__ZN10CssStaticsD1Ev
 __ZN10CssStaticsD1Ev:
@@ -59959,19 +60462,19 @@ __ZN10CssStaticsD1Ev:
 	.globl	__ZThn4_NK12CssTexture2D4TypeEv
 	.private_extern	__ZThn4_NK12CssTexture2D4TypeEv
 __ZThn4_NK12CssTexture2D4TypeEv:
-swv_262438:
+Lswv_262438:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK12CssTexture2D4TypeEv
 	.private_extern	__ZNK12CssTexture2D4TypeEv
 __ZNK12CssTexture2D4TypeEv:
-swv_262440:
+Lswv_262440:
 	.long	0xe3a00011
 	.long	0xe12fff1e
 	.globl	__ZN12CssTexture2D11SetPropertyEiiPf
 	.private_extern	__ZN12CssTexture2D11SetPropertyEiiPf
 __ZN12CssTexture2D11SetPropertyEiiPf:
-swv_262448:
+Lswv_262448:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe300e102
@@ -60050,7 +60553,7 @@ swv_262448:
 	.globl	__ZNK12CssTexture2D21HasAnimatablePropertyEi
 	.private_extern	__ZNK12CssTexture2D21HasAnimatablePropertyEi
 __ZNK12CssTexture2D21HasAnimatablePropertyEi:
-swv_262574:
+Lswv_262574:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe24130ff
@@ -60070,11 +60573,13 @@ __ZN12CssTexture2DC1Ev:
 	.long	0xe59f004c
 	.long	0xe08f9002
 	.long	0xe2891008
+Lswv_2625b4:
 	.long	0xe3a090e3
 	.long	0xe5841000
 	.long	0xe289100e
 	.long	0xe08f3000
 	.long	0xe2410021
+Lswv_2625c8:
 	.long	0xe283c03c
 	.long	0xe2803002
 	.long	0xe3a02000
@@ -60087,12 +60592,12 @@ __ZN12CssTexture2DC1Ev:
 	.long	0xe584003c
 	.long	0xe5843040
 	.long	0xe8bd8090
-	.long	0x000e3ce8
-	.long	0x000e3cd4
+	.long	Lswv_34629c - Lswv_2625b4
+	.long	Lswv_34629c - Lswv_2625c8
 	.globl	__ZN12CssTexture2D11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN12CssTexture2D11SerializeInER27CssSerializeBufferObjectsIn
 __ZN12CssTexture2D11SerializeInER27CssSerializeBufferObjectsIn:
-swv_262600:
+Lswv_262600:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0500
@@ -60204,13 +60709,13 @@ swv_262600:
 	.globl	__ZThn4_N12CssTexture2DD0Ev
 	.private_extern	__ZThn4_N12CssTexture2DD0Ev
 __ZThn4_N12CssTexture2DD0Ev:
-swv_2627b0:
+Lswv_2627b0:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN12CssTexture2DD0Ev
 	.private_extern	__ZN12CssTexture2DD0Ev
 __ZN12CssTexture2DD0Ev:
-swv_2627b8:
+Lswv_2627b8:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc05c
@@ -60218,9 +60723,11 @@ swv_2627b8:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_2627d4:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe280303c
+Lswv_2627e0:
 	.long	0xe5940030
 	.long	0xe5843004
 	.long	0xe3500000
@@ -60238,18 +60745,18 @@ swv_2627b8:
 	.long	0xe1a00004
 	.long	0xeb005386
 	.long	0xe8bd8090
-	.long	0x000e3ac8
-	.long	0x000e3abc
+	.long	Lswv_34629c - Lswv_2627d4
+	.long	Lswv_34629c - Lswv_2627e0
 	.globl	__ZThn4_N12CssTexture2DD1Ev
 	.private_extern	__ZThn4_N12CssTexture2DD1Ev
 __ZThn4_N12CssTexture2DD1Ev:
-swv_26282c:
+Lswv_26282c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN12CssTexture2DD1Ev
 	.private_extern	__ZN12CssTexture2DD1Ev
 __ZN12CssTexture2DD1Ev:
-swv_262834:
+Lswv_262834:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc054
@@ -60257,9 +60764,11 @@ swv_262834:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_262850:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe280303c
+Lswv_26285c:
 	.long	0xe5940030
 	.long	0xe5843004
 	.long	0xe3500000
@@ -60275,8 +60784,8 @@ swv_262834:
 	.long	0xe1a00004
 	.long	0xeb00035c
 	.long	0xe8bd8090
-	.long	0x000e3a4c
-	.long	0x000e3a40
+	.long	Lswv_34629c - Lswv_262850
+	.long	Lswv_34629c - Lswv_26285c
 	.globl	__ZN12CssTexture2D8SetImageEP10CssImage2D
 	.private_extern	__ZN12CssTexture2D8SetImageEP10CssImage2D
 __ZN12CssTexture2D8SetImageEP10CssImage2D:
@@ -60350,7 +60859,7 @@ __ZN12CssTexture2D9ConstructEP10CssImage2D:
 	.globl	__ZNK16CssTransformable19SetMatrixCacheDirtyEv
 	.private_extern	__ZNK16CssTransformable19SetMatrixCacheDirtyEv
 __ZNK16CssTransformable19SetMatrixCacheDirtyEv:
-swv_2629a0:
+Lswv_2629a0:
 	.long	0xe5d03020
 	.long	0xe3130004
 	.long	0x03833003
@@ -60359,14 +60868,14 @@ swv_2629a0:
 	.globl	__ZNK12CssTexture2D18ReCacheBoundingBoxEb
 	.private_extern	__ZNK12CssTexture2D18ReCacheBoundingBoxEb
 __ZNK12CssTexture2D18ReCacheBoundingBoxEb:
-swv_2629b4:
+Lswv_2629b4:
 	.long	0xe24dd004
 	.long	0xe28dd004
 	.long	0xe12fff1e
 	.globl	__ZN12CssTexture2D7GetpRefEi
 	.private_extern	__ZN12CssTexture2D7GetpRefEi
 __ZN12CssTexture2D7GetpRefEi:
-swv_2629c0:
+Lswv_2629c0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe24dd004
@@ -60386,7 +60895,7 @@ swv_2629c0:
 	.globl	__ZNK12CssTexture2D5CloneEv
 	.private_extern	__ZNK12CssTexture2D5CloneEv
 __ZNK12CssTexture2D5CloneEv:
-swv_262a00:
+Lswv_262a00:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe3a01000
@@ -60401,8 +60910,10 @@ swv_262a00:
 	.long	0xe3a09000
 	.long	0xe08f1002
 	.long	0xe286200e
+Lswv_262a38:
 	.long	0xe08fe003
 	.long	0xe2810008
+Lswv_262a40:
 	.long	0xe2421021
 	.long	0xe5842034
 	.long	0xe5842038
@@ -60461,24 +60972,24 @@ swv_262a00:
 	.long	0xeb0050bc
 	.long	0xe1a00004
 	.long	0xe8bd80f0
-	.long	0x000e3864
-	.long	0x000e385c
+	.long	Lswv_34629c - Lswv_262a38
+	.long	Lswv_34629c - Lswv_262a40
 	.globl	__ZThn4_NK12CssTransform4TypeEv
 	.private_extern	__ZThn4_NK12CssTransform4TypeEv
 __ZThn4_NK12CssTransform4TypeEv:
-swv_262b30:
+Lswv_262b30:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK12CssTransform4TypeEv
 	.private_extern	__ZNK12CssTransform4TypeEv
 __ZNK12CssTransform4TypeEv:
-swv_262b38:
+Lswv_262b38:
 	.long	0xe3a0001d
 	.long	0xe12fff1e
 	.globl	__ZN12CssTransform11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN12CssTransform11SerializeInER27CssSerializeBufferObjectsIn
 __ZN12CssTransform11SerializeInER27CssSerializeBufferObjectsIn:
-swv_262b40:
+Lswv_262b40:
 	.long	0xe12fff1e
 	.globl	__ZNK12CssTransform3GetEiPf
 	.private_extern	__ZNK12CssTransform3GetEiPf
@@ -61109,7 +61620,9 @@ __ZN12CssTransformC1Ev:
 	.long	0xe3a03000
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_263470:
 	.long	0xe5803008
+Lswv_263474:
 	.long	0xe28c9008
 	.long	0xe2813020
 	.long	0xe5809000
@@ -61118,53 +61631,57 @@ __ZN12CssTransformC1Ev:
 	.long	0xe280000c
 	.long	0xebff8114
 	.long	0xe8bd8080
-	.long	0x000e2e74
-	.long	0x000e2e70
+	.long	Lswv_3462e4 - Lswv_263470
+	.long	Lswv_3462e4 - Lswv_263474
 	.globl	__ZThn4_N12CssTransformD0Ev
 	.private_extern	__ZThn4_N12CssTransformD0Ev
 __ZThn4_N12CssTransformD0Ev:
-swv_26349c:
+Lswv_26349c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN12CssTransformD0Ev
 	.private_extern	__ZN12CssTransformD0Ev
 __ZN12CssTransformD0Ev:
-swv_2634a4:
+Lswv_2634a4:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59fe020
 	.long	0xe59f2020
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_2634bc:
 	.long	0xe28c9008
+Lswv_2634c0:
 	.long	0xe281301c
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xeb00505a
 	.long	0xe8bd8080
-	.long	0x000e25e8
-	.long	0x000e25e4
+	.long	Lswv_345aa4 - Lswv_2634bc
+	.long	Lswv_345aa4 - Lswv_2634c0
 	.globl	__ZThn4_N12CssTransformD1Ev
 	.private_extern	__ZThn4_N12CssTransformD1Ev
 __ZThn4_N12CssTransformD1Ev:
-swv_2634dc:
+Lswv_2634dc:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN12CssTransformD1Ev
 	.private_extern	__ZN12CssTransformD1Ev
 __ZN12CssTransformD1Ev:
-swv_2634e4:
+Lswv_2634e4:
 	.long	0xe59f301c
 	.long	0xe59f201c
 	.long	0xe08fc003
 	.long	0xe08f1002
+Lswv_2634f4:
 	.long	0xe28c9008
+Lswv_2634f8:
 	.long	0xe281301c
 	.long	0xe5809000
 	.long	0xe5803004
 	.long	0xe12fff1e
-	.long	0x000e25b0
-	.long	0x000e25ac
+	.long	Lswv_345aa4 - Lswv_2634f4
+	.long	Lswv_345aa4 - Lswv_2634f8
 	.globl	__ZN12CssTransform9ConstructEPKS_
 	.private_extern	__ZN12CssTransform9ConstructEPKS_
 __ZN12CssTransform9ConstructEPKS_:
@@ -61190,7 +61707,7 @@ __ZNK16CssTransformable12GetTransformEP12CssTransform:
 	.globl	__ZNK16CssTransformable21HasAnimatablePropertyEi
 	.private_extern	__ZNK16CssTransformable21HasAnimatablePropertyEi
 __ZNK16CssTransformable21HasAnimatablePropertyEi:
-swv_263550:
+Lswv_263550:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59f2018
@@ -61205,13 +61722,13 @@ swv_263550:
 	.globl	__ZThn4_N16CssTransformableD0Ev
 	.private_extern	__ZThn4_N16CssTransformableD0Ev
 __ZThn4_N16CssTransformableD0Ev:
-swv_26357c:
+Lswv_26357c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN16CssTransformableD0Ev
 	.private_extern	__ZN16CssTransformableD0Ev
 __ZN16CssTransformableD0Ev:
-swv_263584:
+Lswv_263584:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc06c
@@ -61219,9 +61736,11 @@ swv_263584:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_2635a0:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803034
+Lswv_2635ac:
 	.long	0xe5843004
 	.long	0xe5d43020
 	.long	0xe3130008
@@ -61243,8 +61762,8 @@ swv_263584:
 	.long	0xe1a00004
 	.long	0xeb00500f
 	.long	0xe8bd8090
-	.long	0x000e2d70
-	.long	0x000e2d64
+	.long	Lswv_346310 - Lswv_2635a0
+	.long	Lswv_346310 - Lswv_2635ac
 	.globl	__ZN16CssTransformableD2Ev
 	.private_extern	__ZN16CssTransformableD2Ev
 __ZN16CssTransformableD2Ev:
@@ -61255,9 +61774,11 @@ __ZN16CssTransformableD2Ev:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_263624:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803034
+Lswv_263630:
 	.long	0xe5843004
 	.long	0xe5d43020
 	.long	0xe3130008
@@ -61277,8 +61798,8 @@ __ZN16CssTransformableD2Ev:
 	.long	0xe1a00004
 	.long	0xebffb3ec
 	.long	0xe8bd8090
-	.long	0x000e2cec
-	.long	0x000e2ce0
+	.long	Lswv_346310 - Lswv_263624
+	.long	Lswv_346310 - Lswv_263630
 	.globl	__ZN16CssTransformableC2Ev
 	.private_extern	__ZN16CssTransformableC2Ev
 __ZN16CssTransformableC2Ev:
@@ -61290,7 +61811,9 @@ __ZN16CssTransformableC2Ev:
 	.long	0xe59f9030
 	.long	0xe08fe003
 	.long	0xe08f2009
+Lswv_2636a4:
 	.long	0xe28ec008
+Lswv_2636a8:
 	.long	0xe2820034
 	.long	0xe584c000
 	.long	0xe5840004
@@ -61300,8 +61823,8 @@ __ZN16CssTransformableC2Ev:
 	.long	0xe5c43020
 	.long	0xe5841024
 	.long	0xe8bd8090
-	.long	0x000e2c6c
-	.long	0x000e2c68
+	.long	Lswv_346310 - Lswv_2636a4
+	.long	Lswv_346310 - Lswv_2636a8
 	.globl	__ZNK16CssTransformable21GetCompositeTransformEP12CssTransform
 	.private_extern	__ZNK16CssTransformable21GetCompositeTransformEP12CssTransform
 __ZNK16CssTransformable21GetCompositeTransformEP12CssTransform:
@@ -61395,13 +61918,13 @@ __ZNK16CssTransformable7ReCacheEv:
 	.globl	__ZThn4_N16CssTransformableD1Ev
 	.private_extern	__ZThn4_N16CssTransformableD1Ev
 __ZThn4_N16CssTransformableD1Ev:
-swv_263824:
+Lswv_263824:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN16CssTransformableD1Ev
 	.private_extern	__ZN16CssTransformableD1Ev
 __ZN16CssTransformableD1Ev:
-swv_26382c:
+Lswv_26382c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc064
@@ -61409,9 +61932,11 @@ swv_26382c:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_263848:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803034
+Lswv_263854:
 	.long	0xe5843004
 	.long	0xe5d43020
 	.long	0xe3130008
@@ -61431,8 +61956,8 @@ swv_26382c:
 	.long	0xe1a00004
 	.long	0xebffb363
 	.long	0xe8bd8090
-	.long	0x000e2ac8
-	.long	0x000e2abc
+	.long	Lswv_346310 - Lswv_263848
+	.long	Lswv_346310 - Lswv_263854
 	.globl	__ZN16CssTransformable10PostRotateERK13CssQuaternion
 	.private_extern	__ZN16CssTransformable10PostRotateERK13CssQuaternion
 __ZN16CssTransformable10PostRotateERK13CssQuaternion:
@@ -62190,7 +62715,7 @@ __ZN16CssTransformable11CloneHelperERKS_:
 	.globl	__ZN16CssTransformable11SetPropertyEiiPf
 	.private_extern	__ZN16CssTransformable11SetPropertyEiiPf
 __ZN16CssTransformable11SetPropertyEiiPf:
-swv_2643f8:
+Lswv_2643f8:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe24dd008
@@ -62425,7 +62950,7 @@ swv_2643f8:
 	.globl	__ZN16CssTransformable11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN16CssTransformable11SerializeInER27CssSerializeBufferObjectsIn
 __ZN16CssTransformable11SerializeInER27CssSerializeBufferObjectsIn:
-swv_264794:
+Lswv_264794:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xed2d8b02
@@ -62867,19 +63392,19 @@ __ZN14CssTrapManager15DestroyInstanceEv:
 	.globl	__ZThn4_NK21CssTriangleStripArray4TypeEv
 	.private_extern	__ZThn4_NK21CssTriangleStripArray4TypeEv
 __ZThn4_NK21CssTriangleStripArray4TypeEv:
-swv_264de8:
+Lswv_264de8:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK21CssTriangleStripArray4TypeEv
 	.private_extern	__ZNK21CssTriangleStripArray4TypeEv
 __ZNK21CssTriangleStripArray4TypeEv:
-swv_264df0:
+Lswv_264df0:
 	.long	0xe3a0000b
 	.long	0xe12fff1e
 	.globl	__ZNK21CssTriangleStripArray13GetIndexCountEv
 	.private_extern	__ZNK21CssTriangleStripArray13GetIndexCountEv
 __ZNK21CssTriangleStripArray13GetIndexCountEv:
-swv_264df8:
+Lswv_264df8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe5909040
@@ -63503,7 +64028,7 @@ __ZN21CssTriangleStripArray9ConstructEiPKliS1_:
 	.globl	__ZN21CssTriangleStripArray11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN21CssTriangleStripArray11SerializeInER27CssSerializeBufferObjectsIn
 __ZN21CssTriangleStripArray11SerializeInER27CssSerializeBufferObjectsIn:
-swv_265790:
+Lswv_265790:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -64200,7 +64725,7 @@ swv_265790:
 	.globl	__ZNK21CssTriangleStripArray10GetIndicesEiPl
 	.private_extern	__ZNK21CssTriangleStripArray10GetIndicesEiPl
 __ZNK21CssTriangleStripArray10GetIndicesEiPl:
-swv_266264:
+Lswv_266264:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -64455,12 +64980,15 @@ __ZN21CssTriangleStripArrayC1Ev:
 	.long	0xe59f005c
 	.long	0xe08f900c
 	.long	0xe2891008
+Lswv_266650:
 	.long	0xe5841000
 	.long	0xe59f1050
 	.long	0xe08f2000
 	.long	0xe282303c
+Lswv_266660:
 	.long	0xe08f0001
 	.long	0xe5843004
+Lswv_266668:
 	.long	0xe2803008
 	.long	0xe3a02000
 	.long	0xe3a0c001
@@ -64476,19 +65004,19 @@ __ZN21CssTriangleStripArrayC1Ev:
 	.long	0xe5842044
 	.long	0xe5843038
 	.long	0xe8bd8090
-	.long	0x000dfd00
-	.long	0x000dfcf0
-	.long	0x000dfb3c
+	.long	Lswv_346350 - Lswv_266650
+	.long	Lswv_346350 - Lswv_266660
+	.long	Lswv_3461a4 - Lswv_266668
 	.globl	__ZThn4_N21CssTriangleStripArrayD0Ev
 	.private_extern	__ZThn4_N21CssTriangleStripArrayD0Ev
 __ZThn4_N21CssTriangleStripArrayD0Ev:
-swv_2666b0:
+Lswv_2666b0:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN21CssTriangleStripArrayD0Ev
 	.private_extern	__ZN21CssTriangleStripArrayD0Ev
 __ZN21CssTriangleStripArrayD0Ev:
-swv_2666b8:
+Lswv_2666b8:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f10d0
@@ -64497,11 +65025,14 @@ swv_2666b8:
 	.long	0xe59fc0cc
 	.long	0xe08f3000
 	.long	0xe08f0001
+Lswv_2666d8:
 	.long	0xe283e008
+Lswv_2666dc:
 	.long	0xe2803008
 	.long	0xe594003c
 	.long	0xe08f900c
 	.long	0xe289203c
+Lswv_2666ec:
 	.long	0xe3500000
 	.long	0xe584e000
 	.long	0xe5842004
@@ -64515,9 +65046,10 @@ swv_2666b8:
 	.long	0xe59fc08c
 	.long	0xe79f3000
 	.long	0xe594002c
-swv_266720:
+Lswv_266720:
 	.long	0xe08f900c
 	.long	0xe283e008
+Lswv_266728:
 	.long	0xe3500000
 	.long	0xe2892008
 	.long	0xe584e038
@@ -64531,7 +65063,7 @@ swv_266720:
 	.long	0xe1a00004
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_26675c:
+Lswv_26675c:
 	.long	0xe5842028
 	.long	0xebff5f24
 	.long	0xe1a00004
@@ -64547,22 +65079,22 @@ swv_26675c:
 	.long	0x0affffee
 	.long	0xeb0043b1
 	.long	0xeaffffec
-	.long	0x000dfac8
-	.long	0x000dfc78
-	.long	0x000dfc64
-	.long	swv_got_0 - swv_266720
-	.long	0x000dfa7c
-	.long	swv_got_0 - swv_26675c
+	.long	Lswv_3461a4 - Lswv_2666dc
+	.long	Lswv_346350 - Lswv_2666d8
+	.long	Lswv_346350 - Lswv_2666ec
+	.long	swv_got_0 - Lswv_266720
+	.long	Lswv_3461a4 - Lswv_266728
+	.long	swv_got_0 - Lswv_26675c
 	.globl	__ZThn4_N21CssTriangleStripArrayD1Ev
 	.private_extern	__ZThn4_N21CssTriangleStripArrayD1Ev
 __ZThn4_N21CssTriangleStripArrayD1Ev:
-swv_2667b0:
+Lswv_2667b0:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN21CssTriangleStripArrayD1Ev
 	.private_extern	__ZN21CssTriangleStripArrayD1Ev
 __ZN21CssTriangleStripArrayD1Ev:
-swv_2667b8:
+Lswv_2667b8:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f10c8
@@ -64571,11 +65103,14 @@ swv_2667b8:
 	.long	0xe59fc0c4
 	.long	0xe08f3000
 	.long	0xe08f0001
+Lswv_2667d8:
 	.long	0xe283e008
+Lswv_2667dc:
 	.long	0xe2803008
 	.long	0xe594003c
 	.long	0xe08f900c
 	.long	0xe289203c
+Lswv_2667ec:
 	.long	0xe3500000
 	.long	0xe584e000
 	.long	0xe5842004
@@ -64589,9 +65124,10 @@ swv_2667b8:
 	.long	0xe59fc084
 	.long	0xe79f3000
 	.long	0xe594002c
-swv_266820:
+Lswv_266820:
 	.long	0xe08f900c
 	.long	0xe283e008
+Lswv_266828:
 	.long	0xe3500000
 	.long	0xe2892008
 	.long	0xe584e038
@@ -64605,7 +65141,7 @@ swv_266820:
 	.long	0xe1a00004
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_26685c:
+Lswv_26685c:
 	.long	0xe5842028
 	.long	0xebff5ee4
 	.long	0xe8bd8090
@@ -64619,16 +65155,16 @@ swv_26685c:
 	.long	0x0afffff0
 	.long	0xeb004373
 	.long	0xeaffffee
-	.long	0x000df9c8
-	.long	0x000dfb78
-	.long	0x000dfb64
-	.long	swv_got_0 - swv_266820
-	.long	0x000df97c
-	.long	swv_got_0 - swv_26685c
+	.long	Lswv_3461a4 - Lswv_2667dc
+	.long	Lswv_346350 - Lswv_2667d8
+	.long	Lswv_346350 - Lswv_2667ec
+	.long	swv_got_0 - Lswv_266820
+	.long	Lswv_3461a4 - Lswv_266828
+	.long	swv_got_0 - Lswv_26685c
 	.globl	__ZNK21CssTriangleStripArray5CloneEv
 	.private_extern	__ZNK21CssTriangleStripArray5CloneEv
 __ZNK21CssTriangleStripArray5CloneEv:
-swv_2668a8:
+Lswv_2668a8:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe3a01000
@@ -64641,12 +65177,15 @@ swv_2668a8:
 	.long	0xe59fc104
 	.long	0xe08f1006
 	.long	0xe3a03001
+Lswv_2668d8:
 	.long	0xe08f900c
 	.long	0xe59fc0f8
+Lswv_2668e0:
 	.long	0xe2892008
 	.long	0xe3a0e000
 	.long	0xe08f900c
 	.long	0xe2896008
+Lswv_2668f0:
 	.long	0xe5c43024
 	.long	0xe1c4e2b6
 	.long	0xe281003c
@@ -64704,9 +65243,9 @@ swv_2668a8:
 	.long	0xeb004111
 	.long	0xe1a00004
 	.long	0xe8bd80f0
-	.long	0x000dfa78
-	.long	0x000dfa70
-	.long	0x000df8b4
+	.long	Lswv_346350 - Lswv_2668d8
+	.long	Lswv_346350 - Lswv_2668e0
+	.long	Lswv_3461a4 - Lswv_2668f0
 	.globl	__ZNK11CssVector3DrmERKS_
 	.private_extern	__ZNK11CssVector3DrmERKS_
 __ZNK11CssVector3DrmERKS_:
@@ -64767,13 +65306,13 @@ __ZN11CssVector3D4UnitEv:
 	.globl	__ZThn4_NK14CssVertexArray4TypeEv
 	.private_extern	__ZThn4_NK14CssVertexArray4TypeEv
 __ZThn4_NK14CssVertexArray4TypeEv:
-swv_266aac:
+Lswv_266aac:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK14CssVertexArray4TypeEv
 	.private_extern	__ZNK14CssVertexArray4TypeEv
 __ZNK14CssVertexArray4TypeEv:
-swv_266ab4:
+Lswv_266ab4:
 	.long	0xe3a00014
 	.long	0xe12fff1e
 	.globl	__ZNK14CssVertexArray12GetMaxNumberEv
@@ -65148,13 +65687,17 @@ __ZN14CssVertexArrayC1Ev:
 	.long	0xe59f9070
 	.long	0xe08f3000
 	.long	0xe08f1009
+Lswv_267044:
 	.long	0xe59f0068
+Lswv_267048:
 	.long	0xe59f9068
 	.long	0xe283c008
 	.long	0xe2812034
 	.long	0xe08f3000
 	.long	0xe08f1009
+Lswv_26705c:
 	.long	0xe584c000
+Lswv_267060:
 	.long	0xe2810008
 	.long	0xe283c008
 	.long	0xe5842004
@@ -65174,10 +65717,10 @@ __ZN14CssVertexArrayC1Ev:
 	.long	0xe5c43050
 	.long	0xe584204c
 	.long	0xe8bd8090
-	.long	0x000df354
-	.long	0x000df350
-	.long	0x000de68c
-	.long	0x000df388
+	.long	Lswv_346398 - Lswv_267044
+	.long	Lswv_346398 - Lswv_267048
+	.long	Lswv_3456e8 - Lswv_26705c
+	.long	Lswv_3463e8 - Lswv_267060
 	.globl	__ZNK14CssVertexArray8GetBBMaxEf11CssVector3D
 	.private_extern	__ZNK14CssVertexArray8GetBBMaxEf11CssVector3D
 __ZNK14CssVertexArray8GetBBMaxEf11CssVector3D:
@@ -65508,9 +66051,11 @@ __ZNK14CssVertexArray20GetTexCoordDataCacheEfRK11CssVector3D:
 	.long	0xe3a0c000
 	.long	0xe08f200e
 	.long	0xe3a03000
+Lswv_2675c0:
 	.long	0xe1a05000
 	.long	0xe08f0001
 	.long	0xe2809008
+Lswv_2675cc:
 	.long	0xe2821008
 	.long	0xe8851200
 	.long	0xe5853008
@@ -65732,8 +66277,8 @@ __ZNK14CssVertexArray20GetTexCoordDataCacheEfRK11CssVector3D:
 	.long	0xe247d018
 	.long	0xe8bd0d00
 	.long	0xe8bd80f0
-	.long	0x000de614
-	.long	0x000dee0c
+	.long	Lswv_345bd4 - Lswv_2675c0
+	.long	Lswv_3463d8 - Lswv_2675cc
 	.long	0x377ba882
 	.long	0xed907a02
 	.long	0xeeb47a48
@@ -66786,7 +67331,7 @@ __ZN14CssVertexArray5Set16EiiiPKs:
 	.globl	__ZN14CssVertexArray11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN14CssVertexArray11SerializeInER27CssSerializeBufferObjectsIn
 __ZN14CssVertexArray11SerializeInER27CssSerializeBufferObjectsIn:
-swv_268994:
+Lswv_268994:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -67264,10 +67809,12 @@ __ZN14CssVertexArrayD2Ev:
 	.long	0xe59f1374
 	.long	0xe08f8009
 	.long	0xe2882008
+Lswv_2690f0:
 	.long	0xe5958044
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe3580000
+Lswv_269100:
 	.long	0xe2803034
 	.long	0xd5950040
 	.long	0xe5853004
@@ -67444,6 +67991,7 @@ __ZN14CssVertexArrayD2Ev:
 	.long	0xe3500000
 	.long	0xe08f3001
 	.long	0xe283e008
+Lswv_2693c0:
 	.long	0xe585e03c
 	.long	0x0a000000
 	.long	0xeb0038a3
@@ -67456,8 +68004,9 @@ __ZN14CssVertexArrayD2Ev:
 	.long	0xe3500000
 	.long	0xe79f3001
 	.long	0xe08f900c
-swv_2693f0:
+Lswv_2693f0:
 	.long	0xe283e008
+Lswv_2693f4:
 	.long	0xe2892008
 	.long	0xe585e03c
 	.long	0xe585202c
@@ -67470,7 +68019,7 @@ swv_2693f0:
 	.long	0xe1a00005
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_269424:
+Lswv_269424:
 	.long	0xe585202c
 	.long	0xebff9c7f
 	.long	0xe8bd0100
@@ -67485,33 +68034,33 @@ swv_269424:
 	.long	0x0affffe0
 	.long	0xeb003880
 	.long	0xeaffffde
-	.long	0x000dd2a8
-	.long	0x000dd298
-	.long	0x000dd028
-	.long	swv_got_0 - swv_2693f0
-	.long	0x000dc2f4
-	.long	swv_got_0 - swv_269424
+	.long	Lswv_346398 - Lswv_2690f0
+	.long	Lswv_346398 - Lswv_269100
+	.long	Lswv_3463e8 - Lswv_2693c0
+	.long	swv_got_0 - Lswv_2693f0
+	.long	Lswv_3456e8 - Lswv_2693f4
+	.long	swv_got_0 - Lswv_269424
 	.globl	__ZThn4_N14CssVertexArrayD1Ev
 	.private_extern	__ZThn4_N14CssVertexArrayD1Ev
 __ZThn4_N14CssVertexArrayD1Ev:
-swv_269474:
+Lswv_269474:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN14CssVertexArrayD1Ev
 	.private_extern	__ZN14CssVertexArrayD1Ev
 __ZN14CssVertexArrayD1Ev:
-swv_26947c:
+Lswv_26947c:
 	.long	0xeaffff13
 	.globl	__ZThn4_N14CssVertexArrayD0Ev
 	.private_extern	__ZThn4_N14CssVertexArrayD0Ev
 __ZThn4_N14CssVertexArrayD0Ev:
-swv_269480:
+Lswv_269480:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN14CssVertexArrayD0Ev
 	.private_extern	__ZN14CssVertexArrayD0Ev
 __ZN14CssVertexArrayD0Ev:
-swv_269488:
+Lswv_269488:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -67520,10 +68069,12 @@ swv_269488:
 	.long	0xe59f137c
 	.long	0xe08f8009
 	.long	0xe2882008
+Lswv_2694a8:
 	.long	0xe5958044
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe3580000
+Lswv_2694b8:
 	.long	0xe2803034
 	.long	0xd5950040
 	.long	0xe5853004
@@ -67700,6 +68251,7 @@ swv_269488:
 	.long	0xe3500000
 	.long	0xe08f3001
 	.long	0xe283e008
+Lswv_269778:
 	.long	0xe585e03c
 	.long	0x0a000000
 	.long	0xeb0037b5
@@ -67712,8 +68264,9 @@ swv_269488:
 	.long	0xe3500000
 	.long	0xe79f3001
 	.long	0xe08f900c
-swv_2697a8:
+Lswv_2697a8:
 	.long	0xe283e008
+Lswv_2697ac:
 	.long	0xe2892008
 	.long	0xe585e03c
 	.long	0xe585202c
@@ -67726,7 +68279,7 @@ swv_2697a8:
 	.long	0xe1a00005
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_2697dc:
+Lswv_2697dc:
 	.long	0xe585202c
 	.long	0xebff9b91
 	.long	0xe1a00005
@@ -67743,16 +68296,16 @@ swv_2697dc:
 	.long	0x0affffde
 	.long	0xeb003790
 	.long	0xeaffffdc
-	.long	0x000dcef0
-	.long	0x000dcee0
-	.long	0x000dcc70
-	.long	swv_got_0 - swv_2697a8
-	.long	0x000dbf3c
-	.long	swv_got_0 - swv_2697dc
+	.long	Lswv_346398 - Lswv_2694a8
+	.long	Lswv_346398 - Lswv_2694b8
+	.long	Lswv_3463e8 - Lswv_269778
+	.long	swv_got_0 - Lswv_2697a8
+	.long	Lswv_3456e8 - Lswv_2697ac
+	.long	swv_got_0 - Lswv_2697dc
 	.globl	__ZN8CssArrayIP19CssVertexArrayCacheE7DestroyEPv
 	.private_extern	__ZN8CssArrayIP19CssVertexArrayCacheE7DestroyEPv
 __ZN8CssArrayIP19CssVertexArrayCacheE7DestroyEPv:
-swv_269834:
+Lswv_269834:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -67762,7 +68315,7 @@ swv_269834:
 	.globl	__ZN8CssArrayIP19CssVertexArrayCacheE8AllocateEi
 	.private_extern	__ZN8CssArrayIP19CssVertexArrayCacheE8AllocateEi
 __ZN8CssArrayIP19CssVertexArrayCacheE8AllocateEi:
-swv_26984c:
+Lswv_26984c:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -67772,7 +68325,7 @@ swv_26984c:
 	.globl	__ZN8CssArrayIP19CssVertexArrayCacheE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIP19CssVertexArrayCacheE9CopyArrayEPvS3_i
 __ZN8CssArrayIP19CssVertexArrayCacheE9CopyArrayEPvS3_i:
-swv_269864:
+Lswv_269864:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -67933,13 +68486,14 @@ swv_269864:
 	.globl	__ZN8CssArrayIP19CssVertexArrayCacheED0Ev
 	.private_extern	__ZN8CssArrayIP19CssVertexArrayCacheED0Ev
 __ZN8CssArrayIP19CssVertexArrayCacheED0Ev:
-swv_269ad8:
+Lswv_269ad8:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_269af0:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -67952,7 +68506,7 @@ swv_269ad8:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_269b20:
+Lswv_269b20:
 	.long	0xe5849000
 	.long	0xeb0036c4
 	.long	0xe8bd8090
@@ -67961,18 +68515,19 @@ swv_269b20:
 	.long	0x0afffff5
 	.long	0xeb0036c7
 	.long	0xeafffff3
-	.long	0x000dc8f8
-	.long	swv_got_0 - swv_269b20
+	.long	Lswv_3463e8 - Lswv_269af0
+	.long	swv_got_0 - Lswv_269b20
 	.globl	__ZN8CssArrayIP19CssVertexArrayCacheED1Ev
 	.private_extern	__ZN8CssArrayIP19CssVertexArrayCacheED1Ev
 __ZN8CssArrayIP19CssVertexArrayCacheED1Ev:
-swv_269b48:
+Lswv_269b48:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_269b60:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -67984,7 +68539,7 @@ swv_269b48:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_269b8c:
+Lswv_269b8c:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -67992,12 +68547,12 @@ swv_269b8c:
 	.long	0x0afffff7
 	.long	0xeb0036ad
 	.long	0xeafffff5
-	.long	0x000dc888
-	.long	swv_got_0 - swv_269b8c
+	.long	Lswv_3463e8 - Lswv_269b60
+	.long	swv_got_0 - Lswv_269b8c
 	.globl	__ZNK14CssVertexArray5CloneEv
 	.private_extern	__ZNK14CssVertexArray5CloneEv
 __ZNK14CssVertexArray5CloneEv:
-swv_269bb0:
+Lswv_269bb0:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0500
@@ -68012,11 +68567,15 @@ swv_269bb0:
 	.long	0xe59f02e4
 	.long	0xe08f2006
 	.long	0xe08fa00c
+Lswv_269be8:
 	.long	0xe59fc2dc
+Lswv_269bec:
 	.long	0xe08f3000
 	.long	0xe28a9008
+Lswv_269bf4:
 	.long	0xe08fa00c
 	.long	0xe283e008
+Lswv_269bfc:
 	.long	0xe2821034
 	.long	0xe584e02c
 	.long	0xe3a02000
@@ -68194,14 +68753,14 @@ swv_269bb0:
 	.long	0xe1a00004
 	.long	0xe8bd0500
 	.long	0xe8bd80f0
-	.long	0x000dc7b0
-	.long	0x000dc7ac
-	.long	0x000dbaf4
-	.long	0x000dc7ec
+	.long	Lswv_346398 - Lswv_269be8
+	.long	Lswv_346398 - Lswv_269bec
+	.long	Lswv_3456e8 - Lswv_269bf4
+	.long	Lswv_3463e8 - Lswv_269bfc
 	.globl	__ZN19CssVertexArrayCacheD0Ev
 	.private_extern	__ZN19CssVertexArrayCacheD0Ev
 __ZN19CssVertexArrayCacheD0Ev:
-swv_269ed0:
+Lswv_269ed0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc068
@@ -68209,9 +68768,11 @@ swv_269ed0:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_269eec:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_269ef8:
 	.long	0xe594001c
 	.long	0xe5843018
 	.long	0xe3500000
@@ -68223,7 +68784,7 @@ swv_269ed0:
 	.long	0xe59f1030
 	.long	0xe79f0001
 	.long	0xe2803008
-swv_269f24:
+Lswv_269f24:
 	.long	0xe1a00004
 	.long	0xe5843018
 	.long	0xeb0035c2
@@ -68233,13 +68794,13 @@ swv_269f24:
 	.long	0x0afffff5
 	.long	0xeb0035c5
 	.long	0xeafffff3
-	.long	0x000dc4ec
-	.long	0x000dbcdc
-	.long	swv_got_0 - swv_269f24
+	.long	Lswv_3463d8 - Lswv_269eec
+	.long	Lswv_345bd4 - Lswv_269ef8
+	.long	swv_got_0 - Lswv_269f24
 	.globl	__ZN19CssVertexArrayCacheD1Ev
 	.private_extern	__ZN19CssVertexArrayCacheD1Ev
 __ZN19CssVertexArrayCacheD1Ev:
-swv_269f54:
+Lswv_269f54:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc060
@@ -68247,9 +68808,11 @@ swv_269f54:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_269f70:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_269f7c:
 	.long	0xe594001c
 	.long	0xe5843018
 	.long	0xe3500000
@@ -68261,7 +68824,7 @@ swv_269f54:
 	.long	0xe59f2028
 	.long	0xe79f1002
 	.long	0xe2810008
-swv_269fa8:
+Lswv_269fa8:
 	.long	0xe5840018
 	.long	0xe8bd8090
 	.long	0xe5940024
@@ -68269,25 +68832,25 @@ swv_269fa8:
 	.long	0x0afffff7
 	.long	0xeb0035a6
 	.long	0xeafffff5
-	.long	0x000dc468
-	.long	0x000dbc58
-	.long	swv_got_0 - swv_269fa8
+	.long	Lswv_3463d8 - Lswv_269f70
+	.long	Lswv_345bd4 - Lswv_269f7c
+	.long	swv_got_0 - Lswv_269fa8
 	.globl	__ZThn4_NK15CssVertexBuffer4TypeEv
 	.private_extern	__ZThn4_NK15CssVertexBuffer4TypeEv
 __ZThn4_NK15CssVertexBuffer4TypeEv:
-swv_269fd0:
+Lswv_269fd0:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK15CssVertexBuffer4TypeEv
 	.private_extern	__ZNK15CssVertexBuffer4TypeEv
 __ZNK15CssVertexBuffer4TypeEv:
-swv_269fd8:
+Lswv_269fd8:
 	.long	0xe3a00015
 	.long	0xe12fff1e
 	.globl	__ZN15CssVertexBuffer11SetPropertyEiiPf
 	.private_extern	__ZN15CssVertexBuffer11SetPropertyEiiPf
 __ZN15CssVertexBuffer11SetPropertyEiiPf:
-swv_269fe0:
+Lswv_269fe0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3510c01
@@ -68388,7 +68951,7 @@ swv_269fe0:
 	.globl	__ZNK15CssVertexBuffer21HasAnimatablePropertyEi
 	.private_extern	__ZNK15CssVertexBuffer21HasAnimatablePropertyEi
 __ZNK15CssVertexBuffer21HasAnimatablePropertyEi:
-swv_26a164:
+Lswv_26a164:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe3a0200a
@@ -68575,13 +69138,13 @@ __ZNK15CssVertexBuffer12GetPositionsEiPf:
 	.globl	__ZThn4_N15CssVertexBufferD0Ev
 	.private_extern	__ZThn4_N15CssVertexBufferD0Ev
 __ZThn4_N15CssVertexBufferD0Ev:
-swv_26a41c:
+Lswv_26a41c:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN15CssVertexBufferD0Ev
 	.private_extern	__ZN15CssVertexBufferD0Ev
 __ZN15CssVertexBufferD0Ev:
-swv_26a424:
+Lswv_26a424:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc138
@@ -68589,9 +69152,11 @@ swv_26a424:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_26a440:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803034
+Lswv_26a44c:
 	.long	0xe5940028
 	.long	0xe5843004
 	.long	0xe3500000
@@ -68664,8 +69229,8 @@ swv_26a424:
 	.long	0xe1a00004
 	.long	0xeb003434
 	.long	0xe8bd8090
-	.long	0x000dbfc8
-	.long	0x000dbfbc
+	.long	Lswv_346408 - Lswv_26a440
+	.long	Lswv_346408 - Lswv_26a44c
 	.globl	__ZN15CssVertexBufferD2Ev
 	.private_extern	__ZN15CssVertexBufferD2Ev
 __ZN15CssVertexBufferD2Ev:
@@ -68676,9 +69241,11 @@ __ZN15CssVertexBufferD2Ev:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_26a590:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803034
+Lswv_26a59c:
 	.long	0xe5940028
 	.long	0xe5843004
 	.long	0xe3500000
@@ -68747,18 +69314,18 @@ __ZN15CssVertexBufferD2Ev:
 	.long	0xe1a00004
 	.long	0xebff97e0
 	.long	0xe8bd8090
-	.long	0x000dbe78
-	.long	0x000dbe6c
+	.long	Lswv_346408 - Lswv_26a590
+	.long	Lswv_346408 - Lswv_26a59c
 	.globl	__ZThn4_N15CssVertexBufferD1Ev
 	.private_extern	__ZThn4_N15CssVertexBufferD1Ev
 __ZThn4_N15CssVertexBufferD1Ev:
-swv_26a6b4:
+Lswv_26a6b4:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN15CssVertexBufferD1Ev
 	.private_extern	__ZN15CssVertexBufferD1Ev
 __ZN15CssVertexBufferD1Ev:
-swv_26a6bc:
+Lswv_26a6bc:
 	.long	0xeaffffac
 	.globl	__ZN15CssVertexBuffer14SetVertexArrayEPP14CssVertexArrayS1_
 	.private_extern	__ZN15CssVertexBuffer14SetVertexArrayEPP14CssVertexArrayS1_
@@ -69067,7 +69634,7 @@ __ZN15CssVertexBuffer12SetPositionsEP14CssVertexArrayfiPKf:
 	.globl	__ZN15CssVertexBuffer11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN15CssVertexBuffer11SerializeInER27CssSerializeBufferObjectsIn
 __ZN15CssVertexBuffer11SerializeInER27CssSerializeBufferObjectsIn:
-swv_26ab44:
+Lswv_26ab44:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -69584,7 +70151,9 @@ __ZN15CssVertexBufferC1Ev:
 	.long	0xe59f10b8
 	.long	0xe08f2000
 	.long	0xe08fc001
+Lswv_26b348:
 	.long	0xe3a00000
+Lswv_26b34c:
 	.long	0xe3a015fe
 	.long	0xe2823008
 	.long	0xe28c9034
@@ -69628,12 +70197,12 @@ __ZN15CssVertexBufferC1Ev:
 	.long	0xe5841078
 	.long	0xe247d004
 	.long	0xe8bd8090
-	.long	0x000db0c0
-	.long	0x000db0bc
+	.long	Lswv_346408 - Lswv_26b348
+	.long	Lswv_346408 - Lswv_26b34c
 	.globl	__ZN15CssVertexBuffer7GetpRefEi
 	.private_extern	__ZN15CssVertexBuffer7GetpRefEi
 __ZN15CssVertexBuffer7GetpRefEi:
-swv_26b400:
+Lswv_26b400:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe24dd014
@@ -69660,7 +70229,7 @@ swv_26b400:
 	.globl	__ZNK15CssVertexBuffer5CloneEv
 	.private_extern	__ZNK15CssVertexBuffer5CloneEv
 __ZNK15CssVertexBuffer5CloneEv:
-swv_26b45c:
+Lswv_26b45c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe24dd004
@@ -69675,7 +70244,9 @@ swv_26b45c:
 	.long	0xe3a0c000
 	.long	0xe08f6009
 	.long	0xe08f3000
+Lswv_26b494:
 	.long	0xe3a09000
+Lswv_26b498:
 	.long	0xe3e02000
 	.long	0xe283e034
 	.long	0xe584c03c
@@ -69881,8 +70452,8 @@ swv_26b45c:
 	.long	0xe1a00004
 	.long	0xe247d00c
 	.long	0xe8bd80f0
-	.long	0x000daf74
-	.long	0x000daf70
+	.long	Lswv_346408 - Lswv_26b494
+	.long	Lswv_346408 - Lswv_26b498
 	.globl	__ZNK10CssWarpMap4WarpEl
 	.private_extern	__ZNK10CssWarpMap4WarpEl
 __ZNK10CssWarpMap4WarpEl:
@@ -70370,7 +70941,9 @@ __ZN10CssWarpMapC1Ev:
 	.long	0xe3a09000
 	.long	0xe08f3001
 	.long	0xe08f1002
+Lswv_26bf4c:
 	.long	0xe283c008
+Lswv_26bf50:
 	.long	0xe2813008
 	.long	0xe580c000
 	.long	0xe5c09004
@@ -70379,12 +70952,12 @@ __ZN10CssWarpMapC1Ev:
 	.long	0xe5809014
 	.long	0xe5803008
 	.long	0xe12fff1e
-	.long	0x000da4fc
-	.long	0x000da508
+	.long	Lswv_346448 - Lswv_26bf4c
+	.long	Lswv_346458 - Lswv_26bf50
 	.globl	__ZN10CssWarpMapD0Ev
 	.private_extern	__ZN10CssWarpMapD0Ev
 __ZN10CssWarpMapD0Ev:
-swv_26bf78:
+Lswv_26bf78:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc068
@@ -70392,9 +70965,11 @@ swv_26bf78:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_26bf94:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_26bfa0:
 	.long	0xe594000c
 	.long	0xe5843008
 	.long	0xe3500000
@@ -70406,7 +70981,7 @@ swv_26bf78:
 	.long	0xe59f1030
 	.long	0xe79f0001
 	.long	0xe2803008
-swv_26bfcc:
+Lswv_26bfcc:
 	.long	0xe1a00004
 	.long	0xe5843008
 	.long	0xeb002d98
@@ -70416,13 +70991,13 @@ swv_26bfcc:
 	.long	0x0afffff5
 	.long	0xeb002d9b
 	.long	0xeafffff3
-	.long	0x000da4b4
-	.long	0x000da4b8
-	.long	swv_got_0 - swv_26bfcc
+	.long	Lswv_346448 - Lswv_26bf94
+	.long	Lswv_346458 - Lswv_26bfa0
+	.long	swv_got_0 - Lswv_26bfcc
 	.globl	__ZN10CssWarpMapD1Ev
 	.private_extern	__ZN10CssWarpMapD1Ev
 __ZN10CssWarpMapD1Ev:
-swv_26bffc:
+Lswv_26bffc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc060
@@ -70430,9 +71005,11 @@ swv_26bffc:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_26c018:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_26c024:
 	.long	0xe594000c
 	.long	0xe5843008
 	.long	0xe3500000
@@ -70444,7 +71021,7 @@ swv_26bffc:
 	.long	0xe59f2028
 	.long	0xe79f1002
 	.long	0xe2810008
-swv_26c050:
+Lswv_26c050:
 	.long	0xe5840008
 	.long	0xe8bd8090
 	.long	0xe5940014
@@ -70452,13 +71029,13 @@ swv_26c050:
 	.long	0x0afffff7
 	.long	0xeb002d7c
 	.long	0xeafffff5
-	.long	0x000da430
-	.long	0x000da434
-	.long	swv_got_0 - swv_26c050
+	.long	Lswv_346448 - Lswv_26c018
+	.long	Lswv_346458 - Lswv_26c024
+	.long	swv_got_0 - Lswv_26c050
 	.globl	__ZN8CssArrayI7SssKnotE7DestroyEPv
 	.private_extern	__ZN8CssArrayI7SssKnotE7DestroyEPv
 __ZN8CssArrayI7SssKnotE7DestroyEPv:
-swv_26c078:
+Lswv_26c078:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -70468,13 +71045,14 @@ swv_26c078:
 	.globl	__ZN8CssArrayI7SssKnotED1Ev
 	.private_extern	__ZN8CssArrayI7SssKnotED1Ev
 __ZN8CssArrayI7SssKnotED1Ev:
-swv_26c090:
+Lswv_26c090:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_26c0a8:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -70486,7 +71064,7 @@ swv_26c090:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_26c0d4:
+Lswv_26c0d4:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -70494,12 +71072,12 @@ swv_26c0d4:
 	.long	0x0afffff7
 	.long	0xeb002d5b
 	.long	0xeafffff5
-	.long	0x000da3b0
-	.long	swv_got_0 - swv_26c0d4
+	.long	Lswv_346458 - Lswv_26c0a8
+	.long	swv_got_0 - Lswv_26c0d4
 	.globl	__ZN8CssArrayI7SssKnotE8AllocateEi
 	.private_extern	__ZN8CssArrayI7SssKnotE8AllocateEi
 __ZN8CssArrayI7SssKnotE8AllocateEi:
-swv_26c0f8:
+Lswv_26c0f8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00181
@@ -70509,7 +71087,7 @@ swv_26c0f8:
 	.globl	__ZN8CssArrayI7SssKnotE9CopyArrayEPvS2_i
 	.private_extern	__ZN8CssArrayI7SssKnotE9CopyArrayEPvS2_i
 __ZN8CssArrayI7SssKnotE9CopyArrayEPvS2_i:
-swv_26c110:
+Lswv_26c110:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe1a09002
@@ -70724,13 +71302,14 @@ swv_26c110:
 	.globl	__ZN8CssArrayI7SssKnotED0Ev
 	.private_extern	__ZN8CssArrayI7SssKnotED0Ev
 __ZN8CssArrayI7SssKnotED0Ev:
-swv_26c45c:
+Lswv_26c45c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_26c474:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -70743,7 +71322,7 @@ swv_26c45c:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_26c4a4:
+Lswv_26c4a4:
 	.long	0xe5849000
 	.long	0xeb002c63
 	.long	0xe8bd8090
@@ -70752,18 +71331,18 @@ swv_26c4a4:
 	.long	0x0afffff5
 	.long	0xeb002c66
 	.long	0xeafffff3
-	.long	0x000d9fe4
-	.long	swv_got_0 - swv_26c4a4
+	.long	Lswv_346458 - Lswv_26c474
+	.long	swv_got_0 - Lswv_26c4a4
 	.globl	__ZThn4_NK8CssWorld4TypeEv
 	.private_extern	__ZThn4_NK8CssWorld4TypeEv
 __ZThn4_NK8CssWorld4TypeEv:
-swv_26c4cc:
+Lswv_26c4cc:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK8CssWorld4TypeEv
 	.private_extern	__ZNK8CssWorld4TypeEv
 __ZNK8CssWorld4TypeEv:
-swv_26c4d4:
+Lswv_26c4d4:
 	.long	0xe3a00016
 	.long	0xe12fff1e
 	.globl	__ZNK8CssWorld22RecacheLightsRecursiveEPK7CssNode
@@ -70831,7 +71410,7 @@ __ZNK8CssWorld11GetapLightsEv:
 	.globl	__ZN8CssWorld11SetPropertyEiiPf
 	.private_extern	__ZN8CssWorld11SetPropertyEiiPf
 __ZN8CssWorld11SetPropertyEiiPf:
-swv_26c5bc:
+Lswv_26c5bc:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xebff7f81
@@ -70839,7 +71418,7 @@ swv_26c5bc:
 	.globl	__ZNK8CssWorld21HasAnimatablePropertyEi
 	.private_extern	__ZNK8CssWorld21HasAnimatablePropertyEi
 __ZNK8CssWorld21HasAnimatablePropertyEi:
-swv_26c5cc:
+Lswv_26c5cc:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xebff7e48
@@ -70855,11 +71434,14 @@ __ZN8CssWorldC1Ev:
 	.long	0xe59f3044
 	.long	0xe08f1002
 	.long	0xe2810008
+Lswv_26c5fc:
 	.long	0xe59f103c
 	.long	0xe08fc003
 	.long	0xe5840000
+Lswv_26c608:
 	.long	0xe08f0001
 	.long	0xe28c9044
+Lswv_26c610:
 	.long	0xe2803008
 	.long	0xe3a02000
 	.long	0xe5849004
@@ -70870,9 +71452,9 @@ __ZN8CssWorldC1Ev:
 	.long	0xe58420b0
 	.long	0xe58430a4
 	.long	0xe8bd8090
-	.long	0x000d9e7c
-	.long	0x000d9e70
-	.long	0x000d9eb8
+	.long	Lswv_346478 - Lswv_26c5fc
+	.long	Lswv_346478 - Lswv_26c608
+	.long	Lswv_3464c8 - Lswv_26c610
 	.globl	__ZN8CssWorld19SetLightsCacheDirtyEPK7CssNode
 	.private_extern	__ZN8CssWorld19SetLightsCacheDirtyEPK7CssNode
 __ZN8CssWorld19SetLightsCacheDirtyEPK7CssNode:
@@ -70957,7 +71539,7 @@ __ZN8CssWorld16SetpActiveCameraEP9CssCamera:
 	.globl	__ZN8CssWorld11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN8CssWorld11SerializeInER27CssSerializeBufferObjectsIn
 __ZN8CssWorld11SerializeInER27CssSerializeBufferObjectsIn:
-swv_26c764:
+Lswv_26c764:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -71026,13 +71608,13 @@ swv_26c764:
 	.globl	__ZThn4_N8CssWorldD0Ev
 	.private_extern	__ZThn4_N8CssWorldD0Ev
 __ZThn4_N8CssWorldD0Ev:
-swv_26c868:
+Lswv_26c868:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN8CssWorldD0Ev
 	.private_extern	__ZN8CssWorldD0Ev
 __ZN8CssWorldD0Ev:
-swv_26c870:
+Lswv_26c870:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc0d8
@@ -71040,9 +71622,11 @@ swv_26c870:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_26c88c:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803044
+Lswv_26c898:
 	.long	0xe594009c
 	.long	0xe5843004
 	.long	0xe3500000
@@ -71069,6 +71653,7 @@ swv_26c870:
 	.long	0xe59fc064
 	.long	0xe08f900c
 	.long	0xe2890008
+Lswv_26c900:
 	.long	0xe58400a4
 	.long	0xe59400a8
 	.long	0xe3500000
@@ -71081,7 +71666,7 @@ swv_26c870:
 	.long	0xe1a00004
 	.long	0xe79f1002
 	.long	0xe2813008
-swv_26c930:
+Lswv_26c930:
 	.long	0xe58430a4
 	.long	0xebff315e
 	.long	0xe1a00004
@@ -71092,10 +71677,10 @@ swv_26c930:
 	.long	0x0afffff3
 	.long	0xeb002b41
 	.long	0xeafffff1
-	.long	0x000d9bec
-	.long	0x000d9be0
-	.long	0x000d9bc8
-	.long	swv_got_0 - swv_26c930
+	.long	Lswv_346478 - Lswv_26c88c
+	.long	Lswv_346478 - Lswv_26c898
+	.long	Lswv_3464c8 - Lswv_26c900
+	.long	swv_got_0 - Lswv_26c930
 	.globl	__ZN8CssWorldD2Ev
 	.private_extern	__ZN8CssWorldD2Ev
 __ZN8CssWorldD2Ev:
@@ -71106,9 +71691,11 @@ __ZN8CssWorldD2Ev:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_26c984:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803044
+Lswv_26c990:
 	.long	0xe594009c
 	.long	0xe5843004
 	.long	0xe3500000
@@ -71135,6 +71722,7 @@ __ZN8CssWorldD2Ev:
 	.long	0xe59fc05c
 	.long	0xe08f900c
 	.long	0xe2890008
+Lswv_26c9f8:
 	.long	0xe58400a4
 	.long	0xe59400a8
 	.long	0xe3500000
@@ -71147,7 +71735,7 @@ __ZN8CssWorldD2Ev:
 	.long	0xe1a00004
 	.long	0xe79f1002
 	.long	0xe2813008
-swv_26ca28:
+Lswv_26ca28:
 	.long	0xe58430a4
 	.long	0xebff3120
 	.long	0xe8bd8090
@@ -71156,25 +71744,25 @@ swv_26ca28:
 	.long	0x0afffff5
 	.long	0xeb002b05
 	.long	0xeafffff3
-	.long	0x000d9af4
-	.long	0x000d9ae8
-	.long	0x000d9ad0
-	.long	swv_got_0 - swv_26ca28
+	.long	Lswv_346478 - Lswv_26c984
+	.long	Lswv_346478 - Lswv_26c990
+	.long	Lswv_3464c8 - Lswv_26c9f8
+	.long	swv_got_0 - Lswv_26ca28
 	.globl	__ZThn4_N8CssWorldD1Ev
 	.private_extern	__ZThn4_N8CssWorldD1Ev
 __ZThn4_N8CssWorldD1Ev:
-swv_26ca58:
+Lswv_26ca58:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN8CssWorldD1Ev
 	.private_extern	__ZN8CssWorldD1Ev
 __ZN8CssWorldD1Ev:
-swv_26ca60:
+Lswv_26ca60:
 	.long	0xeaffffc0
 	.globl	__ZN8CssWorld7GetpRefEi
 	.private_extern	__ZN8CssWorld7GetpRefEi
 __ZN8CssWorld7GetpRefEi:
-swv_26ca64:
+Lswv_26ca64:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe24dd008
@@ -71199,7 +71787,7 @@ swv_26ca64:
 	.globl	__ZN8CssWorld11AnimateRefsEiii
 	.private_extern	__ZN8CssWorld11AnimateRefsEiii
 __ZN8CssWorld11AnimateRefsEiii:
-swv_26cab8:
+Lswv_26cab8:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -71239,7 +71827,7 @@ swv_26cab8:
 	.globl	__ZN8CssArrayIPK8CssLightE7DestroyEPv
 	.private_extern	__ZN8CssArrayIPK8CssLightE7DestroyEPv
 __ZN8CssArrayIPK8CssLightE7DestroyEPv:
-swv_26cb48:
+Lswv_26cb48:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -71249,13 +71837,14 @@ swv_26cb48:
 	.globl	__ZN8CssArrayIPK8CssLightED1Ev
 	.private_extern	__ZN8CssArrayIPK8CssLightED1Ev
 __ZN8CssArrayIPK8CssLightED1Ev:
-swv_26cb60:
+Lswv_26cb60:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_26cb78:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -71267,7 +71856,7 @@ swv_26cb60:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_26cba4:
+Lswv_26cba4:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -71275,12 +71864,12 @@ swv_26cba4:
 	.long	0x0afffff7
 	.long	0xeb002aa7
 	.long	0xeafffff5
-	.long	0x000d9950
-	.long	swv_got_0 - swv_26cba4
+	.long	Lswv_3464c8 - Lswv_26cb78
+	.long	swv_got_0 - Lswv_26cba4
 	.globl	__ZN8CssArrayIPK8CssLightE8AllocateEi
 	.private_extern	__ZN8CssArrayIPK8CssLightE8AllocateEi
 __ZN8CssArrayIPK8CssLightE8AllocateEi:
-swv_26cbc8:
+Lswv_26cbc8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -71290,7 +71879,7 @@ swv_26cbc8:
 	.globl	__ZN8CssArrayIPK8CssLightE9CopyArrayEPvS4_i
 	.private_extern	__ZN8CssArrayIPK8CssLightE9CopyArrayEPvS4_i
 __ZN8CssArrayIPK8CssLightE9CopyArrayEPvS4_i:
-swv_26cbe0:
+Lswv_26cbe0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -71451,13 +72040,14 @@ swv_26cbe0:
 	.globl	__ZN8CssArrayIPK8CssLightED0Ev
 	.private_extern	__ZN8CssArrayIPK8CssLightED0Ev
 __ZN8CssArrayIPK8CssLightED0Ev:
-swv_26ce54:
+Lswv_26ce54:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_26ce6c:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -71470,7 +72060,7 @@ swv_26ce54:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_26ce9c:
+Lswv_26ce9c:
 	.long	0xe5849000
 	.long	0xeb0029e5
 	.long	0xe8bd8090
@@ -71479,12 +72069,12 @@ swv_26ce9c:
 	.long	0x0afffff5
 	.long	0xeb0029e8
 	.long	0xeafffff3
-	.long	0x000d965c
-	.long	swv_got_0 - swv_26ce9c
+	.long	Lswv_3464c8 - Lswv_26ce6c
+	.long	swv_got_0 - Lswv_26ce9c
 	.globl	__ZNK8CssWorld5CloneEv
 	.private_extern	__ZNK8CssWorld5CloneEv
 __ZNK8CssWorld5CloneEv:
-swv_26cec4:
+Lswv_26cec4:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -71500,8 +72090,11 @@ swv_26cec4:
 	.long	0xe59f1294
 	.long	0xe08fe004
 	.long	0xe08f900b
+Lswv_26cf00:
 	.long	0xe08f0001
+Lswv_26cf04:
 	.long	0xe2896008
+Lswv_26cf08:
 	.long	0xe28ec044
 	.long	0xe3a04000
 	.long	0xe588c004
@@ -71662,25 +72255,25 @@ swv_26cec4:
 	.long	0xe1a01008
 	.long	0xebff7fa7
 	.long	0xeaffffa1
-	.long	0x000d9578
-	.long	0x000d95c4
-	.long	0x000d9570
+	.long	Lswv_346478 - Lswv_26cf00
+	.long	Lswv_3464c8 - Lswv_26cf04
+	.long	Lswv_346478 - Lswv_26cf08
 	.globl	__ZThn4_NK7CssXREF4TypeEv
 	.private_extern	__ZThn4_NK7CssXREF4TypeEv
 __ZThn4_NK7CssXREF4TypeEv:
-swv_26d194:
+Lswv_26d194:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZNK7CssXREF4TypeEv
 	.private_extern	__ZNK7CssXREF4TypeEv
 __ZNK7CssXREF4TypeEv:
-swv_26d19c:
+Lswv_26d19c:
 	.long	0xe3a000ff
 	.long	0xe12fff1e
 	.globl	__ZN7CssXREF11SerializeInER27CssSerializeBufferObjectsIn
 	.private_extern	__ZN7CssXREF11SerializeInER27CssSerializeBufferObjectsIn
 __ZN7CssXREF11SerializeInER27CssSerializeBufferObjectsIn:
-swv_26d1a4:
+Lswv_26d1a4:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe280300c
@@ -71716,12 +72309,15 @@ __ZN7CssXREFC1Ev:
 	.long	0xe3a02000
 	.long	0xe08fc003
 	.long	0xe28c9008
+Lswv_26d218:
 	.long	0xe5809000
 	.long	0xe59f9038
 	.long	0xe08f3001
 	.long	0xe283c020
+Lswv_26d228:
 	.long	0xe08f1009
 	.long	0xe2813008
+Lswv_26d230:
 	.long	0xe5802008
 	.long	0xe580c004
 	.long	0xe5802010
@@ -71731,19 +72327,19 @@ __ZN7CssXREFC1Ev:
 	.long	0xe580201c
 	.long	0xe5802020
 	.long	0xe12fff1e
-	.long	0x000d92d0
-	.long	0x000d92c0
-	.long	0x000d84b8
+	.long	Lswv_3464e8 - Lswv_26d218
+	.long	Lswv_3464e8 - Lswv_26d228
+	.long	Lswv_3456e8 - Lswv_26d230
 	.globl	__ZThn4_N7CssXREFD0Ev
 	.private_extern	__ZThn4_N7CssXREFD0Ev
 __ZThn4_N7CssXREFD0Ev:
-swv_26d260:
+Lswv_26d260:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN7CssXREFD0Ev
 	.private_extern	__ZN7CssXREFD0Ev
 __ZN7CssXREFD0Ev:
-swv_26d268:
+Lswv_26d268:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc0c4
@@ -71751,9 +72347,11 @@ swv_26d268:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_26d284:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803020
+Lswv_26d290:
 	.long	0xe5940020
 	.long	0xe5843004
 	.long	0xe3500000
@@ -71769,6 +72367,7 @@ swv_26d268:
 	.long	0xe59f207c
 	.long	0xe08f1002
 	.long	0xe2810008
+Lswv_26d2cc:
 	.long	0xe584000c
 	.long	0xe5940010
 	.long	0xe3500000
@@ -71782,10 +72381,12 @@ swv_26d268:
 	.long	0xe59f3054
 	.long	0xe08f1002
 	.long	0xe79fc00e
+Lswv_26d300:
 	.long	0xe2810008
-swv_26d304:
+Lswv_26d304:
 	.long	0xe08fe003
 	.long	0xe5840000
+Lswv_26d30c:
 	.long	0xe1a00004
 	.long	0xe28c9008
 	.long	0xe28ec01c
@@ -71798,22 +72399,22 @@ swv_26d304:
 	.long	0x0affffed
 	.long	0xeb0028c8
 	.long	0xeaffffeb
-	.long	0x000d9264
-	.long	0x000d9258
-	.long	0x000d841c
-	.long	0x000d87a4
-	.long	swv_got_0 - swv_26d304
-	.long	0x000d8798
+	.long	Lswv_3464e8 - Lswv_26d284
+	.long	Lswv_3464e8 - Lswv_26d290
+	.long	Lswv_3456e8 - Lswv_26d2cc
+	.long	Lswv_345aa4 - Lswv_26d300
+	.long	swv_got_0 - Lswv_26d304
+	.long	Lswv_345aa4 - Lswv_26d30c
 	.globl	__ZThn4_N7CssXREFD1Ev
 	.private_extern	__ZThn4_N7CssXREFD1Ev
 __ZThn4_N7CssXREFD1Ev:
-swv_26d354:
+Lswv_26d354:
 	.long	0xe2400004
 	.long	0xeaffffff
 	.globl	__ZN7CssXREFD1Ev
 	.private_extern	__ZN7CssXREFD1Ev
 __ZN7CssXREFD1Ev:
-swv_26d35c:
+Lswv_26d35c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc0b8
@@ -71821,9 +72422,11 @@ swv_26d35c:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_26d378:
 	.long	0xe5802000
 	.long	0xe08f0001
 	.long	0xe2803020
+Lswv_26d384:
 	.long	0xe5940020
 	.long	0xe5843004
 	.long	0xe3500000
@@ -71839,6 +72442,7 @@ swv_26d35c:
 	.long	0xe59f9070
 	.long	0xe08f2009
 	.long	0xe2820008
+Lswv_26d3c0:
 	.long	0xe584000c
 	.long	0xe5940010
 	.long	0xe3500000
@@ -71851,11 +72455,13 @@ swv_26d35c:
 	.long	0xe59fc048
 	.long	0xe79f1000
 	.long	0xe59f0044
-swv_26d3f0:
+Lswv_26d3f0:
 	.long	0xe2813008
 	.long	0xe08f900c
 	.long	0xe08f1000
+Lswv_26d3fc:
 	.long	0xe584300c
+Lswv_26d400:
 	.long	0xe2892008
 	.long	0xe281301c
 	.long	0xe884000c
@@ -71865,12 +72471,12 @@ swv_26d3f0:
 	.long	0x0afffff0
 	.long	0xeb00288e
 	.long	0xeaffffee
-	.long	0x000d9170
-	.long	0x000d9164
-	.long	0x000d8328
-	.long	swv_got_0 - swv_26d3f0
-	.long	0x000d86a8
-	.long	0x000d86a4
+	.long	Lswv_3464e8 - Lswv_26d378
+	.long	Lswv_3464e8 - Lswv_26d384
+	.long	Lswv_3456e8 - Lswv_26d3c0
+	.long	swv_got_0 - Lswv_26d3f0
+	.long	Lswv_345aa4 - Lswv_26d3fc
+	.long	Lswv_345aa4 - Lswv_26d400
 	.globl	_decompress_AcceptBytes
 	.private_extern	_decompress_AcceptBytes
 _decompress_AcceptBytes:
@@ -75595,6 +76201,7 @@ _mesh_initializeMultiSubmesh:
 	.long	0xe3a04000
 	.long	0xe08f8009
 	.long	0xe2885008
+Lswv_27089c:
 	.long	0xe1a06000
 	.long	0xe5804004
 	.long	0xe5804008
@@ -75774,6 +76381,7 @@ _mesh_initializeMultiSubmesh:
 	.long	0xe3a05000
 	.long	0xe08fe003
 	.long	0xe28ea008
+Lswv_270b68:
 	.long	0xe1a04000
 	.long	0xe580a000
 	.long	0xe5805004
@@ -75981,13 +76589,13 @@ _mesh_initializeMultiSubmesh:
 	.long	0xe59f000c
 	.long	0xeb001a37
 	.long	0xeaffff29
-	.long	0x000d5c78
-	.long	0x000d59ac
+	.long	Lswv_346514 - Lswv_27089c
+	.long	Lswv_346514 - Lswv_270b68
 	.long	0xfffffaea
 	.globl	__ZN8CssArrayIP11CssRefCountE7DestroyEPv
 	.private_extern	__ZN8CssArrayIP11CssRefCountE7DestroyEPv
 __ZN8CssArrayIP11CssRefCountE7DestroyEPv:
-swv_270eb0:
+Lswv_270eb0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -75997,7 +76605,7 @@ swv_270eb0:
 	.globl	__ZN8CssArrayIP11CssRefCountE8AllocateEi
 	.private_extern	__ZN8CssArrayIP11CssRefCountE8AllocateEi
 __ZN8CssArrayIP11CssRefCountE8AllocateEi:
-swv_270ec8:
+Lswv_270ec8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -76007,7 +76615,7 @@ swv_270ec8:
 	.globl	__ZN8CssArrayIP11CssRefCountE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIP11CssRefCountE9CopyArrayEPvS3_i
 __ZN8CssArrayIP11CssRefCountE9CopyArrayEPvS3_i:
-swv_270ee0:
+Lswv_270ee0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -76168,13 +76776,14 @@ swv_270ee0:
 	.globl	__ZN8CssArrayIP11CssRefCountED1Ev
 	.private_extern	__ZN8CssArrayIP11CssRefCountED1Ev
 __ZN8CssArrayIP11CssRefCountED1Ev:
-swv_271154:
+Lswv_271154:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_27116c:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -76186,7 +76795,7 @@ swv_271154:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_271198:
+Lswv_271198:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -76194,18 +76803,19 @@ swv_271198:
 	.long	0x0afffff7
 	.long	0xeb00192a
 	.long	0xeafffff5
-	.long	0x000d53a8
-	.long	swv_got_0 - swv_271198
+	.long	Lswv_346514 - Lswv_27116c
+	.long	swv_got_0 - Lswv_271198
 	.globl	__ZN8CssArrayIP11CssRefCountED0Ev
 	.private_extern	__ZN8CssArrayIP11CssRefCountED0Ev
 __ZN8CssArrayIP11CssRefCountED0Ev:
-swv_2711bc:
+Lswv_2711bc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2711d4:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -76218,7 +76828,7 @@ swv_2711bc:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_271204:
+Lswv_271204:
 	.long	0xe5849000
 	.long	0xeb00190b
 	.long	0xe8bd8090
@@ -76227,8 +76837,8 @@ swv_271204:
 	.long	0x0afffff5
 	.long	0xeb00190e
 	.long	0xeafffff3
-	.long	0x000d5340
-	.long	swv_got_0 - swv_271204
+	.long	Lswv_346514 - Lswv_2711d4
+	.long	swv_got_0 - Lswv_271204
 	.globl	_morphingmesh_getMorphTargetCount
 	.private_extern	_morphingmesh_getMorphTargetCount
 _morphingmesh_getMorphTargetCount:
@@ -76460,6 +77070,7 @@ _morphingmesh_initializeSingleSubmesh:
 	.long	0xe580500c
 	.long	0xe08f0002
 	.long	0xe2803008
+Lswv_271574:
 	.long	0xe5843000
 	.long	0xeb001600
 	.long	0xe1a01004
@@ -76674,7 +77285,7 @@ _morphingmesh_initializeSingleSubmesh:
 	.long	0xe59f0008
 	.long	0xeb0017ad
 	.long	0xeaffffcf
-	.long	0x000d4fa0
+	.long	Lswv_346514 - Lswv_271574
 	.long	0xfffffaea
 	.globl	_morphingmesh_initializeMultiSubmesh
 	.private_extern	_morphingmesh_initializeMultiSubmesh
@@ -76710,6 +77321,7 @@ _morphingmesh_initializeMultiSubmesh:
 	.long	0xe3a04000
 	.long	0xe08f900a
 	.long	0xe2896008
+Lswv_271950:
 	.long	0xe1a08000
 	.long	0xe5804004
 	.long	0xe5804008
@@ -76895,6 +77507,7 @@ _morphingmesh_initializeMultiSubmesh:
 	.long	0xe580400c
 	.long	0xe08f0002
 	.long	0xe2801008
+Lswv_271c34:
 	.long	0xe5861000
 	.long	0xe58d6034
 	.long	0xeb00144f
@@ -77071,6 +77684,7 @@ _morphingmesh_initializeMultiSubmesh:
 	.long	0xe3a05000
 	.long	0xe08fb00e
 	.long	0xe28ba008
+Lswv_271ef4:
 	.long	0xe1a04000
 	.long	0xe580a000
 	.long	0xe5805004
@@ -77292,9 +77906,9 @@ _morphingmesh_initializeMultiSubmesh:
 	.long	0xe59f0010
 	.long	0xeb001546
 	.long	0xeafffe67
-	.long	0x000d4bc4
-	.long	0x000d48e0
-	.long	0x000d4620
+	.long	Lswv_346514 - Lswv_271950
+	.long	Lswv_346514 - Lswv_271c34
+	.long	Lswv_346514 - Lswv_271ef4
 	.long	0xfffffaea
 	.globl	_node_getAlphaFactor
 	.private_extern	_node_getAlphaFactor
@@ -78164,6 +78778,7 @@ _object3d_getReferences:
 	.long	0xe3a05000
 	.long	0xe08f6009
 	.long	0xe2861008
+Lswv_272e88:
 	.long	0xe1a08000
 	.long	0xe8800022
 	.long	0xe5805008
@@ -78236,7 +78851,7 @@ _object3d_getReferences:
 	.long	0x01a0a006
 	.long	0x1affffd6
 	.long	0xeaffffe4
-	.long	0x000d368c
+	.long	Lswv_346514 - Lswv_272e88
 	.long	0xfffffaeb
 	.globl	_polygonmode_isLocalCameraLightingEnabled
 	.private_extern	_polygonmode_isLocalCameraLightingEnabled
@@ -79136,6 +79751,7 @@ _skinnedmesh_initializeMultiSubmesh:
 	.long	0xe3a04000
 	.long	0xe08f8009
 	.long	0xe2885008
+Lswv_273c2c:
 	.long	0xe1a06000
 	.long	0xe5804004
 	.long	0xe5804008
@@ -79315,6 +79931,7 @@ _skinnedmesh_initializeMultiSubmesh:
 	.long	0xe3a05000
 	.long	0xe08fe003
 	.long	0xe28ea008
+Lswv_273ef8:
 	.long	0xe1a04000
 	.long	0xe580a000
 	.long	0xe5805004
@@ -79528,8 +80145,8 @@ _skinnedmesh_initializeMultiSubmesh:
 	.long	0xe59f000c
 	.long	0xeb000d4d
 	.long	0xeaffff23
-	.long	0x000d28e8
-	.long	0x000d261c
+	.long	Lswv_346514 - Lswv_273c2c
+	.long	Lswv_346514 - Lswv_273ef8
 	.long	0xfffffaea
 	.globl	_sprite3d_isScaled
 	.private_extern	_sprite3d_isScaled
@@ -79950,181 +80567,181 @@ __Z46g_ssRegisterNodeFactoriesForEditionMicroSharedP16CssObjectFactory:
 	.long	0xe1a04000
 	.long	0xe79f200e
 	.long	0xebff7229
-swv_27483c:
+Lswv_27483c:
 	.long	0xe59fc1e0
 	.long	0xe1a00004
 	.long	0xe3a01002
 	.long	0xe79f200c
 	.long	0xebff7224
-swv_274850:
+Lswv_274850:
 	.long	0xe59f91d0
 	.long	0xe1a00004
 	.long	0xe3a01003
 	.long	0xe79f2009
 	.long	0xebff721f
-swv_274864:
+Lswv_274864:
 	.long	0xe59f31c0
 	.long	0xe1a00004
 	.long	0xe3a01004
 	.long	0xe79f2003
 	.long	0xebff721a
-swv_274878:
+Lswv_274878:
 	.long	0xe59f21b0
 	.long	0xe1a00004
 	.long	0xe3a01005
 	.long	0xe79f2002
 	.long	0xebff7215
-swv_27488c:
+Lswv_27488c:
 	.long	0xe59fe1a0
 	.long	0xe1a00004
 	.long	0xe3a01006
 	.long	0xe79f200e
 	.long	0xebff7210
-swv_2748a0:
+Lswv_2748a0:
 	.long	0xe59fc190
 	.long	0xe1a00004
 	.long	0xe3a01007
 	.long	0xe79f200c
 	.long	0xebff720b
-swv_2748b4:
+Lswv_2748b4:
 	.long	0xe59f9180
 	.long	0xe1a00004
 	.long	0xe3a01009
 	.long	0xe79f2009
 	.long	0xebff7206
-swv_2748c8:
+Lswv_2748c8:
 	.long	0xe59f3170
 	.long	0xe1a00004
 	.long	0xe3a01008
 	.long	0xe79f2003
 	.long	0xebff7201
-swv_2748dc:
+Lswv_2748dc:
 	.long	0xe59f2160
 	.long	0xe1a00004
 	.long	0xe3a0100a
 	.long	0xe79f2002
 	.long	0xebff71fc
-swv_2748f0:
+Lswv_2748f0:
 	.long	0xe59fe150
 	.long	0xe1a00004
 	.long	0xe3a01013
 	.long	0xe79f200e
 	.long	0xebff71f7
-swv_274904:
+Lswv_274904:
 	.long	0xe59fc140
 	.long	0xe1a00004
 	.long	0xe3a0100c
 	.long	0xe79f200c
 	.long	0xebff71f2
-swv_274918:
+Lswv_274918:
 	.long	0xe59f9130
 	.long	0xe1a00004
 	.long	0xe3a0100d
 	.long	0xe79f2009
 	.long	0xebff71ed
-swv_27492c:
+Lswv_27492c:
 	.long	0xe59f3120
 	.long	0xe1a00004
 	.long	0xe3a0100e
 	.long	0xe79f2003
 	.long	0xebff71e8
-swv_274940:
+Lswv_274940:
 	.long	0xe59f2110
 	.long	0xe1a00004
 	.long	0xe3a0100f
 	.long	0xe79f2002
 	.long	0xebff71e3
-swv_274954:
+Lswv_274954:
 	.long	0xe59fe100
 	.long	0xe1a00004
 	.long	0xe3a0101c
 	.long	0xe79f200e
 	.long	0xebff71de
-swv_274968:
+Lswv_274968:
 	.long	0xe59fc0f0
 	.long	0xe1a00004
 	.long	0xe3a01010
 	.long	0xe79f200c
 	.long	0xebff71d9
-swv_27497c:
+Lswv_27497c:
 	.long	0xe59f90e0
 	.long	0xe1a00004
 	.long	0xe3a01012
 	.long	0xe79f2009
 	.long	0xebff71d4
-swv_274990:
+Lswv_274990:
 	.long	0xe59f30d0
 	.long	0xe1a00004
 	.long	0xe3a01011
 	.long	0xe79f2003
 	.long	0xebff71cf
-swv_2749a4:
+Lswv_2749a4:
 	.long	0xe59f20c0
 	.long	0xe1a00004
 	.long	0xe3a0101d
 	.long	0xe79f2002
 	.long	0xebff71ca
-swv_2749b8:
+Lswv_2749b8:
 	.long	0xe59fe0b0
 	.long	0xe1a00004
 	.long	0xe3a0100b
 	.long	0xe79f200e
 	.long	0xebff71c5
-swv_2749cc:
+Lswv_2749cc:
 	.long	0xe59fc0a0
 	.long	0xe1a00004
 	.long	0xe3a01014
 	.long	0xe79f200c
 	.long	0xebff71c0
-swv_2749e0:
+Lswv_2749e0:
 	.long	0xe59f9090
 	.long	0xe1a00004
 	.long	0xe3a01015
 	.long	0xe79f2009
 	.long	0xebff71bb
-swv_2749f4:
+Lswv_2749f4:
 	.long	0xe59f3080
 	.long	0xe1a00004
 	.long	0xe3a01016
 	.long	0xe79f2003
 	.long	0xebff71b6
-swv_274a08:
+Lswv_274a08:
 	.long	0xe59f2070
 	.long	0xe1a00004
 	.long	0xe3a010ff
 	.long	0xe79f2002
 	.long	0xebff71b1
-swv_274a1c:
+Lswv_274a1c:
 	.long	0xe8bd8090
-	.long	swv_32f8b4 - swv_27483c
-	.long	swv_32f8e8 - swv_274850
-	.long	swv_32f8fc - swv_274864
-	.long	swv_32f8b0 - swv_274878
-	.long	swv_32f8ec - swv_27488c
-	.long	swv_32f8f0 - swv_2748a0
-	.long	swv_32f8a4 - swv_2748b4
-	.long	swv_32f8cc - swv_2748c8
-	.long	swv_32f8c8 - swv_2748dc
-	.long	swv_32f8e4 - swv_2748f0
-	.long	swv_32f8d8 - swv_274904
-	.long	swv_32f8dc - swv_274918
-	.long	swv_32f8f8 - swv_27492c
-	.long	swv_32f8c0 - swv_274940
-	.long	swv_32f900 - swv_274954
-	.long	swv_32f8f4 - swv_274968
-	.long	swv_32f8d0 - swv_27497c
-	.long	swv_32f8c4 - swv_274990
-	.long	swv_32f8d4 - swv_2749a4
-	.long	swv_32f8bc - swv_2749b8
-	.long	swv_32f8b8 - swv_2749cc
-	.long	swv_32f8a8 - swv_2749e0
-	.long	swv_32f8ac - swv_2749f4
-	.long	swv_32f8e0 - swv_274a08
-	.long	swv_32f8a0 - swv_274a1c
+	.long	Lswv_32f8b4 - Lswv_27483c
+	.long	Lswv_32f8e8 - Lswv_274850
+	.long	Lswv_32f8fc - Lswv_274864
+	.long	Lswv_32f8b0 - Lswv_274878
+	.long	Lswv_32f8ec - Lswv_27488c
+	.long	Lswv_32f8f0 - Lswv_2748a0
+	.long	Lswv_32f8a4 - Lswv_2748b4
+	.long	Lswv_32f8cc - Lswv_2748c8
+	.long	Lswv_32f8c8 - Lswv_2748dc
+	.long	Lswv_32f8e4 - Lswv_2748f0
+	.long	Lswv_32f8d8 - Lswv_274904
+	.long	Lswv_32f8dc - Lswv_274918
+	.long	Lswv_32f8f8 - Lswv_27492c
+	.long	Lswv_32f8c0 - Lswv_274940
+	.long	Lswv_32f900 - Lswv_274954
+	.long	Lswv_32f8f4 - Lswv_274968
+	.long	Lswv_32f8d0 - Lswv_27497c
+	.long	Lswv_32f8c4 - Lswv_274990
+	.long	Lswv_32f8d4 - Lswv_2749a4
+	.long	Lswv_32f8bc - Lswv_2749b8
+	.long	Lswv_32f8b8 - Lswv_2749cc
+	.long	Lswv_32f8a8 - Lswv_2749e0
+	.long	Lswv_32f8ac - Lswv_2749f4
+	.long	Lswv_32f8e0 - Lswv_274a08
+	.long	Lswv_32f8a0 - Lswv_274a1c
 	.globl	__ZN18CssRayIntersection13FactoryCreateEv
 	.private_extern	__ZN18CssRayIntersection13FactoryCreateEv
 __ZN18CssRayIntersection13FactoryCreateEv:
-swv_274a84:
+Lswv_274a84:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe3a01000
@@ -80135,15 +80752,17 @@ swv_274a84:
 	.long	0xe3a01000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_274aac:
 	.long	0xe08fc003
 	.long	0xe28c901c
+Lswv_274ab4:
 	.long	0xe5802000
 	.long	0xe59f206c
 	.long	0xe5809004
 	.long	0xe5801008
 	.long	0xe79fc002
 	.long	0xe28c9020
-swv_274acc:
+Lswv_274acc:
 	.long	0xe28c3008
 	.long	0xe3a025fe
 	.long	0xe5803000
@@ -80166,13 +80785,13 @@ swv_274acc:
 	.long	0xe5803024
 	.long	0xe580301c
 	.long	0xe8bd8080
-	.long	0x000d0ff8
-	.long	0x000d0ff0
-	.long	swv_got_2 - swv_274acc
+	.long	Lswv_345aa4 - Lswv_274aac
+	.long	Lswv_345aa4 - Lswv_274ab4
+	.long	swv_got_2 - Lswv_274acc
 	.globl	__ZN7CssXREF13FactoryCreateEv
 	.private_extern	__ZN7CssXREF13FactoryCreateEv
 __ZN7CssXREF13FactoryCreateEv:
-swv_274b30:
+Lswv_274b30:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80185,7 +80804,7 @@ swv_274b30:
 	.globl	__ZN8CssWorld13FactoryCreateEv
 	.private_extern	__ZN8CssWorld13FactoryCreateEv
 __ZN8CssWorld13FactoryCreateEv:
-swv_274b54:
+Lswv_274b54:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80198,7 +80817,7 @@ swv_274b54:
 	.globl	__ZN15CssVertexBuffer13FactoryCreateEv
 	.private_extern	__ZN15CssVertexBuffer13FactoryCreateEv
 __ZN15CssVertexBuffer13FactoryCreateEv:
-swv_274b78:
+Lswv_274b78:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80211,7 +80830,7 @@ swv_274b78:
 	.globl	__ZN14CssVertexArray13FactoryCreateEv
 	.private_extern	__ZN14CssVertexArray13FactoryCreateEv
 __ZN14CssVertexArray13FactoryCreateEv:
-swv_274b9c:
+Lswv_274b9c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80224,7 +80843,7 @@ swv_274b9c:
 	.globl	__ZN21CssTriangleStripArray13FactoryCreateEv
 	.private_extern	__ZN21CssTriangleStripArray13FactoryCreateEv
 __ZN21CssTriangleStripArray13FactoryCreateEv:
-swv_274bc0:
+Lswv_274bc0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80237,7 +80856,7 @@ swv_274bc0:
 	.globl	__ZN12CssTransform13FactoryCreateEv
 	.private_extern	__ZN12CssTransform13FactoryCreateEv
 __ZN12CssTransform13FactoryCreateEv:
-swv_274be4:
+Lswv_274be4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80250,7 +80869,7 @@ swv_274be4:
 	.globl	__ZN12CssTexture2D13FactoryCreateEv
 	.private_extern	__ZN12CssTexture2D13FactoryCreateEv
 __ZN12CssTexture2D13FactoryCreateEv:
-swv_274c08:
+Lswv_274c08:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80263,7 +80882,7 @@ swv_274c08:
 	.globl	__ZN9CssSprite13FactoryCreateEv
 	.private_extern	__ZN9CssSprite13FactoryCreateEv
 __ZN9CssSprite13FactoryCreateEv:
-swv_274c2c:
+Lswv_274c2c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80276,7 +80895,7 @@ swv_274c2c:
 	.long	0xe3a03000
 	.long	0xe79f200c
 	.long	0xe2829008
-swv_274c5c:
+Lswv_274c5c:
 	.long	0xe2821044
 	.long	0xe584009c
 	.long	0xe58400a0
@@ -80289,11 +80908,11 @@ swv_274c5c:
 	.long	0xe58430b0
 	.long	0xe5c430b4
 	.long	0xe8bd8090
-	.long	swv_got_3 - swv_274c5c
+	.long	swv_got_3 - Lswv_274c5c
 	.globl	__ZN8CssLight13FactoryCreateEv
 	.private_extern	__ZN8CssLight13FactoryCreateEv
 __ZN8CssLight13FactoryCreateEv:
-swv_274c90:
+Lswv_274c90:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80306,7 +80925,7 @@ swv_274c90:
 	.long	0xe3e0c4ff
 	.long	0xe79f2000
 	.long	0xe2823008
-swv_274cc0:
+Lswv_274cc0:
 	.long	0xe3a00081
 	.long	0xe5843000
 	.long	0xe2403080
@@ -80325,12 +80944,12 @@ swv_274cc0:
 	.long	0xe58420a0
 	.long	0xe58420a4
 	.long	0xe8bd8090
-	.long	swv_got_4 - swv_274cc0
+	.long	swv_got_4 - Lswv_274cc0
 	.long	0x42340000
 	.globl	__ZN14CssSkinnedMesh13FactoryCreateEv
 	.private_extern	__ZN14CssSkinnedMesh13FactoryCreateEv
 __ZN14CssSkinnedMesh13FactoryCreateEv:
-swv_274d10:
+Lswv_274d10:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80342,8 +80961,9 @@ swv_274d10:
 	.long	0xe59f90e8
 	.long	0xe79fc001
 	.long	0xe08f2009
-swv_274d3c:
+Lswv_274d3c:
 	.long	0xe28c3008
+Lswv_274d40:
 	.long	0xe2821008
 	.long	0xe5843000
 	.long	0xe58410c4
@@ -80353,7 +80973,9 @@ swv_274d3c:
 	.long	0xe59f20cc
 	.long	0xe08fc003
 	.long	0xe08f3001
+Lswv_274d64:
 	.long	0xe28c9008
+Lswv_274d68:
 	.long	0xe283c008
 	.long	0xe58490d4
 	.long	0xe584c0ec
@@ -80362,7 +80984,9 @@ swv_274d3c:
 	.long	0xe58420e4
 	.long	0xe08f2009
 	.long	0xe08f900c
+Lswv_274d88:
 	.long	0xe2821008
+Lswv_274d8c:
 	.long	0xe2892008
 	.long	0xe5840004
 	.long	0xe58410fc
@@ -80399,17 +81023,17 @@ swv_274d3c:
 	.long	0xe5841128
 	.long	0xe5843178
 	.long	0xe8bd8090
-	.long	swv_got_5 - swv_274d3c
-	.long	0x000d1404
-	.long	0x000d1400
-	.long	0x000d141c
+	.long	swv_got_5 - Lswv_274d3c
+	.long	Lswv_346144 - Lswv_274d40
+	.long	Lswv_346164 - Lswv_274d64
+	.long	Lswv_346184 - Lswv_274d68
 	.long	0x7b4097ce
-	.long	0x000d141c
-	.long	0x000d1438
+	.long	Lswv_3461a4 - Lswv_274d88
+	.long	Lswv_3461c4 - Lswv_274d8c
 	.globl	__ZN15CssMorphingMesh13FactoryCreateEv
 	.private_extern	__ZN15CssMorphingMesh13FactoryCreateEv
 __ZN15CssMorphingMesh13FactoryCreateEv:
-swv_274e38:
+Lswv_274e38:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80422,7 +81046,7 @@ swv_274e38:
 	.globl	__ZN7CssMesh13FactoryCreateEv
 	.private_extern	__ZN7CssMesh13FactoryCreateEv
 __ZN7CssMesh13FactoryCreateEv:
-swv_274e5c:
+Lswv_274e5c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80435,7 +81059,7 @@ swv_274e5c:
 	.globl	__ZN13CssBackground13FactoryCreateEv
 	.private_extern	__ZN13CssBackground13FactoryCreateEv
 __ZN13CssBackground13FactoryCreateEv:
-swv_274e80:
+Lswv_274e80:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80448,7 +81072,7 @@ swv_274e80:
 	.long	0xe2821020
 	.long	0xe79fc000
 	.long	0xe28c9034
-swv_274eb0:
+Lswv_274eb0:
 	.long	0xe3a00000
 	.long	0xe28c3008
 	.long	0xe5840030
@@ -80466,11 +81090,11 @@ swv_274eb0:
 	.long	0xe5c43040
 	.long	0xe5c43041
 	.long	0xe8bd8090
-	.long	swv_got_6 - swv_274eb0
+	.long	swv_got_6 - Lswv_274eb0
 	.globl	__ZN11CssMaterial13FactoryCreateEv
 	.private_extern	__ZN11CssMaterial13FactoryCreateEv
 __ZN11CssMaterial13FactoryCreateEv:
-swv_274ef8:
+Lswv_274ef8:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80483,7 +81107,7 @@ swv_274ef8:
 	.long	0xe59f1040
 	.long	0xe79fc000
 	.long	0xe28c9034
-swv_274f28:
+Lswv_274f28:
 	.long	0xe3a00000
 	.long	0xe28c3008
 	.long	0xe5840028
@@ -80497,13 +81121,13 @@ swv_274f28:
 	.long	0xe5841024
 	.long	0xe5843034
 	.long	0xe8bd8090
-	.long	swv_got_7 - swv_274f28
+	.long	swv_got_7 - Lswv_274f28
 	.long	0x00333333
 	.long	0xffcccccc
 	.globl	__ZN19CssKeyframeSequence13FactoryCreateEv
 	.private_extern	__ZN19CssKeyframeSequence13FactoryCreateEv
 __ZN19CssKeyframeSequence13FactoryCreateEv:
-swv_274f68:
+Lswv_274f68:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80516,7 +81140,7 @@ swv_274f68:
 	.globl	__ZN10CssImage2D13FactoryCreateEv
 	.private_extern	__ZN10CssImage2D13FactoryCreateEv
 __ZN10CssImage2D13FactoryCreateEv:
-swv_274f8c:
+Lswv_274f8c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80529,7 +81153,7 @@ swv_274f8c:
 	.globl	__ZN14CssPolygonMode13FactoryCreateEv
 	.private_extern	__ZN14CssPolygonMode13FactoryCreateEv
 __ZN14CssPolygonMode13FactoryCreateEv:
-swv_274fb0:
+Lswv_274fb0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80542,7 +81166,7 @@ swv_274fb0:
 	.globl	__ZN8CssGroup13FactoryCreateEv
 	.private_extern	__ZN8CssGroup13FactoryCreateEv
 __ZN8CssGroup13FactoryCreateEv:
-swv_274fd4:
+Lswv_274fd4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80555,7 +81179,7 @@ swv_274fd4:
 	.globl	__ZN6CssFog13FactoryCreateEv
 	.private_extern	__ZN6CssFog13FactoryCreateEv
 __ZN6CssFog13FactoryCreateEv:
-swv_274ff8:
+Lswv_274ff8:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80568,7 +81192,7 @@ swv_274ff8:
 	.globl	__ZN18CssCompositingMode13FactoryCreateEv
 	.private_extern	__ZN18CssCompositingMode13FactoryCreateEv
 __ZN18CssCompositingMode13FactoryCreateEv:
-swv_27501c:
+Lswv_27501c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80581,7 +81205,7 @@ swv_27501c:
 	.globl	__ZN9CssCamera13FactoryCreateEv
 	.private_extern	__ZN9CssCamera13FactoryCreateEv
 __ZN9CssCamera13FactoryCreateEv:
-swv_275040:
+Lswv_275040:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80594,7 +81218,7 @@ swv_275040:
 	.globl	__ZN13CssAppearance13FactoryCreateEv
 	.private_extern	__ZN13CssAppearance13FactoryCreateEv
 __ZN13CssAppearance13FactoryCreateEv:
-swv_275064:
+Lswv_275064:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80607,7 +81231,7 @@ swv_275064:
 	.globl	__ZN17CssAnimationTrack13FactoryCreateEv
 	.private_extern	__ZN17CssAnimationTrack13FactoryCreateEv
 __ZN17CssAnimationTrack13FactoryCreateEv:
-swv_275088:
+Lswv_275088:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80620,7 +81244,7 @@ swv_275088:
 	.globl	__ZN22CssAnimationController13FactoryCreateEv
 	.private_extern	__ZN22CssAnimationController13FactoryCreateEv
 __ZN22CssAnimationController13FactoryCreateEv:
-swv_2750ac:
+Lswv_2750ac:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80646,27 +81270,27 @@ __Z49g_ssRegisterNodeFactoriesForEditionStandardSharedP16CssObjectFactory:
 	.long	0xe1a04000
 	.long	0xe79f2009
 	.long	0xebff6ffa
-swv_2750f8:
+Lswv_2750f8:
 	.long	0xe59f3028
 	.long	0xe1a00004
 	.long	0xe3a01018
 	.long	0xe79f2003
 	.long	0xebff6ff5
-swv_27510c:
+Lswv_27510c:
 	.long	0xe59f2018
 	.long	0xe1a00004
 	.long	0xe3a01019
 	.long	0xe79f2002
 	.long	0xebff6ff0
-swv_275120:
+Lswv_275120:
 	.long	0xe8bd8090
-	.long	swv_32f90c - swv_2750f8
-	.long	swv_32f908 - swv_27510c
-	.long	swv_32f904 - swv_275120
+	.long	Lswv_32f90c - Lswv_2750f8
+	.long	Lswv_32f908 - Lswv_27510c
+	.long	Lswv_32f904 - Lswv_275120
 	.globl	__ZN20CssCompressedImage2D13FactoryCreateEv
 	.private_extern	__ZN20CssCompressedImage2D13FactoryCreateEv
 __ZN20CssCompressedImage2D13FactoryCreateEv:
-swv_275130:
+Lswv_275130:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80679,7 +81303,7 @@ swv_275130:
 	.globl	__ZN11CssStageset13FactoryCreateEv
 	.private_extern	__ZN11CssStageset13FactoryCreateEv
 __ZN11CssStageset13FactoryCreateEv:
-swv_275154:
+Lswv_275154:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -80692,8 +81316,9 @@ swv_275154:
 	.long	0xe3a03000
 	.long	0xe79f1009
 	.long	0xe08f900c
-swv_275184:
+Lswv_275184:
 	.long	0xe2812008
+Lswv_275188:
 	.long	0xe5842000
 	.long	0xe2892008
 	.long	0xe281005c
@@ -80710,12 +81335,12 @@ swv_275184:
 	.long	0xe5841088
 	.long	0xe5c43090
 	.long	0xe8bd8090
-	.long	swv_got_8 - swv_275184
-	.long	0x000d101c
+	.long	swv_got_8 - Lswv_275184
+	.long	Lswv_3461a4 - Lswv_275188
 	.globl	__ZN14CssPlasmaImage13FactoryCreateEv
 	.private_extern	__ZN14CssPlasmaImage13FactoryCreateEv
 __ZN14CssPlasmaImage13FactoryCreateEv:
-swv_2751d0:
+Lswv_2751d0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe3a01000
@@ -81168,10 +81793,10 @@ _swerve_setMode:
 	.long	0xe3a02001
 	.long	0xe79f3000
 	.long	0xe5832000
-swv_27582c:
+Lswv_27582c:
 	.long	0xe3a00000
 	.long	0xe12fff1e
-	.long	swv_got_9 - swv_27582c
+	.long	swv_got_9 - Lswv_27582c
 	.globl	_swervehandle_AddRef
 	.private_extern	_swervehandle_AddRef
 _swervehandle_AddRef:
@@ -81198,18 +81823,18 @@ _swvSetGlobalDataPointer:
 	.long	0xe59f1008
 	.long	0xe79f3001
 	.long	0xe5830000
-swv_27587c:
+Lswv_27587c:
 	.long	0xe12fff1e
-	.long	swv_got_10 - swv_27587c
+	.long	swv_got_10 - Lswv_27587c
 	.globl	_swvGetGlobalDataPointer
 	.private_extern	_swvGetGlobalDataPointer
 _swvGetGlobalDataPointer:
 	.long	0xe59f1008
 	.long	0xe79f0001
 	.long	0xe5900000
-swv_275890:
+Lswv_275890:
 	.long	0xe12fff1e
-	.long	swv_got_10 - swv_275890
+	.long	swv_got_10 - Lswv_275890
 	.globl	_swvError
 	.private_extern	_swvError
 _swvError:
@@ -81303,14 +81928,14 @@ _swvFree:
 	.long	0xe59f101c
 	.long	0xe79f3001
 	.long	0xe5933000
-swv_2759f4:
+Lswv_2759f4:
 	.long	0xe3530000
 	.long	0x0a000001
 	.long	0xe8bd4080
 	.long	0xe12fff13
 	bl	_swvSystemFree
 	.long	0xe8bd8080
-	.long	swv_got_11 - swv_2759f4
+	.long	swv_got_11 - Lswv_2759f4
 	.globl	_swvAllocate
 	.private_extern	_swvAllocate
 _swvAllocate:
@@ -81319,14 +81944,14 @@ _swvAllocate:
 	.long	0xe59f101c
 	.long	0xe79f3001
 	.long	0xe5933000
-swv_275a24:
+Lswv_275a24:
 	.long	0xe3530000
 	.long	0x0a000001
 	.long	0xe8bd4080
 	.long	0xe12fff13
 	bl	_swvSystemAllocate
 	.long	0xe8bd8080
-	.long	swv_got_12 - swv_275a24
+	.long	swv_got_12 - Lswv_275a24
 	.globl	_swvNew
 	.private_extern	_swvNew
 _swvNew:
@@ -81372,7 +81997,7 @@ _swvNew:
 	.long	0xe08fc003
 	.long	0xe79f3001
 	.long	0xe580c028
-swv_275ae8:
+Lswv_275ae8:
 	.long	0xe5809000
 	.long	0xe3a02001
 	.long	0xe59fc07c
@@ -81383,11 +82008,11 @@ swv_275ae8:
 	.long	0xe59f0070
 	.long	0xe79f900c
 	.long	0xe79f1002
-swv_275b10:
+Lswv_275b10:
 	.long	0xe79f3000
-swv_275b14:
+Lswv_275b14:
 	.long	0xe59fc064
-swv_275b18:
+Lswv_275b18:
 	.long	0xe59f2064
 	.long	0xe59f0064
 	.long	0xe5894000
@@ -81395,11 +82020,11 @@ swv_275b18:
 	.long	0xe5834000
 	.long	0xe79f900c
 	.long	0xe79f3000
-swv_275b34:
+Lswv_275b34:
 	.long	0xe79f1002
-swv_275b38:
+Lswv_275b38:
 	.long	0xe1a00004
-swv_275b3c:
+Lswv_275b3c:
 	.long	0xe5894000
 	.long	0xe5814000
 	.long	0xe5834000
@@ -81413,13 +82038,13 @@ swv_275b3c:
 	.long	0x00000e68
 	.long	0xfffffd38
 	.long	0xfffffd30
-	.long	swv_got_1 - swv_275ae8
-	.long	swv_got_12 - swv_275b10
-	.long	swv_got_11 - swv_275b14
-	.long	swv_got_13 - swv_275b18
-	.long	swv_got_14 - swv_275b34
-	.long	swv_got_15 - swv_275b3c
-	.long	swv_got_9 - swv_275b38
+	.long	swv_got_1 - Lswv_275ae8
+	.long	swv_got_12 - Lswv_275b10
+	.long	swv_got_11 - Lswv_275b14
+	.long	swv_got_13 - Lswv_275b18
+	.long	swv_got_14 - Lswv_275b34
+	.long	swv_got_15 - Lswv_275b3c
+	.long	swv_got_9 - Lswv_275b38
 	.globl	_swerve_createObject
 	.private_extern	_swerve_createObject
 _swerve_createObject:
@@ -81431,7 +82056,7 @@ _swerve_createObject:
 	.long	0xe59f9320
 	.long	0xe79f2009
 	.long	0xe5923000
-swv_275bac:
+Lswv_275bac:
 	.long	0xe3530000
 	.long	0x059f0314
 	.long	0x08bd8080
@@ -81631,7 +82256,7 @@ swv_275bac:
 	.long	0xe1a00001
 	.long	0xebfed4b4
 	.long	0xe8bd8080
-	.long	swv_got_13 - swv_275bac
+	.long	swv_got_13 - Lswv_275bac
 	.long	0x0001000c
 	.globl	_swervehandle_QueryInterface
 	.private_extern	_swervehandle_QueryInterface
@@ -81895,7 +82520,7 @@ _swvObject2IClass:
 	.long	0xe599c000
 	.long	0xe79fe005
 	.long	0xe1a00009
-swv_2762d0:
+Lswv_2762d0:
 	.long	0xe59e5000
 	.long	0xe59c4008
 	.long	0xe12fff34
@@ -81949,7 +82574,7 @@ swv_2762d0:
 	.long	0xe08fe002
 	.long	0xe79f2003
 	.long	0xe584e000
-swv_2763a4:
+Lswv_2763a4:
 	.long	0xe08f0001
 	.long	0xe08f900c
 	.long	0xe5840008
@@ -81962,13 +82587,13 @@ swv_2763a4:
 	.long	0xe59f94ac
 	.long	0xe79f0009
 	.long	0xe5903000
-swv_2763d4:
+Lswv_2763d4:
 	.long	0xe3530000
 	.long	0x0a000004
 	.long	0xe59f249c
 	.long	0xe79fc002
 	.long	0xe59ce000
-swv_2763e8:
+Lswv_2763e8:
 	.long	0xe581e00c
 	.long	0xe58c1000
 	.long	0xe5814000
@@ -82255,15 +82880,15 @@ swv_2763e8:
 	.long	0xeb000392
 	.long	0xe1a01000
 	.long	0xeafffed9
-	.long	swv_got_16 - swv_2762d0
+	.long	swv_got_16 - Lswv_2762d0
 	.long	0xfffffaea
 	.long	0x0001000c
-	.long	swv_got_14 - swv_2763a4
+	.long	swv_got_14 - Lswv_2763a4
 	.long	0xfffff498
 	.long	0xfffffb24
 	.long	0x000004d4
-	.long	swv_got_9 - swv_2763d4
-	.long	swv_got_15 - swv_2763e8
+	.long	swv_got_9 - Lswv_2763d4
+	.long	swv_got_15 - Lswv_2763e8
 	.globl	_swervehandle_Release
 	.private_extern	_swervehandle_Release
 _swervehandle_Release:
@@ -82277,13 +82902,13 @@ _swervehandle_Release:
 	.long	0xe59f9080
 	.long	0xe79f2009
 	.long	0xe5921000
-swv_2768ac:
+Lswv_2768ac:
 	.long	0xe3510000
 	.long	0x0a00000d
 	.long	0xe59f3070
 	.long	0xe79fc003
 	.long	0xe59c2000
-swv_2768c0:
+Lswv_2768c0:
 	.long	0xe1500002
 	.long	0x0590200c
 	.long	0x058c2000
@@ -82298,7 +82923,7 @@ swv_2768c0:
 	.long	0xe59fc03c
 	.long	0xe79f200c
 	.long	0xe5929000
-swv_2768f8:
+Lswv_2768f8:
 	.long	0xe580900c
 	.long	0xe5820000
 	.long	0xe5900004
@@ -82311,9 +82936,9 @@ swv_2768f8:
 	.long	0x012fff33
 	.long	0xe1a00004
 	.long	0xe8bd8090
-	.long	swv_got_9 - swv_2768ac
-	.long	swv_got_15 - swv_2768c0
-	.long	swv_got_14 - swv_2768f8
+	.long	swv_got_9 - Lswv_2768ac
+	.long	swv_got_15 - Lswv_2768c0
+	.long	swv_got_14 - Lswv_2768f8
 	.globl	_swerve_initialize
 	.private_extern	_swerve_initialize
 _swerve_initialize:
@@ -82324,7 +82949,7 @@ _swerve_initialize:
 	.long	0xe58d0000
 	.long	0xe79f0009
 	.long	0xe5903000
-swv_276950:
+Lswv_276950:
 	.long	0xe3530000
 	.long	0x159f00bc
 	.long	0x1a00001e
@@ -82333,9 +82958,9 @@ swv_276950:
 	.long	0xe3510000
 	.long	0xe79f3000
 	.long	0xe79fc00e
-swv_276970:
+Lswv_276970:
 	.long	0xe5831000
-swv_276974:
+Lswv_276974:
 	.long	0xe58c2000
 	.long	0x0a000022
 	.long	0xe3a00074
@@ -82344,7 +82969,7 @@ swv_276974:
 	.long	0xe3500000
 	.long	0xe79f1002
 	.long	0xe5810000
-swv_276994:
+Lswv_276994:
 	.long	0x0a000005
 	.long	0xe3a01000
 	.long	0xe3a02074
@@ -82356,9 +82981,9 @@ swv_276994:
 	.long	0xe59f2070
 	.long	0xe79fe001
 	.long	0xe79f0002
-swv_2769c0:
+Lswv_2769c0:
 	.long	0xe59e3000
-swv_2769c4:
+Lswv_2769c4:
 	.long	0xe5900000
 	.long	0xe3530000
 	.long	0x0a00000a
@@ -82372,7 +82997,7 @@ swv_2769c4:
 	.long	0xe3a00000
 	.long	0xe79f9003
 	.long	0xe589c000
-swv_2769f8:
+Lswv_2769f8:
 	.long	0xeafffff6
 	bl	_swvSystemFree
 	.long	0xe3a00002
@@ -82380,14 +83005,14 @@ swv_2769f8:
 	.long	0xe3a00074
 	bl	_swvSystemAllocate
 	.long	0xeaffffdb
-	.long	swv_got_13 - swv_276950
+	.long	swv_got_13 - Lswv_276950
 	.long	0x0001000c
-	.long	swv_got_12 - swv_276970
-	.long	swv_got_11 - swv_276974
-	.long	swv_got_16 - swv_276994
-	.long	swv_got_11 - swv_2769c0
-	.long	swv_got_16 - swv_2769c4
-	.long	swv_got_13 - swv_2769f8
+	.long	swv_got_12 - Lswv_276970
+	.long	swv_got_11 - Lswv_276974
+	.long	swv_got_16 - Lswv_276994
+	.long	swv_got_11 - Lswv_2769c0
+	.long	swv_got_16 - Lswv_2769c4
+	.long	swv_got_13 - Lswv_2769f8
 	.globl	_swerve_release
 	.private_extern	_swerve_release
 _swerve_release:
@@ -82403,19 +83028,19 @@ _swerve_release:
 	.long	0xe59f22c4
 	.long	0xe79f1002
 	.long	0xe5913000
-swv_276a64:
+Lswv_276a64:
 	.long	0xe3530000
 	.long	0x0a000080
 	.long	0xe59f52b4
 	.long	0xe79f4005
 	.long	0xe5940000
-swv_276a78:
+Lswv_276a78:
 	.long	0xe3500000
 	.long	0x0a00000d
 	.long	0xe59f62a4
 	.long	0xe79f5006
 	.long	0xea000003
-swv_276a8c:
+Lswv_276a8c:
 	.long	0xe12fff33
 	.long	0xe3540000
 	.long	0x0a000007
@@ -82430,7 +83055,7 @@ swv_276a8c:
 	.long	0xe59fc270
 	.long	0xe79f900c
 	.long	0xe5998000
-swv_276ac4:
+Lswv_276ac4:
 	.long	0xe3580000
 	.long	0x1a00006e
 	.long	0xe59f4260
@@ -82438,9 +83063,9 @@ swv_276ac4:
 	.long	0xebfef828
 	.long	0xe79f8004
 	.long	0xe79f5006
-swv_276ae0:
+Lswv_276ae0:
 	.long	0xe5983000
-swv_276ae4:
+Lswv_276ae4:
 	.long	0xe5956000
 	.long	0xe3530000
 	.long	0xe5960000
@@ -82535,9 +83160,9 @@ swv_276ae4:
 	.long	0xe59f10e8
 	.long	0xe79fe003
 	.long	0xe79f0001
-swv_276c5c:
+Lswv_276c5c:
 	.long	0xe59e3000
-swv_276c60:
+Lswv_276c60:
 	.long	0xe5900000
 	.long	0xe3530000
 	.long	0x0a000029
@@ -82551,12 +83176,13 @@ swv_276c60:
 	.long	0xe59f00b4
 	.long	0xe79fe000
 	.long	0xe59e4000
-swv_276c94:
+Lswv_276c94:
 	.long	0xe3540000
 	.long	0x0affff8b
 	.long	0xe59f30a4
 	.long	0xe08f6003
 	.long	0xe594500c
+Lswv_276ca8:
 	.long	0xea000007
 	.long	0xe5940004
 	.long	0xe5902004
@@ -82588,16 +83214,16 @@ swv_276c94:
 	.long	0xeaffffd4
 	bl	_swvSystemFree
 	.long	0xeaffff74
-	.long	swv_got_13 - swv_276a64
-	.long	swv_got_14 - swv_276a78
-	.long	swv_got_11 - swv_276a8c
-	.long	swv_got_9 - swv_276ac4
-	.long	swv_got_11 - swv_276ae0
-	.long	swv_got_16 - swv_276ae4
-	.long	swv_got_11 - swv_276c5c
-	.long	swv_got_16 - swv_276c60
-	.long	swv_got_15 - swv_276c94
-	.long	0x00080534
+	.long	swv_got_13 - Lswv_276a64
+	.long	swv_got_14 - Lswv_276a78
+	.long	swv_got_11 - Lswv_276a8c
+	.long	swv_got_9 - Lswv_276ac4
+	.long	swv_got_11 - Lswv_276ae0
+	.long	swv_got_16 - Lswv_276ae4
+	.long	swv_got_11 - Lswv_276c5c
+	.long	swv_got_16 - Lswv_276c60
+	.long	swv_got_15 - Lswv_276c94
+	.long	swv_got_11 - Lswv_276ca8
 	.globl	__ZN22CssCleanupStackManager15DestroyInstanceEv
 	.private_extern	__ZN22CssCleanupStackManager15DestroyInstanceEv
 __ZN22CssCleanupStackManager15DestroyInstanceEv:
@@ -82647,7 +83273,9 @@ __ZN22CssCleanupStackManager10InitializeEv:
 	.long	0xe59f9034
 	.long	0xe08f2003
 	.long	0xe08f1009
+Lswv_276de0:
 	.long	0xe282c008
+Lswv_276de4:
 	.long	0xe2813008
 	.long	0xe3a02000
 	.long	0xe580c000
@@ -82658,8 +83286,8 @@ __ZN22CssCleanupStackManager10InitializeEv:
 	.long	0xe5802014
 	.long	0xe5840010
 	.long	0xe8bd8090
-	.long	0x000cf754
-	.long	0x000cf760
+	.long	Lswv_346534 - Lswv_276de0
+	.long	Lswv_346544 - Lswv_276de4
 	.globl	__ZN22CssCleanupStackManager11PopInternalEP13CssHeapObject
 	.private_extern	__ZN22CssCleanupStackManager11PopInternalEP13CssHeapObject
 __ZN22CssCleanupStackManager11PopInternalEP13CssHeapObject:
@@ -82760,8 +83388,10 @@ __ZN22CssCleanupStackManager7CleanupEv:
 	.long	0xe59fe09c
 	.long	0xe08f1000
 	.long	0xe5940008
+Lswv_276f74:
 	.long	0xe08fc00e
 	.long	0xe2813008
+Lswv_276f7c:
 	.long	0xe3500000
 	.long	0xe28c9008
 	.long	0xe8840208
@@ -82774,7 +83404,7 @@ __ZN22CssCleanupStackManager7CleanupEv:
 	.long	0xe1a00004
 	.long	0xe79f900c
 	.long	0xe289e008
-swv_276fac:
+Lswv_276fac:
 	.long	0xe584e004
 	.long	0xeb0001a5
 	.long	0xe5952014
@@ -82798,9 +83428,9 @@ swv_276fac:
 	.long	0x0affffe6
 	.long	0xeb000195
 	.long	0xeaffffe4
-	.long	0x000ce8a0
-	.long	0x000ce8a8
-	.long	swv_got_0 - swv_276fac
+	.long	Lswv_345814 - Lswv_276f74
+	.long	Lswv_345824 - Lswv_276f7c
+	.long	swv_got_0 - Lswv_276fac
 	.globl	__ZN22CssCleanupStackManager13PopStackFrameEv
 	.private_extern	__ZN22CssCleanupStackManager13PopStackFrameEv
 __ZN22CssCleanupStackManager13PopStackFrameEv:
@@ -82821,6 +83451,7 @@ __ZN22CssCleanupStackManagerD2Ev:
 	.long	0xe1a05000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_27704c:
 	.long	0xe5853000
 	.long	0xe595300c
 	.long	0xe3530000
@@ -82833,7 +83464,7 @@ __ZN22CssCleanupStackManagerD2Ev:
 	.long	0xe1a00004
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_27707c:
+Lswv_27707c:
 	.long	0xe5842004
 	.long	0xeb000171
 	.long	0xe595300c
@@ -82848,8 +83479,10 @@ swv_27707c:
 	.long	0xe59fc0a0
 	.long	0xe08f3000
 	.long	0xe5940008
+Lswv_2770b4:
 	.long	0xe08f900c
 	.long	0xe283e008
+Lswv_2770bc:
 	.long	0xe3500000
 	.long	0xe2892008
 	.long	0xe584e000
@@ -82868,6 +83501,7 @@ swv_27707c:
 	.long	0xe3500000
 	.long	0xe08f2009
 	.long	0xe2821008
+Lswv_277104:
 	.long	0xe5851004
 	.long	0x0a000001
 	.long	0xeb000152
@@ -82877,7 +83511,7 @@ swv_27707c:
 	.long	0xe59fc034
 	.long	0xe79f000c
 	.long	0xe2803008
-swv_277128:
+Lswv_277128:
 	.long	0xe5853004
 	.long	0xe8bd80f0
 	.long	0xe5950010
@@ -82885,27 +83519,28 @@ swv_277128:
 	.long	0x0afffff7
 	.long	0xeb000146
 	.long	0xeafffff5
-	.long	0x000cf4e8
-	.long	swv_got_0 - swv_27707c
-	.long	0x000ce760
-	.long	0x000ce768
-	.long	0x000cf440
-	.long	swv_got_0 - swv_277128
+	.long	Lswv_346534 - Lswv_27704c
+	.long	swv_got_0 - Lswv_27707c
+	.long	Lswv_345814 - Lswv_2770b4
+	.long	Lswv_345824 - Lswv_2770bc
+	.long	Lswv_346544 - Lswv_277104
+	.long	swv_got_0 - Lswv_277128
 	.globl	__ZN22CssCleanupStackManagerD1Ev
 	.private_extern	__ZN22CssCleanupStackManagerD1Ev
 __ZN22CssCleanupStackManagerD1Ev:
-swv_27715c:
+Lswv_27715c:
 	.long	0xeaffffb4
 	.globl	__ZN22CssCleanupStackManagerD0Ev
 	.private_extern	__ZN22CssCleanupStackManagerD0Ev
 __ZN22CssCleanupStackManagerD0Ev:
-swv_277160:
+Lswv_277160:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe59f1108
 	.long	0xe1a05000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_277178:
 	.long	0xe5853000
 	.long	0xe595300c
 	.long	0xe3530000
@@ -82918,7 +83553,7 @@ swv_277160:
 	.long	0xe1a00004
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_2771a8:
+Lswv_2771a8:
 	.long	0xe5842004
 	.long	0xeb000126
 	.long	0xe595300c
@@ -82933,8 +83568,10 @@ swv_2771a8:
 	.long	0xe59fc0a8
 	.long	0xe08f3000
 	.long	0xe5940008
+Lswv_2771e0:
 	.long	0xe08f900c
 	.long	0xe283e008
+Lswv_2771e8:
 	.long	0xe3500000
 	.long	0xe2892008
 	.long	0xe584e000
@@ -82953,6 +83590,7 @@ swv_2771a8:
 	.long	0xe3500000
 	.long	0xe08f1002
 	.long	0xe281e008
+Lswv_277230:
 	.long	0xe585e004
 	.long	0x0a000001
 	.long	0xeb000107
@@ -82962,7 +83600,7 @@ swv_2771a8:
 	.long	0xe59f903c
 	.long	0xe79f0009
 	.long	0xe2803008
-swv_277254:
+Lswv_277254:
 	.long	0xe1a00005
 	.long	0xe5853004
 	.long	0xeb0000fa
@@ -82972,16 +83610,16 @@ swv_277254:
 	.long	0x0afffff5
 	.long	0xeb0000f9
 	.long	0xeafffff3
-	.long	0x000cf3bc
-	.long	swv_got_0 - swv_2771a8
-	.long	0x000ce634
-	.long	0x000ce63c
-	.long	0x000cf314
-	.long	swv_got_0 - swv_277254
+	.long	Lswv_346534 - Lswv_277178
+	.long	swv_got_0 - Lswv_2771a8
+	.long	Lswv_345814 - Lswv_2771e0
+	.long	Lswv_345824 - Lswv_2771e8
+	.long	Lswv_346544 - Lswv_277230
+	.long	swv_got_0 - Lswv_277254
 	.globl	__ZN8CssArrayIP23CssCleanupStackInstanceE7DestroyEPv
 	.private_extern	__ZN8CssArrayIP23CssCleanupStackInstanceE7DestroyEPv
 __ZN8CssArrayIP23CssCleanupStackInstanceE7DestroyEPv:
-swv_277290:
+Lswv_277290:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -82991,13 +83629,14 @@ swv_277290:
 	.globl	__ZN8CssArrayIP23CssCleanupStackInstanceED0Ev
 	.private_extern	__ZN8CssArrayIP23CssCleanupStackInstanceED0Ev
 __ZN8CssArrayIP23CssCleanupStackInstanceED0Ev:
-swv_2772a8:
+Lswv_2772a8:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2772c0:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -83010,7 +83649,7 @@ swv_2772a8:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_2772f0:
+Lswv_2772f0:
 	.long	0xe5849000
 	.long	0xeb0000d0
 	.long	0xe8bd8090
@@ -83019,12 +83658,12 @@ swv_2772f0:
 	.long	0x0afffff5
 	.long	0xeb0000d3
 	.long	0xeafffff3
-	.long	0x000cf284
-	.long	swv_got_0 - swv_2772f0
+	.long	Lswv_346544 - Lswv_2772c0
+	.long	swv_got_0 - Lswv_2772f0
 	.globl	__ZN8CssArrayIP23CssCleanupStackInstanceE8AllocateEi
 	.private_extern	__ZN8CssArrayIP23CssCleanupStackInstanceE8AllocateEi
 __ZN8CssArrayIP23CssCleanupStackInstanceE8AllocateEi:
-swv_277318:
+Lswv_277318:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -83034,7 +83673,7 @@ swv_277318:
 	.globl	__ZN8CssArrayIP23CssCleanupStackInstanceE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIP23CssCleanupStackInstanceE9CopyArrayEPvS3_i
 __ZN8CssArrayIP23CssCleanupStackInstanceE9CopyArrayEPvS3_i:
-swv_277330:
+Lswv_277330:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -83195,13 +83834,14 @@ swv_277330:
 	.globl	__ZN8CssArrayIP23CssCleanupStackInstanceED1Ev
 	.private_extern	__ZN8CssArrayIP23CssCleanupStackInstanceED1Ev
 __ZN8CssArrayIP23CssCleanupStackInstanceED1Ev:
-swv_2775a4:
+Lswv_2775a4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_2775bc:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -83213,7 +83853,7 @@ swv_2775a4:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_2775e8:
+Lswv_2775e8:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -83221,8 +83861,8 @@ swv_2775e8:
 	.long	0x0afffff7
 	.long	0xeb000016
 	.long	0xeafffff5
-	.long	0x000cef88
-	.long	swv_got_0 - swv_2775e8
+	.long	Lswv_346544 - Lswv_2775bc
+	.long	swv_got_0 - Lswv_2775e8
 	.globl	__znam
 __znam:
 	.long	0xe92d4080
@@ -86494,6 +87134,7 @@ __ZN18CssGLBufferManager11LoadImage2DEPK10CssImage2Dii:
 	.long	0xe59d2014
 	.long	0xe08f0001
 	.long	0xe0838000
+Lswv_27a4ac:
 	.long	0xe59d1018
 	.long	0xe5186180
 	.long	0xe1a0000b
@@ -86512,6 +87153,7 @@ __ZN18CssGLBufferManager11LoadImage2DEPK10CssImage2Dii:
 	.long	0xe59fe6c8
 	.long	0xe08fc00e
 	.long	0xe28c9008
+Lswv_27a4f4:
 	.long	0xe58d0040
 	.long	0xe5806004
 	.long	0xe59d2040
@@ -86944,8 +87586,8 @@ __ZN18CssGLBufferManager11LoadImage2DEPK10CssImage2Dii:
 	.long	0xe59f000c
 	.long	0xebfff2f3
 	.long	0xeafffef7
-	.long	0x0007cb24
-	.long	0x000cbcb0
+	.long	Lswv_2f6fd0 - Lswv_27a4ac
+	.long	Lswv_3461a4 - Lswv_27a4f4
 	.long	0xfffffaec
 	.globl	__ZN18CssGLBufferManager11LoadImage2DEP10CssImage2Diiiiii
 	.private_extern	__ZN18CssGLBufferManager11LoadImage2DEP10CssImage2Diiiiii
@@ -87398,17 +88040,22 @@ __ZN18CssGLBufferManager11GetInstanceEv:
 	.long	0xe59fe088
 	.long	0xe08f1002
 	.long	0xe59f2084
+Lswv_27b29c:
 	.long	0xe2813008
 	.long	0xe08fc00e
 	.long	0xe08f1002
+Lswv_27b2a8:
 	.long	0xe59fe078
+Lswv_27b2ac:
 	.long	0xe59f2078
 	.long	0xe28c9008
 	.long	0xe08fc00e
 	.long	0xe5803000
+Lswv_27b2bc:
 	.long	0xe2813008
 	.long	0xe08f1002
 	.long	0xe5804008
+Lswv_27b2c8:
 	.long	0xe580400c
 	.long	0xe5804010
 	.long	0xe5809004
@@ -87430,11 +88077,11 @@ __ZN18CssGLBufferManager11GetInstanceEv:
 	.long	0xebfff113
 	.long	0xe5900034
 	.long	0xe8bd80b0
-	.long	0x000cb2c8
-	.long	0x000cb30c
-	.long	0x000cb2e8
-	.long	0x000ca42c
-	.long	0x000cb2ac
+	.long	Lswv_346564 - Lswv_27b29c
+	.long	Lswv_3465b4 - Lswv_27b2a8
+	.long	Lswv_346594 - Lswv_27b2ac
+	.long	Lswv_3456e8 - Lswv_27b2bc
+	.long	Lswv_346574 - Lswv_27b2c8
 	.globl	__ZN18CssGLBufferManager9CreateVBOERjP12swvVBOFormatiPK15CssVertexBuffer
 	.private_extern	__ZN18CssGLBufferManager9CreateVBOERjP12swvVBOFormatiPK15CssVertexBuffer
 __ZN18CssGLBufferManager9CreateVBOERjP12swvVBOFormatiPK15CssVertexBuffer:
@@ -89213,18 +89860,20 @@ __ZN18CssGLBufferManager13UnloadImage2DEP10CssImage2Dii:
 	.globl	__ZN18CssGLBufferManagerD0Ev
 	.private_extern	__ZN18CssGLBufferManagerD0Ev
 __ZN18CssGLBufferManagerD0Ev:
-swv_27ced4:
+Lswv_27ced4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc15c
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_27ceec:
 	.long	0xe5802000
 	.long	0xebfff7a4
 	.long	0xe59f1148
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_27cf00:
 	.long	0xe5940038
 	.long	0xe5843034
 	.long	0xe3500000
@@ -89237,10 +89886,11 @@ swv_27ced4:
 	.long	0xe59fc120
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_27cf30:
 	.long	0xe5940028
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_27cf3c:
+Lswv_27cf3c:
 	.long	0xe3500000
 	.long	0xe5842034
 	.long	0xe5843024
@@ -89253,10 +89903,11 @@ swv_27cf3c:
 	.long	0xe59fc0ec
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_27cf6c:
 	.long	0xe5940018
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_27cf78:
+Lswv_27cf78:
 	.long	0xe3500000
 	.long	0xe5842024
 	.long	0xe5843014
@@ -89269,10 +89920,11 @@ swv_27cf78:
 	.long	0xe59fc0b8
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_27cfa8:
 	.long	0xe5940008
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_27cfb4:
+Lswv_27cfb4:
 	.long	0xe3500000
 	.long	0xe5842014
 	.long	0xe5843004
@@ -89284,7 +89936,7 @@ swv_27cfb4:
 	.long	0xe59f1084
 	.long	0xe79f0001
 	.long	0xe2803008
-swv_27cfe0:
+Lswv_27cfe0:
 	.long	0xe1a00004
 	.long	0xe5843004
 	.long	0xebffe993
@@ -89309,15 +89961,15 @@ swv_27cfe0:
 	.long	0x0affffc8
 	.long	0xebffe987
 	.long	0xeaffffc6
-	.long	0x000c9678
-	.long	0x000c9674
-	.long	0x000c87b8
-	.long	swv_got_0 - swv_27cf3c
-	.long	0x000c9628
-	.long	swv_got_0 - swv_27cf78
-	.long	0x000c960c
-	.long	swv_got_0 - swv_27cfb4
-	.long	swv_got_0 - swv_27cfe0
+	.long	Lswv_346564 - Lswv_27ceec
+	.long	Lswv_346574 - Lswv_27cf00
+	.long	Lswv_3456e8 - Lswv_27cf30
+	.long	swv_got_0 - Lswv_27cf3c
+	.long	Lswv_346594 - Lswv_27cf6c
+	.long	swv_got_0 - Lswv_27cf78
+	.long	Lswv_3465b4 - Lswv_27cfa8
+	.long	swv_got_0 - Lswv_27cfb4
+	.long	swv_got_0 - Lswv_27cfe0
 	.globl	__ZN18CssGLBufferManagerD2Ev
 	.private_extern	__ZN18CssGLBufferManagerD2Ev
 __ZN18CssGLBufferManagerD2Ev:
@@ -89327,11 +89979,13 @@ __ZN18CssGLBufferManagerD2Ev:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_27d07c:
 	.long	0xe5802000
 	.long	0xebfff740
 	.long	0xe59f1140
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_27d090:
 	.long	0xe5940038
 	.long	0xe5843034
 	.long	0xe3500000
@@ -89344,11 +89998,12 @@ __ZN18CssGLBufferManagerD2Ev:
 	.long	0xe59f3118
 	.long	0xe08f1002
 	.long	0xe2810008
+Lswv_27d0c0:
 	.long	0xe5840024
 	.long	0xe5940028
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_27d0d0:
+Lswv_27d0d0:
 	.long	0xe3500000
 	.long	0xe5849034
 	.long	0x0a000000
@@ -89360,9 +90015,10 @@ swv_27d0d0:
 	.long	0xe59f90e4
 	.long	0xe79f3000
 	.long	0xe5940018
-swv_27d0fc:
+Lswv_27d0fc:
 	.long	0xe08f2009
 	.long	0xe283c008
+Lswv_27d104:
 	.long	0xe3500000
 	.long	0xe2821008
 	.long	0xe584c024
@@ -89376,10 +90032,11 @@ swv_27d0fc:
 	.long	0xe59fc0b0
 	.long	0xe79f0001
 	.long	0xe2803008
-swv_27d138:
+Lswv_27d138:
 	.long	0xe5940008
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_27d144:
 	.long	0xe3500000
 	.long	0xe5843014
 	.long	0xe5842004
@@ -89391,7 +90048,7 @@ swv_27d138:
 	.long	0xe59f307c
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_27d170:
+Lswv_27d170:
 	.long	0xe5849004
 	.long	0xe8bd8090
 	.long	0xe5940040
@@ -89414,24 +90071,24 @@ swv_27d170:
 	.long	0x0affffca
 	.long	0xebffe925
 	.long	0xeaffffc8
-	.long	0x000c94e8
-	.long	0x000c94e4
-	.long	0x000c8628
-	.long	swv_got_0 - swv_27d0d0
-	.long	swv_got_0 - swv_27d0fc
-	.long	0x000c9490
-	.long	swv_got_0 - swv_27d138
-	.long	0x000c9470
-	.long	swv_got_0 - swv_27d170
+	.long	Lswv_346564 - Lswv_27d07c
+	.long	Lswv_346574 - Lswv_27d090
+	.long	Lswv_3456e8 - Lswv_27d0c0
+	.long	swv_got_0 - Lswv_27d0d0
+	.long	swv_got_0 - Lswv_27d0fc
+	.long	Lswv_346594 - Lswv_27d104
+	.long	swv_got_0 - Lswv_27d138
+	.long	Lswv_3465b4 - Lswv_27d144
+	.long	swv_got_0 - Lswv_27d170
 	.globl	__ZN18CssGLBufferManagerD1Ev
 	.private_extern	__ZN18CssGLBufferManagerD1Ev
 __ZN18CssGLBufferManagerD1Ev:
-swv_27d1ec:
+Lswv_27d1ec:
 	.long	0xeaffff9c
 	.globl	__ZN8CssArrayIN18CssGLBufferManager10SssTextureEE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIN18CssGLBufferManager10SssTextureEE9CopyArrayEPvS3_i
 __ZN8CssArrayIN18CssGLBufferManager10SssTextureEE9CopyArrayEPvS3_i:
-swv_27d1f0:
+Lswv_27d1f0:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe1a0c002
@@ -89657,7 +90314,7 @@ swv_27d1f0:
 	.globl	__ZN8CssArrayIjE9CopyArrayEPvS1_i
 	.private_extern	__ZN8CssArrayIjE9CopyArrayEPvS1_i
 __ZN8CssArrayIjE9CopyArrayEPvS1_i:
-swv_27d568:
+Lswv_27d568:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a0c002
@@ -89818,7 +90475,7 @@ swv_27d568:
 	.globl	__ZN8CssArrayIN18CssGLBufferManager6SssVBOEE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIN18CssGLBufferManager6SssVBOEE9CopyArrayEPvS3_i
 __ZN8CssArrayIN18CssGLBufferManager6SssVBOEE9CopyArrayEPvS3_i:
-swv_27d7dc:
+Lswv_27d7dc:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe1a09002
@@ -90033,7 +90690,7 @@ swv_27d7dc:
 	.globl	__ZN8CssArrayIN18CssGLBufferManager10SssTextureEE7DestroyEPv
 	.private_extern	__ZN8CssArrayIN18CssGLBufferManager10SssTextureEE7DestroyEPv
 __ZN8CssArrayIN18CssGLBufferManager10SssTextureEE7DestroyEPv:
-swv_27db28:
+Lswv_27db28:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -90043,7 +90700,7 @@ swv_27db28:
 	.globl	__ZN8CssArrayIjE7DestroyEPv
 	.private_extern	__ZN8CssArrayIjE7DestroyEPv
 __ZN8CssArrayIjE7DestroyEPv:
-swv_27db40:
+Lswv_27db40:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -90053,7 +90710,7 @@ swv_27db40:
 	.globl	__ZN8CssArrayIN18CssGLBufferManager6SssVBOEE7DestroyEPv
 	.private_extern	__ZN8CssArrayIN18CssGLBufferManager6SssVBOEE7DestroyEPv
 __ZN8CssArrayIN18CssGLBufferManager6SssVBOEE7DestroyEPv:
-swv_27db58:
+Lswv_27db58:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -90063,7 +90720,7 @@ swv_27db58:
 	.globl	__ZN8CssArrayIN18CssGLBufferManager10SssTextureEE8AllocateEi
 	.private_extern	__ZN8CssArrayIN18CssGLBufferManager10SssTextureEE8AllocateEi
 __ZN8CssArrayIN18CssGLBufferManager10SssTextureEE8AllocateEi:
-swv_27db70:
+Lswv_27db70:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -90075,7 +90732,7 @@ swv_27db70:
 	.globl	__ZN8CssArrayIjE8AllocateEi
 	.private_extern	__ZN8CssArrayIjE8AllocateEi
 __ZN8CssArrayIjE8AllocateEi:
-swv_27db90:
+Lswv_27db90:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00101
@@ -90085,7 +90742,7 @@ swv_27db90:
 	.globl	__ZN8CssArrayIN18CssGLBufferManager6SssVBOEE8AllocateEi
 	.private_extern	__ZN8CssArrayIN18CssGLBufferManager6SssVBOEE8AllocateEi
 __ZN8CssArrayIN18CssGLBufferManager6SssVBOEE8AllocateEi:
-swv_27dba8:
+Lswv_27dba8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00181
@@ -90095,13 +90752,14 @@ swv_27dba8:
 	.globl	__ZN8CssArrayIN18CssGLBufferManager6SssVBOEED0Ev
 	.private_extern	__ZN8CssArrayIN18CssGLBufferManager6SssVBOEED0Ev
 __ZN8CssArrayIN18CssGLBufferManager6SssVBOEED0Ev:
-swv_27dbc0:
+Lswv_27dbc0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_27dbd8:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -90114,7 +90772,7 @@ swv_27dbc0:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_27dc08:
+Lswv_27dc08:
 	.long	0xe5849000
 	.long	0xebffe68a
 	.long	0xe8bd8090
@@ -90123,18 +90781,19 @@ swv_27dc08:
 	.long	0x0afffff5
 	.long	0xebffe68d
 	.long	0xeafffff3
-	.long	0x000c899c
-	.long	swv_got_0 - swv_27dc08
+	.long	Lswv_346574 - Lswv_27dbd8
+	.long	swv_got_0 - Lswv_27dc08
 	.globl	__ZN8CssArrayIN18CssGLBufferManager6SssVBOEED1Ev
 	.private_extern	__ZN8CssArrayIN18CssGLBufferManager6SssVBOEED1Ev
 __ZN8CssArrayIN18CssGLBufferManager6SssVBOEED1Ev:
-swv_27dc30:
+Lswv_27dc30:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_27dc48:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -90146,7 +90805,7 @@ swv_27dc30:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_27dc74:
+Lswv_27dc74:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -90154,18 +90813,19 @@ swv_27dc74:
 	.long	0x0afffff7
 	.long	0xebffe673
 	.long	0xeafffff5
-	.long	0x000c892c
-	.long	swv_got_0 - swv_27dc74
+	.long	Lswv_346574 - Lswv_27dc48
+	.long	swv_got_0 - Lswv_27dc74
 	.globl	__ZN8CssArrayIjED0Ev
 	.private_extern	__ZN8CssArrayIjED0Ev
 __ZN8CssArrayIjED0Ev:
-swv_27dc98:
+Lswv_27dc98:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_27dcb0:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -90178,7 +90838,7 @@ swv_27dc98:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_27dce0:
+Lswv_27dce0:
 	.long	0xe5849000
 	.long	0xebffe654
 	.long	0xe8bd8090
@@ -90187,18 +90847,19 @@ swv_27dce0:
 	.long	0x0afffff5
 	.long	0xebffe657
 	.long	0xeafffff3
-	.long	0x000c88e4
-	.long	swv_got_0 - swv_27dce0
+	.long	Lswv_346594 - Lswv_27dcb0
+	.long	swv_got_0 - Lswv_27dce0
 	.globl	__ZN8CssArrayIjED1Ev
 	.private_extern	__ZN8CssArrayIjED1Ev
 __ZN8CssArrayIjED1Ev:
-swv_27dd08:
+Lswv_27dd08:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_27dd20:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -90210,7 +90871,7 @@ swv_27dd08:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_27dd4c:
+Lswv_27dd4c:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -90218,18 +90879,19 @@ swv_27dd4c:
 	.long	0x0afffff7
 	.long	0xebffe63d
 	.long	0xeafffff5
-	.long	0x000c8874
-	.long	swv_got_0 - swv_27dd4c
+	.long	Lswv_346594 - Lswv_27dd20
+	.long	swv_got_0 - Lswv_27dd4c
 	.globl	__ZN8CssArrayIN18CssGLBufferManager10SssTextureEED0Ev
 	.private_extern	__ZN8CssArrayIN18CssGLBufferManager10SssTextureEED0Ev
 __ZN8CssArrayIN18CssGLBufferManager10SssTextureEED0Ev:
-swv_27dd70:
+Lswv_27dd70:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_27dd88:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -90242,7 +90904,7 @@ swv_27dd70:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_27ddb8:
+Lswv_27ddb8:
 	.long	0xe5849000
 	.long	0xebffe61e
 	.long	0xe8bd8090
@@ -90251,18 +90913,19 @@ swv_27ddb8:
 	.long	0x0afffff5
 	.long	0xebffe621
 	.long	0xeafffff3
-	.long	0x000c882c
-	.long	swv_got_0 - swv_27ddb8
+	.long	Lswv_3465b4 - Lswv_27dd88
+	.long	swv_got_0 - Lswv_27ddb8
 	.globl	__ZN8CssArrayIN18CssGLBufferManager10SssTextureEED1Ev
 	.private_extern	__ZN8CssArrayIN18CssGLBufferManager10SssTextureEED1Ev
 __ZN8CssArrayIN18CssGLBufferManager10SssTextureEED1Ev:
-swv_27dde0:
+Lswv_27dde0:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_27ddf8:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -90274,7 +90937,7 @@ swv_27dde0:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_27de24:
+Lswv_27de24:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -90282,8 +90945,8 @@ swv_27de24:
 	.long	0x0afffff7
 	.long	0xebffe607
 	.long	0xeafffff5
-	.long	0x000c87bc
-	.long	swv_got_0 - swv_27de24
+	.long	Lswv_3465b4 - Lswv_27ddf8
+	.long	swv_got_0 - Lswv_27de24
 	.globl	__ZN16CssActiveLightGL10InitializeEPK8CssLightRK9CssMatrixS5_
 	.private_extern	__ZN16CssActiveLightGL10InitializeEPK8CssLightRK9CssMatrixS5_
 __ZN16CssActiveLightGL10InitializeEPK8CssLightRK9CssMatrixS5_:
@@ -90489,14 +91152,14 @@ __ZN16CssActiveLightGL10InitializeEPK8CssLightRK9CssMatrixS5_:
 	.globl	__ZN13CssRendererGL17UpdatepBackBufferEP13CssGraphics3D
 	.private_extern	__ZN13CssRendererGL17UpdatepBackBufferEP13CssGraphics3D
 __ZN13CssRendererGL17UpdatepBackBufferEP13CssGraphics3D:
-swv_27e164:
+Lswv_27e164:
 	.long	0xe24dd004
 	.long	0xe28dd004
 	.long	0xe12fff1e
 	.globl	__ZN13CssRendererGL11SetViewportEiiii
 	.private_extern	__ZN13CssRendererGL11SetViewportEiiii
 __ZN13CssRendererGL11SetViewportEiiii:
-swv_27e170:
+Lswv_27e170:
 	.long	0xe5902004
 	.long	0xed9d5a00
 	.long	0xe5922074
@@ -90752,7 +91415,7 @@ __ZN13CssRendererGL7ClearGLEbbffff:
 	.globl	__ZN13CssRendererGL14SetpBackBufferEP13CssGraphics3D
 	.private_extern	__ZN13CssRendererGL14SetpBackBufferEP13CssGraphics3D
 __ZN13CssRendererGL14SetpBackBufferEP13CssGraphics3D:
-swv_27e548:
+Lswv_27e548:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe300923a
@@ -90810,7 +91473,7 @@ swv_27e548:
 	.globl	__ZN13CssRendererGL20ClearGLBufferManagerEv
 	.private_extern	__ZN13CssRendererGL20ClearGLBufferManagerEv
 __ZN13CssRendererGL20ClearGLBufferManagerEv:
-swv_27e620:
+Lswv_27e620:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe59001d0
@@ -90826,14 +91489,17 @@ __ZN13CssRendererGLC2Ev:
 	.long	0xe1a04000
 	.long	0xe08fe002
 	.long	0xe28e5008
+Lswv_27e650:
 	.long	0xe59fe154
 	.long	0xe08f1003
 	.long	0xe281c008
+Lswv_27e65c:
 	.long	0xe59f114c
 	.long	0xe3a095fe
 	.long	0xe5809008
 	.long	0xe08f900e
 	.long	0xe2893008
+Lswv_27e670:
 	.long	0xe58431a8
 	.long	0xe59f3138
 	.long	0xe5805000
@@ -90852,6 +91518,7 @@ __ZN13CssRendererGLC2Ev:
 	.long	0xe5840174
 	.long	0xe08f0001
 	.long	0xe280e008
+Lswv_27e6b8:
 	.long	0xe584e1b8
 	.long	0xe284ef8e
 	.long	0xe3e0c000
@@ -90859,6 +91526,7 @@ __ZN13CssRendererGLC2Ev:
 	.long	0xe584c184
 	.long	0xe08f1003
 	.long	0xe5842188
+Lswv_27e6d4:
 	.long	0xe58491d4
 	.long	0xe3a02001
 	.long	0xe58491d8
@@ -90911,15 +91579,15 @@ __ZN13CssRendererGLC2Ev:
 	bl	_swvGetGLMaxTextureSize
 	.long	0xe5840258
 	.long	0xe8bd80b0
-	.long	0x000c7f84
-	.long	0x000c7ff0
-	.long	0x000c7fbc
-	.long	0x000c7030
-	.long	0x000c7ad0
+	.long	Lswv_3465d4 - Lswv_27e650
+	.long	Lswv_34664c - Lswv_27e65c
+	.long	Lswv_34662c - Lswv_27e670
+	.long	Lswv_3456e8 - Lswv_27e6b8
+	.long	Lswv_3461a4 - Lswv_27e6d4
 	.globl	__ZN13CssRendererGL25FinalizeGLBackgroundStateEv
 	.private_extern	__ZN13CssRendererGL25FinalizeGLBackgroundStateEv
 __ZN13CssRendererGL25FinalizeGLBackgroundStateEv:
-swv_27e7b8:
+Lswv_27e7b8:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a04000
@@ -90934,7 +91602,7 @@ swv_27e7b8:
 	.globl	__ZN13CssRendererGL13RenderTexRectEllllP10CssImage2Dllllbb
 	.private_extern	__ZN13CssRendererGL13RenderTexRectEllllP10CssImage2Dllllbb
 __ZN13CssRendererGL13RenderTexRectEllllP10CssImage2Dllllbb:
-swv_27e7e4:
+Lswv_27e7e4:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -91407,7 +92075,7 @@ swv_27e7e4:
 	.globl	__ZN13CssRendererGL9SetCameraEPK9CssCameraPK9CssMatrix
 	.private_extern	__ZN13CssRendererGL9SetCameraEPK9CssCameraPK9CssMatrix
 __ZN13CssRendererGL9SetCameraEPK9CssCameraPK9CssMatrix:
-swv_27ef38:
+Lswv_27ef38:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -92010,7 +92678,7 @@ __ZN13CssRendererGL25RenderSetupSceneRecursiveEPK7CssNode:
 	.globl	__ZN13CssRendererGL25ClearBackgroundAndZBufferEP13CssBackgroundPK9CssCamera
 	.private_extern	__ZN13CssRendererGL25ClearBackgroundAndZBufferEP13CssBackgroundPK9CssCamera
 __ZN13CssRendererGL25ClearBackgroundAndZBufferEP13CssBackgroundPK9CssCamera:
-swv_27f888:
+Lswv_27f888:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -92832,7 +93500,7 @@ __ZN13CssRendererGL6CreateEv:
 	.globl	__ZN13CssRendererGL9SetLightsEiPKPK8CssLightPK9CssMatrix
 	.private_extern	__ZN13CssRendererGL9SetLightsEiPKPK8CssLightPK9CssMatrix
 __ZN13CssRendererGL9SetLightsEiPKPK8CssLightPK9CssMatrix:
-swv_280538:
+Lswv_280538:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -93138,7 +93806,7 @@ swv_280538:
 	.globl	__ZN13CssRendererGL10ClearCacheEv
 	.private_extern	__ZN13CssRendererGL10ClearCacheEv
 __ZN13CssRendererGL10ClearCacheEv:
-swv_2809f0:
+Lswv_2809f0:
 	.long	0xe92d40b0
 	.long	0xe28d7008
 	.long	0xe3a04b01
@@ -93263,13 +93931,14 @@ swv_2809f0:
 	.globl	__ZN13CssRendererGLD0Ev
 	.private_extern	__ZN13CssRendererGLD0Ev
 __ZN13CssRendererGLD0Ev:
-swv_280bd4:
+Lswv_280bd4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59fc1a8
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_280bec:
 	.long	0xe5802000
 	.long	0xe59001c8
 	.long	0xe3500000
@@ -93294,6 +93963,7 @@ swv_280bd4:
 	.long	0xe59f1148
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_280c4c:
 	.long	0xe5940220
 	.long	0xe584321c
 	.long	0xe3500000
@@ -93306,10 +93976,11 @@ swv_280bd4:
 	.long	0xe59fc120
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_280c7c:
 	.long	0xe59401bc
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_280c88:
+Lswv_280c88:
 	.long	0xe3500000
 	.long	0xe584221c
 	.long	0xe58431b8
@@ -93322,10 +93993,11 @@ swv_280c88:
 	.long	0xe59fc0ec
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_280cb8:
 	.long	0xe59401ac
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_280cc4:
+Lswv_280cc4:
 	.long	0xe3500000
 	.long	0xe58421b8
 	.long	0xe58431a8
@@ -93338,10 +94010,11 @@ swv_280cc4:
 	.long	0xe59fc0b8
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_280cf4:
 	.long	0xe5940010
 	.long	0xe79f900c
 	.long	0xe2892008
-swv_280d00:
+Lswv_280d00:
 	.long	0xe3500000
 	.long	0xe58421a8
 	.long	0xe584300c
@@ -93353,7 +94026,7 @@ swv_280d00:
 	.long	0xe59f1084
 	.long	0xe79f0001
 	.long	0xe2803008
-swv_280d2c:
+Lswv_280d2c:
 	.long	0xe1a00004
 	.long	0xe584300c
 	.long	0xebffda40
@@ -93378,15 +94051,15 @@ swv_280d2c:
 	.long	0x0affffc8
 	.long	0xebffda34
 	.long	0xeaffffc6
-	.long	0x000c59e8
-	.long	0x000c5558
-	.long	0x000c4a6c
-	.long	swv_got_0 - swv_280c88
-	.long	0x000c5974
-	.long	swv_got_0 - swv_280cc4
-	.long	0x000c5958
-	.long	swv_got_0 - swv_280d00
-	.long	swv_got_0 - swv_280d2c
+	.long	Lswv_3465d4 - Lswv_280bec
+	.long	Lswv_3461a4 - Lswv_280c4c
+	.long	Lswv_3456e8 - Lswv_280c7c
+	.long	swv_got_0 - Lswv_280c88
+	.long	Lswv_34662c - Lswv_280cb8
+	.long	swv_got_0 - Lswv_280cc4
+	.long	Lswv_34664c - Lswv_280cf4
+	.long	swv_got_0 - Lswv_280d00
+	.long	swv_got_0 - Lswv_280d2c
 	.globl	__ZN13CssRendererGLD2Ev
 	.private_extern	__ZN13CssRendererGLD2Ev
 __ZN13CssRendererGLD2Ev:
@@ -93396,6 +94069,7 @@ __ZN13CssRendererGLD2Ev:
 	.long	0xe1a04000
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_280dc8:
 	.long	0xe5802000
 	.long	0xe59001c8
 	.long	0xe3500000
@@ -93420,6 +94094,7 @@ __ZN13CssRendererGLD2Ev:
 	.long	0xe59f1140
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_280e28:
 	.long	0xe5940220
 	.long	0xe584321c
 	.long	0xe3500000
@@ -93432,11 +94107,12 @@ __ZN13CssRendererGLD2Ev:
 	.long	0xe59f3118
 	.long	0xe08f1002
 	.long	0xe2810008
+Lswv_280e58:
 	.long	0xe58401b8
 	.long	0xe59401bc
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_280e68:
+Lswv_280e68:
 	.long	0xe3500000
 	.long	0xe584921c
 	.long	0x0a000000
@@ -93448,9 +94124,10 @@ swv_280e68:
 	.long	0xe59f90e4
 	.long	0xe79f3000
 	.long	0xe59401ac
-swv_280e94:
+Lswv_280e94:
 	.long	0xe08f2009
 	.long	0xe283c008
+Lswv_280e9c:
 	.long	0xe3500000
 	.long	0xe2821008
 	.long	0xe584c1b8
@@ -93464,10 +94141,11 @@ swv_280e94:
 	.long	0xe59fc0b0
 	.long	0xe79f0001
 	.long	0xe2803008
-swv_280ed0:
+Lswv_280ed0:
 	.long	0xe5940010
 	.long	0xe08f900c
 	.long	0xe2892008
+Lswv_280edc:
 	.long	0xe3500000
 	.long	0xe58431a8
 	.long	0xe584200c
@@ -93479,7 +94157,7 @@ swv_280ed0:
 	.long	0xe59f307c
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_280f08:
+Lswv_280f08:
 	.long	0xe584900c
 	.long	0xe8bd8090
 	.long	0xe5940228
@@ -93502,24 +94180,24 @@ swv_280f08:
 	.long	0x0affffca
 	.long	0xebffd9bf
 	.long	0xeaffffc8
-	.long	0x000c580c
-	.long	0x000c537c
-	.long	0x000c4890
-	.long	swv_got_0 - swv_280e68
-	.long	swv_got_0 - swv_280e94
-	.long	0x000c5790
-	.long	swv_got_0 - swv_280ed0
-	.long	0x000c5770
-	.long	swv_got_0 - swv_280f08
+	.long	Lswv_3465d4 - Lswv_280dc8
+	.long	Lswv_3461a4 - Lswv_280e28
+	.long	Lswv_3456e8 - Lswv_280e58
+	.long	swv_got_0 - Lswv_280e68
+	.long	swv_got_0 - Lswv_280e94
+	.long	Lswv_34662c - Lswv_280e9c
+	.long	swv_got_0 - Lswv_280ed0
+	.long	Lswv_34664c - Lswv_280edc
+	.long	swv_got_0 - Lswv_280f08
 	.globl	__ZN13CssRendererGLD1Ev
 	.private_extern	__ZN13CssRendererGLD1Ev
 __ZN13CssRendererGLD1Ev:
-swv_280f84:
+Lswv_280f84:
 	.long	0xeaffff89
 	.globl	__ZN13CssRendererGL27InitializeGLBackgroundStateEv
 	.private_extern	__ZN13CssRendererGL27InitializeGLBackgroundStateEv
 __ZN13CssRendererGL27InitializeGLBackgroundStateEv:
-swv_280f88:
+Lswv_280f88:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe5903234
@@ -93774,6 +94452,7 @@ __ZNK13CssRendererGL12SetupTextureEPK12CssTexture2Di:
 	.long	0xe28d9014
 	.long	0xe08f8002
 	.long	0xe898000f
+Lswv_281374:
 	.long	0xe889000f
 	.long	0xe3a00c23
 	.long	0xe3021201
@@ -93886,7 +94565,7 @@ __ZNK13CssRendererGL12SetupTextureEPK12CssTexture2Di:
 	bl	_glDrawElements
 	.long	0xeaffff5c
 	.long	0x3b808081
-	.long	0x00075c70
+	.long	Lswv_2f6fe4 - Lswv_281374
 	.globl	__ZNK13CssRendererGL13SetupMaterialEPK11CssMaterial
 	.private_extern	__ZNK13CssRendererGL13SetupMaterialEPK11CssMaterial
 __ZNK13CssRendererGL13SetupMaterialEPK11CssMaterial:
@@ -95880,7 +96559,7 @@ __ZN13CssRendererGL10LoadLightsEjb:
 	.globl	__ZN13CssRendererGL12RenderSpriteEPK9CssSpriteb
 	.private_extern	__ZN13CssRendererGL12RenderSpriteEPK9CssSpriteb
 __ZN13CssRendererGL12RenderSpriteEPK9CssSpriteb:
-swv_2833fc:
+Lswv_2833fc:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -97383,7 +98062,7 @@ __ZN13CssRendererGL19RenderVerticesScopeEP14CssIndexBufferP13CssAppearanceib:
 	.globl	__ZN13CssRendererGL14RenderVerticesEP15CssVertexBufferP14CssIndexBufferP13CssAppearanceP12CssTransformi
 	.private_extern	__ZN13CssRendererGL14RenderVerticesEP15CssVertexBufferP14CssIndexBufferP13CssAppearanceP12CssTransformi
 __ZN13CssRendererGL14RenderVerticesEP15CssVertexBufferP14CssIndexBufferP13CssAppearanceP12CssTransformi:
-swv_284b5c:
+Lswv_284b5c:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -98349,7 +99028,7 @@ __ZN13CssRendererGL16RenderStateQueueEv:
 	.globl	__ZN13CssRendererGL10RenderNodeEPK7CssNodePK12CssTransform
 	.private_extern	__ZN13CssRendererGL10RenderNodeEPK7CssNodePK12CssTransform
 __ZN13CssRendererGL10RenderNodeEPK7CssNodePK12CssTransform:
-swv_285a58:
+Lswv_285a58:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -98467,7 +99146,7 @@ swv_285a58:
 	.globl	__ZN13CssRendererGL11RenderWorldEPK8CssWorld
 	.private_extern	__ZN13CssRendererGL11RenderWorldEPK8CssWorld
 __ZN13CssRendererGL11RenderWorldEPK8CssWorld:
-swv_285c20:
+Lswv_285c20:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe52d8004
@@ -98638,25 +99317,25 @@ swv_285c20:
 	.globl	__ZNK13CssRendererGL20GetBytesZBufferDepthEv
 	.private_extern	__ZNK13CssRendererGL20GetBytesZBufferDepthEv
 __ZNK13CssRendererGL20GetBytesZBufferDepthEv:
-swv_285ebc:
+Lswv_285ebc:
 	.long	0xe3a00002
 	.long	0xe12fff1e
 	.globl	__ZN13CssRendererGL15GetScissorFlagsEv
 	.private_extern	__ZN13CssRendererGL15GetScissorFlagsEv
 __ZN13CssRendererGL15GetScissorFlagsEv:
-swv_285ec4:
+Lswv_285ec4:
 	.long	0xe5900234
 	.long	0xe12fff1e
 	.globl	__ZN13CssRendererGL15SetScissorFlagsEi
 	.private_extern	__ZN13CssRendererGL15SetScissorFlagsEi
 __ZN13CssRendererGL15SetScissorFlagsEi:
-swv_285ecc:
+Lswv_285ecc:
 	.long	0xe5801234
 	.long	0xe12fff1e
 	.globl	__ZN8CssArrayIN13CssRendererGL14SssQueuedStateEE9CopyArrayEPvS3_i
 	.private_extern	__ZN8CssArrayIN13CssRendererGL14SssQueuedStateEE9CopyArrayEPvS3_i
 __ZN8CssArrayIN13CssRendererGL14SssQueuedStateEE9CopyArrayEPvS3_i:
-swv_285ed4:
+Lswv_285ed4:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0500
@@ -98992,7 +99671,7 @@ swv_285ed4:
 	.globl	__ZN8CssArrayI16CssActiveLightGLE9CopyArrayEPvS2_i
 	.private_extern	__ZN8CssArrayI16CssActiveLightGLE9CopyArrayEPvS2_i
 __ZN8CssArrayI16CssActiveLightGLE9CopyArrayEPvS2_i:
-swv_286404:
+Lswv_286404:
 	.long	0xe92d40f0
 	.long	0xe28d700c
 	.long	0xe92d0d00
@@ -99305,7 +99984,7 @@ swv_286404:
 	.globl	__ZN8CssArrayIN13CssRendererGL14SssQueuedStateEE7DestroyEPv
 	.private_extern	__ZN8CssArrayIN13CssRendererGL14SssQueuedStateEE7DestroyEPv
 __ZN8CssArrayIN13CssRendererGL14SssQueuedStateEE7DestroyEPv:
-swv_2868d8:
+Lswv_2868d8:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -99315,7 +99994,7 @@ swv_2868d8:
 	.globl	__ZN8CssArrayI16CssActiveLightGLE7DestroyEPv
 	.private_extern	__ZN8CssArrayI16CssActiveLightGLE7DestroyEPv
 __ZN8CssArrayI16CssActiveLightGLE7DestroyEPv:
-swv_2868f0:
+Lswv_2868f0:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe2510000
@@ -99325,7 +100004,7 @@ swv_2868f0:
 	.globl	__ZN8CssArrayIN13CssRendererGL14SssQueuedStateEE8AllocateEi
 	.private_extern	__ZN8CssArrayIN13CssRendererGL14SssQueuedStateEE8AllocateEi
 __ZN8CssArrayIN13CssRendererGL14SssQueuedStateEE8AllocateEi:
-swv_286908:
+Lswv_286908:
 	.long	0xe92d4080
 	.long	0xe28d7000
 	.long	0xe1a00181
@@ -99337,7 +100016,7 @@ swv_286908:
 	.globl	__ZN8CssArrayI16CssActiveLightGLE8AllocateEi
 	.private_extern	__ZN8CssArrayI16CssActiveLightGLE8AllocateEi
 __ZN8CssArrayI16CssActiveLightGLE8AllocateEi:
-swv_286928:
+Lswv_286928:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe1a03101
@@ -99422,13 +100101,14 @@ swv_286928:
 	.globl	__ZN8CssArrayI16CssActiveLightGLED0Ev
 	.private_extern	__ZN8CssArrayI16CssActiveLightGLED0Ev
 __ZN8CssArrayI16CssActiveLightGLED0Ev:
-swv_286a6c:
+Lswv_286a6c:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_286a84:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -99441,7 +100121,7 @@ swv_286a6c:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_286ab4:
+Lswv_286ab4:
 	.long	0xe5849000
 	.long	0xebffc2df
 	.long	0xe8bd8090
@@ -99450,18 +100130,19 @@ swv_286ab4:
 	.long	0x0afffff5
 	.long	0xebffc2e2
 	.long	0xeafffff3
-	.long	0x000bfba8
-	.long	swv_got_0 - swv_286ab4
+	.long	Lswv_34662c - Lswv_286a84
+	.long	swv_got_0 - Lswv_286ab4
 	.globl	__ZN8CssArrayI16CssActiveLightGLED1Ev
 	.private_extern	__ZN8CssArrayI16CssActiveLightGLED1Ev
 __ZN8CssArrayI16CssActiveLightGLED1Ev:
-swv_286adc:
+Lswv_286adc:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_286af4:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -99473,7 +100154,7 @@ swv_286adc:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_286b20:
+Lswv_286b20:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -99481,18 +100162,19 @@ swv_286b20:
 	.long	0x0afffff7
 	.long	0xebffc2c8
 	.long	0xeafffff5
-	.long	0x000bfb38
-	.long	swv_got_0 - swv_286b20
+	.long	Lswv_34662c - Lswv_286af4
+	.long	swv_got_0 - Lswv_286b20
 	.globl	__ZN8CssArrayIN13CssRendererGL14SssQueuedStateEED0Ev
 	.private_extern	__ZN8CssArrayIN13CssRendererGL14SssQueuedStateEED0Ev
 __ZN8CssArrayIN13CssRendererGL14SssQueuedStateEED0Ev:
-swv_286b44:
+Lswv_286b44:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1058
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_286b5c:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -99505,7 +100187,7 @@ swv_286b44:
 	.long	0xe1a00004
 	.long	0xe79fc00e
 	.long	0xe28c9008
-swv_286b8c:
+Lswv_286b8c:
 	.long	0xe5849000
 	.long	0xebffc2a9
 	.long	0xe8bd8090
@@ -99514,18 +100196,19 @@ swv_286b8c:
 	.long	0x0afffff5
 	.long	0xebffc2ac
 	.long	0xeafffff3
-	.long	0x000bfaf0
-	.long	swv_got_0 - swv_286b8c
+	.long	Lswv_34664c - Lswv_286b5c
+	.long	swv_got_0 - Lswv_286b8c
 	.globl	__ZN8CssArrayIN13CssRendererGL14SssQueuedStateEED1Ev
 	.private_extern	__ZN8CssArrayIN13CssRendererGL14SssQueuedStateEED1Ev
 __ZN8CssArrayIN13CssRendererGL14SssQueuedStateEED1Ev:
-swv_286bb4:
+Lswv_286bb4:
 	.long	0xe92d4090
 	.long	0xe28d7004
 	.long	0xe59f1050
 	.long	0xe1a04000
 	.long	0xe08f0001
 	.long	0xe2803008
+Lswv_286bcc:
 	.long	0xe5940004
 	.long	0xe5843000
 	.long	0xe3500000
@@ -99537,7 +100220,7 @@ swv_286bb4:
 	.long	0xe59f3024
 	.long	0xe79fc003
 	.long	0xe28c9008
-swv_286bf8:
+Lswv_286bf8:
 	.long	0xe5849000
 	.long	0xe8bd8090
 	.long	0xe594000c
@@ -99545,14 +100228,15 @@ swv_286bf8:
 	.long	0x0afffff7
 	.long	0xebffc292
 	.long	0xeafffff5
-	.long	0x000bfa80
-	.long	swv_got_0 - swv_286bf8
+	.long	Lswv_34664c - Lswv_286bcc
+	.long	swv_got_0 - Lswv_286bf8
 
 	.section __DATA,__const
 	.align 2
 	.globl	__ZTV21CssAlignTargetManager
 	.private_extern	__ZTV21CssAlignTargetManager
 __ZTV21CssAlignTargetManager:
+Lswv_34556c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99561,11 +100245,12 @@ __ZTV21CssAlignTargetManager:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_22d718
-	.long	swv_22d648
+	.long	Lswv_22d718
+	.long	Lswv_22d648
 	.globl	__ZTV8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEE
 	.private_extern	__ZTV8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEE
 __ZTV8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEE:
+Lswv_34557c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99574,15 +100259,16 @@ __ZTV8CssArrayIPN21CssAlignTargetManager14CssAlignTargetEE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_22d810
-	.long	swv_22de68
-	.long	swv_231378
-	.long	swv_22db1c
-	.long	swv_22d890
-	.long	swv_22d7f8
+	.long	Lswv_22d810
+	.long	Lswv_22de68
+	.long	Lswv_231378
+	.long	Lswv_22db1c
+	.long	Lswv_22d890
+	.long	Lswv_22d7f8
 	.globl	__ZTVN21CssAlignTargetManager14CssAlignTargetE
 	.private_extern	__ZTVN21CssAlignTargetManager14CssAlignTargetE
 __ZTVN21CssAlignTargetManager14CssAlignTargetE:
+Lswv_34559c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99591,11 +100277,12 @@ __ZTVN21CssAlignTargetManager14CssAlignTargetE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_22ded8
-	.long	swv_22dfa8
+	.long	Lswv_22ded8
+	.long	Lswv_22dfa8
 	.globl	__ZTV8CssArrayIP7CssNodeE
 	.private_extern	__ZTV8CssArrayIP7CssNodeE
 __ZTV8CssArrayIP7CssNodeE:
+Lswv_3455ac:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99604,15 +100291,16 @@ __ZTV8CssArrayIP7CssNodeE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_22de00
-	.long	swv_22dd90
-	.long	swv_231378
-	.long	swv_22d8a8
-	.long	swv_22d878
-	.long	swv_22d7e0
+	.long	Lswv_22de00
+	.long	Lswv_22dd90
+	.long	Lswv_231378
+	.long	Lswv_22d8a8
+	.long	Lswv_22d878
+	.long	Lswv_22d7e0
 	.globl	__ZTV22CssAnimationController
 	.private_extern	__ZTV22CssAnimationController
 __ZTV22CssAnimationController:
+Lswv_3455cc:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99621,15 +100309,15 @@ __ZTV22CssAnimationController:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_22e218
-	.long	swv_22e1cc
-	.long	swv_22e130
-	.long	swv_22e474
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_24ddc0
-	.long	swv_24ddb8
-	.long	swv_22e46c
+	.long	Lswv_22e218
+	.long	Lswv_22e1cc
+	.long	Lswv_22e130
+	.long	Lswv_22e474
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
+	.long	Lswv_22e46c
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -99638,12 +100326,13 @@ __ZTV22CssAnimationController:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_22e210
-	.long	swv_22e1c4
-	.long	swv_22e464
+	.long	Lswv_22e210
+	.long	Lswv_22e1c4
+	.long	Lswv_22e464
 	.globl	__ZTV17CssAnimationTrack
 	.private_extern	__ZTV17CssAnimationTrack
 __ZTV17CssAnimationTrack:
+Lswv_34560c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99652,15 +100341,15 @@ __ZTV17CssAnimationTrack:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_22e824
-	.long	swv_22e77c
-	.long	swv_22e924
-	.long	swv_22eb04
-	.long	swv_22e454
-	.long	swv_22eab0
-	.long	swv_24ddc0
-	.long	swv_24ddb8
-	.long	swv_22eaa8
+	.long	Lswv_22e824
+	.long	Lswv_22e77c
+	.long	Lswv_22e924
+	.long	Lswv_22eb04
+	.long	Lswv_22e454
+	.long	Lswv_22eab0
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
+	.long	Lswv_22eaa8
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -99669,12 +100358,13 @@ __ZTV17CssAnimationTrack:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_22e81c
-	.long	swv_22e774
-	.long	swv_22eaa0
+	.long	Lswv_22e81c
+	.long	Lswv_22e774
+	.long	Lswv_22eaa0
 	.globl	__ZTV13CssAppearance
 	.private_extern	__ZTV13CssAppearance
 __ZTV13CssAppearance:
+Lswv_34564c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99683,15 +100373,15 @@ __ZTV13CssAppearance:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_22ee1c
-	.long	swv_22ee28
-	.long	swv_22f0e0
-	.long	swv_22fab0
-	.long	swv_22f9f0
-	.long	swv_22f994
-	.long	swv_24ddc0
-	.long	swv_24ddb8
-	.long	swv_22ec54
+	.long	Lswv_22ee1c
+	.long	Lswv_22ee28
+	.long	Lswv_22f0e0
+	.long	Lswv_22fab0
+	.long	Lswv_22f9f0
+	.long	Lswv_22f994
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
+	.long	Lswv_22ec54
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -99700,12 +100390,13 @@ __ZTV13CssAppearance:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_22ee14
-	.long	swv_22ee20
-	.long	swv_22ec4c
+	.long	Lswv_22ee14
+	.long	Lswv_22ee20
+	.long	Lswv_22ec4c
 	.globl	__ZTV10CssArchive
 	.private_extern	__ZTV10CssArchive
 __ZTV10CssArchive:
+Lswv_34568c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99714,12 +100405,13 @@ __ZTV10CssArchive:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_22fecc
-	.long	swv_22fe68
-	.long	swv_230b58
+	.long	Lswv_22fecc
+	.long	Lswv_22fe68
+	.long	Lswv_230b58
 	.globl	__ZTV14CssFileManager
 	.private_extern	__ZTV14CssFileManager
 __ZTV14CssFileManager:
+Lswv_3456a0:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99728,9 +100420,9 @@ __ZTV14CssFileManager:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_230bd0
-	.long	swv_230b80
-	.long	swv_230b50
+	.long	Lswv_230bd0
+	.long	Lswv_230b80
+	.long	Lswv_230b50
 	.byte	0xf8
 	.byte	0xff
 	.byte	0xff
@@ -99739,11 +100431,12 @@ __ZTV14CssFileManager:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_230bc8
-	.long	swv_230b78
+	.long	Lswv_230bc8
+	.long	Lswv_230b78
 	.globl	__ZTV7CssFile
 	.private_extern	__ZTV7CssFile
 __ZTV7CssFile:
+Lswv_3456c4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99752,9 +100445,9 @@ __ZTV7CssFile:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_230c64
-	.long	swv_230c14
-	.long	swv_230b50
+	.long	Lswv_230c64
+	.long	Lswv_230c14
+	.long	Lswv_230b50
 	.byte	0xf8
 	.byte	0xff
 	.byte	0xff
@@ -99763,11 +100456,12 @@ __ZTV7CssFile:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_230c5c
-	.long	swv_230c0c
+	.long	Lswv_230c5c
+	.long	Lswv_230c0c
 	.globl	__ZTV8CssArrayIhE
 	.private_extern	__ZTV8CssArrayIhE
 __ZTV8CssArrayIhE:
+Lswv_3456e8:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99776,15 +100470,16 @@ __ZTV8CssArrayIhE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_230cb8
-	.long	swv_230f80
-	.long	swv_231378
-	.long	swv_230d20
-	.long	swv_230b60
-	.long	swv_230ca0
+	.long	Lswv_230cb8
+	.long	Lswv_230f80
+	.long	Lswv_231378
+	.long	Lswv_230d20
+	.long	Lswv_230b60
+	.long	Lswv_230ca0
 	.globl	__ZTV16CssArchiveMember
 	.private_extern	__ZTV16CssArchiveMember
 __ZTV16CssArchiveMember:
+Lswv_345708:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99793,13 +100488,13 @@ __ZTV16CssArchiveMember:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_231184
-	.long	swv_231130
-	.long	swv_23124c
+	.long	Lswv_231184
+	.long	Lswv_231130
+	.long	Lswv_23124c
 	.globl	__ZTV12CssArrayBase
 	.private_extern	__ZTV12CssArrayBase
 __ZTV12CssArrayBase:
-swv_34571c:
+Lswv_34571c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99808,16 +100503,16 @@ swv_34571c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_231530
-	.long	swv_23150c
-	.long	swv_231378
+	.long	Lswv_231530
+	.long	Lswv_23150c
+	.long	Lswv_231378
 	.long	___cxa_pure_virtual
 	.long	___cxa_pure_virtual
 	.long	___cxa_pure_virtual
 	.globl	__ZTV13CssBackground
 	.private_extern	__ZTV13CssBackground
 __ZTV13CssBackground:
-swv_34573c:
+Lswv_34573c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99826,15 +100521,15 @@ swv_34573c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_231954
-	.long	swv_2318d8
-	.long	swv_231728
-	.long	swv_2319c0
-	.long	swv_22e454
-	.long	swv_231890
-	.long	swv_231548
-	.long	swv_231700
-	.long	swv_231888
+	.long	Lswv_231954
+	.long	Lswv_2318d8
+	.long	Lswv_231728
+	.long	Lswv_2319c0
+	.long	Lswv_22e454
+	.long	Lswv_231890
+	.long	Lswv_231548
+	.long	Lswv_231700
+	.long	Lswv_231888
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -99843,12 +100538,13 @@ swv_34573c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_23194c
-	.long	swv_2318d0
-	.long	swv_231880
+	.long	Lswv_23194c
+	.long	Lswv_2318d0
+	.long	Lswv_231880
 	.globl	__ZTV13CssBrewLoader
 	.private_extern	__ZTV13CssBrewLoader
 __ZTV13CssBrewLoader:
+Lswv_34577c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99857,9 +100553,9 @@ __ZTV13CssBrewLoader:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_231c9c
-	.long	swv_231c04
-	.long	swv_232544
+	.long	Lswv_231c9c
+	.long	Lswv_231c04
+	.long	Lswv_232544
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -99868,12 +100564,13 @@ __ZTV13CssBrewLoader:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_231c94
-	.long	swv_231bfc
-	.long	swv_23253c
+	.long	Lswv_231c94
+	.long	Lswv_231bfc
+	.long	Lswv_23253c
 	.globl	__ZTV8CssArrayIcE
 	.private_extern	__ZTV8CssArrayIcE
 __ZTV8CssArrayIcE:
+Lswv_3457a4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99882,15 +100579,16 @@ __ZTV8CssArrayIcE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2327dc
-	.long	swv_232844
-	.long	swv_231378
-	.long	swv_23254c
-	.long	swv_2327ac
-	.long	swv_2327c4
+	.long	Lswv_2327dc
+	.long	Lswv_232844
+	.long	Lswv_231378
+	.long	Lswv_23254c
+	.long	Lswv_2327ac
+	.long	Lswv_2327c4
 	.globl	__ZTV9CssCamera
 	.private_extern	__ZTV9CssCamera
 __ZTV9CssCamera:
+Lswv_3457c4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99899,19 +100597,19 @@ __ZTV9CssCamera:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_232ffc
-	.long	swv_23303c
-	.long	swv_232d90
-	.long	swv_233080
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_232928
-	.long	swv_232a30
-	.long	swv_23290c
-	.long	swv_24bf28
-	.long	swv_232fdc
-	.long	swv_24be1c
-	.long	swv_232fec
+	.long	Lswv_232ffc
+	.long	Lswv_23303c
+	.long	Lswv_232d90
+	.long	Lswv_233080
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_232928
+	.long	Lswv_232a30
+	.long	Lswv_23290c
+	.long	Lswv_24bf28
+	.long	Lswv_232fdc
+	.long	Lswv_24be1c
+	.long	Lswv_232fec
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -99920,12 +100618,13 @@ __ZTV9CssCamera:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_232ff4
-	.long	swv_233034
-	.long	swv_232fe4
+	.long	Lswv_232ff4
+	.long	Lswv_233034
+	.long	Lswv_232fe4
 	.globl	__ZTV8CssStackIP13CssHeapObjectE
 	.private_extern	__ZTV8CssStackIP13CssHeapObjectE
 __ZTV8CssStackIP13CssHeapObjectE:
+Lswv_345814:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99934,11 +100633,12 @@ __ZTV8CssStackIP13CssHeapObjectE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2338bc
-	.long	swv_233838
+	.long	Lswv_2338bc
+	.long	Lswv_233838
 	.globl	__ZTV8CssArrayIP13CssHeapObjectE
 	.private_extern	__ZTV8CssArrayIP13CssHeapObjectE
 __ZTV8CssArrayIP13CssHeapObjectE:
+Lswv_345824:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99947,15 +100647,16 @@ __ZTV8CssArrayIP13CssHeapObjectE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2334d4
-	.long	swv_2337c8
-	.long	swv_231378
-	.long	swv_233554
-	.long	swv_23353c
-	.long	swv_2334bc
+	.long	Lswv_2334d4
+	.long	Lswv_2337c8
+	.long	Lswv_231378
+	.long	Lswv_233554
+	.long	Lswv_23353c
+	.long	Lswv_2334bc
 	.globl	__ZTV18CssCompositingMode
 	.private_extern	__ZTV18CssCompositingMode
 __ZTV18CssCompositingMode:
+Lswv_345844:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99964,15 +100665,15 @@ __ZTV18CssCompositingMode:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_233c9c
-	.long	swv_233c50
-	.long	swv_233b4c
-	.long	swv_233cd4
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_24ddc0
-	.long	swv_24ddb8
-	.long	swv_233b44
+	.long	Lswv_233c9c
+	.long	Lswv_233c50
+	.long	Lswv_233b4c
+	.long	Lswv_233cd4
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
+	.long	Lswv_233b44
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -99981,12 +100682,13 @@ __ZTV18CssCompositingMode:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_233c94
-	.long	swv_233c48
-	.long	swv_233b3c
+	.long	Lswv_233c94
+	.long	Lswv_233c48
+	.long	Lswv_233b3c
 	.globl	__ZTV20CssCompressedImage2D
 	.private_extern	__ZTV20CssCompressedImage2D
 __ZTV20CssCompressedImage2D:
+Lswv_345884:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -99995,25 +100697,25 @@ __ZTV20CssCompressedImage2D:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_23436c
-	.long	swv_2342c4
-	.long	swv_233ea0
-	.long	swv_234780
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_24ddc0
-	.long	swv_24ddb8
-	.long	swv_23c9d8
-	.long	swv_23d0ec
-	.long	swv_23d464
-	.long	swv_23aa18
-	.long	swv_23aad0
-	.long	swv_23aad8
-	.long	swv_233dc4
-	.long	swv_233dbc
-	.long	swv_23a748
-	.long	swv_23ab58
-	.long	swv_234148
+	.long	Lswv_23436c
+	.long	Lswv_2342c4
+	.long	Lswv_233ea0
+	.long	Lswv_234780
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
+	.long	Lswv_23c9d8
+	.long	Lswv_23d0ec
+	.long	Lswv_23d464
+	.long	Lswv_23aa18
+	.long	Lswv_23aad0
+	.long	Lswv_23aad8
+	.long	Lswv_233dc4
+	.long	Lswv_233dbc
+	.long	Lswv_23a748
+	.long	Lswv_23ab58
+	.long	Lswv_234148
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100022,12 +100724,13 @@ __ZTV20CssCompressedImage2D:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_234364
-	.long	swv_2342bc
-	.long	swv_233db4
+	.long	Lswv_234364
+	.long	Lswv_2342bc
+	.long	Lswv_233db4
 	.globl	__ZTV8CssArrayIiE
 	.private_extern	__ZTV8CssArrayIiE
 __ZTV8CssArrayIiE:
+Lswv_3458ec:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100036,15 +100739,16 @@ __ZTV8CssArrayIiE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_234690
-	.long	swv_234710
-	.long	swv_231378
-	.long	swv_234404
-	.long	swv_2346f8
-	.long	swv_234678
+	.long	Lswv_234690
+	.long	Lswv_234710
+	.long	Lswv_231378
+	.long	Lswv_234404
+	.long	Lswv_2346f8
+	.long	Lswv_234678
 	.globl	__ZTV13CssDecompress
 	.private_extern	__ZTV13CssDecompress
 __ZTV13CssDecompress:
+Lswv_34590c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100053,13 +100757,14 @@ __ZTV13CssDecompress:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_234888
-	.long	swv_234864
+	.long	Lswv_234888
+	.long	Lswv_234864
 	.long	___cxa_pure_virtual
 	.long	___cxa_pure_virtual
 	.globl	__ZTV17CssDecompressNone
 	.private_extern	__ZTV17CssDecompressNone
 __ZTV17CssDecompressNone:
+Lswv_345924:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100068,13 +100773,14 @@ __ZTV17CssDecompressNone:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_23491c
-	.long	swv_2348ec
-	.long	swv_2348d0
-	.long	swv_2349a8
+	.long	Lswv_23491c
+	.long	Lswv_2348ec
+	.long	Lswv_2348d0
+	.long	Lswv_2349a8
 	.globl	__ZTV17CssDecompressZLib
 	.private_extern	__ZTV17CssDecompressZLib
 __ZTV17CssDecompressZLib:
+Lswv_34593c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100083,13 +100789,14 @@ __ZTV17CssDecompressZLib:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_234a8c
-	.long	swv_234a28
-	.long	swv_2349b0
-	.long	swv_234b74
+	.long	Lswv_234a8c
+	.long	Lswv_234a28
+	.long	Lswv_2349b0
+	.long	Lswv_234b74
 	.globl	__ZTV13CssFileHeader
 	.private_extern	__ZTV13CssFileHeader
 __ZTV13CssFileHeader:
+Lswv_345954:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100098,11 +100805,12 @@ __ZTV13CssFileHeader:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_234d74
-	.long	swv_234d50
+	.long	Lswv_234d74
+	.long	Lswv_234d50
 	.globl	__ZTV16CssFileHeaderM3G
 	.private_extern	__ZTV16CssFileHeaderM3G
 __ZTV16CssFileHeaderM3G:
+Lswv_345964:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100111,11 +100819,12 @@ __ZTV16CssFileHeaderM3G:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_234df4
-	.long	swv_234dc4
+	.long	Lswv_234df4
+	.long	Lswv_234dc4
 	.globl	__ZTV16CssFileHeaderSWV
 	.private_extern	__ZTV16CssFileHeaderSWV
 __ZTV16CssFileHeaderSWV:
+Lswv_345974:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100124,11 +100833,12 @@ __ZTV16CssFileHeaderSWV:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_234e80
-	.long	swv_234e50
+	.long	Lswv_234e80
+	.long	Lswv_234e50
 	.globl	__ZTV6CssFog
 	.private_extern	__ZTV6CssFog
 __ZTV6CssFog:
+Lswv_345984:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100137,15 +100847,15 @@ __ZTV6CssFog:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_235ae4
-	.long	swv_235a98
-	.long	swv_235970
-	.long	swv_235b1c
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_2357b8
-	.long	swv_235948
-	.long	swv_2357a4
+	.long	Lswv_235ae4
+	.long	Lswv_235a98
+	.long	Lswv_235970
+	.long	Lswv_235b1c
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_2357b8
+	.long	Lswv_235948
+	.long	Lswv_2357a4
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100154,12 +100864,13 @@ __ZTV6CssFog:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_235adc
-	.long	swv_235a90
-	.long	swv_23579c
+	.long	Lswv_235adc
+	.long	Lswv_235a90
+	.long	Lswv_23579c
 	.globl	__ZTV13CssGraphics3D
 	.private_extern	__ZTV13CssGraphics3D
 __ZTV13CssGraphics3D:
+Lswv_3459c4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100168,9 +100879,9 @@ __ZTV13CssGraphics3D:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_237a94
-	.long	swv_237aa0
-	.long	swv_238168
+	.long	Lswv_237a94
+	.long	Lswv_237aa0
+	.long	Lswv_238168
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100179,12 +100890,13 @@ __ZTV13CssGraphics3D:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_237a8c
-	.long	swv_237a98
-	.long	swv_238160
+	.long	Lswv_237a8c
+	.long	Lswv_237a98
+	.long	Lswv_238160
 	.globl	__ZTV8CssArrayI9CssMatrixE
 	.private_extern	__ZTV8CssArrayI9CssMatrixE
 __ZTV8CssArrayI9CssMatrixE:
+Lswv_3459ec:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100193,15 +100905,16 @@ __ZTV8CssArrayI9CssMatrixE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_238a20
-	.long	swv_238938
-	.long	swv_231378
-	.long	swv_238598
-	.long	swv_238208
-	.long	swv_23891c
+	.long	Lswv_238a20
+	.long	Lswv_238938
+	.long	Lswv_231378
+	.long	Lswv_238598
+	.long	Lswv_238208
+	.long	Lswv_23891c
 	.globl	__ZTV8CssArrayIP8CssLightE
 	.private_extern	__ZTV8CssArrayIP8CssLightE
 __ZTV8CssArrayIP8CssLightE:
+Lswv_345a0c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100210,15 +100923,16 @@ __ZTV8CssArrayIP8CssLightE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_238188
-	.long	swv_2389b0
-	.long	swv_231378
-	.long	swv_238324
-	.long	swv_2381f0
-	.long	swv_238170
+	.long	Lswv_238188
+	.long	Lswv_2389b0
+	.long	Lswv_231378
+	.long	Lswv_238324
+	.long	Lswv_2381f0
+	.long	Lswv_238170
 	.globl	__ZTV8CssGroup
 	.private_extern	__ZTV8CssGroup
 __ZTV8CssGroup:
+Lswv_345a2c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100227,19 +100941,19 @@ __ZTV8CssGroup:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_238e7c
-	.long	swv_238e30
-	.long	swv_238b74
-	.long	swv_239940
-	.long	swv_238eec
-	.long	swv_238fb0
-	.long	swv_24c3d0
-	.long	swv_24befc
-	.long	swv_24cc04
-	.long	swv_24bf28
-	.long	swv_232fdc
-	.long	swv_24be1c
-	.long	swv_239938
+	.long	Lswv_238e7c
+	.long	Lswv_238e30
+	.long	Lswv_238b74
+	.long	Lswv_239940
+	.long	Lswv_238eec
+	.long	Lswv_238fb0
+	.long	Lswv_24c3d0
+	.long	Lswv_24befc
+	.long	Lswv_24cc04
+	.long	Lswv_24bf28
+	.long	Lswv_232fdc
+	.long	Lswv_24be1c
+	.long	Lswv_239938
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100248,12 +100962,13 @@ __ZTV8CssGroup:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_238e74
-	.long	swv_238e28
-	.long	swv_239930
+	.long	Lswv_238e74
+	.long	Lswv_238e28
+	.long	Lswv_239930
 	.globl	__ZTV15CssHeaderObject
 	.private_extern	__ZTV15CssHeaderObject
 __ZTV15CssHeaderObject:
+Lswv_345a7c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100262,9 +100977,9 @@ __ZTV15CssHeaderObject:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_239cbc
-	.long	swv_239bf4
-	.long	swv_239b1c
+	.long	Lswv_239cbc
+	.long	Lswv_239bf4
+	.long	Lswv_239b1c
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100273,12 +100988,13 @@ __ZTV15CssHeaderObject:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_239cb4
-	.long	swv_239bec
-	.long	swv_230b50
+	.long	Lswv_239cb4
+	.long	Lswv_239bec
+	.long	Lswv_230b50
 	.globl	__ZTV15IssSerializable
 	.private_extern	__ZTV15IssSerializable
 __ZTV15IssSerializable:
+Lswv_345aa4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100287,8 +101003,8 @@ __ZTV15IssSerializable:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_239db8
-	.long	swv_239d78
+	.long	Lswv_239db8
+	.long	Lswv_239d78
 	.long	___cxa_pure_virtual
 	.byte	0xfc
 	.byte	0xff
@@ -100298,12 +101014,13 @@ __ZTV15IssSerializable:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_239db0
-	.long	swv_239d70
-	.long	swv_230b50
+	.long	Lswv_239db0
+	.long	Lswv_239d70
+	.long	Lswv_230b50
 	.globl	__ZTV10CssImage2D
 	.private_extern	__ZTV10CssImage2D
 __ZTV10CssImage2D:
+Lswv_345acc:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100312,24 +101029,24 @@ __ZTV10CssImage2D:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_23d840
-	.long	swv_23c6cc
-	.long	swv_23cbd0
-	.long	swv_23dd28
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_24ddc0
-	.long	swv_24ddb8
-	.long	swv_23c9d8
-	.long	swv_23d0ec
-	.long	swv_23d464
-	.long	swv_23aa18
-	.long	swv_23aad0
-	.long	swv_23aad8
-	.long	swv_239df4
-	.long	swv_239dec
-	.long	swv_23a748
-	.long	swv_23ab58
+	.long	Lswv_23d840
+	.long	Lswv_23c6cc
+	.long	Lswv_23cbd0
+	.long	Lswv_23dd28
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
+	.long	Lswv_23c9d8
+	.long	Lswv_23d0ec
+	.long	Lswv_23d464
+	.long	Lswv_23aa18
+	.long	Lswv_23aad0
+	.long	Lswv_23aad8
+	.long	Lswv_239df4
+	.long	Lswv_239dec
+	.long	Lswv_23a748
+	.long	Lswv_23ab58
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100338,12 +101055,13 @@ __ZTV10CssImage2D:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_23d838
-	.long	swv_23c6c4
-	.long	swv_239de4
+	.long	Lswv_23d838
+	.long	Lswv_23c6c4
+	.long	Lswv_239de4
 	.globl	__ZTV8CssArrayIN10CssImage2D7CssTileEE
 	.private_extern	__ZTV8CssArrayIN10CssImage2D7CssTileEE
 __ZTV8CssArrayIN10CssImage2D7CssTileEE:
+Lswv_345b30:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100352,15 +101070,16 @@ __ZTV8CssArrayIN10CssImage2D7CssTileEE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_23e160
-	.long	swv_23dfa0
-	.long	swv_231378
-	.long	swv_23d9a0
-	.long	swv_23d844
-	.long	swv_23de2c
+	.long	Lswv_23e160
+	.long	Lswv_23dfa0
+	.long	Lswv_231378
+	.long	Lswv_23d9a0
+	.long	Lswv_23d844
+	.long	Lswv_23de2c
 	.globl	__ZTV14CssIndexBuffer
 	.private_extern	__ZTV14CssIndexBuffer
 __ZTV14CssIndexBuffer:
+Lswv_345b50:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100369,14 +101088,14 @@ __ZTV14CssIndexBuffer:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_23e3c0
-	.long	swv_23e374
-	.long	swv_23e318
-	.long	swv_23e430
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_24ddc0
-	.long	swv_24ddb8
+	.long	Lswv_23e3c0
+	.long	Lswv_23e374
+	.long	Lswv_23e318
+	.long	Lswv_23e430
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
 	.long	___cxa_pure_virtual
 	.long	___cxa_pure_virtual
 	.byte	0xfc
@@ -100387,12 +101106,13 @@ __ZTV14CssIndexBuffer:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_23e3b8
-	.long	swv_23e36c
-	.long	swv_230b50
+	.long	Lswv_23e3b8
+	.long	Lswv_23e36c
+	.long	Lswv_230b50
 	.globl	__ZTV19CssKeyframeSequence
 	.private_extern	__ZTV19CssKeyframeSequence
 __ZTV19CssKeyframeSequence:
+Lswv_345b94:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100401,15 +101121,15 @@ __ZTV19CssKeyframeSequence:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_240e4c
-	.long	swv_240da4
-	.long	swv_2408dc
-	.long	swv_2412e0
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_24ddc0
-	.long	swv_24ddb8
-	.long	swv_240eec
+	.long	Lswv_240e4c
+	.long	Lswv_240da4
+	.long	Lswv_2408dc
+	.long	Lswv_2412e0
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
+	.long	Lswv_240eec
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100418,12 +101138,13 @@ __ZTV19CssKeyframeSequence:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_240e44
-	.long	swv_240d9c
-	.long	swv_240ee4
+	.long	Lswv_240e44
+	.long	Lswv_240d9c
+	.long	Lswv_240ee4
 	.globl	__ZTV8CssArrayIfE
 	.private_extern	__ZTV8CssArrayIfE
 __ZTV8CssArrayIfE:
+Lswv_345bd4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100432,16 +101153,16 @@ __ZTV8CssArrayIfE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_241208
-	.long	swv_241270
-	.long	swv_231378
-	.long	swv_240f24
-	.long	swv_240f0c
-	.long	swv_240ef4
+	.long	Lswv_241208
+	.long	Lswv_241270
+	.long	Lswv_231378
+	.long	Lswv_240f24
+	.long	Lswv_240f0c
+	.long	Lswv_240ef4
 	.globl	__ZTV8CssLight
 	.private_extern	__ZTV8CssLight
 __ZTV8CssLight:
-swv_345bf4:
+Lswv_345bf4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100450,19 +101171,19 @@ swv_345bf4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2418e8
-	.long	swv_241928
-	.long	swv_241738
-	.long	swv_24196c
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_241488
-	.long	swv_24169c
-	.long	swv_241894
-	.long	swv_2418b0
-	.long	swv_241478
-	.long	swv_24be1c
-	.long	swv_2418d8
+	.long	Lswv_2418e8
+	.long	Lswv_241928
+	.long	Lswv_241738
+	.long	Lswv_24196c
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_241488
+	.long	Lswv_24169c
+	.long	Lswv_241894
+	.long	Lswv_2418b0
+	.long	Lswv_241478
+	.long	Lswv_24be1c
+	.long	Lswv_2418d8
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100471,13 +101192,13 @@ swv_345bf4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2418e0
-	.long	swv_241920
-	.long	swv_2418d0
+	.long	Lswv_2418e0
+	.long	Lswv_241920
+	.long	Lswv_2418d0
 	.globl	__ZTV11CssMaterial
 	.private_extern	__ZTV11CssMaterial
 __ZTV11CssMaterial:
-swv_345c44:
+Lswv_345c44:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100486,15 +101207,15 @@ swv_345c44:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_24216c
-	.long	swv_2421ac
-	.long	swv_241bf8
-	.long	swv_2421f0
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_241d40
-	.long	swv_241bcc
-	.long	swv_241bc4
+	.long	Lswv_24216c
+	.long	Lswv_2421ac
+	.long	Lswv_241bf8
+	.long	Lswv_2421f0
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_241d40
+	.long	Lswv_241bcc
+	.long	Lswv_241bc4
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100503,12 +101224,13 @@ swv_345c44:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_242164
-	.long	swv_2421a4
-	.long	swv_241bbc
+	.long	Lswv_242164
+	.long	Lswv_2421a4
+	.long	Lswv_241bbc
 	.globl	__ZTV7CssMesh
 	.private_extern	__ZTV7CssMesh
 __ZTV7CssMesh:
+Lswv_345c84:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100517,21 +101239,21 @@ __ZTV7CssMesh:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_247218
-	.long	swv_246e18
-	.long	swv_246be8
-	.long	swv_2479b4
-	.long	swv_245fec
-	.long	swv_24725c
-	.long	swv_24c3d0
-	.long	swv_24befc
-	.long	swv_24cc04
-	.long	swv_24bf28
-	.long	swv_232fdc
-	.long	swv_24620c
-	.long	swv_245b38
-	.long	swv_245b30
-	.long	swv_24721c
+	.long	Lswv_247218
+	.long	Lswv_246e18
+	.long	Lswv_246be8
+	.long	Lswv_2479b4
+	.long	Lswv_245fec
+	.long	Lswv_24725c
+	.long	Lswv_24c3d0
+	.long	Lswv_24befc
+	.long	Lswv_24cc04
+	.long	Lswv_24bf28
+	.long	Lswv_232fdc
+	.long	Lswv_24620c
+	.long	Lswv_245b38
+	.long	Lswv_245b30
+	.long	Lswv_24721c
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100540,12 +101262,13 @@ __ZTV7CssMesh:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_247210
-	.long	swv_246e10
-	.long	swv_245b28
+	.long	Lswv_247210
+	.long	Lswv_246e10
+	.long	Lswv_245b28
 	.globl	__ZTV8CssArrayIP13CssAppearanceE
 	.private_extern	__ZTV8CssArrayIP13CssAppearanceE
 __ZTV8CssArrayIP13CssAppearanceE:
+Lswv_345cdc:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100554,15 +101277,16 @@ __ZTV8CssArrayIP13CssAppearanceE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2478dc
-	.long	swv_24786c
-	.long	swv_231378
-	.long	swv_247384
-	.long	swv_24736c
-	.long	swv_2472d4
+	.long	Lswv_2478dc
+	.long	Lswv_24786c
+	.long	Lswv_231378
+	.long	Lswv_247384
+	.long	Lswv_24736c
+	.long	Lswv_2472d4
 	.globl	__ZTV8CssArrayIP14CssIndexBufferE
 	.private_extern	__ZTV8CssArrayIP14CssIndexBufferE
 __ZTV8CssArrayIP14CssIndexBufferE:
+Lswv_345cfc:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100571,15 +101295,16 @@ __ZTV8CssArrayIP14CssIndexBufferE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2472ec
-	.long	swv_247944
-	.long	swv_231378
-	.long	swv_2475f8
-	.long	swv_247354
-	.long	swv_2472bc
+	.long	Lswv_2472ec
+	.long	Lswv_247944
+	.long	Lswv_231378
+	.long	Lswv_2475f8
+	.long	Lswv_247354
+	.long	Lswv_2472bc
 	.globl	__ZTV15CssMorphingMesh
 	.private_extern	__ZTV15CssMorphingMesh
 __ZTV15CssMorphingMesh:
+Lswv_345d1c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100588,21 +101313,21 @@ __ZTV15CssMorphingMesh:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_249188
-	.long	swv_249194
-	.long	swv_248dac
-	.long	swv_24b70c
-	.long	swv_248804
-	.long	swv_24a894
-	.long	swv_2484d8
-	.long	swv_248500
-	.long	swv_24cc04
-	.long	swv_24bf28
-	.long	swv_232fdc
-	.long	swv_24620c
-	.long	swv_245b38
-	.long	swv_2484d0
-	.long	swv_24a1a4
+	.long	Lswv_249188
+	.long	Lswv_249194
+	.long	Lswv_248dac
+	.long	Lswv_24b70c
+	.long	Lswv_248804
+	.long	Lswv_24a894
+	.long	Lswv_2484d8
+	.long	Lswv_248500
+	.long	Lswv_24cc04
+	.long	Lswv_24bf28
+	.long	Lswv_232fdc
+	.long	Lswv_24620c
+	.long	Lswv_245b38
+	.long	Lswv_2484d0
+	.long	Lswv_24a1a4
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100611,12 +101336,13 @@ __ZTV15CssMorphingMesh:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_249180
-	.long	swv_24918c
-	.long	swv_2484c8
+	.long	Lswv_249180
+	.long	Lswv_24918c
+	.long	Lswv_2484c8
 	.globl	__ZTV8CssArrayIP15CssVertexBufferE
 	.private_extern	__ZTV8CssArrayIP15CssVertexBufferE
 __ZTV8CssArrayIP15CssVertexBufferE:
+Lswv_345d74:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100625,15 +101351,16 @@ __ZTV8CssArrayIP15CssVertexBufferE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_24ac44
-	.long	swv_24abd4
-	.long	swv_231378
-	.long	swv_24a960
-	.long	swv_24a948
-	.long	swv_24a930
+	.long	Lswv_24ac44
+	.long	Lswv_24abd4
+	.long	Lswv_231378
+	.long	Lswv_24a960
+	.long	Lswv_24a948
+	.long	Lswv_24a930
 	.globl	__ZTV7CssNode
 	.private_extern	__ZTV7CssNode
 __ZTV7CssNode:
+Lswv_345d94:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100642,18 +101369,18 @@ __ZTV7CssNode:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_24d020
-	.long	swv_24cf18
-	.long	swv_24c4b8
-	.long	swv_23e430
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_24c3d0
-	.long	swv_24befc
-	.long	swv_24cc04
-	.long	swv_24bf28
-	.long	swv_232fdc
-	.long	swv_24be1c
+	.long	Lswv_24d020
+	.long	Lswv_24cf18
+	.long	Lswv_24c4b8
+	.long	Lswv_23e430
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_24c3d0
+	.long	Lswv_24befc
+	.long	Lswv_24cc04
+	.long	Lswv_24bf28
+	.long	Lswv_232fdc
+	.long	Lswv_24be1c
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100662,12 +101389,13 @@ __ZTV7CssNode:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_24d018
-	.long	swv_24cf10
-	.long	swv_230b50
+	.long	Lswv_24d018
+	.long	Lswv_24cf10
+	.long	Lswv_230b50
 	.globl	__ZTV11CssObject3D
 	.private_extern	__ZTV11CssObject3D
 __ZTV11CssObject3D:
+Lswv_345de0:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100676,14 +101404,14 @@ __ZTV11CssObject3D:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2508dc
-	.long	swv_25037c
-	.long	swv_24f42c
-	.long	swv_23e430
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_24ddc0
-	.long	swv_24ddb8
+	.long	Lswv_2508dc
+	.long	Lswv_25037c
+	.long	Lswv_24f42c
+	.long	Lswv_23e430
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100692,12 +101420,13 @@ __ZTV11CssObject3D:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2508d4
-	.long	swv_250374
-	.long	swv_230b50
+	.long	Lswv_2508d4
+	.long	Lswv_250374
+	.long	Lswv_230b50
 	.globl	__ZTV8CssArrayIP17CssAnimationTrackE
 	.private_extern	__ZTV8CssArrayIP17CssAnimationTrackE
 __ZTV8CssArrayIP17CssAnimationTrackE:
+Lswv_345e1c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100706,15 +101435,16 @@ __ZTV8CssArrayIP17CssAnimationTrackE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_250910
-	.long	swv_251074
-	.long	swv_231378
-	.long	swv_250d28
-	.long	swv_250978
-	.long	swv_2508e0
+	.long	Lswv_250910
+	.long	Lswv_251074
+	.long	Lswv_231378
+	.long	Lswv_250d28
+	.long	Lswv_250978
+	.long	Lswv_2508e0
 	.globl	__ZTV8CssArrayIN11CssObject3D16SssUserParameterEE
 	.private_extern	__ZTV8CssArrayIN11CssObject3D16SssUserParameterEE
 __ZTV8CssArrayIN11CssObject3D16SssUserParameterEE:
+Lswv_345e3c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100723,15 +101453,16 @@ __ZTV8CssArrayIN11CssObject3D16SssUserParameterEE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_25100c
-	.long	swv_250f9c
-	.long	swv_231378
-	.long	swv_2509b0
-	.long	swv_250990
-	.long	swv_2508f8
+	.long	Lswv_25100c
+	.long	Lswv_250f9c
+	.long	Lswv_231378
+	.long	Lswv_2509b0
+	.long	Lswv_250990
+	.long	Lswv_2508f8
 	.globl	__ZTV16CssObjectFactory
 	.private_extern	__ZTV16CssObjectFactory
 __ZTV16CssObjectFactory:
+Lswv_345e5c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100740,11 +101471,12 @@ __ZTV16CssObjectFactory:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2511f4
-	.long	swv_251160
+	.long	Lswv_2511f4
+	.long	Lswv_251160
 	.globl	__ZTV11CssPickData
 	.private_extern	__ZTV11CssPickData
 __ZTV11CssPickData:
+Lswv_345e6c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100753,11 +101485,12 @@ __ZTV11CssPickData:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2533ec
-	.long	swv_253600
+	.long	Lswv_2533ec
+	.long	Lswv_253600
 	.globl	__ZTV8CssStackIN11CssPickData10SssPickRayEE
 	.private_extern	__ZTV8CssStackIN11CssPickData10SssPickRayEE
 __ZTV8CssStackIN11CssPickData10SssPickRayEE:
+Lswv_345e7c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100766,11 +101499,12 @@ __ZTV8CssStackIN11CssPickData10SssPickRayEE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2534f0
-	.long	swv_253574
+	.long	Lswv_2534f0
+	.long	Lswv_253574
 	.globl	__ZTV8CssArrayIN11CssPickData10SssPickRayEE
 	.private_extern	__ZTV8CssArrayIN11CssPickData10SssPickRayEE
 __ZTV8CssArrayIN11CssPickData10SssPickRayEE:
+Lswv_345e8c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100779,15 +101513,16 @@ __ZTV8CssArrayIN11CssPickData10SssPickRayEE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_253480
-	.long	swv_253374
-	.long	swv_231378
-	.long	swv_252f5c
-	.long	swv_252de0
-	.long	swv_252f40
+	.long	Lswv_253480
+	.long	Lswv_253374
+	.long	Lswv_231378
+	.long	Lswv_252f5c
+	.long	Lswv_252de0
+	.long	Lswv_252f40
 	.globl	__ZTV14CssPlasmaImage
 	.private_extern	__ZTV14CssPlasmaImage
 __ZTV14CssPlasmaImage:
+Lswv_345eac:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100796,24 +101531,24 @@ __ZTV14CssPlasmaImage:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2537c4
-	.long	swv_2536bc
-	.long	swv_2558dc
-	.long	swv_256ab8
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_24ddc0
-	.long	swv_24ddb8
-	.long	swv_23c9d8
-	.long	swv_23d0ec
-	.long	swv_23d464
-	.long	swv_23aa18
-	.long	swv_256a9c
-	.long	swv_256a80
-	.long	swv_239df4
-	.long	swv_2536a4
-	.long	swv_256a64
-	.long	swv_2566e4
+	.long	Lswv_2537c4
+	.long	Lswv_2536bc
+	.long	Lswv_2558dc
+	.long	Lswv_256ab8
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
+	.long	Lswv_23c9d8
+	.long	Lswv_23d0ec
+	.long	Lswv_23d464
+	.long	Lswv_23aa18
+	.long	Lswv_256a9c
+	.long	Lswv_256a80
+	.long	Lswv_239df4
+	.long	Lswv_2536a4
+	.long	Lswv_256a64
+	.long	Lswv_2566e4
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100822,9 +101557,9 @@ __ZTV14CssPlasmaImage:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2537bc
-	.long	swv_2536b4
-	.long	swv_25369c
+	.long	Lswv_2537bc
+	.long	Lswv_2536b4
+	.long	Lswv_25369c
 	.byte	0x88
 	.byte	0xff
 	.byte	0xff
@@ -100833,11 +101568,12 @@ __ZTV14CssPlasmaImage:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2537b4
-	.long	swv_2536ac
+	.long	Lswv_2537b4
+	.long	Lswv_2536ac
 	.globl	__ZTV8CssArrayIlE
 	.private_extern	__ZTV8CssArrayIlE
 __ZTV8CssArrayIlE:
+Lswv_345f20:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100846,15 +101582,16 @@ __ZTV8CssArrayIlE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_25698c
-	.long	swv_2569f4
-	.long	swv_231378
-	.long	swv_256718
-	.long	swv_256700
-	.long	swv_2566e8
+	.long	Lswv_25698c
+	.long	Lswv_2569f4
+	.long	Lswv_231378
+	.long	Lswv_256718
+	.long	Lswv_256700
+	.long	Lswv_2566e8
 	.globl	__ZTV14CssPolygonMode
 	.private_extern	__ZTV14CssPolygonMode
 __ZTV14CssPolygonMode:
+Lswv_345f40:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100863,15 +101600,15 @@ __ZTV14CssPolygonMode:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_256ed8
-	.long	swv_256e8c
-	.long	swv_256d0c
-	.long	swv_256f10
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_24ddc0
-	.long	swv_24ddb8
-	.long	swv_256be8
+	.long	Lswv_256ed8
+	.long	Lswv_256e8c
+	.long	Lswv_256d0c
+	.long	Lswv_256f10
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
+	.long	Lswv_256be8
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100880,12 +101617,13 @@ __ZTV14CssPolygonMode:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_256ed0
-	.long	swv_256e84
-	.long	swv_256be0
+	.long	Lswv_256ed0
+	.long	Lswv_256e84
+	.long	Lswv_256be0
 	.globl	__ZTV15CssRandomNumber
 	.private_extern	__ZTV15CssRandomNumber
 __ZTV15CssRandomNumber:
+Lswv_345f80:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100894,12 +101632,12 @@ __ZTV15CssRandomNumber:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_257d10
-	.long	swv_257cec
+	.long	Lswv_257d10
+	.long	Lswv_257cec
 	.globl	__ZTV18CssRayIntersection
 	.private_extern	__ZTV18CssRayIntersection
 __ZTV18CssRayIntersection:
-swv_345f90:
+Lswv_345f90:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100908,10 +101646,10 @@ swv_345f90:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_257ea4
-	.long	swv_257f38
-	.long	swv_257d50
-	.long	swv_257d48
+	.long	Lswv_257ea4
+	.long	Lswv_257f38
+	.long	Lswv_257d50
+	.long	Lswv_257d48
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100920,12 +101658,13 @@ swv_345f90:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_257e9c
-	.long	swv_257f30
-	.long	swv_257d40
+	.long	Lswv_257e9c
+	.long	Lswv_257f30
+	.long	Lswv_257d40
 	.globl	__ZTV17CssResourceLoader
 	.private_extern	__ZTV17CssResourceLoader
 __ZTV17CssResourceLoader:
+Lswv_345fbc:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100934,18 +101673,18 @@ __ZTV17CssResourceLoader:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2587a8
-	.long	swv_2585cc
-	.long	swv_25a284
-	.long	swv_25a4c0
-	.long	swv_25a1cc
-	.long	swv_25a1ac
-	.long	swv_25a1c4
-	.long	swv_25b53c
-	.long	swv_25aac4
-	.long	swv_25ad6c
-	.long	swv_25ac7c
-	.long	swv_258a20
+	.long	Lswv_2587a8
+	.long	Lswv_2585cc
+	.long	Lswv_25a284
+	.long	Lswv_25a4c0
+	.long	Lswv_25a1cc
+	.long	Lswv_25a1ac
+	.long	Lswv_25a1c4
+	.long	Lswv_25b53c
+	.long	Lswv_25aac4
+	.long	Lswv_25ad6c
+	.long	Lswv_25ac7c
+	.long	Lswv_258a20
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -100954,12 +101693,13 @@ __ZTV17CssResourceLoader:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2587a0
-	.long	swv_2585c4
-	.long	swv_258a18
+	.long	Lswv_2587a0
+	.long	Lswv_2585c4
+	.long	Lswv_258a18
 	.globl	__ZTV27CssSerializeBufferObjectsIn
 	.private_extern	__ZTV27CssSerializeBufferObjectsIn
 __ZTV27CssSerializeBufferObjectsIn:
+Lswv_346008:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100968,11 +101708,12 @@ __ZTV27CssSerializeBufferObjectsIn:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_25960c
-	.long	swv_259588
+	.long	Lswv_25960c
+	.long	Lswv_259588
 	.globl	__ZTV14CssSerializeIn
 	.private_extern	__ZTV14CssSerializeIn
 __ZTV14CssSerializeIn:
+Lswv_346018:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -100981,13 +101722,13 @@ __ZTV14CssSerializeIn:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_25a364
-	.long	swv_25a2f8
-	.long	swv_25a284
-	.long	swv_25a4c0
-	.long	swv_25a1cc
-	.long	swv_25a1ac
-	.long	swv_25a1c4
+	.long	Lswv_25a364
+	.long	Lswv_25a2f8
+	.long	Lswv_25a284
+	.long	Lswv_25a4c0
+	.long	Lswv_25a1cc
+	.long	Lswv_25a1ac
+	.long	Lswv_25a1c4
 	.long	___cxa_pure_virtual
 	.long	___cxa_pure_virtual
 	.long	___cxa_pure_virtual
@@ -101000,12 +101741,13 @@ __ZTV14CssSerializeIn:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_25a35c
-	.long	swv_25a2f0
-	.long	swv_230b50
+	.long	Lswv_25a35c
+	.long	Lswv_25a2f0
+	.long	Lswv_230b50
 	.globl	__ZTV21CssSerializeObjectsIn
 	.private_extern	__ZTV21CssSerializeObjectsIn
 __ZTV21CssSerializeObjectsIn:
+Lswv_346060:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101014,18 +101756,18 @@ __ZTV21CssSerializeObjectsIn:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_25bba0
-	.long	swv_25b748
-	.long	swv_25a284
-	.long	swv_25a4c0
-	.long	swv_25a1cc
-	.long	swv_25a1ac
-	.long	swv_25a1c4
-	.long	swv_25b53c
-	.long	swv_25aac4
-	.long	swv_25ad6c
-	.long	swv_25ac7c
-	.long	swv_258a20
+	.long	Lswv_25bba0
+	.long	Lswv_25b748
+	.long	Lswv_25a284
+	.long	Lswv_25a4c0
+	.long	Lswv_25a1cc
+	.long	Lswv_25a1ac
+	.long	Lswv_25a1c4
+	.long	Lswv_25b53c
+	.long	Lswv_25aac4
+	.long	Lswv_25ad6c
+	.long	Lswv_25ac7c
+	.long	Lswv_258a20
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -101034,12 +101776,13 @@ __ZTV21CssSerializeObjectsIn:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_25bb98
-	.long	swv_25b740
-	.long	swv_258a18
+	.long	Lswv_25bb98
+	.long	Lswv_25b740
+	.long	Lswv_258a18
 	.globl	__ZTV8CssArrayIbE
 	.private_extern	__ZTV8CssArrayIbE
 __ZTV8CssArrayIbE:
+Lswv_3460ac:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101048,15 +101791,16 @@ __ZTV8CssArrayIbE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_25bbd4
-	.long	swv_25c218
-	.long	swv_231378
-	.long	swv_25bee0
-	.long	swv_25bc54
-	.long	swv_25bbbc
+	.long	Lswv_25bbd4
+	.long	Lswv_25c218
+	.long	Lswv_231378
+	.long	Lswv_25bee0
+	.long	Lswv_25bc54
+	.long	Lswv_25bbbc
 	.globl	__ZTV8CssArrayIP15IssSerializableE
 	.private_extern	__ZTV8CssArrayIP15IssSerializableE
 __ZTV8CssArrayIP15IssSerializableE:
+Lswv_3460cc:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101065,16 +101809,16 @@ __ZTV8CssArrayIP15IssSerializableE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_25c1b0
-	.long	swv_25c140
-	.long	swv_231378
-	.long	swv_25bc6c
-	.long	swv_25bc3c
-	.long	swv_25bba4
+	.long	Lswv_25c1b0
+	.long	Lswv_25c140
+	.long	Lswv_231378
+	.long	Lswv_25bc6c
+	.long	Lswv_25bc3c
+	.long	Lswv_25bba4
 	.globl	__ZTV14CssSkinnedMesh
 	.private_extern	__ZTV14CssSkinnedMesh
 __ZTV14CssSkinnedMesh:
-swv_3460ec:
+Lswv_3460ec:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101083,21 +101827,21 @@ swv_3460ec:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_25eea4
-	.long	swv_25ea1c
-	.long	swv_25ccac
-	.long	swv_260e1c
-	.long	swv_25fe30
-	.long	swv_25f2c8
-	.long	swv_24c3d0
-	.long	swv_24befc
-	.long	swv_24cc04
-	.long	swv_24bf28
-	.long	swv_232fdc
-	.long	swv_24620c
-	.long	swv_245b38
-	.long	swv_25c290
-	.long	swv_26109c
+	.long	Lswv_25eea4
+	.long	Lswv_25ea1c
+	.long	Lswv_25ccac
+	.long	Lswv_260e1c
+	.long	Lswv_25fe30
+	.long	Lswv_25f2c8
+	.long	Lswv_24c3d0
+	.long	Lswv_24befc
+	.long	Lswv_24cc04
+	.long	Lswv_24bf28
+	.long	Lswv_232fdc
+	.long	Lswv_24620c
+	.long	Lswv_245b38
+	.long	Lswv_25c290
+	.long	Lswv_26109c
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -101106,12 +101850,13 @@ swv_3460ec:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_25ee9c
-	.long	swv_25ea14
-	.long	swv_25c288
+	.long	Lswv_25ee9c
+	.long	Lswv_25ea14
+	.long	Lswv_25c288
 	.globl	__ZTV8CssArrayIN14CssSkinnedMesh11SssBoneNodeEE
 	.private_extern	__ZTV8CssArrayIN14CssSkinnedMesh11SssBoneNodeEE
 __ZTV8CssArrayIN14CssSkinnedMesh11SssBoneNodeEE:
+Lswv_346144:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101120,15 +101865,16 @@ __ZTV8CssArrayIN14CssSkinnedMesh11SssBoneNodeEE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_260dac
-	.long	swv_2606fc
-	.long	swv_231378
-	.long	swv_26093c
-	.long	swv_25f37c
-	.long	swv_25fdf8
+	.long	Lswv_260dac
+	.long	Lswv_2606fc
+	.long	Lswv_231378
+	.long	Lswv_26093c
+	.long	Lswv_25f37c
+	.long	Lswv_25fdf8
 	.globl	__ZTV8CssArrayIN14CssSkinnedMesh11SssBoneDataEE
 	.private_extern	__ZTV8CssArrayIN14CssSkinnedMesh11SssBoneDataEE
 __ZTV8CssArrayIN14CssSkinnedMesh11SssBoneDataEE:
+Lswv_346164:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101137,15 +101883,16 @@ __ZTV8CssArrayIN14CssSkinnedMesh11SssBoneDataEE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_260694
-	.long	swv_260624
-	.long	swv_231378
-	.long	swv_25f7f0
-	.long	swv_25f4f0
-	.long	swv_25f34c
+	.long	Lswv_260694
+	.long	Lswv_260624
+	.long	Lswv_231378
+	.long	Lswv_25f7f0
+	.long	Lswv_25f4f0
+	.long	Lswv_25f34c
 	.globl	__ZTV8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEE
 	.private_extern	__ZTV8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEE
 __ZTV8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEE:
+Lswv_346184:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101154,15 +101901,16 @@ __ZTV8CssArrayIN14CssSkinnedMesh15SssPaletteEntryEE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_260ccc
-	.long	swv_2607dc
-	.long	swv_231378
-	.long	swv_260338
-	.long	swv_25f510
-	.long	swv_25fe14
+	.long	Lswv_260ccc
+	.long	Lswv_2607dc
+	.long	Lswv_231378
+	.long	Lswv_260338
+	.long	Lswv_25f510
+	.long	Lswv_25fe14
 	.globl	__ZTV8CssArrayItE
 	.private_extern	__ZTV8CssArrayItE
 __ZTV8CssArrayItE:
+Lswv_3461a4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101171,15 +101919,16 @@ __ZTV8CssArrayItE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_260774
-	.long	swv_260854
-	.long	swv_231378
-	.long	swv_25fb68
-	.long	swv_25f63c
-	.long	swv_25f364
+	.long	Lswv_260774
+	.long	Lswv_260854
+	.long	Lswv_231378
+	.long	Lswv_25fb68
+	.long	Lswv_25f63c
+	.long	Lswv_25f364
 	.globl	__ZTV8CssArrayI11CssVector3DE
 	.private_extern	__ZTV8CssArrayI11CssVector3DE
 __ZTV8CssArrayI11CssVector3DE:
+Lswv_3461c4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101188,16 +101937,16 @@ __ZTV8CssArrayI11CssVector3DE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_260d3c
-	.long	swv_2608c4
-	.long	swv_231378
-	.long	swv_25fe90
-	.long	swv_25f654
-	.long	swv_25fddc
+	.long	Lswv_260d3c
+	.long	Lswv_2608c4
+	.long	Lswv_231378
+	.long	Lswv_25fe90
+	.long	Lswv_25f654
+	.long	Lswv_25fddc
 	.globl	__ZTV9CssSprite
 	.private_extern	__ZTV9CssSprite
 __ZTV9CssSprite:
-swv_3461e4:
+Lswv_3461e4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101206,19 +101955,19 @@ swv_3461e4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_26145c
-	.long	swv_2613b4
-	.long	swv_2614f4
-	.long	swv_26184c
-	.long	swv_261810
-	.long	swv_2617bc
-	.long	swv_2610a4
-	.long	swv_261128
-	.long	swv_24cc04
-	.long	swv_24bf28
-	.long	swv_232fdc
-	.long	swv_24be1c
-	.long	swv_2617b4
+	.long	Lswv_26145c
+	.long	Lswv_2613b4
+	.long	Lswv_2614f4
+	.long	Lswv_26184c
+	.long	Lswv_261810
+	.long	Lswv_2617bc
+	.long	Lswv_2610a4
+	.long	Lswv_261128
+	.long	Lswv_24cc04
+	.long	Lswv_24bf28
+	.long	Lswv_232fdc
+	.long	Lswv_24be1c
+	.long	Lswv_2617b4
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -101227,13 +101976,13 @@ swv_3461e4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_261454
-	.long	swv_2613ac
-	.long	swv_2617ac
+	.long	Lswv_261454
+	.long	Lswv_2613ac
+	.long	Lswv_2617ac
 	.globl	__ZTV11CssStageset
 	.private_extern	__ZTV11CssStageset
 __ZTV11CssStageset:
-swv_346234:
+Lswv_346234:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101242,25 +101991,25 @@ swv_346234:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2622f4
-	.long	swv_262394
-	.long	swv_261c14
-	.long	swv_2621f0
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_24ddc0
-	.long	swv_24ddb8
-	.long	swv_23c9d8
-	.long	swv_23d0ec
-	.long	swv_23d464
-	.long	swv_23aa18
-	.long	swv_23aad0
-	.long	swv_23aad8
-	.long	swv_239df4
-	.long	swv_2621e4
-	.long	swv_23a748
-	.long	swv_2621ec
-	.long	swv_261e88
+	.long	Lswv_2622f4
+	.long	Lswv_262394
+	.long	Lswv_261c14
+	.long	Lswv_2621f0
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
+	.long	Lswv_23c9d8
+	.long	Lswv_23d0ec
+	.long	Lswv_23d464
+	.long	Lswv_23aa18
+	.long	Lswv_23aad0
+	.long	Lswv_23aad8
+	.long	Lswv_239df4
+	.long	Lswv_2621e4
+	.long	Lswv_23a748
+	.long	Lswv_2621ec
+	.long	Lswv_261e88
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -101269,12 +102018,13 @@ swv_346234:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2622ec
-	.long	swv_26238c
-	.long	swv_2621dc
+	.long	Lswv_2622ec
+	.long	Lswv_26238c
+	.long	Lswv_2621dc
 	.globl	__ZTV12CssTexture2D
 	.private_extern	__ZTV12CssTexture2D
 __ZTV12CssTexture2D:
+Lswv_34629c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101283,17 +102033,17 @@ __ZTV12CssTexture2D:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_262834
-	.long	swv_2627b8
-	.long	swv_262600
-	.long	swv_262a00
-	.long	swv_22e454
-	.long	swv_2629c0
-	.long	swv_262448
-	.long	swv_262574
-	.long	swv_2629a0
-	.long	swv_262440
-	.long	swv_2629b4
+	.long	Lswv_262834
+	.long	Lswv_2627b8
+	.long	Lswv_262600
+	.long	Lswv_262a00
+	.long	Lswv_22e454
+	.long	Lswv_2629c0
+	.long	Lswv_262448
+	.long	Lswv_262574
+	.long	Lswv_2629a0
+	.long	Lswv_262440
+	.long	Lswv_2629b4
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -101302,12 +102052,13 @@ __ZTV12CssTexture2D:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_26282c
-	.long	swv_2627b0
-	.long	swv_262438
+	.long	Lswv_26282c
+	.long	Lswv_2627b0
+	.long	Lswv_262438
 	.globl	__ZTV12CssTransform
 	.private_extern	__ZTV12CssTransform
 __ZTV12CssTransform:
+Lswv_3462e4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101316,10 +102067,10 @@ __ZTV12CssTransform:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2634e4
-	.long	swv_2634a4
-	.long	swv_262b40
-	.long	swv_262b38
+	.long	Lswv_2634e4
+	.long	Lswv_2634a4
+	.long	Lswv_262b40
+	.long	Lswv_262b38
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -101328,12 +102079,13 @@ __ZTV12CssTransform:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2634dc
-	.long	swv_26349c
-	.long	swv_262b30
+	.long	Lswv_2634dc
+	.long	Lswv_26349c
+	.long	Lswv_262b30
 	.globl	__ZTV16CssTransformable
 	.private_extern	__ZTV16CssTransformable
 __ZTV16CssTransformable:
+Lswv_346310:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101342,15 +102094,15 @@ __ZTV16CssTransformable:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_26382c
-	.long	swv_263584
-	.long	swv_264794
-	.long	swv_23e430
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_2643f8
-	.long	swv_263550
-	.long	swv_2629a0
+	.long	Lswv_26382c
+	.long	Lswv_263584
+	.long	Lswv_264794
+	.long	Lswv_23e430
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_2643f8
+	.long	Lswv_263550
+	.long	Lswv_2629a0
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -101359,12 +102111,13 @@ __ZTV16CssTransformable:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_263824
-	.long	swv_26357c
-	.long	swv_230b50
+	.long	Lswv_263824
+	.long	Lswv_26357c
+	.long	Lswv_230b50
 	.globl	__ZTV21CssTriangleStripArray
 	.private_extern	__ZTV21CssTriangleStripArray
 __ZTV21CssTriangleStripArray:
+Lswv_346350:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101373,17 +102126,17 @@ __ZTV21CssTriangleStripArray:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2667b8
-	.long	swv_2666b8
-	.long	swv_265790
-	.long	swv_2668a8
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_24ddc0
-	.long	swv_24ddb8
-	.long	swv_264df8
-	.long	swv_266264
-	.long	swv_264df0
+	.long	Lswv_2667b8
+	.long	Lswv_2666b8
+	.long	Lswv_265790
+	.long	Lswv_2668a8
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
+	.long	Lswv_264df8
+	.long	Lswv_266264
+	.long	Lswv_264df0
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -101392,12 +102145,13 @@ __ZTV21CssTriangleStripArray:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2667b0
-	.long	swv_2666b0
-	.long	swv_264de8
+	.long	Lswv_2667b0
+	.long	Lswv_2666b0
+	.long	Lswv_264de8
 	.globl	__ZTV14CssVertexArray
 	.private_extern	__ZTV14CssVertexArray
 __ZTV14CssVertexArray:
+Lswv_346398:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101406,15 +102160,15 @@ __ZTV14CssVertexArray:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_26947c
-	.long	swv_269488
-	.long	swv_268994
-	.long	swv_269bb0
-	.long	swv_22e454
-	.long	swv_24f938
-	.long	swv_24ddc0
-	.long	swv_24ddb8
-	.long	swv_266ab4
+	.long	Lswv_26947c
+	.long	Lswv_269488
+	.long	Lswv_268994
+	.long	Lswv_269bb0
+	.long	Lswv_22e454
+	.long	Lswv_24f938
+	.long	Lswv_24ddc0
+	.long	Lswv_24ddb8
+	.long	Lswv_266ab4
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -101423,12 +102177,13 @@ __ZTV14CssVertexArray:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_269474
-	.long	swv_269480
-	.long	swv_266aac
+	.long	Lswv_269474
+	.long	Lswv_269480
+	.long	Lswv_266aac
 	.globl	__ZTV19CssVertexArrayCache
 	.private_extern	__ZTV19CssVertexArrayCache
 __ZTV19CssVertexArrayCache:
+Lswv_3463d8:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101437,11 +102192,12 @@ __ZTV19CssVertexArrayCache:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_269f54
-	.long	swv_269ed0
+	.long	Lswv_269f54
+	.long	Lswv_269ed0
 	.globl	__ZTV8CssArrayIP19CssVertexArrayCacheE
 	.private_extern	__ZTV8CssArrayIP19CssVertexArrayCacheE
 __ZTV8CssArrayIP19CssVertexArrayCacheE:
+Lswv_3463e8:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101450,15 +102206,16 @@ __ZTV8CssArrayIP19CssVertexArrayCacheE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_269b48
-	.long	swv_269ad8
-	.long	swv_231378
-	.long	swv_269864
-	.long	swv_26984c
-	.long	swv_269834
+	.long	Lswv_269b48
+	.long	Lswv_269ad8
+	.long	Lswv_231378
+	.long	Lswv_269864
+	.long	Lswv_26984c
+	.long	Lswv_269834
 	.globl	__ZTV15CssVertexBuffer
 	.private_extern	__ZTV15CssVertexBuffer
 __ZTV15CssVertexBuffer:
+Lswv_346408:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101467,15 +102224,15 @@ __ZTV15CssVertexBuffer:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_26a6bc
-	.long	swv_26a424
-	.long	swv_26ab44
-	.long	swv_26b45c
-	.long	swv_22e454
-	.long	swv_26b400
-	.long	swv_269fe0
-	.long	swv_26a164
-	.long	swv_269fd8
+	.long	Lswv_26a6bc
+	.long	Lswv_26a424
+	.long	Lswv_26ab44
+	.long	Lswv_26b45c
+	.long	Lswv_22e454
+	.long	Lswv_26b400
+	.long	Lswv_269fe0
+	.long	Lswv_26a164
+	.long	Lswv_269fd8
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -101484,12 +102241,13 @@ __ZTV15CssVertexBuffer:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_26a6b4
-	.long	swv_26a41c
-	.long	swv_269fd0
+	.long	Lswv_26a6b4
+	.long	Lswv_26a41c
+	.long	Lswv_269fd0
 	.globl	__ZTV10CssWarpMap
 	.private_extern	__ZTV10CssWarpMap
 __ZTV10CssWarpMap:
+Lswv_346448:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101498,11 +102256,12 @@ __ZTV10CssWarpMap:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_26bffc
-	.long	swv_26bf78
+	.long	Lswv_26bffc
+	.long	Lswv_26bf78
 	.globl	__ZTV8CssArrayI7SssKnotE
 	.private_extern	__ZTV8CssArrayI7SssKnotE
 __ZTV8CssArrayI7SssKnotE:
+Lswv_346458:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101511,15 +102270,16 @@ __ZTV8CssArrayI7SssKnotE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_26c090
-	.long	swv_26c45c
-	.long	swv_231378
-	.long	swv_26c110
-	.long	swv_26c0f8
-	.long	swv_26c078
+	.long	Lswv_26c090
+	.long	Lswv_26c45c
+	.long	Lswv_231378
+	.long	Lswv_26c110
+	.long	Lswv_26c0f8
+	.long	Lswv_26c078
 	.globl	__ZTV8CssWorld
 	.private_extern	__ZTV8CssWorld
 __ZTV8CssWorld:
+Lswv_346478:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101528,19 +102288,19 @@ __ZTV8CssWorld:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_26ca60
-	.long	swv_26c870
-	.long	swv_26c764
-	.long	swv_26cec4
-	.long	swv_26cab8
-	.long	swv_26ca64
-	.long	swv_26c5bc
-	.long	swv_26c5cc
-	.long	swv_24cc04
-	.long	swv_24bf28
-	.long	swv_232fdc
-	.long	swv_24be1c
-	.long	swv_26c4d4
+	.long	Lswv_26ca60
+	.long	Lswv_26c870
+	.long	Lswv_26c764
+	.long	Lswv_26cec4
+	.long	Lswv_26cab8
+	.long	Lswv_26ca64
+	.long	Lswv_26c5bc
+	.long	Lswv_26c5cc
+	.long	Lswv_24cc04
+	.long	Lswv_24bf28
+	.long	Lswv_232fdc
+	.long	Lswv_24be1c
+	.long	Lswv_26c4d4
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -101549,12 +102309,13 @@ __ZTV8CssWorld:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_26ca58
-	.long	swv_26c868
-	.long	swv_26c4cc
+	.long	Lswv_26ca58
+	.long	Lswv_26c868
+	.long	Lswv_26c4cc
 	.globl	__ZTV8CssArrayIPK8CssLightE
 	.private_extern	__ZTV8CssArrayIPK8CssLightE
 __ZTV8CssArrayIPK8CssLightE:
+Lswv_3464c8:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101563,15 +102324,16 @@ __ZTV8CssArrayIPK8CssLightE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_26cb60
-	.long	swv_26ce54
-	.long	swv_231378
-	.long	swv_26cbe0
-	.long	swv_26cbc8
-	.long	swv_26cb48
+	.long	Lswv_26cb60
+	.long	Lswv_26ce54
+	.long	Lswv_231378
+	.long	Lswv_26cbe0
+	.long	Lswv_26cbc8
+	.long	Lswv_26cb48
 	.globl	__ZTV7CssXREF
 	.private_extern	__ZTV7CssXREF
 __ZTV7CssXREF:
+Lswv_3464e8:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101580,10 +102342,10 @@ __ZTV7CssXREF:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_26d35c
-	.long	swv_26d268
-	.long	swv_26d1a4
-	.long	swv_26d19c
+	.long	Lswv_26d35c
+	.long	Lswv_26d268
+	.long	Lswv_26d1a4
+	.long	Lswv_26d19c
 	.byte	0xfc
 	.byte	0xff
 	.byte	0xff
@@ -101592,12 +102354,13 @@ __ZTV7CssXREF:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_26d354
-	.long	swv_26d260
-	.long	swv_26d194
+	.long	Lswv_26d354
+	.long	Lswv_26d260
+	.long	Lswv_26d194
 	.globl	__ZTV8CssArrayIP11CssRefCountE
 	.private_extern	__ZTV8CssArrayIP11CssRefCountE
 __ZTV8CssArrayIP11CssRefCountE:
+Lswv_346514:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101606,15 +102369,16 @@ __ZTV8CssArrayIP11CssRefCountE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_271154
-	.long	swv_2711bc
-	.long	swv_231378
-	.long	swv_270ee0
-	.long	swv_270ec8
-	.long	swv_270eb0
+	.long	Lswv_271154
+	.long	Lswv_2711bc
+	.long	Lswv_231378
+	.long	Lswv_270ee0
+	.long	Lswv_270ec8
+	.long	Lswv_270eb0
 	.globl	__ZTV22CssCleanupStackManager
 	.private_extern	__ZTV22CssCleanupStackManager
 __ZTV22CssCleanupStackManager:
+Lswv_346534:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101623,11 +102387,12 @@ __ZTV22CssCleanupStackManager:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_27715c
-	.long	swv_277160
+	.long	Lswv_27715c
+	.long	Lswv_277160
 	.globl	__ZTV8CssArrayIP23CssCleanupStackInstanceE
 	.private_extern	__ZTV8CssArrayIP23CssCleanupStackInstanceE
 __ZTV8CssArrayIP23CssCleanupStackInstanceE:
+Lswv_346544:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101636,15 +102401,16 @@ __ZTV8CssArrayIP23CssCleanupStackInstanceE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_2775a4
-	.long	swv_2772a8
-	.long	swv_231378
-	.long	swv_277330
-	.long	swv_277318
-	.long	swv_277290
+	.long	Lswv_2775a4
+	.long	Lswv_2772a8
+	.long	Lswv_231378
+	.long	Lswv_277330
+	.long	Lswv_277318
+	.long	Lswv_277290
 	.globl	__ZTV18CssGLBufferManager
 	.private_extern	__ZTV18CssGLBufferManager
 __ZTV18CssGLBufferManager:
+Lswv_346564:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101653,11 +102419,12 @@ __ZTV18CssGLBufferManager:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_27d1ec
-	.long	swv_27ced4
+	.long	Lswv_27d1ec
+	.long	Lswv_27ced4
 	.globl	__ZTV8CssArrayIN18CssGLBufferManager6SssVBOEE
 	.private_extern	__ZTV8CssArrayIN18CssGLBufferManager6SssVBOEE
 __ZTV8CssArrayIN18CssGLBufferManager6SssVBOEE:
+Lswv_346574:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101666,15 +102433,16 @@ __ZTV8CssArrayIN18CssGLBufferManager6SssVBOEE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_27dc30
-	.long	swv_27dbc0
-	.long	swv_231378
-	.long	swv_27d7dc
-	.long	swv_27dba8
-	.long	swv_27db58
+	.long	Lswv_27dc30
+	.long	Lswv_27dbc0
+	.long	Lswv_231378
+	.long	Lswv_27d7dc
+	.long	Lswv_27dba8
+	.long	Lswv_27db58
 	.globl	__ZTV8CssArrayIjE
 	.private_extern	__ZTV8CssArrayIjE
 __ZTV8CssArrayIjE:
+Lswv_346594:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101683,15 +102451,16 @@ __ZTV8CssArrayIjE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_27dd08
-	.long	swv_27dc98
-	.long	swv_231378
-	.long	swv_27d568
-	.long	swv_27db90
-	.long	swv_27db40
+	.long	Lswv_27dd08
+	.long	Lswv_27dc98
+	.long	Lswv_231378
+	.long	Lswv_27d568
+	.long	Lswv_27db90
+	.long	Lswv_27db40
 	.globl	__ZTV8CssArrayIN18CssGLBufferManager10SssTextureEE
 	.private_extern	__ZTV8CssArrayIN18CssGLBufferManager10SssTextureEE
 __ZTV8CssArrayIN18CssGLBufferManager10SssTextureEE:
+Lswv_3465b4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101700,15 +102469,16 @@ __ZTV8CssArrayIN18CssGLBufferManager10SssTextureEE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_27dde0
-	.long	swv_27dd70
-	.long	swv_231378
-	.long	swv_27d1f0
-	.long	swv_27db70
-	.long	swv_27db28
+	.long	Lswv_27dde0
+	.long	Lswv_27dd70
+	.long	Lswv_231378
+	.long	Lswv_27d1f0
+	.long	Lswv_27db70
+	.long	Lswv_27db28
 	.globl	__ZTV13CssRendererGL
 	.private_extern	__ZTV13CssRendererGL
 __ZTV13CssRendererGL:
+Lswv_3465d4:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101717,29 +102487,30 @@ __ZTV13CssRendererGL:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_280f84
-	.long	swv_280bd4
-	.long	swv_2809f0
-	.long	swv_27e548
-	.long	swv_27e164
-	.long	swv_27e170
-	.long	swv_27f888
-	.long	swv_27ef38
-	.long	swv_280538
-	.long	swv_284b5c
-	.long	swv_285a58
-	.long	swv_285c20
-	.long	swv_285ec4
-	.long	swv_285ecc
-	.long	swv_280f88
-	.long	swv_27e7b8
-	.long	swv_27e7e4
-	.long	swv_27e620
-	.long	swv_285ebc
-	.long	swv_2833fc
+	.long	Lswv_280f84
+	.long	Lswv_280bd4
+	.long	Lswv_2809f0
+	.long	Lswv_27e548
+	.long	Lswv_27e164
+	.long	Lswv_27e170
+	.long	Lswv_27f888
+	.long	Lswv_27ef38
+	.long	Lswv_280538
+	.long	Lswv_284b5c
+	.long	Lswv_285a58
+	.long	Lswv_285c20
+	.long	Lswv_285ec4
+	.long	Lswv_285ecc
+	.long	Lswv_280f88
+	.long	Lswv_27e7b8
+	.long	Lswv_27e7e4
+	.long	Lswv_27e620
+	.long	Lswv_285ebc
+	.long	Lswv_2833fc
 	.globl	__ZTV8CssArrayI16CssActiveLightGLE
 	.private_extern	__ZTV8CssArrayI16CssActiveLightGLE
 __ZTV8CssArrayI16CssActiveLightGLE:
+Lswv_34662c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101748,15 +102519,16 @@ __ZTV8CssArrayI16CssActiveLightGLE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_286adc
-	.long	swv_286a6c
-	.long	swv_231378
-	.long	swv_286404
-	.long	swv_286928
-	.long	swv_2868f0
+	.long	Lswv_286adc
+	.long	Lswv_286a6c
+	.long	Lswv_231378
+	.long	Lswv_286404
+	.long	Lswv_286928
+	.long	Lswv_2868f0
 	.globl	__ZTV8CssArrayIN13CssRendererGL14SssQueuedStateEE
 	.private_extern	__ZTV8CssArrayIN13CssRendererGL14SssQueuedStateEE
 __ZTV8CssArrayIN13CssRendererGL14SssQueuedStateEE:
+Lswv_34664c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101765,15 +102537,2287 @@ __ZTV8CssArrayIN13CssRendererGL14SssQueuedStateEE:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-	.long	swv_286bb4
-	.long	swv_286b44
-	.long	swv_231378
-	.long	swv_285ed4
-	.long	swv_286908
-	.long	swv_2868d8
+	.long	Lswv_286bb4
+	.long	Lswv_286b44
+	.long	Lswv_231378
+	.long	Lswv_285ed4
+	.long	Lswv_286908
+	.long	Lswv_2868d8
+
+	.section __TEXT,__const
+	.align 2
+	.globl	_aPropertyComponents.6839
+	.private_extern	_aPropertyComponents.6839
+_aPropertyComponents.6839:
+Lswv_2f6738:
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x02
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x08
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x08
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x14
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x02
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x08
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x08
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x02
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x02
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x02
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0xff
+	.byte	0xff
+	.byte	0xff
+	.byte	0xff
+	.byte	0x02
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x10
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x02
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x0a
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x02
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x08
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x02
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x02
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x08
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x02
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.globl	__ZL15kFileIdentifier
+	.private_extern	__ZL15kFileIdentifier
+__ZL15kFileIdentifier:
+Lswv_2f6790:
+	.byte	0xab
+	.byte	0x53
+	.byte	0x57
+	.byte	0x56
+	.byte	0x41
+	.byte	0x52
+	.byte	0x43
+	.byte	0xbb
+	.byte	0x0d
+	.byte	0x0a
+	.byte	0x1a
+	.byte	0x0a
+	.globl	__ZN16CssFileHeaderM3G11m_M3GHeaderE
+	.private_extern	__ZN16CssFileHeaderM3G11m_M3GHeaderE
+__ZN16CssFileHeaderM3G11m_M3GHeaderE:
+Lswv_2f679c:
+	.byte	0xab
+	.byte	0x4a
+	.byte	0x53
+	.byte	0x52
+	.byte	0x31
+	.byte	0x38
+	.byte	0x34
+	.byte	0xbb
+	.byte	0x0d
+	.byte	0x0a
+	.byte	0x1a
+	.byte	0x0a
+	.globl	__ZN16CssFileHeaderSWV11m_SWVHeaderE
+	.private_extern	__ZN16CssFileHeaderSWV11m_SWVHeaderE
+__ZN16CssFileHeaderSWV11m_SWVHeaderE:
+Lswv_2f67a8:
+	.byte	0xbb
+	.byte	0x53
+	.byte	0x57
+	.byte	0x45
+	.byte	0x52
+	.byte	0x56
+	.byte	0x45
+	.byte	0xab
+	.byte	0x0d
+	.byte	0x0a
+	.byte	0x1a
+	.byte	0x0a
+	.globl	__ZZ12g_fixed_atanlE1a
+	.private_extern	__ZZ12g_fixed_atanlE1a
+__ZZ12g_fixed_atanlE1a:
+Lswv_2f67b4:
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x0b
+	.byte	0x86
+	.byte	0x00
+	.byte	0x00
+	.byte	0x20
+	.byte	0x92
+	.byte	0x01
+	.byte	0x00
+	.byte	0x15
+	.byte	0x0c
+	.byte	0x01
+	.byte	0x00
+	.globl	__ZL15reciprocalTable
+	.private_extern	__ZL15reciprocalTable
+__ZL15reciprocalTable:
+Lswv_2f67c4:
+	.byte	0xff
+	.byte	0xff
+	.byte	0xff
+	.byte	0x7f
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x40
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x20
+	.byte	0x55
+	.byte	0x55
+	.byte	0x55
+	.byte	0x15
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x10
+	.byte	0xcc
+	.byte	0xcc
+	.byte	0xcc
+	.byte	0x0c
+	.byte	0xaa
+	.byte	0xaa
+	.byte	0xaa
+	.byte	0x0a
+	.byte	0x49
+	.byte	0x92
+	.byte	0x24
+	.byte	0x09
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x08
+	.byte	0xc7
+	.byte	0x71
+	.byte	0x1c
+	.byte	0x07
+	.byte	0x66
+	.byte	0x66
+	.byte	0x66
+	.byte	0x06
+	.byte	0x5d
+	.byte	0x74
+	.byte	0xd1
+	.byte	0x05
+	.byte	0x55
+	.byte	0x55
+	.byte	0x55
+	.byte	0x05
+	.byte	0xc4
+	.byte	0x4e
+	.byte	0xec
+	.byte	0x04
+	.byte	0x24
+	.byte	0x49
+	.byte	0x92
+	.byte	0x04
+	.byte	0x44
+	.byte	0x44
+	.byte	0x44
+	.byte	0x04
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x04
+	.byte	0xc3
+	.byte	0xc3
+	.byte	0xc3
+	.byte	0x03
+	.byte	0xe3
+	.byte	0x38
+	.byte	0x8e
+	.byte	0x03
+	.byte	0xd7
+	.byte	0x50
+	.byte	0x5e
+	.byte	0x03
+	.byte	0x33
+	.byte	0x33
+	.byte	0x33
+	.byte	0x03
+	.byte	0xc3
+	.byte	0x30
+	.byte	0x0c
+	.byte	0x03
+	.byte	0x2e
+	.byte	0xba
+	.byte	0xe8
+	.byte	0x02
+	.byte	0x0b
+	.byte	0x59
+	.byte	0xc8
+	.byte	0x02
+	.byte	0xaa
+	.byte	0xaa
+	.byte	0xaa
+	.byte	0x02
+	.byte	0x28
+	.byte	0x5c
+	.byte	0x8f
+	.byte	0x02
+	.byte	0x62
+	.byte	0x27
+	.byte	0x76
+	.byte	0x02
+	.byte	0x97
+	.byte	0xd0
+	.byte	0x5e
+	.byte	0x02
+	.byte	0x92
+	.byte	0x24
+	.byte	0x49
+	.byte	0x02
+	.byte	0x2c
+	.byte	0xf7
+	.byte	0x34
+	.byte	0x02
+	.byte	0x22
+	.byte	0x22
+	.byte	0x22
+	.byte	0x02
+	.byte	0x21
+	.byte	0x84
+	.byte	0x10
+	.byte	0x02
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x02
+	.byte	0x1f
+	.byte	0x7c
+	.byte	0xf0
+	.byte	0x01
+	.byte	0xe1
+	.byte	0xe1
+	.byte	0xe1
+	.byte	0x01
+	.byte	0x41
+	.byte	0x1d
+	.byte	0xd4
+	.byte	0x01
+	.byte	0x71
+	.byte	0x1c
+	.byte	0xc7
+	.byte	0x01
+	.byte	0x91
+	.byte	0xcf
+	.byte	0xba
+	.byte	0x01
+	.byte	0x6b
+	.byte	0x28
+	.byte	0xaf
+	.byte	0x01
+	.byte	0x41
+	.byte	0x1a
+	.byte	0xa4
+	.byte	0x01
+	.byte	0x99
+	.byte	0x99
+	.byte	0x99
+	.byte	0x01
+	.byte	0x18
+	.byte	0x9c
+	.byte	0x8f
+	.byte	0x01
+	.byte	0x61
+	.byte	0x18
+	.byte	0x86
+	.byte	0x01
+	.byte	0xf4
+	.byte	0x05
+	.byte	0x7d
+	.byte	0x01
+	.byte	0x17
+	.byte	0x5d
+	.byte	0x74
+	.byte	0x01
+	.byte	0xc1
+	.byte	0x16
+	.byte	0x6c
+	.byte	0x01
+	.byte	0x85
+	.byte	0x2c
+	.byte	0x64
+	.byte	0x01
+	.byte	0x82
+	.byte	0x98
+	.byte	0x5c
+	.byte	0x01
+	.byte	0x55
+	.byte	0x55
+	.byte	0x55
+	.byte	0x01
+	.byte	0x0a
+	.byte	0x5e
+	.byte	0x4e
+	.byte	0x01
+	.byte	0x14
+	.byte	0xae
+	.byte	0x47
+	.byte	0x01
+	.byte	0x41
+	.byte	0x41
+	.byte	0x41
+	.byte	0x01
+	.byte	0xb1
+	.byte	0x13
+	.byte	0x3b
+	.byte	0x01
+	.byte	0xcf
+	.byte	0x21
+	.byte	0x35
+	.byte	0x01
+	.byte	0x4b
+	.byte	0x68
+	.byte	0x2f
+	.byte	0x01
+	.byte	0x12
+	.byte	0xe4
+	.byte	0x29
+	.byte	0x01
+	.byte	0x49
+	.byte	0x92
+	.byte	0x24
+	.byte	0x01
+	.byte	0x47
+	.byte	0x70
+	.byte	0x1f
+	.byte	0x01
+	.byte	0x96
+	.byte	0x7b
+	.byte	0x1a
+	.byte	0x01
+	.byte	0xe5
+	.byte	0xb1
+	.byte	0x15
+	.byte	0x01
+	.byte	0x11
+	.byte	0x11
+	.byte	0x11
+	.byte	0x01
+	.byte	0x14
+	.byte	0x97
+	.byte	0x0c
+	.byte	0x01
+	.byte	0x10
+	.byte	0x42
+	.byte	0x08
+	.byte	0x01
+	.byte	0x41
+	.byte	0x10
+	.byte	0x04
+	.byte	0x01
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x01
+	.byte	0xc0
+	.byte	0x0f
+	.byte	0xfc
+	.byte	0x00
+	.byte	0x0f
+	.byte	0x3e
+	.byte	0xf8
+	.byte	0x00
+	.byte	0x8d
+	.byte	0x89
+	.byte	0xf4
+	.byte	0x00
+	.byte	0xf0
+	.byte	0xf0
+	.byte	0xf0
+	.byte	0x00
+	.byte	0x03
+	.byte	0x73
+	.byte	0xed
+	.byte	0x00
+	.byte	0xa0
+	.byte	0x0e
+	.byte	0xea
+	.byte	0x00
+	.byte	0xb4
+	.byte	0xc2
+	.byte	0xe6
+	.byte	0x00
+	.byte	0x38
+	.byte	0x8e
+	.byte	0xe3
+	.byte	0x00
+	.byte	0x38
+	.byte	0x70
+	.byte	0xe0
+	.byte	0x00
+	.byte	0xc8
+	.byte	0x67
+	.byte	0xdd
+	.byte	0x00
+	.byte	0x0d
+	.byte	0x74
+	.byte	0xda
+	.byte	0x00
+	.byte	0x35
+	.byte	0x94
+	.byte	0xd7
+	.byte	0x00
+	.byte	0x7b
+	.byte	0xc7
+	.byte	0xd4
+	.byte	0x00
+	.byte	0x20
+	.byte	0x0d
+	.byte	0xd2
+	.byte	0x00
+	.byte	0x74
+	.byte	0x64
+	.byte	0xcf
+	.byte	0x00
+	.byte	0xcc
+	.byte	0xcc
+	.byte	0xcc
+	.byte	0x00
+	.byte	0x87
+	.byte	0x45
+	.byte	0xca
+	.byte	0x00
+	.byte	0x0c
+	.byte	0xce
+	.byte	0xc7
+	.byte	0x00
+	.byte	0xc8
+	.byte	0x65
+	.byte	0xc5
+	.byte	0x00
+	.byte	0x30
+	.byte	0x0c
+	.byte	0xc3
+	.byte	0x00
+	.byte	0xc0
+	.byte	0xc0
+	.byte	0xc0
+	.byte	0x00
+	.byte	0xfa
+	.byte	0x82
+	.byte	0xbe
+	.byte	0x00
+	.byte	0x64
+	.byte	0x52
+	.byte	0xbc
+	.byte	0x00
+	.byte	0x8b
+	.byte	0x2e
+	.byte	0xba
+	.byte	0x00
+	.byte	0x02
+	.byte	0x17
+	.byte	0xb8
+	.byte	0x00
+	.byte	0x60
+	.byte	0x0b
+	.byte	0xb6
+	.byte	0x00
+	.byte	0x40
+	.byte	0x0b
+	.byte	0xb4
+	.byte	0x00
+	.byte	0x42
+	.byte	0x16
+	.byte	0xb2
+	.byte	0x00
+	.byte	0x0b
+	.byte	0x2c
+	.byte	0xb0
+	.byte	0x00
+	.byte	0x41
+	.byte	0x4c
+	.byte	0xae
+	.byte	0x00
+	.byte	0x91
+	.byte	0x76
+	.byte	0xac
+	.byte	0x00
+	.byte	0xaa
+	.byte	0xaa
+	.byte	0xaa
+	.byte	0x00
+	.byte	0x3f
+	.byte	0xe8
+	.byte	0xa8
+	.byte	0x00
+	.byte	0x05
+	.byte	0x2f
+	.byte	0xa7
+	.byte	0x00
+	.byte	0xb5
+	.byte	0x7e
+	.byte	0xa5
+	.byte	0x00
+	.byte	0x0a
+	.byte	0xd7
+	.byte	0xa3
+	.byte	0x00
+	.byte	0xc3
+	.byte	0x37
+	.byte	0xa2
+	.byte	0x00
+	.byte	0xa0
+	.byte	0xa0
+	.byte	0xa0
+	.byte	0x00
+	.byte	0x65
+	.byte	0x11
+	.byte	0x9f
+	.byte	0x00
+	.byte	0xd8
+	.byte	0x89
+	.byte	0x9d
+	.byte	0x00
+	.byte	0xc0
+	.byte	0x09
+	.byte	0x9c
+	.byte	0x00
+	.byte	0xe7
+	.byte	0x90
+	.byte	0x9a
+	.byte	0x00
+	.byte	0x1a
+	.byte	0x1f
+	.byte	0x99
+	.byte	0x00
+	.byte	0x25
+	.byte	0xb4
+	.byte	0x97
+	.byte	0x00
+	.byte	0xda
+	.byte	0x4f
+	.byte	0x96
+	.byte	0x00
+	.byte	0x09
+	.byte	0xf2
+	.byte	0x94
+	.byte	0x00
+	.byte	0x85
+	.byte	0x9a
+	.byte	0x93
+	.byte	0x00
+	.byte	0x24
+	.byte	0x49
+	.byte	0x92
+	.byte	0x00
+	.byte	0xbc
+	.byte	0xfd
+	.byte	0x90
+	.byte	0x00
+	.byte	0x23
+	.byte	0xb8
+	.byte	0x8f
+	.byte	0x00
+	.byte	0x35
+	.byte	0x78
+	.byte	0x8e
+	.byte	0x00
+	.byte	0xcb
+	.byte	0x3d
+	.byte	0x8d
+	.byte	0x00
+	.byte	0xc0
+	.byte	0x08
+	.byte	0x8c
+	.byte	0x00
+	.byte	0xf2
+	.byte	0xd8
+	.byte	0x8a
+	.byte	0x00
+	.byte	0x40
+	.byte	0xae
+	.byte	0x89
+	.byte	0x00
+	.byte	0x88
+	.byte	0x88
+	.byte	0x88
+	.byte	0x00
+	.byte	0xab
+	.byte	0x67
+	.byte	0x87
+	.byte	0x00
+	.byte	0x8a
+	.byte	0x4b
+	.byte	0x86
+	.byte	0x00
+	.byte	0x08
+	.byte	0x34
+	.byte	0x85
+	.byte	0x00
+	.byte	0x08
+	.byte	0x21
+	.byte	0x84
+	.byte	0x00
+	.byte	0x6e
+	.byte	0x12
+	.byte	0x83
+	.byte	0x00
+	.byte	0x20
+	.byte	0x08
+	.byte	0x82
+	.byte	0x00
+	.byte	0x04
+	.byte	0x02
+	.byte	0x81
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x80
+	.byte	0x00
+	.byte	0xfc
+	.byte	0x01
+	.byte	0x7f
+	.byte	0x00
+	.byte	0xe0
+	.byte	0x07
+	.byte	0x7e
+	.byte	0x00
+	.byte	0x96
+	.byte	0x11
+	.byte	0x7d
+	.byte	0x00
+	.byte	0x07
+	.byte	0x1f
+	.byte	0x7c
+	.byte	0x00
+	.byte	0x1e
+	.byte	0x30
+	.byte	0x7b
+	.byte	0x00
+	.byte	0xc6
+	.byte	0x44
+	.byte	0x7a
+	.byte	0x00
+	.byte	0xeb
+	.byte	0x5c
+	.byte	0x79
+	.byte	0x00
+	.byte	0x78
+	.byte	0x78
+	.byte	0x78
+	.byte	0x00
+	.byte	0x5b
+	.byte	0x97
+	.byte	0x77
+	.byte	0x00
+	.byte	0x81
+	.byte	0xb9
+	.byte	0x76
+	.byte	0x00
+	.byte	0xd9
+	.byte	0xde
+	.byte	0x75
+	.byte	0x00
+	.byte	0x50
+	.byte	0x07
+	.byte	0x75
+	.byte	0x00
+	.byte	0xd6
+	.byte	0x32
+	.byte	0x74
+	.byte	0x00
+	.byte	0x5a
+	.byte	0x61
+	.byte	0x73
+	.byte	0x00
+	.byte	0xcc
+	.byte	0x92
+	.byte	0x72
+	.byte	0x00
+	.byte	0x1c
+	.byte	0xc7
+	.byte	0x71
+	.byte	0x00
+	.byte	0x3c
+	.byte	0xfe
+	.byte	0x70
+	.byte	0x00
+	.byte	0x1c
+	.byte	0x38
+	.byte	0x70
+	.byte	0x00
+	.byte	0xae
+	.byte	0x74
+	.byte	0x6f
+	.byte	0x00
+	.byte	0xe4
+	.byte	0xb3
+	.byte	0x6e
+	.byte	0x00
+	.byte	0xb0
+	.byte	0xf5
+	.byte	0x6d
+	.byte	0x00
+	.byte	0x06
+	.byte	0x3a
+	.byte	0x6d
+	.byte	0x00
+	.byte	0xd9
+	.byte	0x80
+	.byte	0x6c
+	.byte	0x00
+	.byte	0x1a
+	.byte	0xca
+	.byte	0x6b
+	.byte	0x00
+	.byte	0xc0
+	.byte	0x15
+	.byte	0x6b
+	.byte	0x00
+	.byte	0xbd
+	.byte	0x63
+	.byte	0x6a
+	.byte	0x00
+	.byte	0x06
+	.byte	0xb4
+	.byte	0x69
+	.byte	0x00
+	.byte	0x90
+	.byte	0x06
+	.byte	0x69
+	.byte	0x00
+	.byte	0x4f
+	.byte	0x5b
+	.byte	0x68
+	.byte	0x00
+	.byte	0x3a
+	.byte	0xb2
+	.byte	0x67
+	.byte	0x00
+	.byte	0x45
+	.byte	0x0b
+	.byte	0x67
+	.byte	0x00
+	.byte	0x66
+	.byte	0x66
+	.byte	0x66
+	.byte	0x00
+	.byte	0x93
+	.byte	0xc3
+	.byte	0x65
+	.byte	0x00
+	.byte	0xc3
+	.byte	0x22
+	.byte	0x65
+	.byte	0x00
+	.byte	0xed
+	.byte	0x83
+	.byte	0x64
+	.byte	0x00
+	.byte	0x06
+	.byte	0xe7
+	.byte	0x63
+	.byte	0x00
+	.byte	0x06
+	.byte	0x4c
+	.byte	0x63
+	.byte	0x00
+	.byte	0xe4
+	.byte	0xb2
+	.byte	0x62
+	.byte	0x00
+	.byte	0x97
+	.byte	0x1b
+	.byte	0x62
+	.byte	0x00
+	.byte	0x18
+	.byte	0x86
+	.byte	0x61
+	.byte	0x00
+	.byte	0x5d
+	.byte	0xf2
+	.byte	0x60
+	.byte	0x00
+	.byte	0x60
+	.byte	0x60
+	.byte	0x60
+	.byte	0x00
+	.byte	0x17
+	.byte	0xd0
+	.byte	0x5f
+	.byte	0x00
+	.byte	0x7d
+	.byte	0x41
+	.byte	0x5f
+	.byte	0x00
+	.byte	0x88
+	.byte	0xb4
+	.byte	0x5e
+	.byte	0x00
+	.byte	0x32
+	.byte	0x29
+	.byte	0x5e
+	.byte	0x00
+	.byte	0x73
+	.byte	0x9f
+	.byte	0x5d
+	.byte	0x00
+	.byte	0x45
+	.byte	0x17
+	.byte	0x5d
+	.byte	0x00
+	.byte	0xa1
+	.byte	0x90
+	.byte	0x5c
+	.byte	0x00
+	.byte	0x81
+	.byte	0x0b
+	.byte	0x5c
+	.byte	0x00
+	.byte	0xdd
+	.byte	0x87
+	.byte	0x5b
+	.byte	0x00
+	.byte	0xb0
+	.byte	0x05
+	.byte	0x5b
+	.byte	0x00
+	.byte	0xf3
+	.byte	0x84
+	.byte	0x5a
+	.byte	0x00
+	.byte	0xa0
+	.byte	0x05
+	.byte	0x5a
+	.byte	0x00
+	.byte	0xb1
+	.byte	0x87
+	.byte	0x59
+	.byte	0x00
+	.byte	0x21
+	.byte	0x0b
+	.byte	0x59
+	.byte	0x00
+	.byte	0xe9
+	.byte	0x8f
+	.byte	0x58
+	.byte	0x00
+	.byte	0x05
+	.byte	0x16
+	.byte	0x58
+	.byte	0x00
+	.byte	0x6e
+	.byte	0x9d
+	.byte	0x57
+	.byte	0x00
+	.byte	0x20
+	.byte	0x26
+	.byte	0x57
+	.byte	0x00
+	.byte	0x15
+	.byte	0xb0
+	.byte	0x56
+	.byte	0x00
+	.byte	0x48
+	.byte	0x3b
+	.byte	0x56
+	.byte	0x00
+	.byte	0xb4
+	.byte	0xc7
+	.byte	0x55
+	.byte	0x00
+	.byte	0x55
+	.byte	0x55
+	.byte	0x55
+	.byte	0x00
+	.byte	0x25
+	.byte	0xe4
+	.byte	0x54
+	.byte	0x00
+	.byte	0x1f
+	.byte	0x74
+	.byte	0x54
+	.byte	0x00
+	.byte	0x40
+	.byte	0x05
+	.byte	0x54
+	.byte	0x00
+	.byte	0x82
+	.byte	0x97
+	.byte	0x53
+	.byte	0x00
+	.byte	0xe2
+	.byte	0x2a
+	.byte	0x53
+	.byte	0x00
+	.byte	0x5a
+	.byte	0xbf
+	.byte	0x52
+	.byte	0x00
+	.byte	0xe7
+	.byte	0x54
+	.byte	0x52
+	.byte	0x00
+	.byte	0x85
+	.byte	0xeb
+	.byte	0x51
+	.byte	0x00
+	.byte	0x2f
+	.byte	0x83
+	.byte	0x51
+	.byte	0x00
+	.byte	0xe1
+	.byte	0x1b
+	.byte	0x51
+	.byte	0x00
+	.byte	0x98
+	.byte	0xb5
+	.byte	0x50
+	.byte	0x00
+	.byte	0x50
+	.byte	0x50
+	.byte	0x50
+	.byte	0x00
+	.byte	0x04
+	.byte	0xec
+	.byte	0x4f
+	.byte	0x00
+	.byte	0xb2
+	.byte	0x88
+	.byte	0x4f
+	.byte	0x00
+	.byte	0x56
+	.byte	0x26
+	.byte	0x4f
+	.byte	0x00
+	.byte	0xec
+	.byte	0xc4
+	.byte	0x4e
+	.byte	0x00
+	.byte	0x70
+	.byte	0x64
+	.byte	0x4e
+	.byte	0x00
+	.byte	0xe0
+	.byte	0x04
+	.byte	0x4e
+	.byte	0x00
+	.byte	0x37
+	.byte	0xa6
+	.byte	0x4d
+	.byte	0x00
+	.byte	0x73
+	.byte	0x48
+	.byte	0x4d
+	.byte	0x00
+	.byte	0x91
+	.byte	0xeb
+	.byte	0x4c
+	.byte	0x00
+	.byte	0x8d
+	.byte	0x8f
+	.byte	0x4c
+	.byte	0x00
+	.byte	0x64
+	.byte	0x34
+	.byte	0x4c
+	.byte	0x00
+	.byte	0x12
+	.byte	0xda
+	.byte	0x4b
+	.byte	0x00
+	.byte	0x97
+	.byte	0x80
+	.byte	0x4b
+	.byte	0x00
+	.byte	0xed
+	.byte	0x27
+	.byte	0x4b
+	.byte	0x00
+	.byte	0x12
+	.byte	0xd0
+	.byte	0x4a
+	.byte	0x00
+	.byte	0x04
+	.byte	0x79
+	.byte	0x4a
+	.byte	0x00
+	.byte	0xc0
+	.byte	0x22
+	.byte	0x4a
+	.byte	0x00
+	.byte	0x42
+	.byte	0xcd
+	.byte	0x49
+	.byte	0x00
+	.byte	0x89
+	.byte	0x78
+	.byte	0x49
+	.byte	0x00
+	.byte	0x92
+	.byte	0x24
+	.byte	0x49
+	.byte	0x00
+	.byte	0x59
+	.byte	0xd1
+	.byte	0x48
+	.byte	0x00
+	.byte	0xde
+	.byte	0x7e
+	.byte	0x48
+	.byte	0x00
+	.byte	0x1c
+	.byte	0x2d
+	.byte	0x48
+	.byte	0x00
+	.byte	0x11
+	.byte	0xdc
+	.byte	0x47
+	.byte	0x00
+	.byte	0xbc
+	.byte	0x8b
+	.byte	0x47
+	.byte	0x00
+	.byte	0x1a
+	.byte	0x3c
+	.byte	0x47
+	.byte	0x00
+	.byte	0x29
+	.byte	0xed
+	.byte	0x46
+	.byte	0x00
+	.byte	0xe5
+	.byte	0x9e
+	.byte	0x46
+	.byte	0x00
+	.byte	0x4e
+	.byte	0x51
+	.byte	0x46
+	.byte	0x00
+	.byte	0x60
+	.byte	0x04
+	.byte	0x46
+	.byte	0x00
+	.byte	0x1a
+	.byte	0xb8
+	.byte	0x45
+	.byte	0x00
+	.byte	0x79
+	.byte	0x6c
+	.byte	0x45
+	.byte	0x00
+	.byte	0x7c
+	.byte	0x21
+	.byte	0x45
+	.byte	0x00
+	.byte	0x20
+	.byte	0xd7
+	.byte	0x44
+	.byte	0x00
+	.byte	0x63
+	.byte	0x8d
+	.byte	0x44
+	.byte	0x00
+	.byte	0x44
+	.byte	0x44
+	.byte	0x44
+	.byte	0x00
+	.byte	0xc0
+	.byte	0xfb
+	.byte	0x43
+	.byte	0x00
+	.byte	0xd5
+	.byte	0xb3
+	.byte	0x43
+	.byte	0x00
+	.byte	0x82
+	.byte	0x6c
+	.byte	0x43
+	.byte	0x00
+	.byte	0xc5
+	.byte	0x25
+	.byte	0x43
+	.byte	0x00
+	.byte	0x9b
+	.byte	0xdf
+	.byte	0x42
+	.byte	0x00
+	.byte	0x04
+	.byte	0x9a
+	.byte	0x42
+	.byte	0x00
+	.byte	0xfc
+	.byte	0x54
+	.byte	0x42
+	.byte	0x00
+	.byte	0x84
+	.byte	0x10
+	.byte	0x42
+	.byte	0x00
+	.byte	0x98
+	.byte	0xcc
+	.byte	0x41
+	.byte	0x00
+	.byte	0x37
+	.byte	0x89
+	.byte	0x41
+	.byte	0x00
+	.byte	0x5f
+	.byte	0x46
+	.byte	0x41
+	.byte	0x00
+	.byte	0x10
+	.byte	0x04
+	.byte	0x41
+	.byte	0x00
+	.byte	0x46
+	.byte	0xc2
+	.byte	0x40
+	.byte	0x00
+	.byte	0x02
+	.byte	0x81
+	.byte	0x40
+	.byte	0x00
+	.byte	0x40
+	.byte	0x40
+	.byte	0x40
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x40
+	.byte	0x00
+	.byte	0x3f
+	.byte	0xc0
+	.byte	0x3f
+	.byte	0x00
+	.byte	0xfe
+	.byte	0x80
+	.byte	0x3f
+	.byte	0x00
+	.byte	0x39
+	.byte	0x42
+	.byte	0x3f
+	.byte	0x00
+	.byte	0xf0
+	.byte	0x03
+	.byte	0x3f
+	.byte	0x00
+	.byte	0x21
+	.byte	0xc6
+	.byte	0x3e
+	.byte	0x00
+	.byte	0xcb
+	.byte	0x88
+	.byte	0x3e
+	.byte	0x00
+	.byte	0xec
+	.byte	0x4b
+	.byte	0x3e
+	.byte	0x00
+	.byte	0x83
+	.byte	0x0f
+	.byte	0x3e
+	.byte	0x00
+	.byte	0x8f
+	.byte	0xd3
+	.byte	0x3d
+	.byte	0x00
+	.byte	0x0f
+	.byte	0x98
+	.byte	0x3d
+	.byte	0x00
+	.byte	0x00
+	.byte	0x5d
+	.byte	0x3d
+	.byte	0x00
+	.byte	0x63
+	.byte	0x22
+	.byte	0x3d
+	.byte	0x00
+	.byte	0x35
+	.byte	0xe8
+	.byte	0x3c
+	.byte	0x00
+	.byte	0x75
+	.byte	0xae
+	.byte	0x3c
+	.byte	0x00
+	.byte	0x22
+	.byte	0x75
+	.byte	0x3c
+	.byte	0x00
+	.byte	0x3c
+	.byte	0x3c
+	.byte	0x3c
+	.byte	0x00
+	.byte	0xc0
+	.byte	0x03
+	.byte	0x3c
+	.byte	0x00
+	.byte	0xad
+	.byte	0xcb
+	.byte	0x3b
+	.byte	0x00
+	.byte	0x03
+	.byte	0x94
+	.byte	0x3b
+	.byte	0x00
+	.byte	0xc0
+	.byte	0x5c
+	.byte	0x3b
+	.byte	0x00
+	.byte	0xe4
+	.byte	0x25
+	.byte	0x3b
+	.byte	0x00
+	.byte	0x6c
+	.byte	0xef
+	.byte	0x3a
+	.byte	0x00
+	.byte	0x59
+	.byte	0xb9
+	.byte	0x3a
+	.byte	0x00
+	.byte	0xa8
+	.byte	0x83
+	.byte	0x3a
+	.byte	0x00
+	.byte	0x59
+	.byte	0x4e
+	.byte	0x3a
+	.byte	0x00
+	.byte	0x6b
+	.byte	0x19
+	.byte	0x3a
+	.byte	0x00
+	.byte	0xdc
+	.byte	0xe4
+	.byte	0x39
+	.byte	0x00
+	.byte	0xad
+	.byte	0xb0
+	.byte	0x39
+	.byte	0x00
+	.byte	0xdb
+	.byte	0x7c
+	.byte	0x39
+	.byte	0x00
+	.byte	0x66
+	.byte	0x49
+	.byte	0x39
+	.byte	0x00
+	.byte	0x4c
+	.byte	0x16
+	.byte	0x39
+	.byte	0x00
+	.byte	0x8e
+	.byte	0xe3
+	.byte	0x38
+	.byte	0x00
+	.byte	0x29
+	.byte	0xb1
+	.byte	0x38
+	.byte	0x00
+	.byte	0x1e
+	.byte	0x7f
+	.byte	0x38
+	.byte	0x00
+	.byte	0x6a
+	.byte	0x4d
+	.byte	0x38
+	.byte	0x00
+	.byte	0x0e
+	.byte	0x1c
+	.byte	0x38
+	.byte	0x00
+	.byte	0x07
+	.byte	0xeb
+	.byte	0x37
+	.byte	0x00
+	.byte	0x57
+	.byte	0xba
+	.byte	0x37
+	.byte	0x00
+	.byte	0xfa
+	.byte	0x89
+	.byte	0x37
+	.byte	0x00
+	.byte	0xf2
+	.byte	0x59
+	.byte	0x37
+	.byte	0x00
+	.byte	0x3c
+	.byte	0x2a
+	.byte	0x37
+	.byte	0x00
+	.byte	0xd8
+	.byte	0xfa
+	.byte	0x36
+	.byte	0x00
+	.byte	0xc5
+	.byte	0xcb
+	.byte	0x36
+	.byte	0x00
+	.byte	0x03
+	.byte	0x9d
+	.byte	0x36
+	.byte	0x00
+	.byte	0x90
+	.byte	0x6e
+	.byte	0x36
+	.byte	0x00
+	.byte	0x6c
+	.byte	0x40
+	.byte	0x36
+	.byte	0x00
+	.byte	0x96
+	.byte	0x12
+	.byte	0x36
+	.byte	0x00
+	.byte	0x0d
+	.byte	0xe5
+	.byte	0x35
+	.byte	0x00
+	.byte	0xd0
+	.byte	0xb7
+	.byte	0x35
+	.byte	0x00
+	.byte	0xe0
+	.byte	0x8a
+	.byte	0x35
+	.byte	0x00
+	.byte	0x3a
+	.byte	0x5e
+	.byte	0x35
+	.byte	0x00
+	.byte	0xde
+	.byte	0x31
+	.byte	0x35
+	.byte	0x00
+	.byte	0xcc
+	.byte	0x05
+	.byte	0x35
+	.byte	0x00
+	.byte	0x03
+	.byte	0xda
+	.byte	0x34
+	.byte	0x00
+	.byte	0x82
+	.byte	0xae
+	.byte	0x34
+	.byte	0x00
+	.byte	0x48
+	.byte	0x83
+	.byte	0x34
+	.byte	0x00
+	.byte	0x55
+	.byte	0x58
+	.byte	0x34
+	.byte	0x00
+	.byte	0xa7
+	.byte	0x2d
+	.byte	0x34
+	.byte	0x00
+	.byte	0x40
+	.byte	0x03
+	.byte	0x34
+	.byte	0x00
+	.byte	0x1d
+	.byte	0xd9
+	.byte	0x33
+	.byte	0x00
+	.byte	0x3e
+	.byte	0xaf
+	.byte	0x33
+	.byte	0x00
+	.byte	0xa2
+	.byte	0x85
+	.byte	0x33
+	.byte	0x00
+	.byte	0x49
+	.byte	0x5c
+	.byte	0x33
+	.byte	0x00
+	.byte	0x33
+	.byte	0x33
+	.byte	0x33
+	.byte	0x00
+	.byte	0x5e
+	.byte	0x0a
+	.byte	0x33
+	.byte	0x00
+	.byte	0xc9
+	.byte	0xe1
+	.byte	0x32
+	.byte	0x00
+	.byte	0x76
+	.byte	0xb9
+	.byte	0x32
+	.byte	0x00
+	.byte	0x61
+	.byte	0x91
+	.byte	0x32
+	.byte	0x00
+	.byte	0x8c
+	.byte	0x69
+	.byte	0x32
+	.byte	0x00
+	.byte	0xf6
+	.byte	0x41
+	.byte	0x32
+	.byte	0x00
+	.byte	0x9e
+	.byte	0x1a
+	.byte	0x32
+	.byte	0x00
+	.byte	0x83
+	.byte	0xf3
+	.byte	0x31
+	.byte	0x00
+	.byte	0xa4
+	.byte	0xcc
+	.byte	0x31
+	.byte	0x00
+	.byte	0x03
+	.byte	0xa6
+	.byte	0x31
+	.byte	0x00
+	.byte	0x9d
+	.byte	0x7f
+	.byte	0x31
+	.byte	0x00
+	.byte	0x72
+	.byte	0x59
+	.byte	0x31
+	.byte	0x00
+	.byte	0x81
+	.byte	0x33
+	.byte	0x31
+	.byte	0x00
+	.byte	0xcb
+	.byte	0x0d
+	.byte	0x31
+	.byte	0x00
+	.byte	0x4f
+	.byte	0xe8
+	.byte	0x30
+	.byte	0x00
+	.byte	0x0c
+	.byte	0xc3
+	.byte	0x30
+	.byte	0x00
+	.byte	0x01
+	.byte	0x9e
+	.byte	0x30
+	.byte	0x00
+	.byte	0x2e
+	.byte	0x79
+	.byte	0x30
+	.byte	0x00
+	.byte	0x94
+	.byte	0x54
+	.byte	0x30
+	.byte	0x00
+	.byte	0x30
+	.byte	0x30
+	.byte	0x30
+	.byte	0x00
+	.byte	0x03
+	.byte	0x0c
+	.byte	0x30
+	.byte	0x00
+	.byte	0x0b
+	.byte	0xe8
+	.byte	0x2f
+	.byte	0x00
+	.byte	0x4a
+	.byte	0xc4
+	.byte	0x2f
+	.byte	0x00
+	.byte	0xbe
+	.byte	0xa0
+	.byte	0x2f
+	.byte	0x00
+	.byte	0x67
+	.byte	0x7d
+	.byte	0x2f
+	.byte	0x00
+	.byte	0x44
+	.byte	0x5a
+	.byte	0x2f
+	.byte	0x00
+	.byte	0x54
+	.byte	0x37
+	.byte	0x2f
+	.byte	0x00
+	.byte	0x99
+	.byte	0x14
+	.byte	0x2f
+	.byte	0x00
+	.byte	0x10
+	.byte	0xf2
+	.byte	0x2e
+	.byte	0x00
+	.byte	0xb9
+	.byte	0xcf
+	.byte	0x2e
+	.byte	0x00
+	.byte	0x95
+	.byte	0xad
+	.byte	0x2e
+	.byte	0x00
+	.byte	0xa2
+	.byte	0x8b
+	.byte	0x2e
+	.byte	0x00
+	.byte	0xe1
+	.byte	0x69
+	.byte	0x2e
+	.byte	0x00
+	.byte	0x50
+	.byte	0x48
+	.byte	0x2e
+	.byte	0x00
+	.byte	0xf0
+	.byte	0x26
+	.byte	0x2e
+	.byte	0x00
+	.byte	0xc0
+	.byte	0x05
+	.byte	0x2e
+	.byte	0x00
+	.byte	0xc0
+	.byte	0xe4
+	.byte	0x2d
+	.byte	0x00
+	.byte	0xee
+	.byte	0xc3
+	.byte	0x2d
+	.byte	0x00
+	.byte	0x4c
+	.byte	0xa3
+	.byte	0x2d
+	.byte	0x00
+	.byte	0xd8
+	.byte	0x82
+	.byte	0x2d
+	.byte	0x00
+	.byte	0x92
+	.byte	0x62
+	.byte	0x2d
+	.byte	0x00
+	.byte	0x79
+	.byte	0x42
+	.byte	0x2d
+	.byte	0x00
+	.byte	0x8e
+	.byte	0x22
+	.byte	0x2d
+	.byte	0x00
+	.byte	0xd0
+	.byte	0x02
+	.byte	0x2d
+	.byte	0x00
+	.byte	0x3e
+	.byte	0xe3
+	.byte	0x2c
+	.byte	0x00
+	.byte	0xd8
+	.byte	0xc3
+	.byte	0x2c
+	.byte	0x00
+	.byte	0x9f
+	.byte	0xa4
+	.byte	0x2c
+	.byte	0x00
+	.byte	0x90
+	.byte	0x85
+	.byte	0x2c
+	.byte	0x00
+	.byte	0xad
+	.byte	0x66
+	.byte	0x2c
+	.byte	0x00
+	.byte	0xf4
+	.byte	0x47
+	.byte	0x2c
+	.byte	0x00
+	.byte	0x66
+	.byte	0x29
+	.byte	0x2c
+	.byte	0x00
+	.byte	0x02
+	.byte	0x0b
+	.byte	0x2c
+	.byte	0x00
+	.byte	0xc8
+	.byte	0xec
+	.byte	0x2b
+	.byte	0x00
+	.byte	0xb7
+	.byte	0xce
+	.byte	0x2b
+	.byte	0x00
+	.byte	0xcf
+	.byte	0xb0
+	.byte	0x2b
+	.byte	0x00
+	.byte	0x10
+	.byte	0x93
+	.byte	0x2b
+	.byte	0x00
+	.byte	0x79
+	.byte	0x75
+	.byte	0x2b
+	.byte	0x00
+	.byte	0x0a
+	.byte	0x58
+	.byte	0x2b
+	.byte	0x00
+	.byte	0xc3
+	.byte	0x3a
+	.byte	0x2b
+	.byte	0x00
+	.byte	0xa4
+	.byte	0x1d
+	.byte	0x2b
+	.byte	0x00
+	.byte	0xac
+	.byte	0x00
+	.byte	0x2b
+	.byte	0x00
+	.byte	0xda
+	.byte	0xe3
+	.byte	0x2a
+	.byte	0x00
+	.byte	0x2f
+	.byte	0xc7
+	.byte	0x2a
+	.byte	0x00
+	.byte	0xaa
+	.byte	0xaa
+	.byte	0x2a
+	.byte	0x00
+	.byte	0x4b
+	.byte	0x8e
+	.byte	0x2a
+	.byte	0x00
+	.byte	0x12
+	.byte	0x72
+	.byte	0x2a
+	.byte	0x00
+	.byte	0xfe
+	.byte	0x55
+	.byte	0x2a
+	.byte	0x00
+	.byte	0x0f
+	.byte	0x3a
+	.byte	0x2a
+	.byte	0x00
+	.byte	0x45
+	.byte	0x1e
+	.byte	0x2a
+	.byte	0x00
+	.byte	0xa0
+	.byte	0x02
+	.byte	0x2a
+	.byte	0x00
+	.byte	0x1e
+	.byte	0xe7
+	.byte	0x29
+	.byte	0x00
+	.byte	0xc1
+	.byte	0xcb
+	.byte	0x29
+	.byte	0x00
+	.byte	0x87
+	.byte	0xb0
+	.byte	0x29
+	.byte	0x00
+	.byte	0x71
+	.byte	0x95
+	.byte	0x29
+	.byte	0x00
+	.byte	0x7d
+	.byte	0x7a
+	.byte	0x29
+	.byte	0x00
+	.byte	0xad
+	.byte	0x5f
+	.byte	0x29
+	.byte	0x00
+	.byte	0xff
+	.byte	0x44
+	.byte	0x29
+	.byte	0x00
+	.byte	0x73
+	.byte	0x2a
+	.byte	0x29
+	.byte	0x00
+	.byte	0x0a
+	.byte	0x10
+	.byte	0x29
+	.byte	0x00
+	.byte	0xc2
+	.byte	0xf5
+	.byte	0x28
+	.byte	0x00
+	.byte	0x9c
+	.byte	0xdb
+	.byte	0x28
+	.byte	0x00
+	.byte	0x97
+	.byte	0xc1
+	.byte	0x28
+	.byte	0x00
+	.byte	0xb3
+	.byte	0xa7
+	.byte	0x28
+	.byte	0x00
+	.byte	0xf0
+	.byte	0x8d
+	.byte	0x28
+	.byte	0x00
+	.byte	0x4e
+	.byte	0x74
+	.byte	0x28
+	.byte	0x00
+	.byte	0xcc
+	.byte	0x5a
+	.byte	0x28
+	.byte	0x00
+	.byte	0x6a
+	.byte	0x41
+	.byte	0x28
+	.byte	0x00
+	.byte	0x28
+	.byte	0x28
+	.byte	0x28
+	.byte	0x00
+	.byte	0x05
+	.byte	0x0f
+	.byte	0x28
+	.byte	0x00
+	.byte	0x02
+	.byte	0xf6
+	.byte	0x27
+	.byte	0x00
+	.byte	0x1e
+	.byte	0xdd
+	.byte	0x27
+	.byte	0x00
+	.byte	0x59
+	.byte	0xc4
+	.byte	0x27
+	.byte	0x00
+	.byte	0xb3
+	.byte	0xab
+	.byte	0x27
+	.byte	0x00
+	.byte	0x2b
+	.byte	0x93
+	.byte	0x27
+	.byte	0x00
+	.byte	0xc1
+	.byte	0x7a
+	.byte	0x27
+	.byte	0x00
+	.byte	0x76
+	.byte	0x62
+	.byte	0x27
+	.byte	0x00
+	.byte	0x48
+	.byte	0x4a
+	.byte	0x27
+	.byte	0x00
+	.byte	0x38
+	.byte	0x32
+	.byte	0x27
+	.byte	0x00
+	.byte	0x45
+	.byte	0x1a
+	.byte	0x27
+	.byte	0x00
+	.byte	0x70
+	.byte	0x02
+	.byte	0x27
+	.byte	0x00
+	.byte	0xb7
+	.byte	0xea
+	.byte	0x26
+	.byte	0x00
+	.byte	0x1b
+	.byte	0xd3
+	.byte	0x26
+	.byte	0x00
+	.byte	0x9c
+	.byte	0xbb
+	.byte	0x26
+	.byte	0x00
+	.byte	0x39
+	.byte	0xa4
+	.byte	0x26
+	.byte	0x00
+	.byte	0xf3
+	.byte	0x8c
+	.byte	0x26
+	.byte	0x00
+	.byte	0xc8
+	.byte	0x75
+	.byte	0x26
+	.byte	0x00
+	.byte	0xb9
+	.byte	0x5e
+	.byte	0x26
+	.byte	0x00
+	.byte	0xc6
+	.byte	0x47
+	.byte	0x26
+	.byte	0x00
+	.byte	0xee
+	.byte	0x30
+	.byte	0x26
+	.byte	0x00
+	.byte	0x32
+	.byte	0x1a
+	.byte	0x26
+	.byte	0x00
+	.byte	0x90
+	.byte	0x03
+	.byte	0x26
+	.byte	0x00
+	.byte	0x09
+	.byte	0xed
+	.byte	0x25
+	.byte	0x00
+	.byte	0x9d
+	.byte	0xd6
+	.byte	0x25
+	.byte	0x00
+	.byte	0x4b
+	.byte	0xc0
+	.byte	0x25
+	.byte	0x00
+	.byte	0x14
+	.byte	0xaa
+	.byte	0x25
+	.byte	0x00
+	.byte	0xf6
+	.byte	0x93
+	.byte	0x25
+	.byte	0x00
+	.byte	0xf3
+	.byte	0x7d
+	.byte	0x25
+	.byte	0x00
+	.byte	0x09
+	.byte	0x68
+	.byte	0x25
+	.byte	0x00
+	.byte	0x39
+	.byte	0x52
+	.byte	0x25
+	.byte	0x00
+	.byte	0x82
+	.byte	0x3c
+	.byte	0x25
+	.byte	0x00
+	.byte	0xe4
+	.byte	0x26
+	.byte	0x25
+	.byte	0x00
+	.byte	0x60
+	.byte	0x11
+	.byte	0x25
+	.byte	0x00
+	.byte	0xf4
+	.byte	0xfb
+	.byte	0x24
+	.byte	0x00
+	.byte	0xa1
+	.byte	0xe6
+	.byte	0x24
+	.byte	0x00
+	.byte	0x66
+	.byte	0xd1
+	.byte	0x24
+	.byte	0x00
+	.byte	0x44
+	.byte	0xbc
+	.byte	0x24
+	.byte	0x00
+	.byte	0x3a
+	.byte	0xa7
+	.byte	0x24
+	.byte	0x00
+	.byte	0x49
+	.byte	0x92
+	.byte	0x24
+	.byte	0x00
+	.byte	0x6f
+	.byte	0x7d
+	.byte	0x24
+	.byte	0x00
+	.byte	0xac
+	.byte	0x68
+	.byte	0x24
+	.byte	0x00
+	.byte	0x02
+	.byte	0x54
+	.byte	0x24
+	.byte	0x00
+	.byte	0x6f
+	.byte	0x3f
+	.byte	0x24
+	.byte	0x00
+	.byte	0xf3
+	.byte	0x2a
+	.byte	0x24
+	.byte	0x00
+	.byte	0x8e
+	.byte	0x16
+	.byte	0x24
+	.byte	0x00
+	.byte	0x40
+	.byte	0x02
+	.byte	0x24
+	.byte	0x00
+	.byte	0x08
+	.byte	0xee
+	.byte	0x23
+	.byte	0x00
+	.byte	0xe8
+	.byte	0xd9
+	.byte	0x23
+	.byte	0x00
+	.byte	0xde
+	.byte	0xc5
+	.byte	0x23
+	.byte	0x00
+	.byte	0xea
+	.byte	0xb1
+	.byte	0x23
+	.byte	0x00
+	.byte	0x0d
+	.byte	0x9e
+	.byte	0x23
+	.byte	0x00
+	.byte	0x45
+	.byte	0x8a
+	.byte	0x23
+	.byte	0x00
+	.byte	0x94
+	.byte	0x76
+	.byte	0x23
+	.byte	0x00
+	.byte	0xf8
+	.byte	0x62
+	.byte	0x23
+	.byte	0x00
+	.byte	0x72
+	.byte	0x4f
+	.byte	0x23
+	.byte	0x00
+	.byte	0x02
+	.byte	0x3c
+	.byte	0x23
+	.byte	0x00
+	.byte	0xa7
+	.byte	0x28
+	.byte	0x23
+	.byte	0x00
+	.byte	0x61
+	.byte	0x15
+	.byte	0x23
+	.byte	0x00
+	.byte	0x30
+	.byte	0x02
+	.byte	0x23
+	.byte	0x00
+	.byte	0x14
+	.byte	0xef
+	.byte	0x22
+	.byte	0x00
+	.byte	0x0d
+	.byte	0xdc
+	.byte	0x22
+	.byte	0x00
+	.byte	0x1a
+	.byte	0xc9
+	.byte	0x22
+	.byte	0x00
+	.byte	0x3c
+	.byte	0xb6
+	.byte	0x22
+	.byte	0x00
+	.byte	0x73
+	.byte	0xa3
+	.byte	0x22
+	.byte	0x00
+	.byte	0xbe
+	.byte	0x90
+	.byte	0x22
+	.byte	0x00
+	.byte	0x1d
+	.byte	0x7e
+	.byte	0x22
+	.byte	0x00
+	.byte	0x90
+	.byte	0x6b
+	.byte	0x22
+	.byte	0x00
+	.byte	0x17
+	.byte	0x59
+	.byte	0x22
+	.byte	0x00
+	.byte	0xb1
+	.byte	0x46
+	.byte	0x22
+	.byte	0x00
+	.byte	0x60
+	.byte	0x34
+	.byte	0x22
+	.byte	0x00
+	.byte	0x22
+	.byte	0x22
+	.byte	0x22
+	.byte	0x00
+	.byte	0xf7
+	.byte	0x0f
+	.byte	0x22
+	.byte	0x00
+	.byte	0xe0
+	.byte	0xfd
+	.byte	0x21
+	.byte	0x00
+	.byte	0xdb
+	.byte	0xeb
+	.byte	0x21
+	.byte	0x00
+	.byte	0xea
+	.byte	0xd9
+	.byte	0x21
+	.byte	0x00
+	.byte	0x0c
+	.byte	0xc8
+	.byte	0x21
+	.byte	0x00
+	.byte	0x41
+	.byte	0xb6
+	.byte	0x21
+	.byte	0x00
+	.byte	0x88
+	.byte	0xa4
+	.byte	0x21
+	.byte	0x00
+	.byte	0xe2
+	.byte	0x92
+	.byte	0x21
+	.byte	0x00
+	.byte	0x4f
+	.byte	0x81
+	.byte	0x21
+	.byte	0x00
+	.byte	0xcd
+	.byte	0x6f
+	.byte	0x21
+	.byte	0x00
+	.byte	0x5e
+	.byte	0x5e
+	.byte	0x21
+	.byte	0x00
+	.byte	0x02
+	.byte	0x4d
+	.byte	0x21
+	.byte	0x00
+	.byte	0xb7
+	.byte	0x3b
+	.byte	0x21
+	.byte	0x00
+	.byte	0x7e
+	.byte	0x2a
+	.byte	0x21
+	.byte	0x00
+	.byte	0x57
+	.byte	0x19
+	.byte	0x21
+	.byte	0x00
+	.byte	0x42
+	.byte	0x08
+	.byte	0x21
+	.byte	0x00
+	.byte	0x3e
+	.byte	0xf7
+	.byte	0x20
+	.byte	0x00
+	.byte	0x4c
+	.byte	0xe6
+	.byte	0x20
+	.byte	0x00
+	.byte	0x6b
+	.byte	0xd5
+	.byte	0x20
+	.byte	0x00
+	.byte	0x9b
+	.byte	0xc4
+	.byte	0x20
+	.byte	0x00
+	.byte	0xdd
+	.byte	0xb3
+	.byte	0x20
+	.byte	0x00
+	.byte	0x2f
+	.byte	0xa3
+	.byte	0x20
+	.byte	0x00
+	.byte	0x93
+	.byte	0x92
+	.byte	0x20
+	.byte	0x00
+	.byte	0x08
+	.byte	0x82
+	.byte	0x20
+	.byte	0x00
+	.byte	0x8d
+	.byte	0x71
+	.byte	0x20
+	.byte	0x00
+	.byte	0x23
+	.byte	0x61
+	.byte	0x20
+	.byte	0x00
+	.byte	0xc9
+	.byte	0x50
+	.byte	0x20
+	.byte	0x00
+	.byte	0x81
+	.byte	0x40
+	.byte	0x20
+	.byte	0x00
+	.byte	0x48
+	.byte	0x30
+	.byte	0x20
+	.byte	0x00
+	.byte	0x20
+	.byte	0x20
+	.byte	0x20
+	.byte	0x00
+	.byte	0x08
+	.byte	0x10
+	.byte	0x20
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x20
+	.byte	0x00
+Lswv_2f6fc8:
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.globl	_glformats.11269
+	.private_extern	_glformats.11269
+_glformats.11269:
+Lswv_2f6fd0:
+	.byte	0x06
+	.byte	0x19
+	.byte	0x00
+	.byte	0x00
+	.byte	0x09
+	.byte	0x19
+	.byte	0x00
+	.byte	0x00
+	.byte	0x0a
+	.byte	0x19
+	.byte	0x00
+	.byte	0x00
+	.byte	0x07
+	.byte	0x19
+	.byte	0x00
+	.byte	0x00
+	.byte	0x08
+	.byte	0x19
+	.byte	0x00
+	.byte	0x00
+	.globl	__ZZNK13CssRendererGL12SetupTextureEPK12CssTexture2DiE5C.360
+	.private_extern	__ZZNK13CssRendererGL12SetupTextureEPK12CssTexture2DiE5C.360
+__ZZNK13CssRendererGL12SetupTextureEPK12CssTexture2DiE5C.360:
+Lswv_2f6fe4:
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
+	.byte	0x00
 
 	.section __TEXT,__cstring,cstring_literals
-swv_2de798:
+Lswv_2de798:
 	.byte	0x73
 	.byte	0x77
 	.byte	0x76
@@ -101783,12 +104827,16 @@ swv_2de798:
 	.byte	0x3a
 	.byte	0x00
 
+	.section __TEXT,__swv_empty
+Lswv_2dec70:
+	.byte	0x00
+
 	.section __DATA,__data
 	.align 2
 	.globl	_gpFnAllocMem
 	.private_extern	_gpFnAllocMem
 _gpFnAllocMem:
-swv_32f87c:
+Lswv_32f87c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101796,7 +104844,7 @@ swv_32f87c:
 	.globl	_gpFnFreeMem
 	.private_extern	_gpFnFreeMem
 _gpFnFreeMem:
-swv_32f880:
+Lswv_32f880:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101804,7 +104852,7 @@ swv_32f880:
 	.globl	_gbInitialized
 	.private_extern	_gbInitialized
 _gbInitialized:
-swv_32f884:
+Lswv_32f884:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101812,7 +104860,7 @@ swv_32f884:
 	.globl	_gpVTables
 	.private_extern	_gpVTables
 _gpVTables:
-swv_32f888:
+Lswv_32f888:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101820,7 +104868,7 @@ swv_32f888:
 	.globl	_gpISwerve
 	.private_extern	_gpISwerve
 _gpISwerve:
-swv_32f88c:
+Lswv_32f88c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101828,7 +104876,7 @@ swv_32f88c:
 	.globl	_gSwvGlobalDataPointer
 	.private_extern	_gSwvGlobalDataPointer
 _gSwvGlobalDataPointer:
-swv_32f890:
+Lswv_32f890:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101836,7 +104884,7 @@ swv_32f890:
 	.globl	_gpFreeHandles
 	.private_extern	_gpFreeHandles
 _gpFreeHandles:
-swv_32f894:
+Lswv_32f894:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101844,7 +104892,7 @@ swv_32f894:
 	.globl	_gpLiveHandles
 	.private_extern	_gpLiveHandles
 _gpLiveHandles:
-swv_32f898:
+Lswv_32f898:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
@@ -101852,102 +104900,102 @@ swv_32f898:
 	.globl	_gbFreeLeakedHandlesOnExit
 	.private_extern	_gbFreeLeakedHandlesOnExit
 _gbFreeLeakedHandlesOnExit:
-swv_32f89c:
+Lswv_32f89c:
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
 	.byte	0x00
-swv_32f8a0:
-	.long	swv_274b30
-swv_32f8a4:
-	.long	swv_274ff8
-swv_32f8a8:
-	.long	swv_274b9c
-swv_32f8ac:
-	.long	swv_274b78
-swv_32f8b0:
-	.long	swv_274e80
-swv_32f8b4:
-	.long	swv_2750ac
-swv_32f8b8:
-	.long	swv_274bc0
-swv_32f8bc:
-	.long	swv_274be4
-swv_32f8c0:
-	.long	swv_274e5c
-swv_32f8c4:
-	.long	swv_274c2c
-swv_32f8c8:
-	.long	swv_274fb0
-swv_32f8cc:
-	.long	swv_274fd4
-swv_32f8d0:
-	.long	swv_274d10
-swv_32f8d4:
-	.long	swv_274c08
-swv_32f8d8:
-	.long	swv_274f68
-swv_32f8dc:
-	.long	swv_274c90
-swv_32f8e0:
-	.long	swv_274b54
-swv_32f8e4:
-	.long	swv_274f8c
-swv_32f8e8:
-	.long	swv_275088
-swv_32f8ec:
-	.long	swv_275040
-swv_32f8f0:
-	.long	swv_27501c
-swv_32f8f4:
-	.long	swv_274a84
-swv_32f8f8:
-	.long	swv_274ef8
-swv_32f8fc:
-	.long	swv_275064
-swv_32f900:
-	.long	swv_274e38
-swv_32f904:
-	.long	swv_275130
-swv_32f908:
-	.long	swv_275154
-swv_32f90c:
-	.long	swv_2751d0
+Lswv_32f8a0:
+	.long	Lswv_274b30
+Lswv_32f8a4:
+	.long	Lswv_274ff8
+Lswv_32f8a8:
+	.long	Lswv_274b9c
+Lswv_32f8ac:
+	.long	Lswv_274b78
+Lswv_32f8b0:
+	.long	Lswv_274e80
+Lswv_32f8b4:
+	.long	Lswv_2750ac
+Lswv_32f8b8:
+	.long	Lswv_274bc0
+Lswv_32f8bc:
+	.long	Lswv_274be4
+Lswv_32f8c0:
+	.long	Lswv_274e5c
+Lswv_32f8c4:
+	.long	Lswv_274c2c
+Lswv_32f8c8:
+	.long	Lswv_274fb0
+Lswv_32f8cc:
+	.long	Lswv_274fd4
+Lswv_32f8d0:
+	.long	Lswv_274d10
+Lswv_32f8d4:
+	.long	Lswv_274c08
+Lswv_32f8d8:
+	.long	Lswv_274f68
+Lswv_32f8dc:
+	.long	Lswv_274c90
+Lswv_32f8e0:
+	.long	Lswv_274b54
+Lswv_32f8e4:
+	.long	Lswv_274f8c
+Lswv_32f8e8:
+	.long	Lswv_275088
+Lswv_32f8ec:
+	.long	Lswv_275040
+Lswv_32f8f0:
+	.long	Lswv_27501c
+Lswv_32f8f4:
+	.long	Lswv_274a84
+Lswv_32f8f8:
+	.long	Lswv_274ef8
+Lswv_32f8fc:
+	.long	Lswv_275064
+Lswv_32f900:
+	.long	Lswv_274e38
+Lswv_32f904:
+	.long	Lswv_275130
+Lswv_32f908:
+	.long	Lswv_275154
+Lswv_32f90c:
+	.long	Lswv_2751d0
 
 	.section __DATA,__swv_got
 	.align 2
 swv_got_0:
-	.long	swv_34571c
+	.long	Lswv_34571c
 swv_got_1:
-	.long	swv_32f88c
+	.long	Lswv_32f88c
 swv_got_2:
-	.long	swv_345f90
+	.long	Lswv_345f90
 swv_got_3:
-	.long	swv_3461e4
+	.long	Lswv_3461e4
 swv_got_4:
-	.long	swv_345bf4
+	.long	Lswv_345bf4
 swv_got_5:
-	.long	swv_3460ec
+	.long	Lswv_3460ec
 swv_got_6:
-	.long	swv_34573c
+	.long	Lswv_34573c
 swv_got_7:
-	.long	swv_345c44
+	.long	Lswv_345c44
 swv_got_8:
-	.long	swv_346234
+	.long	Lswv_346234
 swv_got_9:
-	.long	swv_32f89c
+	.long	Lswv_32f89c
 swv_got_10:
-	.long	swv_32f890
+	.long	Lswv_32f890
 swv_got_11:
-	.long	swv_32f880
+	.long	Lswv_32f880
 swv_got_12:
-	.long	swv_32f87c
+	.long	Lswv_32f87c
 swv_got_13:
-	.long	swv_32f884
+	.long	Lswv_32f884
 swv_got_14:
-	.long	swv_32f894
+	.long	Lswv_32f894
 swv_got_15:
-	.long	swv_32f898
+	.long	Lswv_32f898
 swv_got_16:
-	.long	swv_32f888
+	.long	Lswv_32f888
 

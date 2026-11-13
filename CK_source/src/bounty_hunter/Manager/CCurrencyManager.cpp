@@ -12,7 +12,8 @@ CCurrencyManager::CCurrencyManager()
     if (config != NULL) {
         delete[] config;
     }
-    TiXmlElement* element = document.FirstChild("currency")->ToElement();
+    const TiXmlNode* node = document.FirstChild("currency");
+    const TiXmlElement* element = node->ToElement();
     do {
         CCurrency* currency = new CCurrency();
         currency->init(*element);

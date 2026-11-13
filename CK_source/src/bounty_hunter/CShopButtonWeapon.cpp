@@ -112,5 +112,5 @@ bool CShopButtonWeapon::IsEquiped()
 bool CShopButtonWeapon::IsLocked()
 {
     CItem* weapon = Weapons()->getItemById(m_weaponId);
-    return CBH_Player::GetInstance()->GetLevel() < weapon->m_unlockLevel;
+    return weapon->m_unlockLevel > CBH_Player::GetInstance()->GetLevel();
 }

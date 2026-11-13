@@ -23,7 +23,6 @@ public:
     };  // added by b077
 
     /** Load (or share) the surface of resource `name`. */
-    ICRenderSurface* CreateSurface(const char* name, bool keep, bool mipmaps);
     /** CK signature (__ZN18CBH_SurfaceManager13CreateSurfaceEPKcb) called by the game UI. */  // added by game2
     ICRenderSurface* CreateSurface(const char* name, bool keep);  // added by game2
     ICRenderSurface* CreateSurface565(const char* name, bool keep);

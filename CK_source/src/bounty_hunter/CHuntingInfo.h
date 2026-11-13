@@ -2,6 +2,7 @@
 #ifndef CHUNTINGINFO_H
 #define CHUNTINGINFO_H
 
+#include "CFactionType.h"
 #include "xString.h"
 
 class CBH_PersonType;
@@ -30,7 +31,7 @@ public:
         SAssignedData();
 
         XString m_bossName;             // 0x00
-        int m_reputationChanges[5];     // 0x04
+        CFactionType::SReputationChanges m_reputationChanges; // 0x04
         int m_field18[2];              // 0x18
         CBH_PersonType* m_bossType;     // 0x20
         CSquadType* m_squadType;
@@ -52,7 +53,7 @@ public:
         XString m_cameraHUDModel;      // 0x64
         int m_additionalMinionCount;
         XString m_field6c;
-        bool m_field70;
+        bool m_informantUnlockOnLevelUp; // 0x70
         bool m_hasTarget;
         bool m_revenge;
         bool m_friendGated;            // 0x73

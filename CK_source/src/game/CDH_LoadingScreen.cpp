@@ -68,11 +68,12 @@ void CDH_LoadingScreen::Update()
         CNGSLoginFlow* flow = CNGSLoginFlow::GetInstance();
         CGServeHandler* handler = app->m_gserveHandler;
         bool online = app->m_networkAvailability->IsAvailable();
-        if (!m_loginPending && !handler->m_offlineAccepted && !m_profileRequested) {
+        // Original: the startup login only waits for a running flow.
+        if (!m_loginPending && !handler->m_offlineAccepted) {
             if (!online) {
                 app->m_gserveHandler->ShowOfflineModeDialog();
                 m_loginPending = true;
-            } else if (!flow->IsRunning() && !app->m_field3a1 && !m_restartRequested) {
+            } else if (!flow->IsRunning()) {
                 app->StartLogin(App::LoginAtStartup, false);
                 m_loginPending = true;
             }
@@ -124,9 +125,8 @@ void CDH_LoadingScreen::Update()
 
 void CDH_LoadingScreen::Paint(ICGraphics2d& graphics)
 {
-    if (m_title != NULL) {
-        DrawImage(graphics, m_title, 0, 0, 0, 0);
-    }
+    // the original draws without checking the title image
+    DrawImage(graphics, m_title, 0, 0, 0, 0);
 }
 
 void CDH_LoadingScreen::OnCommand(Event& event)

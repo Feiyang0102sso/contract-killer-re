@@ -1,6 +1,7 @@
 #include "CUnitInfoScreen.h"
 
 #include "App.h"
+#include "BaseDialog.h"
 #include "CBH_ProgressBar.h"
 #include "CDH_BasicGameData.h"
 #include "CDH_Weapon.h"
@@ -11,93 +12,156 @@
 #include "CUnit.h"
 #include "CUtility.h"
 #include "DGHelper.h"
+#include "SScreenAdaptingConstant.h"
+#include "ServiceWindows.h"
 
 typedef char CKUnitInfoWindowSize[sizeof(CUnitInfoScreen) == 0x160 ? 1 : -1];
 
+namespace {
+TextWindow* AddInfoLine(Window* content, const XString& text, CFont* font, int row)
+{
+    TextWindow* line = new TextWindow(text, font);
+    line->SetAlign(Window::ALIGN_HCENTER | Window::ALIGN_VCENTER);
+    content->AddToFront(line, 0, row);
+    return line;
+}
+}
+
 CUnitInfoScreen::CUnitInfoScreen(CSwerveGame* game, CUnit* unit, float distance,
                                  float identificationRange, bool tagged, int startingDamage, bool revealTarget)
-    : Window(false), m_hpBar(NULL), m_revealTarget(revealTarget), m_distance(distance),
-      m_identificationRange(identificationRange), m_maxHp(unit->m_maxHp), m_hp(unit->m_hp + startingDamage),
-      m_game(game), m_openedAt(0), m_state(0), m_tagged(tagged), m_civilian(unit->m_type == UnitCivilian),
-      m_outOfRange(false), m_duration(0), m_guid(unit->m_guid)
+    : Window(false), m_hpBar(NULL), m_distance(distance), m_identificationRange(identificationRange),
+      m_startingDamage(startingDamage), m_maxHp(0), m_hp(0), m_game(game), m_openedAt(0), m_state(0),
+      m_tagged(tagged), m_civilian(false), m_revealTarget(revealTarget), m_duration(0), m_guid(-1)
 {
     ClearAndSetFlags(FLAG_FOCUSABLE | FLAG_ENABLED, 0);
-    m_title = CUtility::GetString("IDS_GAME_PLAY_TAGGED").GetWCharPtr();
-    if (!m_tagged) {
-        const char* status = "IDS_GAME_PLAY_KILLED";
-        if (unit->m_tranquillized) {
-            status = "IDS_GAME_PLAY_TRANQUILIZED";
-        }
-        m_title = CUtility::GetString(status).GetWCharPtr();
+    if (unit == NULL) {
+        return;
     }
-    if (m_tagged && !m_revealTarget && m_distance >= m_identificationRange) {
-        m_type = CUtility::GetString("IDS_GAME_PLAY_UNKNOWN").GetWCharPtr();
-    } else if (m_civilian) {
-        m_type = CUtility::GetString("IDS_GAME_PLAY_CIVILIAN").GetWCharPtr();
+    m_guid = unit->m_guid;
+    SetLayoutType(LAYOUT_NONE);
+    const SScreenAdaptingConstant topOffset(75, 150);
+    SetCorner(0, -topOffset());
+    if (m_tagged) {
+        m_title = CUtility::GetString("IDS_GAME_PLAY_TAGGED").GetWCharPtr();
     } else {
-        m_name = unit->m_name;
-        const char* role = "IDS_GAME_PLAY_MINION";
-        if (unit->m_type == UnitBoss) {
-            role = "IDS_GAME_PLAY_BOSS";
-        }
-        m_type = CUtility::GetString(role).GetWCharPtr();
+        m_title = CUtility::GetString("IDS_GAME_PLAY_KILLED").GetWCharPtr();
     }
+    m_name = unit->m_name;
+    switch (unit->m_type) {
+    case UnitCivilian:
+        m_type = CUtility::GetString("IDS_GAME_PLAY_CIVILIAN").GetWCharPtr();
+        m_name = XString("");
+        m_civilian = true;
+        break;
+    case UnitWarrior:
+        m_type = CUtility::GetString("IDS_GAME_PLAY_MINION").GetWCharPtr();
+        break;
+    case UnitBoss:
+        m_type = CUtility::GetString("IDS_GAME_PLAY_BOSS").GetWCharPtr();
+        break;
+    }
+    m_maxHp = unit->m_maxHp;
+    m_hp = unit->m_hp + m_startingDamage;
 }
 
 void CUnitInfoScreen::Init()
 {
     CreateContent();
-    FlushBeforeCloseTimer();
-    m_state = 2;
+    StartEasy(m_fade, FLAG_SHOW_AFTER_EASY);
+    m_state = 1;
 }
 
 void CUnitInfoScreen::CreateContent()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    int panelWidth = m_game->m_width * 40 / 100;
-    int inset = 6 * App::Scale();
-    CFont* font = CFontMgr::GetInstance()->GetFont(16);
-    int lineHeight = font->GetFontHeight() + App::Scale();
-    int panelHeight = 4 * lineHeight + 2 * inset;
-    SetRect((m_game->m_width - panelWidth) / 2, 2 * App::Scale(), panelWidth, panelHeight, true);
-
-    XString distance(CUtility::GetString("IDS_GAME_PLAY_DISTANCE").GetWCharPtr());
-    XString measure(CUtility::GetString("IDS_GAME_PLAY_MEASURE").GetWCharPtr());
-    m_distanceText = XString::Format(L"%ls %d %ls", distance.c_str(),
-                                    static_cast<int>(m_distance * 3.28f), measure.c_str());
-    CDH_Weapon* weapon = app->m_helper->GetGameData()->GetActiveWeapon();
-    m_outOfRange = weapon != NULL && m_distance > weapon->effectiveRange();
-    if (m_tagged && m_outOfRange) {
-        m_distanceText = CUtility::GetString("IDS_GAME_PLAY_DISTANCE_OUT_OF_RANGE").GetWCharPtr();
+    CUnit* unit = m_game->GetUnitByGUID(m_guid);
+    if (unit == NULL) {
+        return;
     }
-    if (m_tagged && !m_civilian && (m_revealTarget || m_distance < m_identificationRange)) {
-        m_hpBar = new CAnimatedProgressBar(panelWidth - 2 * inset, "IDB_HUD_PROGRESSBAR_NPC_PINK",
+    Window* content = new Window(false);
+    content->SetPercentWidth(40, 0, 0);
+    content->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+    content->SetHeightByContent(0, 0);
+    m_fade.Init(content, EasyLib::LINEAR);
+    m_fade.SetFullTime(0.5f);
+    m_fade.SetOpacity(0.0f, 0.8f);
+
+    CFontMgr* fonts = CFontMgr::GetInstance();
+    CFont* heading = fonts->GetFont(16);
+    CFont* font = fonts->GetFont(17);
+    CFont* civilian = fonts->GetFont(18);
+    if (m_tagged && m_distance > m_identificationRange) {
+        AddInfoLine(content, ResString("IDS_GAME_PLAY_UNKNOWN"), font, 0);
+        m_distanceText = ResString("IDS_GAME_PLAY_DISTANCE") + L" " + ResString("IDS_GAME_PLAY_DISTANCE_TOO_FAR");
+        AddInfoLine(content, m_distanceText, font, 1);
+        AddToFront(content);
+        return;
+    }
+
+    int row = 0;
+    if (!m_tagged) {
+        CFont* titleFont = font;
+        if (unit->m_tranquillized) {
+            m_title = ResString("IDS_GAME_PLAY_TRANQUILIZED");
+            titleFont = civilian;
+        }
+        AddInfoLine(content, m_title, titleFont, row++);
+    }
+    TextWindow* name = AddInfoLine(content, m_name, font, row++);
+    if (m_revealTarget) {
+        const SScreenAdaptingConstant nameHeight(25, 40);
+        name->SetDesiredHeight(nameHeight());
+    }
+    CFont* typeFont = heading;
+    if (m_civilian) {
+        typeFont = civilian;
+    }
+    AddInfoLine(content, m_type, typeFont, row++);
+
+    if (!m_tagged) {
+        XString reward = XString::Format(L"+%d", unit->m_field1f0);
+        LabelWithIcon* xp = new LabelWithIcon("IDB_HUD_ICON_EXP", reward, true, font, 0);
+        xp->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+        Window* xpRow = new Window(false);
+        xpRow->SetHeightByContent(0, 0);
+        xpRow->SetWidthByContent(0, 0);
+        xpRow->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+        xpRow->AddToFront(xp);
+        content->AddToFront(xpRow, 0, row);
+        content->SetWidthByContent(0, 0);
+        AddToFront(content);
+        return;
+    }
+
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    CDH_Weapon* weapon = app->m_helper->GetGameData()->GetActiveWeapon();
+    if (weapon != NULL) {
+        XString distance = ResString("IDS_GAME_PLAY_DISTANCE");
+        float distanceInFeet = m_distance * 3.28f;
+        if (distanceInFeet <= weapon->effectiveRange()) {
+            XString measure = ResString("IDS_GAME_PLAY_MEASURE");
+            m_distanceText = XString::Format(L"%ls: %d %ls", distance.c_str(),
+                                             static_cast<int>(distanceInFeet), measure.c_str());
+        } else {
+            XString outOfRange = ResString("IDS_GAME_PLAY_DISTANCE_OUT_OF_RANGE");
+            m_distanceText = XString::Format(L"%ls : %ls", distance.c_str(), outOfRange.c_str());
+        }
+        content->AddToFront(new TextWindow(m_distanceText, font), 0, row++);
+
+        int width = 100;
+        if (App::IsVGA() || App::IsXGA() || App::IsWVGA()) {
+            width = 200;
+        }
+        m_hpBar = new CAnimatedProgressBar(width, "IDB_HUD_PROGRESSBAR_NPC_DARK_RED",
                                            "IDB_HUD_PROGRESSBAR_NPC_LEFT", "IDB_HUD_PROGRESSBAR_NPC_RIGHT",
-                                           "IDB_HUD_PROGRESSBAR_NPC", "IDB_HUD_PROGRESSBAR_NPC_DARK_RED");
-        m_hpBar->m_drawText = false;
+                                           "IDB_HUD_PROGRESSBAR_NPC", "IDB_HUD_PROGRESSBAR_NPC_PINK");
         m_hpBar->SetMaxValue(m_maxHp);
         m_hpBar->SetCurrValue(m_hp);
+        m_hpBar->m_drawText = false;
         m_hpBar->ClearAndSetFlags(FLAG_FOCUSABLE | FLAG_ENABLED, 0);
-        m_hpBar->SetCorner(inset, inset + 3 * lineHeight);
-        AddToFront(m_hpBar);
+        content->AddToFront(m_hpBar, 0, row);
     }
-}
-
-void CUnitInfoScreen::Paint(ICGraphics2d& graphics)
-{
-    CFont* heading = CFontMgr::GetInstance()->GetFont(16);
-    CFont* font = CFontMgr::GetInstance()->GetFont(17);
-    int inset = 6 * App::Scale();
-    int lineHeight = heading->GetFontHeight() + App::Scale();
-    int center = m_width / 2;
-    FillRect(graphics, 0, 0, m_width, m_height, 0xb0101210);
-    DrawFontText(graphics, heading, m_title.c_str(), center, inset, ALIGN_HCENTER | ALIGN_TOP);
-    XString name = m_type;
-    if (m_name.Length() != 0) {
-        name = m_name;
-    }
-    DrawFontText(graphics, font, name.c_str(), center, inset + lineHeight, ALIGN_HCENTER | ALIGN_TOP);
-    DrawFontText(graphics, font, m_distanceText.c_str(), center, inset + 2 * lineHeight, ALIGN_HCENTER | ALIGN_TOP);
+    content->SetWidthByContent(0, 0);
+    AddToFront(content);
 }
 
 void CUnitInfoScreen::Update()
@@ -114,6 +178,9 @@ void CUnitInfoScreen::Update()
         }
     }
     if (CStdUtil_Cocoa::GetUpTimeMS() - m_openedAt > duration) {
+        if (m_game->m_unitInfo == this) {
+            m_game->OnUnitInfoScreenClosed();
+        }
         m_state = 3;
         Close();
         return;
@@ -123,6 +190,7 @@ void CUnitInfoScreen::Update()
         if (m_hp != unit->m_hp) {
             m_hp = unit->m_hp;
             m_hpBar->SetCurrValueWithAnimation(m_hp);
+            m_hpBar->SetMaxValue(unit->m_maxHp);
         }
         if (m_hpBar->m_deltaPercent == 0.0f && (unit->m_dead || unit->m_tranquillized)) {
             m_game->ShowUnitKillScreen(unit);
@@ -134,13 +202,6 @@ void CUnitInfoScreen::FlushBeforeCloseTimer()
 {
     m_openedAt = CStdUtil_Cocoa::GetUpTimeMS();
     m_duration = 0;
-}
-
-void CUnitInfoScreen::OnClosed()
-{
-    if (m_game->m_unitInfo == this) {
-        m_game->OnUnitInfoScreenClosed();
-    }
 }
 
 void CUnitInfoScreen::OnEasyFinished()

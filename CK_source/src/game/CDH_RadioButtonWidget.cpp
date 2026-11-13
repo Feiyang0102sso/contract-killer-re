@@ -39,11 +39,12 @@ void CDH_RadioButtonWidget::Init(bool selected, XString label, int font)
 
 void CDH_RadioButtonWidget::SetValue(bool selected)
 {
+    // the original picks the image first and makes a single call
+    ImageRes* image = &m_off;
     if (selected) {
-        m_image->SetImage(m_on);
-    } else {
-        m_image->SetImage(m_off);
+        image = &m_on;
     }
+    m_image->SetImage(*image);
 }
 
 void CDH_RadioButtonWidget::OnPointerEvent(Event& event)

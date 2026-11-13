@@ -13,13 +13,15 @@
 #include "DGHelper.h"
 
 CGPSInstantInformant::CGPSInstantInformant(TiXmlNode* node)
-    : m_lastBountyCompleted(0), m_bought(false), m_listener(NULL), m_cameraId(-1), m_state(Hidden)
+    : m_lastBountyCompleted(0), m_bought(false), m_listener(NULL), m_weaponGated(false), m_cameraId(-1),
+      m_state(Hidden)
 {
+    // Original 0x12b7fc: the round animation is the press overlay.
     ParseNode(node);
     m_timerFont = CFontMgr::GetInstance()->GetFont(8);
     m_nameFont = CFontMgr::GetInstance()->GetFont(15);
     UpdateIcon();
-    SetBlinkingImage("IDB_GPS_ROUND_ICON_ANIM");
+    SetPressImage("IDB_GPS_ROUND_ICON_ANIM");
 }
 
 CGPSInstantInformant::~CGPSInstantInformant()
@@ -92,46 +94,77 @@ void CGPSInstantInformant::SetBlinking(bool enabled)
 void CGPSInstantInformant::Update(long)
 {
     UpdateState();
-    if (CTutorialManager::IsPlayerInTutorial()) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
         App* app = static_cast<App*>(WindowApp::m_instance);
         SetBlinking(app->m_tutorialManager->IsInstantInformantBlink(m_id));
     }
 }
 
+// Original 0x12b7a0: both states load the same icon.
 void CGPSInstantInformant::UpdateIcon()
 {
-    SetImage(XString::AnsiString(m_icon.c_str()));
+    if (m_state == Locked) {
+        SetImage(XString::AnsiString(m_icon.c_str()));
+    } else {
+        SetImage(XString::AnsiString(m_icon.c_str()));
+    }
 }
 
+// Original 0x12bdc4: the moving informant keeps its state (Hidden -> Available once the moving
+// camera missions are finished) and never becomes Searching; the listener is not NULL checked.
 void CGPSInstantInformant::UpdateState()
 {
-    CBH_Player* player = CBH_Player::GetInstance();
-    m_visible = CTutorialManager::IsInstantInformantVisible(m_id)
-        && (player->GetLevel() >= m_unlockLevel || m_cameraId >= 0);
-    m_state = Hidden;
-    if (!m_visible) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial() == true
+        && !static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsInstantInformantVisible(m_id)) {
+        m_state = Hidden;
+        m_visible = false;
         return;
     }
+    unsigned int now = CStdUtil_Cocoa::GetTimeSeconds();
+    int levelDiff = CBH_Player::GetInstance()->GetLevel() - m_unlockLevel;
     if (m_type == Moving) {
-        CBH_GPSMap* map = CBH_GPSMap::m_instance;
-        m_visible = player->GetLevel() >= m_unlockLevel && map != NULL && map->IsMovingCameraMissionsFinished();
-        if (!m_visible) {
+        bool visible = false;
+        if (levelDiff >= 0) {
+            m_listener->OnVehicleMissionsVisible();
+            bool finished = CBH_GPSMap::m_instance->IsMovingCameraMissionsFinished();
+            if (finished) {
+                visible = true;
+                if (m_state == Hidden && finished == true) {
+                    m_state = Available;
+                }
+            }
+        }
+        if (!visible) {
+            m_state = Hidden;
+        }
+        m_visible = visible;
+        if (m_state == Hidden) {
             return;
         }
         if (m_cameraId >= 0) {
             m_state = Assigned;
-        } else if (CStdUtil_Cocoa::GetTimeSeconds() - m_lastBountyCompleted >= m_cooldown) {
+            return;
+        }
+        if (levelDiff < 0) {
+            return;
+        }
+        if (now - m_lastBountyCompleted >= m_cooldown) {
             m_state = Available;
-        } else {
-            m_state = Searching;
         }
         return;
     }
+    m_visible = true;
+    if (m_type == Targeting) {
+        m_listener->OnTargetMissionsVisible();
+    }
     if (m_cameraId >= 0) {
         m_state = Assigned;
+    } else if (levelDiff < 0) {
+        m_state = Hidden;
+        m_visible = false;
     } else if (!m_bought) {
         m_state = Locked;
-    } else if (CStdUtil_Cocoa::GetTimeSeconds() - m_lastBountyCompleted < m_cooldown) {
+    } else if (now - m_lastBountyCompleted < m_cooldown) {
         m_state = Searching;
     } else {
         m_state = Available;
@@ -147,34 +180,35 @@ void CGPSInstantInformant::OnClick()
 
 void CGPSInstantInformant::Paint(ICGraphics2d& graphics, int mapX, int mapY)
 {
-    if (!m_visible) {
-        return;
-    }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    int x = GetX();
-    int y = GetY();
-    app->m_helper->DrawImage(GetImage(), x + mapX, y + mapY, 1.0f, 0, 0, 0.0f, 0);
-    if (m_nameFont != NULL) {
-        int width = m_nameFont->MeasureTextWidth(m_name.c_str(), -1, -1, NULL);
-        CRectangle label;
-        label.m_x = x + (GetWidth() - width) / 2;
-        label.m_y = y + GetHeight();
-        label.m_width = width;
-        label.m_height = m_nameFont->GetFontHeight();
-        m_nameFont->PaintText(m_name.c_str(), -1, label.m_x + mapX, label.m_y + mapY, -1, -1);
-        setSubItem(0, label, mapX, mapY);
-        int seconds = GetCooldownTimeLeft();
-        if (m_type != Blue && seconds > 0 && m_timerFont != NULL) {
-            XString time = DGHelper::ClockStringFromSeconds(seconds);
-            label.m_width = m_timerFont->MeasureTextWidth(time.c_str(), -1, -1, NULL);
-            label.m_x = x + (GetWidth() - label.m_width) / 2;
-            label.m_y += label.m_height;
-            label.m_height = m_timerFont->GetFontHeight();
-            m_timerFont->PaintText(time.c_str(), -1, label.m_x + mapX, label.m_y + mapY, -1, -1);
-            setSubItem(1, label, mapX, mapY);
+    // Original 0x12b3b8: weapon gated, targeting and hidden informants draw nothing. Both texts use
+    // the name font; the text y uses GetWidth() (original; the icons are square).
+    if (!m_weaponGated) {
+        if (m_type != Targeting && m_state != Hidden) {
+            static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+                GetImage(), GetX() + mapX, GetY() + mapY, 1.0f, 0, 0, 0.0f, 0);
+            int nameWidth = static_cast<App*>(WindowApp::m_instance)->m_helper->GetTextWidth(
+                XString::AnsiString(m_name.c_str()), m_nameFont);
+            m_nameFont->PaintText(m_name.c_str(), -1, GetX() + mapX + GetWidth() / 2 - nameWidth / 2,
+                                  mapY + GetY() + GetWidth(), -1, -1);
+            CRectangle nameLabel(GetX() - nameWidth / 2 + GetWidth() / 2, GetY() + GetHeight(),
+                                 nameWidth, m_nameFont->GetFontHeight());
+            setSubItem(0, nameLabel, mapX, mapY);
+            int seconds = GetCooldownTimeLeft();
+            if (m_state == Searching && m_type != Blue && seconds > 0) {
+                CStdUtil_Cocoa::GetTimeSeconds();  // result unused (original)
+                XString time = DGHelper::ClockStringFromSeconds(seconds);
+                int timeWidth = static_cast<App*>(WindowApp::m_instance)->m_helper->GetTextWidth(
+                    XString::AnsiString(time.c_str()), m_nameFont);
+                m_nameFont->PaintText(time.c_str(), -1, GetX() + mapX + GetWidth() / 2 - timeWidth / 2,
+                                      mapY + GetY() + GetWidth() + m_nameFont->GetFontHeight(), -1, -1);
+                CRectangle timeLabel(GetX() - timeWidth / 2 + GetWidth() / 2,
+                                     GetY() + GetHeight() + m_nameFont->GetFontHeight(),
+                                     timeWidth, m_nameFont->GetFontHeight());
+                setSubItem(1, timeLabel, mapX, mapY);
+            }
+            CGPSItem::Paint(graphics, mapX, mapY);
         }
     }
-    CGPSItem::Paint(graphics, mapX, mapY);
 }
 
 int CGPSInstantInformant::GetCooldownTimeLeft()
@@ -187,37 +221,34 @@ int CGPSInstantInformant::GetCooldownTimeLeft()
         return 0;
     }
     unsigned int elapsed = now - m_lastBountyCompleted;
-    if (elapsed >= m_cooldown) {
-        return 0;
+    if (m_cooldown > elapsed) {
+        return m_cooldown - elapsed;
     }
-    return m_cooldown - elapsed;
+    return 0;
 }
 
 void CGPSInstantInformant::Save(TiXmlElement* parent)
 {
-    TiXmlElement* item = parent->FirstChildElement("instant_informant");
-    while (item != NULL && CXmlHelper::GetAttributeValue(item, "id").ToInt() != m_id) {
-        item = item->NextSiblingElement("instant_informant");
-    }
-    if (item == NULL) {
-        item = new TiXmlElement("instant_informant");
-        item->SetAttribute("id", m_id);
-        parent->LinkEndChild(item);
-    }
+    // Original 0x12b2f4: a fresh element is copied into the parent and deleted.
+    TiXmlElement* item = new TiXmlElement("instant_informant");
+    item->SetAttribute("id", m_id);
     item->SetAttribute("lastBountyCompletedTime", m_lastBountyCompleted);
     item->SetAttribute("bountyCameraId", m_cameraId);
     item->SetAttribute("bought", m_bought);
+    parent->InsertEndChild(*item);
+    delete item;
 }
 
 void CGPSInstantInformant::Load(TiXmlElement* parent)
 {
     for (TiXmlElement* item = parent->FirstChildElement("instant_informant"); item != NULL;
          item = item->NextSiblingElement("instant_informant")) {
-        if (CXmlHelper::GetAttributeValue(item, "id").ToInt() == m_id) {
-            m_lastBountyCompleted = CXmlHelper::GetIntAttributeValueOrUseDefault(item, "lastBountyCompletedTime", 0);
-            m_cameraId = CXmlHelper::GetIntAttributeValueOrUseDefault(item, "bountyCameraId", -1);
-            m_bought = CXmlHelper::GetBoolAttributeValueOrUseDefault(item, "bought", false);
-            break;
+        // Original 0x12b6a8: plain attribute reads, every matching element (no break).
+        int id = CXmlHelper::GetAttributeValue(item, "id").ToInt();
+        if (id == m_id) {
+            m_lastBountyCompleted = CXmlHelper::GetAttributeValue(item, "lastBountyCompletedTime").ToInt();
+            m_cameraId = CXmlHelper::GetAttributeValue(item, "bountyCameraId").ToInt();
+            m_bought = CXmlHelper::GetAttributeValue(item, "bought").ToBool();
         }
     }
     UpdateState();
@@ -306,12 +337,11 @@ bool CGPSInstantInformant::Buy()
 
 bool CGPSInstantInformant::BuyFree()
 {
-    if (m_bought) {
-        return false;
-    }
+    // the original does not test m_bought first and logs the unlock
     m_bought = true;
     UpdateState();
     UpdateIcon();
+    CGameAnalytics::logInformantUnlocked(m_id);
     CBH_Player::GetInstance()->m_gameStats.AddInformantsUnlocked(1);
     return true;
 }

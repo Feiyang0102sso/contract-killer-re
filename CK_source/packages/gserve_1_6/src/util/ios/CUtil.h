@@ -2,6 +2,7 @@
 #ifndef CUTIL_H
 #define CUTIL_H
 
+#ifdef __OBJC__
 #import <Foundation/Foundation.h>
 
 @interface CUtil : NSObject
@@ -16,6 +17,7 @@
 + (const wchar_t*)NSStringToWchar:(NSString*)string;
 
 @end
+#endif
 
 #ifdef __cplusplus
 /** C++ side helpers of CUtil.mm. */

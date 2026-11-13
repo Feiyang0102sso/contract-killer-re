@@ -38,10 +38,10 @@ void MenuWindow::MenuDialog::CancelDialog()
 void MenuWindow::MenuDialog::OnCommand(Event& event)
 {
     SimpleDialog::OnCommand(event);
-    if (event.m_id == MenuOpened && event.m_param1 != reinterpret_cast<int>(this)) {
-        ReverseEasy(FLAG_CLOSE_AFTER_EASY);
-    } else if (event.m_id == MenuCommand) {
+    if (event.m_id == MenuCommand) {
         event.Clear();
+    } else if (event.m_id == MenuOpened && event.m_param1 != reinterpret_cast<int>(this)) {
+        ReverseEasy(FLAG_CLOSE_AFTER_EASY);
     }
 }
 

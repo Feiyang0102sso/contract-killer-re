@@ -42,12 +42,12 @@ void CFactionType::ParseInfo(TiXmlNode* node)
     m_friends.setSize(0);
     m_enemies.setSize(0);
     XString friends = CXmlHelper::GetAttributeValue(node, "friends");
-    XString enemies = CXmlHelper::GetAttributeValue(node, "enemies");
-    if (friends.Length() != 0) {
-        friends.Split(m_friends, L",");
+    if (!(XString("") == friends)) {
+        m_friends = friends.Split(L",");
     }
-    if (enemies.Length() != 0) {
-        enemies.Split(m_enemies, L",");
+    XString enemies = CXmlHelper::GetAttributeValue(node, "enemies");
+    if (!(XString("") == enemies)) {
+        m_enemies = enemies.Split(L",");
     }
     m_description = CXmlHelper::GetAttributeValue(node, "description");
     m_legal = CXmlHelper::GetAttributeValue(node, "legal").ToInt() == 1;

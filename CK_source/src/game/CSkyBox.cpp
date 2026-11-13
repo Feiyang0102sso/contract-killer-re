@@ -37,41 +37,34 @@ void CSkyBox::Init(World& world)
     if (world == NULL) {
         return;
     }
-    int skyId = DGHelper::getSwerveID("SkyBox");
-    Mesh sky(m_skyWorld.find(skyId));
+    Mesh sky(m_skyWorld.find(DGHelper::getSwerveID("SkyBox")));
     if (sky == NULL) {
         return;
     }
     sky.setPickingEnable(false);
     Mesh materials(world.find(DGHelper::getSwerveID("SkyBoxMaterialDummy")));
     if (materials == NULL) {
-        SwerveHelper::Node copy(sky.duplicate());
-        if (copy != NULL) {
-            world.addChild(copy);
-        }
-        return;
-    }
-
-    if (materials.getSubmeshCount() < 6 || sky.getSubmeshCount() < 6) {
+        // Original adds the plain copy without checking it.
+        world.addChild(SwerveHelper::Node(sky.duplicate()));
         return;
     }
     Appearance faces[6];
     for (int index = 0; index < 6; ++index) {
         faces[index] = materials.getAppearance(index);
-        if (faces[index] == NULL) {
-            return;
+    }
+    if (faces[0] != NULL && faces[1] != NULL && faces[2] != NULL && faces[3] != NULL && faces[4] != NULL &&
+        faces[5] != NULL) {
+        for (int index = 0; index < 6; ++index) {
+            DisableZBuffer(faces[index]);
         }
+        for (int index = 0; index < 6; ++index) {
+            sky.setAppearance(index, faces[index]);
+        }
+        world.addChild(SwerveHelper::Node(sky.duplicate()));
+        // The rendered sky is the copy now living in the game world.
+        m_skyMesh = Mesh(world.find(DGHelper::getSwerveID("SkyBox")));
+        materials.setRenderingEnable(false);
     }
-    for (int index = 0; index < 6; ++index) {
-        DisableZBuffer(faces[index]);
-        sky.setAppearance(index, faces[index]);
-    }
-    Mesh copy(sky.duplicate());
-    if (copy != NULL) {
-        world.addChild(copy);
-        m_skyMesh = copy;
-    }
-    materials.setRenderingEnable(false);
 }
 
 void CSkyBox::DisableZBuffer(Appearance appearance)
@@ -79,15 +72,13 @@ void CSkyBox::DisableZBuffer(Appearance appearance)
     CompositingMode mode = appearance.getCompositingMode();
     if (mode == NULL) {
         mode = SwerveHelper::NewCompositingMode();
-        if (mode == NULL) {
-            return;
-        }
         mode.setDepthTestEnable(false);
         mode.setDepthWriteEnable(false);
         appearance.setCompositingMode(mode);
     } else {
-        mode.setDepthWriteEnable(false);
-        mode.setDepthTestEnable(false);
+        // Original fetches the mode again for each call.
+        appearance.getCompositingMode().setDepthWriteEnable(false);
+        appearance.getCompositingMode().setDepthTestEnable(false);
     }
 }
 
@@ -96,17 +87,14 @@ void CSkyBox::Update()
     if (m_skyMesh == NULL) {
         return;
     }
+    // Original: no camera check, and the sky first gets an identity transform.
     Camera camera = m_world.getActiveCamera();
-    if (camera == NULL) {
-        return;
-    }
     SwerveHelper::Transform cameraTransform = SwerveHelper::NewTransform();
-    if (!camera.getTransformTo(m_world, cameraTransform)) {
-        return;
-    }
+    camera.getTransformTo(m_world, cameraTransform);
+    SwerveHelper::Transform skyTransform = SwerveHelper::NewTransform();
+    m_skyMesh.setTransform(skyTransform);
     float cameraMatrix[16];
     cameraTransform.get(cameraMatrix);
-    SwerveHelper::Transform skyTransform = SwerveHelper::NewTransform();
     const float rotation[4] = {-90.0f, 1.0f, 0.0f, 0.0f};
     skyTransform.postRotate(rotation);
     float matrix[16];

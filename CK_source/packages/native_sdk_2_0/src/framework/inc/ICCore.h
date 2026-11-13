@@ -18,7 +18,7 @@ class CStrWChar;
                 
 /** Key codes of the input system (only the values used here are named). */
 enum eKeyCode {
-    KeyCode_SoftkeyLeft = 13
+    KeyCode_SoftkeyLeft = 15
 };
  
 
@@ -87,6 +87,21 @@ public:
         return index;
     }
 
+    /**
+     * Default orientation state. The original writes these in the ICCore inline constructor and the
+     * remaining state in CCore() (an intermediate vtable store splits the merged zero stores).
+     */
+    ICCore()
+    {
+        m_classId = 0x02d75845;     // same value as CCore::ClassId
+        m_canSetDeviceOrientation[0] = 0;
+        m_canSetDeviceOrientation[1] = 1;
+        m_canSetDeviceOrientation[2] = 0;
+        m_canSetDeviceOrientation[3] = 0;
+        m_canSetDeviceOrientation[4] = 0;
+        m_applicationCanSetOrientation = 0;
+    }
+
     virtual ~ICCore() {}
 
     /** Period of the application timer in milliseconds. */
@@ -113,13 +128,8 @@ public:
     virtual unsigned char DeviceOrientationSetRotateRight() = 0;
     virtual unsigned char DeviceOrientationSetFlip() = 0;
     virtual unsigned char DeviceOrientationSetDefault() = 0;
-    virtual unsigned char AutoRotationIsActive() const = 0;
-    virtual unsigned char ApplicationCanSelectivelyEnableAllAutoRotationOrientations() const = 0;
-    virtual unsigned char ApplicationCanSelectivelyEnableAutoRotationOrientation(eAutoRotationOrientation orientation) const = 0;
-    virtual eAutoRotationOrientation GetDisplayOrientationInTermsOfAutoRotation() const = 0;
-    virtual unsigned char AutoRotationOrientationIsEnabled(eAutoRotationOrientation orientation) const = 0;
-    virtual unsigned char AutoRotationOrientationEnable(eAutoRotationOrientation orientation) = 0;
-    virtual unsigned char AutoRotationOrientationDisable(eAutoRotationOrientation orientation) = 0;
+    virtual const CVector2dx& GetDisplayToWindowScale() const = 0;
+    virtual const CVector2dx& GetWindowToDisplayScale() const = 0;
     virtual eSoftkeyPosition GetSoftkeyPosition(eKeyCode key) const = 0;
     /** Persistent per-device identifier (en0 MAC address or a stored UUID). */
     virtual CStrWChar GetDeviceIdentifier() const = 0;
@@ -128,8 +138,6 @@ public:
     /** Operating system version ("5.0.1"). */
     virtual CStrWChar GetPlatformVersion() const = 0;
     virtual CStrWChar GetPlatformName() const = 0;
-    virtual const CVector2dx& GetDisplayToWindowScale() const = 0;
-    virtual const CVector2dx& GetWindowToDisplayScale() const = 0;
     /** Accelerometer samples per second (0 stops the updates). */
     virtual void SetAccelerometerFrequency(unsigned int frequency) = 0;
     virtual unsigned char CanMultipleTouch() const = 0;
@@ -141,11 +149,6 @@ public:
     virtual void SetGyroscopeFrequency(unsigned int frequency) = 0;
     /** Free physical memory in bytes. */
     virtual unsigned int GetDeviceAvailableMemory() = 0;
-    virtual void SystemMessageBox(const CStrWChar& title, const CStrWChar& message) const = 0;
-    virtual CStrWChar GetDeviceModel() const = 0;
-    virtual unsigned char IsNetworkAvailable() const = 0;
-    virtual unsigned char CanDetectTimezone() const = 0;
-    virtual CStrWChar GetTimezone() const = 0;
 
     // ---- state shared with the platform layer and the renderers (set up by CCore) ----
     int m_maxTouches;                                   // 0x08 6
@@ -164,9 +167,8 @@ public:
     eDeviceOrientation m_deviceOrientation;             // 0x28
     unsigned char m_autoRotationIsActive;               // 0x2c
     unsigned char m_autoRotationAllowed;                // 0x2d
-    unsigned char m_autoRotationOrientationEnabled[AutoRotation_Count];   // 0x2e
-    CVector2dx m_windowToDisplayScale;            // 0x34
-    CVector2dx m_displayToWindowScale;            // 0x3c
+    CVector2dx m_windowToDisplayScale;            // 0x30
+    CVector2dx m_displayToWindowScale;            // 0x38
 };
 
        

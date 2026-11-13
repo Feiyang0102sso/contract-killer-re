@@ -2,6 +2,7 @@
 #import <UIKit/UIKit.h>
 
 #include "CSystemFont_Cocoa.h"
+#include "CMath.h"
 
 #include <wchar.h>
 
@@ -73,7 +74,7 @@ int CSystemFont_Cocoa::MeasureTextWidth(const wchar_t* text, int length, int max
             measured = MeasureTextWidth(prefix);
             [prefix release];
             next = count + 1;
-            if (maxWidth >= 0 && measured >= maxWidth && measured != maxWidth) {
+            if (maxWidth >= 0 && measured > maxWidth) {
                 break;
             }
         }
@@ -138,16 +139,15 @@ unsigned char CSystemFont_Cocoa::InitializeSurfaceWithText(ICRenderSurface& surf
     if (m_font != nil && text != NULL) {
         NSString* string = Unicode2NSString(text, length);
         int textWidth = MeasureTextWidth(string);
-        if (width >= 0 && width < textWidth) {
-            textWidth = width;
+        // a negative size means "measured"; the original clamps with CMath::Min
+        if (width >= 0) {
+            textWidth = CMath::Min(width, textWidth);
         }
         int textHeight = GetFontHeight() + GetMinLineSpacing();
         if (height >= 0) {
-            if (height > textHeight) {
-                height = textHeight;
-            }
-            textHeight = height;
+            textHeight = CMath::Min(textHeight, height);
         }
+        // the original always renders and reports success
         CreatePngWithText(string, textWidth, textHeight, surface);
         [string release];
         result = 1;

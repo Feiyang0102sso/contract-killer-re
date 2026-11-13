@@ -26,6 +26,17 @@ vec3 Unit(const vec3& value)
     return value * MathLib::InvSqrt(value.LengthSqr());
 }
 
+float Sign(float value)
+{
+    if (value < 0.0f) {
+        return -1.0f;
+    }
+    if (value > 0.0f) {
+        return 1.0f;
+    }
+    return 0.0f;
+}
+
 void WrapSmokeAngle(float& angle)
 {
     if (angle < -180.0f) {
@@ -59,82 +70,82 @@ void Ballistics::Simulate(float elapsed)
     for (int index = 0; index < m_capacity; ++index) {
         Projectile& projectile = m_projectiles[index];
         if (projectile.m_active) {
-            m_activeIndices[m_activeCount++] = index;
+            m_activeIndices[m_activeCount] = index;
+            m_activeCount++;
             projectile.m_previous = projectile.m_position;
         }
     }
     while (elapsed > 0.0f) {
-        float step = 0.05f;
-        if (elapsed < step) {
-            step = elapsed;
-        }
+        float step = 0.05f < elapsed ? 0.05f : elapsed;
         for (int index = 0; index < m_activeCount; ++index) {
             Projectile& projectile = m_projectiles[m_activeIndices[index]];
-            if (!projectile.m_active) {
-                continue;
-            }
-            projectile.m_age += step;
-            if (projectile.m_age > m_maxAge) {
-                projectile.m_active = false;
-                OnActivate(&projectile);
-            } else {
-                projectile.m_position = projectile.m_position + projectile.m_velocity * step;
-                projectile.m_velocity = projectile.m_velocity + m_gravity * step;
+            if (projectile.m_active) {
+                projectile.m_age += step;
+                if (projectile.m_age <= m_maxAge) {
+                    projectile.m_position = projectile.m_position + projectile.m_velocity * step;
+                    projectile.m_velocity = projectile.m_velocity + m_gravity * step;
+                } else {
+                    projectile.m_active = false;
+                    OnActivate(&projectile);
+                }
             }
         }
         elapsed -= step;
     }
-    if (m_collision == NULL) {
+    if (m_collision == NULL || m_activeCount == 0) {
         return;
     }
+    vec3 point;
+    vec3 normal;
     for (int index = 0; index < m_activeCount; ++index) {
         Projectile& projectile = m_projectiles[m_activeIndices[index]];
-        vec3 displacement = projectile.m_position - projectile.m_previous;
-        if (!projectile.m_active || displacement.LengthSqr() <= 0.0f) {
+        if (!projectile.m_active) {
+            continue;
+        }
+        if (Length(projectile.m_position - projectile.m_previous) <= 0.0f) {
             continue;
         }
         vec3 hit;
-        vec3 normal;
+        vec3 hitNormal;
         CCollision::Triangle triangle;
         CCollision::Line line = {projectile.m_previous, projectile.m_position};
-        if (!m_collision->IntersectAny(line, hit, normal, triangle)) {
+        bool intersected = m_collision->IntersectAny(line, hit, hitNormal, triangle);
+        float fraction = Length(hit - projectile.m_previous) / Length(projectile.m_position - projectile.m_previous);
+        if (fraction > 1.0f || !intersected) {
             continue;
         }
-        float fraction = Length(hit - projectile.m_previous) / Length(displacement);
-        if (fraction > 1.0f) {
-            continue;
-        }
-        vec3 point = projectile.m_previous + displacement * fraction;
+        point = projectile.m_previous + (projectile.m_position - projectile.m_previous) * fraction;
+        normal = hitNormal;
         OnCollision(&projectile, &point, &normal);
+        // Shipped order: deactivation callback first, then re-test the flag before bouncing.
+        if (!projectile.m_active) {
+            OnActivate(&projectile);
+        }
         if (projectile.m_active) {
             vec3 normalVelocity = normal * projectile.m_velocity.Dot(normal);
             vec3 tangentVelocity = projectile.m_velocity - normalVelocity;
             projectile.m_velocity = tangentVelocity * m_tangentRetention - normalVelocity * m_normalBounce;
             projectile.m_position = point;
-        } else {
-            OnActivate(&projectile);
         }
     }
 }
 
 int Ballistics::AddProjectile(const vec3& position, const vec3& velocity, float spread, void* userData)
 {
+    // Shipped: the oldest slot is overwritten without notifying its owner.
     int index = m_next;
     Projectile& projectile = m_projectiles[index];
-    ++m_next;
-    if (m_next == m_capacity) {
-        m_next = 0;
+    int next = index + 1;
+    if (next == m_capacity) {
+        next = 0;
     }
-    if (projectile.m_active) {
-        projectile.m_active = false;
-        OnActivate(&projectile);
-    }
+    m_next = next;
     projectile.m_active = true;
     projectile.m_age = 0.0f;
     projectile.m_position = position;
     projectile.m_previous = position;
     projectile.m_velocity = velocity;
-    if (spread != 0.0f && velocity.LengthSqr() > 0.0f) {
+    if (spread != 0.0f) {
         vec3 forward = Unit(velocity);
         vec3 right = Unit(vec3(forward.m_y, forward.m_z, forward.m_x).Cross(forward));
         vec3 up = Unit(forward.Cross(right));
@@ -330,67 +341,110 @@ void GrenadeLauncher::Simulate(float elapsed)
 {
     Ballistics::Simulate(elapsed);
     m_smoke->Simulate(elapsed);
-    for (int index = 0; index < m_activeCount; ++index) {
+    vec3 up(0.0f, 1.0f, 0.0f);
+    unsigned int count = m_activeCount;
+    for (unsigned int index = 0; index < count; ++index) {
         Projectile& projectile = m_projectiles[m_activeIndices[index]];
         if (!projectile.m_active) {
             continue;
         }
-        CCollision::Line line = {projectile.m_previous, projectile.m_position};
-        for (int unitIndex = 0; unitIndex < m_units.size(); ++unitIndex) {
+        // Units: accept a box hit only when it lies within this frame's segment.
+        for (unsigned int unitIndex = 0; unitIndex < (unsigned int)m_units.size(); ++unitIndex) {
             CUnit* unit = m_units[unitIndex];
             if (unit->m_dead) {
                 continue;
             }
+            float height = unit->m_body.GetHeight();
             vec3 center = unit->m_body.m_position;
             CCollision::AABB bounds = {
                 center - vec3(0.4f, 0.4f, 0.0f),
-                center + vec3(0.4f, 0.4f, unit->m_body.GetHeight())
+                center + vec3(0.4f, 0.4f, height)
             };
             vec3 point;
+            CCollision::Line line = {projectile.m_previous, projectile.m_position};
             if (CCollision::Intersect(line, bounds, point)) {
-                vec3 normal(0.0f, 1.0f, 0.0f);
-                OnCollision(&projectile, &point, &normal);
-                break;
+                if (Length(point - projectile.m_previous) <= Length(projectile.m_position - projectile.m_previous)) {
+                    OnCollision(&projectile, &point, &up);
+                    if (!projectile.m_active) {
+                        break;
+                    }
+                }
             }
         }
-        vec3 movement = projectile.m_position - projectile.m_previous;
-        float distance = Length(movement);
-        if (!projectile.m_active || distance <= 0.0f) {
+        if (!projectile.m_active) {
             continue;
         }
+        // Smoke puffs every 0.25 units along the flight path.
         Flight* flight = static_cast<Flight*>(projectile.m_userData);
-        vec3 direction = Unit(movement);
-        float spacing = 0.25f;
-        float next = spacing - flight->m_trailDistance;
-        while (next <= distance) {
-            vec3 position = projectile.m_previous + direction * next;
+        vec3 position = projectile.m_previous;
+        vec3 direction = Unit(projectile.m_position - projectile.m_previous);
+        float distance = Length(projectile.m_position - projectile.m_previous);
+        if (distance + flight->m_trailDistance < 0.25f) {
+            flight->m_trailDistance = flight->m_trailDistance + distance;
+        } else {
+            float first = 0.25f - flight->m_trailDistance;
+            position = position + direction * first;
+            distance = distance - first;
             m_smoke->AddProjectile(position, direction * -0.25f, 0.0f);
-            next += spacing;
+            flight->m_trailDistance = 0.0f;
+            while (distance > 0.25f) {
+                position = position + direction * 0.25f;
+                m_smoke->AddProjectile(position, direction * -0.25f, 0.0f);
+                distance = distance - 0.25f;
+            }
+            flight->m_trailDistance = distance;
         }
-        flight->m_trailDistance = spacing + distance - next;
-        flight->m_distance += distance;
+        flight->m_distance = flight->m_distance + distance;
     }
+}
+
+namespace {
+/** Places the grenade model at (x, y, z) with its +X axis along `velocity`. */
+void PlaceGrenade(Transform& transform, float x, float y, float z, const vec3& velocity)
+{
+    float horizontal[4];
+    float vertical[4];
+    float translation[3];
+    translation[0] = x;
+    translation[1] = y;
+    translation[2] = z;
+    transform.postTranslate(translation);
+    // No zero-length guard, as shipped.
+    vec3 direction = Unit(velocity);
+    vec3 back(-direction.m_x, -direction.m_y, -direction.m_z);
+    vec3 planar(back.m_x, back.m_y, 0.0f);
+    float pitch = Sign(back.m_z) * MathLib::ArcCos(Length(planar) / Length(back));
+    float base = 0.0f;
+    float factor = 1.0f;
+    if (back.m_x < 0.0f) {
+        base = 180.0f;
+        factor = -1.0f;
+    }
+    float yaw = Sign(back.m_y) * (base + factor * MathLib::ArcCos(Length(vec3(back.m_x, 0.0f, 0.0f)) / Length(planar))) + 180.0f;
+    horizontal[0] = yaw;
+    horizontal[1] = 0.0f;
+    horizontal[2] = 0.0f;
+    horizontal[3] = 1.0f;
+    transform.postRotate(horizontal);
+    vertical[0] = pitch;
+    vertical[1] = 0.0f;
+    vertical[2] = 1.0f;
+    vertical[3] = 0.0f;
+    transform.postRotate(vertical);
+}
 }
 
 void GrenadeLauncher::Paint3D(Graphics3D& graphics)
 {
-    if (m_model != NULL && m_activeCount > 0) {
-        Transform transform(CSwerve::GetInstance()->m_swerve);
-        for (int index = m_activeCount - 1; index >= 0; --index) {
-            const Projectile& projectile = m_projectiles[m_activeIndices[index]];
-            if (!projectile.m_active) {
-                continue;
-            }
-            vec3 velocity = projectile.m_velocity;
-            float yaw = MathLib::ArcTan(velocity.m_y, velocity.m_x);
-            float planar = sqrtf(velocity.m_x * velocity.m_x + velocity.m_y * velocity.m_y);
-            float pitch = MathLib::ArcTan(velocity.m_z, planar);
-            float horizontal[4] = {yaw, 0.0f, 0.0f, 1.0f};
-            float vertical[4] = {-pitch - 90.0f, 0.0f, 1.0f, 0.0f};
+    int index = m_activeCount;
+    Transform transform(CSwerve::GetInstance()->m_swerve);
+    while (index > 0) {
+        index--;
+        const Projectile& projectile = m_projectiles[m_activeIndices[index]];
+        if (projectile.m_active) {
             transform.setIdentity();
-            transform.postTranslate(&projectile.m_position.m_x);
-            transform.postRotate(horizontal);
-            transform.postRotate(vertical);
+            const vec3& position = projectile.m_position;
+            PlaceGrenade(transform, position.m_x, position.m_y, position.m_z, projectile.m_velocity);
             graphics.render(m_model, transform);
         }
     }

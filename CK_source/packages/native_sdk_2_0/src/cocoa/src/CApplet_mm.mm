@@ -14,7 +14,7 @@ short CApplet::m_UIScreenMainScreenWidth;
 short CApplet::m_UIScreenMainScreenHeight;
 void* CApplet::m_eaglLayer;
 
-CApplet::CApplet()
+__attribute__((noinline)) CApplet::CApplet()
 {
     m_pThis = this;
     m_pApp = NULL;
@@ -23,9 +23,10 @@ CApplet::CApplet()
     m_accelerometerFrequency = 0;
     m_multipleTouchEnabled = 0;
     m_gyroscope = NULL;
+    m_pushToken = CStrChar("");
 }
 
-CApplet::~CApplet()
+__attribute__((noinline)) CApplet::~CApplet()
 {
     Destroy();
     m_pThis = NULL;

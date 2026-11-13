@@ -39,8 +39,6 @@ public:
 
     static CRegularShop* GetInstance(bool create);
     static void Show(ETab tab);
-    static void ShowItem(ETab tab, int id);
-    static void ShowDeal(CItem* item);
     void UpdateTabLock();
     void SwitchWeaponFilter(int filter);  // public: CBH_GPSMap::ShowShopWithWeapon calls it
     friend class CBH_GPSMap;  // added by gps: CBH_GPSMap::ShowShop calls TryOpenTapJoy
@@ -54,7 +52,7 @@ private:
                                     int maxItems);
     void UpdateAmmoPage();
     void CreateOtherTab();
-    static CAutoArrangedWindow* CreateItemsContainer(int width);
+    CAutoArrangedWindow* CreateItemsContainer(int width);
     void CreateOthersPage();
     CShopItemButton* CreateTapjoyWeaponButton();
     void TryOpenTapJoy();
@@ -62,9 +60,6 @@ private:
     static Window* CreateWeaponStats(CDH_Weapon* weapon);
     static void AddIconDescription(Window* parent, const char* icon, const XString& text, int column, int row);
     static void AddStatsBar(Window* parent, int value, int maximum, int column, int row, bool infinite);
-    void ShowItem(CItem* item);
-    void CloseShop();
-    void OpenCard(CShopItemButton* card);  // body of the original OnCommand card case
 
     static CRegularShop* m_instance;
     int m_weaponFilter;                 // 0x104 bit mask of the weapon filter buttons

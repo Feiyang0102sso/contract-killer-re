@@ -9,8 +9,8 @@ bool CXmlHelper::HasAttribute(const TiXmlNode* node, const char* name)
     if (node == NULL || name == NULL) {
         return false;
     }
-    const TiXmlElement* element = node->ToElement();
-    return element != NULL && element->Attribute(name) != NULL;
+    // the original does not check the element
+    return node->ToElement()->Attribute(name) != NULL;
 }
 
 const char* CXmlHelper::GetCharAttributeValueOptional(const TiXmlElement& element, const char* name)
@@ -26,20 +26,20 @@ XString CXmlHelper::GetAttributeValue(const TiXmlElement& element, const char* n
 XString CXmlHelper::GetAttributeValueOptional(const TiXmlElement& element, const char* name)
 {
     const char* value = element.Attribute(name);
-    if (value == NULL) {
-        return XString();
+    if (value != NULL) {
+        return XString(value).Replace(L"\\n", L"\n", true);
     }
-    return XString(value).Replace(L"\\n", L"\n", true);
+    return XString();
 }
 
 XString CXmlHelper::GetAttributeValueOrUseDefault(const TiXmlElement& element, const char* name,
                                                  const XString& defaultValue)
 {
     const char* value = element.Attribute(name);
-    if (value == NULL) {
-        return defaultValue;
+    if (value != NULL) {
+        return XString(value).Replace(L"\\n", L"\n", true);
     }
-    return XString(value).Replace(L"\\n", L"\n", true);
+    return defaultValue;
 }
 
 const char* CXmlHelper::GetCharAttributeValue(const TiXmlNode* node, const char* name)
@@ -104,62 +104,66 @@ int CXmlHelper::GetIntAttributeValueOrUseDefault(const TiXmlNode* node, const ch
 
 void CXmlHelper::WriteHashtable(const HashTable<HashTableKey<int>, int>& table, TiXmlElement* parent, const XString& name)
 {
-    TiXmlElement* section = ObtainElement(parent, name);
-    section->Clear();
+    // the original builds a fresh section and inserts a copy of it (callers clear the parent first)
+    TiXmlElement* section = new TiXmlElement(XString::AnsiString(name.c_str()));
     for (int index = 0; index < table.m_count; ++index) {
         HashTableKey<int>* key = NULL;
         int value = *table.GetAt(index, &key);
         TiXmlElement* entry = new TiXmlElement("element");
         entry->SetAttribute("key", key->m_value);
         entry->SetAttribute("value", value);
-        section->LinkEndChild(entry);
+        section->InsertEndChild(*entry);
+        delete entry;
     }
+    parent->InsertEndChild(*section);
+    delete section;
 }
 
 void CXmlHelper::WriteHashtable(const HashTable<XString, int>& table, TiXmlElement* parent, const XString& name)
 {
-    TiXmlElement* section = ObtainElement(parent, name);
-    section->Clear();
+    TiXmlElement* section = new TiXmlElement(XString::AnsiString(name.c_str()));
     for (int index = 0; index < table.m_count; ++index) {
         XString* key = NULL;
         int value = *table.GetAt(index, &key);
         TiXmlElement* entry = new TiXmlElement("element");
         entry->SetAttribute("key", XString::AnsiString(key->c_str()));
         entry->SetAttribute("value", value);
-        section->LinkEndChild(entry);
+        section->InsertEndChild(*entry);
+        delete entry;
     }
+    parent->InsertEndChild(*section);
+    delete section;
 }
 
 void CXmlHelper::ReadHashtable(HashTable<HashTableKey<int>, int>& table, TiXmlElement* parent, const XString& name)
 {
-    TiXmlElement* section = GetElement(parent, name);
+    // the original looks the section up inline and always calls Add
+    TiXmlElement* section = parent->FirstChildElement(XString::AnsiString(name.c_str()));
     if (section == NULL) {
         return;
     }
-    for (TiXmlElement* entry = section->FirstChildElement("element"); entry != NULL;
-         entry = entry->NextSiblingElement("element")) {
-        int key = GetAttributeValue(*entry, "key").ToInt();
-        int value = GetAttributeValue(*entry, "value").ToInt();
-        int* previous = table.Get(HashTableKey<int>(key));
-        if (previous == NULL) {
-            table.Add(HashTableKey<int>(key), value);
-        } else {
-            *previous = value;
-        }
+    TiXmlElement* entry = section->FirstChildElement("element");
+    while (entry != NULL) {
+        int key = GetAttributeValue(entry, "key").ToInt();
+        int value = GetAttributeValue(entry, "value").ToInt();
+        table.Add(HashTableKey<int>(key), value);
+        entry = entry->NextSiblingElement("element");
     }
 }
 
 void CXmlHelper::ReadHashtable(HashTable<XString, int>& table, TiXmlElement* parent, const XString& name)
 {
-    TiXmlElement* section = GetElement(parent, name);
+    TiXmlElement* section = parent->FirstChildElement(XString::AnsiString(name.c_str()));
     if (section == NULL) {
         return;
     }
-    for (TiXmlElement* entry = section->FirstChildElement("element"); entry != NULL;
-         entry = entry->NextSiblingElement("element")) {
-        XString key = GetAttributeValue(*entry, "key");
-        int value = GetAttributeValue(*entry, "value").ToInt();
-        table.Set(key, value);
+    TiXmlElement* entry = section->FirstChildElement("element");
+    while (entry != NULL) {
+        // the original releases the key only after stepping to the next sibling
+        XString key = GetAttributeValue(entry, "key");
+        int value = GetAttributeValue(entry, "value").ToInt();
+        table.Add(key, value);
+        entry = entry->NextSiblingElement("element");
     }
 }
 
@@ -200,7 +204,7 @@ TiXmlElement* CXmlHelper::GetElement(TiXmlElement* parent, const XString& name)
 
 TiXmlDocument CXmlHelper::Parse(const wchar_t* resourceName)
 {
-    char* text = ((App*)WindowApp::m_instance)->m_resMap->loadText(XString(resourceName));
+    char* text = static_cast<App*>(WindowApp::m_instance)->InitResMap()->loadText(XString(resourceName));
     TiXmlDocument document;
     document.Parse(text, NULL, TIXML_ENCODING_UNKNOWN);
     if (text != NULL) {

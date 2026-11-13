@@ -139,14 +139,21 @@ void CDH_SoundManager::PrecacheSound(const char* name)
 
 CDH_SoundManager::SSound* CDH_SoundManager::PrecacheAndGetSound(const char* name)
 {
-    HashTableKey<const char*> key(name);
-    SSound** cached = m_sounds.Get(key);
-    if (cached != NULL) {
-        return *cached;
+    if (name == NULL) {
+        return NULL;
+    }
+    // A keyset owns its strings. Use the sound resource's stable name as the cache key.
+    CResource* resource = NULL;
+    CApplet::m_pApp->m_resourceManager->GetResource(name, &resource);
+    if (resource != NULL) {
+        SSound** cached = m_sounds.Get(HashTableKey<const char*>(resource->m_name));
+        if (cached != NULL) {
+            return *cached;
+        }
     }
     SSound* sound = CreateSound(name);
     if (sound != NULL) {
-        m_sounds.Add(key, sound);
+        m_sounds.Add(HashTableKey<const char*>(sound->m_name), sound);
     }
     return sound;
 }
@@ -176,7 +183,7 @@ CDH_SoundManager::SSound* CDH_SoundManager::CreateSound(const char* name)
         return NULL;
     }
     SSound* sound = new SSound;
-    sound->m_name = name;
+    sound->m_name = resource->m_name;
     sound->m_eventId = 0;
     sound->m_media = static_cast<CMedia*>(resource->GetData());
     sound->m_music = false;

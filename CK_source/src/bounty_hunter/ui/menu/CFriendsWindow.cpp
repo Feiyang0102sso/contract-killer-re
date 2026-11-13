@@ -1,4 +1,5 @@
 #include "CFriendsWindow.h"
+#include "AdBannerSizes.h"
 
 #include "App.h"
 #include "CBH_GPSMap.h"
@@ -33,9 +34,13 @@
 #include "CShopItem.h"
 #include "CShopWindow.h"
 #include "CTabWindow.h"
+#include "CWaitWindow.h"
 #include "CSocialGiftsManager.h"
 
 namespace {
+// Recovered from the static initializer at 0x13ad20. The original only writes this value.
+const SScreenAdaptingConstant ScreenConstant(10, 20);
+
 enum ETab { NewsTab, GuildTab, CoopTab, GiftsTab, TabCount };
 const char* const TabNames[] = {
     "IDS_FRIENDS_TAB_NEWS_FEED", "IDS_FRIENDS_TAB_ASSASING_GUILD",
@@ -55,6 +60,7 @@ const int InviteFacebook = (int)0xa8848c82;
 const int InviteSms = (int)0x8848ddb6;
 const int InviteMail = (int)0x848c14b4;
 const int RefreshNewsFeed = 0x6e7d5209;
+const int TabChanged = 0x5ce88d33;
 const int StartGameCenterLogin = 0x5be239f5;
 const int StartFacebookLogin = (int)0xc7b99831;
 const int SelectCoopTab = (int)0xa2457dae;
@@ -617,6 +623,9 @@ void CFriendsWindow::ShowFacebookInviteFriendsWindow()
 
 void CFriendsWindow::HandleFacebookInvitation(CIncentivizedWindow* picker)
 {
+    if (picker == NULL) {
+        return;
+    }
     Vector<int> selected = picker->GetSelectedIds();
     if (selected.size() == 0) {
         return;
@@ -647,11 +656,29 @@ void CFriendsWindow::HandleFacebookInvitation(CIncentivizedWindow* picker)
         CStrWChar name(ResString("IDS_FB_LINK_DESC").c_str());
         CStrWChar caption(ResString("IDS_FB_CAPTION").c_str());
         CStrWChar privacy(L"");
+        CGameAnalytics::logFriendInvited(queued, GetNonPlayingFriendsCount());
+        CWaitWindow* wait = new CWaitWindow();
+        wait->SetBackgroundColor(0x64000000);
+        m_waitWindow = wait;
+        m_sentInviteCount = queued;
+        AddModal(wait);
         if (offers->sendQueuedInvitations(&message, &link, &name, &caption, &description, &picture, &privacy) == 0) {
             return;
         }
     }
     WindowApp::HandleTunnelCommand(FacebookInviteFailed, 0, 0, 0);
+}
+
+void CFriendsWindow::CloseInviteWait()
+{
+    if (m_sentInviteCount == 0) {
+        return;
+    }
+    Window* wait = m_waitWindow;
+    m_sentInviteCount = 0;
+    if (IsChildExisting(wait)) {
+        wait->CloseSafely();
+    }
 }
 
 void CFriendsWindow::HandleGiftSending(CIncentivizedWindow* picker)
@@ -710,6 +737,14 @@ void CFriendsWindow::HandleGiftSending(CIncentivizedWindow* picker)
 void CFriendsWindow::OnCommand(Event& event)
 {
     switch (event.m_id) {
+    case TabChanged:
+        if (event.m_param1 == NewsTab && m_tabs->m_currentTab == NewsTab && IsVisible()) {
+            App* app = static_cast<App*>(WindowApp::m_instance);
+            if (app->m_newsFeedManager != NULL) {
+                app->m_newsFeedManager->MarkAllMessagesAsRead();
+            }
+        }
+        break;
     case RefreshNewsFeed:
         m_newsFeed->ClearNews();
         FillNewsFeedTab(true);
@@ -722,9 +757,12 @@ void CFriendsWindow::OnCommand(Event& event)
         ShowSelectGiftRecipient();
         break;
     case FacebookInviteSent:
-        ShowFacebookIncentiveWindow(m_sentInviteCount);
-        m_waitWindow->CloseSafely();
-        event.Clear();
+        if (m_sentInviteCount != 0) {
+            int sent = m_sentInviteCount;
+            CloseInviteWait();
+            ShowFacebookIncentiveWindow(sent);
+            event.Clear();
+        }
         break;
     case CloseFriends:
         Close();
@@ -756,9 +794,11 @@ void CFriendsWindow::OnCommand(Event& event)
         m_loginButton130->SetFont(m_loginFont);
         break;
     case SendFacebookInvitations:
-        m_incentiveShown = false;
-        m_inviteFailShown = false;
-        HandleFacebookInvitation(reinterpret_cast<CIncentivizedWindow*>(event.m_param1));
+        if (m_sentInviteCount == 0) {
+            m_incentiveShown = false;
+            m_inviteFailShown = false;
+            HandleFacebookInvitation(reinterpret_cast<CIncentivizedWindow*>(event.m_param1));
+        }
         break;
     case ShowGiftCatalog:
         m_selectingGiftRecipient = true;
@@ -766,6 +806,7 @@ void CFriendsWindow::OnCommand(Event& event)
         m_tabs->SetCurrTab(GiftsTab, false);
         break;
     case FacebookInviteFailed:
+        CloseInviteWait();
         if (!m_inviteFailShown) {
             CTextDialog* dialog = new CTextDialog();
             dialog->SetButtons(CDialogWindow::BUTTON_OK);
@@ -774,7 +815,6 @@ void CFriendsWindow::OnCommand(Event& event)
             static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(dialog);
             m_inviteFailShown = true;
         }
-        m_waitWindow->CloseSafely();
         event.Clear();
         break;
     default:

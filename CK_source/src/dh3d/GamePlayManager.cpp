@@ -96,15 +96,12 @@ void GamePlayManager::ResetLevelUp()
 
 void GamePlayManager::SwitchWeapons()
 {
+    // the original checks neither the game, the weapon nor the hunting info
     GetGameData()->SwitchWeapons();
+    static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->onWeaponSwitch();
     App* app = static_cast<App*>(WindowApp::m_instance);
-    if (app->m_helper->m_swerveGame != NULL) {
-        app->m_helper->m_swerveGame->onWeaponSwitch();
-    }
-    const CDH_Weapon* weapon = GetGameData()->GetActiveWeapon();
-    if (weapon != NULL && app->m_huntingInfo != NULL) {
-        CGameAnalytics::logSwitchWeapon(app->m_huntingInfo->m_assignedData.m_missionName, weapon->m_id);
-    }
+    CGameAnalytics::logSwitchWeapon(app->m_huntingInfo->m_assignedData.m_missionName,
+                                    app->m_helper->GetGameData()->GetActiveWeapon()->m_id);
 }
 
 void GamePlayManager::SetWeapon01(int id)

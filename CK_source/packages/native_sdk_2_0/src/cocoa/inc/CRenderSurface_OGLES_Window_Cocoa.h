@@ -6,18 +6,10 @@
 #ifndef CRENDERSURFACE_OGLES_WINDOW_COCOA_H
 #define CRENDERSURFACE_OGLES_WINDOW_COCOA_H
 
-#include "CRenderSurface_OGLES_Texture_FBO.h"
+#include "CRenderSurface_OGLES_Texture.h"
 
-class CRenderSurface_OGLES_Window_Cocoa : public CRenderSurface_OGLES_Texture_FBO {
+class CRenderSurface_OGLES_Window_Cocoa : public CRenderSurface_OGLES_Texture {
 public:
-    /** State of the window framebuffer (m_framebufferStatus). */
-    enum FramebufferStatus {
-        FramebufferStatus_None = 0,
-        FramebufferStatus_Complete = 1,
-        FramebufferStatus_Incomplete = 2,
-        FramebufferStatus_StorageFailed = 3     // the layer could not back the color renderbuffer
-    };
-
     CRenderSurface_OGLES_Window_Cocoa();
     virtual ~CRenderSurface_OGLES_Window_Cocoa();
 
@@ -29,22 +21,20 @@ public:
     virtual void Unlock();
     /** Size of the color buffer, swapped when the device is in landscape orientation. */
     virtual unsigned char GetWidthAndHeight(unsigned int& width, unsigned int& height);
-    virtual unsigned char SaveStateForFutureRecreation();
-    virtual unsigned char Recreate();
-    virtual void RemoveSelfAsTarget();
-    virtual unsigned char InitializeFrameBuffer();
-    virtual void DestroyFrameBuffer();
-    virtual void BindFrameBuffer();
     /** Make the window the render target of the device (both the HAL and its GLES device). */
     virtual void Bind();
 
-    void* m_context;                                // 0x58 EAGLContext the surface presents with
-    unsigned int m_colorRenderbuffer;               // 0x5c backed by the layer
-    unsigned int m_multisampleFramebuffer;          // 0x60 0: no multisampling
-    unsigned int m_multisampleColorRenderbuffer;    // 0x64
-    unsigned int m_multisampleDepthRenderbuffer;    // 0x68
-    int m_framebufferStatus;                        // 0x6c FramebufferStatus
-    unsigned char m_keepContext;                    // 0x70 Initialize found a context: Destroy keeps it
+    unsigned char InitializeFrameBuffer();
+    void DestroyFrameBuffer();
+
+    void* m_context;                                // 0x30 EAGLContext the surface presents with
+    unsigned int m_framebuffer;                     // 0x34
+    unsigned int m_colorRenderbuffer;               // 0x38 backed by the layer
+    unsigned int m_depthRenderbuffer;               // 0x3c
+    unsigned int m_multisampleFramebuffer;          // 0x40 0: no multisampling
+    unsigned int m_multisampleColorRenderbuffer;    // 0x44
+    unsigned int m_multisampleDepthRenderbuffer;    // 0x48
+    int m_lockCount;                                // 0x4c
 };
 
 #endif

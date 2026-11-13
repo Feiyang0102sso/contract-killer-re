@@ -86,7 +86,6 @@ public:
     virtual void OnCooperationItemSelected(CGPSCooperation* cooperation);
 
     void LoadTiles();
-    void SetTileLayout(const TiXmlElement& map);
     void AddMapPatch(ICRenderSurface* surface);
     void OnPointerEvent(PointerEventController::Event event);
     void CheckMapPosBounds();
@@ -118,6 +117,7 @@ public:
     void CancelInstantInformantWithCamera(int cameraId);
     void SetupLocalPushNotifications();
     void InitPrefetchedManager();
+    int GetPrefetchedManagerCount() const { return m_prefetchedManagers.size(); }
     bool LoadPrefetchedManagerResource();
     void ReleasePrefetchedManagerResource();
     void UpdateMapItems();
@@ -128,20 +128,20 @@ public:
     void FillBeforeTargetHuntInfo(const CGPSBounty* bounty);
     void FillBeforeHuntInfo(const CGPSHuntingItem* item, const char* image, ICRenderSurface* surface);
     static void ShowShopWithWeapon(const CDH_Weapon& weapon);
-    static void ShowShopWithUnlockedWeapon(int weaponId, CShopItemInfoWindow::ESource source);
+    void ShowShopWithUnlockedWeapon(int weaponId, CShopItemInfoWindow::ESource source);  // this unused (original)
     static void CheckGameCenterAccounts();
     static void ShowShopWithItem(CItemManager* manager, CShopWindow::ETab tab, CItem::EItemTypes type, int id);
     bool ShowNextQueueDialog(bool animate);
     void FlushDialogsQueue();
     void ShowCoopWindow();
     void OnGPSSocialNetworkSelected();
+    void OpenPendingFriendsWindow();
     void CollectSubContractsNotifications(Vector<SLocalPush>& pushes);
 
     static bool m_isFirstLoading;
     static CBH_GPSMap* m_instance;
 
 private:
-    CGPSItem* FindItem(int x, int y);
     static bool IsItemIntersects(const CGPSItem& item, int left, int top, int right, int bottom);
     static bool IsRegionFree(int left, int top, int right, int bottom, const Vector<const CGPSItem*>& items);
     void FilterRegionItems(int left, int top, int right, int bottom, Vector<const CGPSItem*>& items) const;
@@ -169,7 +169,7 @@ private:
     bool MakePlayerWeaponGatedIDCheck(int id);
     CDH_Weapon* GetMostExpensiveWeaponInCategory(int category) const;
     int GetMostExpensiveWeaponId(const Vector<int>& ids);
-    bool CheckMissionEquipment(CGPSHauntCamera* camera, CGPSHuntingItem* item);
+    bool CheckMissionEquipment(CGPSHauntCamera* camera, CGPSHuntingItem* item, bool skipAmmoCheck);
     void ShowBuyInformantDialog(CGPSInstantInformant* informant);
     void ShowInformantIsSearchingDialog(CGPSInstantInformant* informant);
     void ResolveInformantPurchase(CGPSInstantInformant* informant);
@@ -180,8 +180,17 @@ private:
     void CreateBar();
     void CreateCooperationIcon();
     void CreateZombiesPromoIcon();
-    void ScrollToItem(const CGPSItem& item, float speed);
     void UpdateScroll();
+
+    /** Switch the scroll state; a new state restarts from the current map position. */
+    void SetScrollState(int state)
+    {
+        if (m_scrollState != state) {
+            m_scrollState = state;
+            m_scrollX = static_cast<float>(m_mapX);
+            m_scrollY = static_cast<float>(m_mapY);
+        }
+    }
     void ShowWhatsNewDialog();
     void ShowRocketLauncherInroduce();
     void HandleBonuses(int elapsed);
@@ -212,7 +221,7 @@ public:
     int m_dragOriginX;                                  // 0x138 OnPointerEvent (map X at press)
     int m_dragOriginY;                                  // 0x13c
     int m_field140;                                     // 0x140
-    bool m_field144;                                    // 0x144
+    bool m_dailyDealShown;                              // 0x144 MakeDailyDealCheck
     bool m_showRocketLauncherIntro;                     // 0x145 Load
     bool m_draggingMap;                                 // 0x146 OnPointerEvent
     unsigned char m_unknown147[0x150 - 0x147];          // 0x147 not yet mapped
@@ -224,9 +233,9 @@ public:
     unsigned int m_lastDailyDealDisplay;                // 0x17c GetTimeSeconds
     bool m_field180;                                    // 0x180
     int m_field184;                                     // 0x184
-    int m_field188;                                     // 0x188
+    int m_bonusTeaserElapsed;                           // 0x188 HandleBonuses
     bool m_field18c;                                    // 0x18c
-    bool m_field18d;                                    // 0x18d
+    bool m_skipAmmoCheck;                                // 0x18d
     CGPSHauntCamera* m_selectedCamera;                  // 0x190 FillBeforeHuntInfo
     int m_field194;                                     // 0x194
     int m_field198;                                     // 0x198
@@ -255,7 +264,7 @@ public:
     CGPSInstantInformant* m_informantType4;             // 0x27c CreateInstantInformants (type 4)
     CGPSInstantInformant* m_weaponGatedInformant;       // 0x280 CreateInstantInformants
     CGPSInstantInformant* m_informantType5;             // 0x284 CreateInstantInformants (type 5)
-    int m_field288;                                     // 0x288
+    CGPSMissionInformant* m_movingMissionInformant;      // 0x288 active vehicle story mission
     CGPSCooperation* m_cooperation;                     // 0x28c
     CGPSBar* m_bar;                                     // 0x290
     CGPSShop* m_shop;                                   // 0x294
@@ -279,13 +288,10 @@ public:
     bool m_showingHuntConfirmation;
     bool m_acceptInformant;
     bool m_showTutorialFinish;
-    bool m_dailyDealShown;
     unsigned int m_nextGiftSaveAttempt;
     CGPSZombiesPromo* m_zombiesPromo;
     unsigned int m_nextChallengeSaveAttempt;
     int m_mapIdleElapsed;
-    int m_bonusTeaserElapsed;
-    bool m_scrollToItem;
     bool m_openTargetPickerAfterLogin;
     const CFriendGatedMission* m_friendGatedMission;
     CBH_PersonType* m_friendGatedBoss;

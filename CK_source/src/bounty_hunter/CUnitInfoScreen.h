@@ -14,9 +14,7 @@ public:
     virtual ~CUnitInfoScreen() {}
     virtual void Init();
     virtual void Update();
-    virtual void OnClosed();
     virtual void OnEasyFinished();
-    virtual void Paint(ICGraphics2d& graphics);
 
     void CreateContent();
     void FlushBeforeCloseTimer();
@@ -24,20 +22,20 @@ public:
     CAnimatedProgressBar* m_hpBar;       // 0xa4
     XString m_title;
     XString m_name;
-    XString m_distanceText;
+    XString m_distanceText;             // 0xb0
     XString m_type;
-    bool m_revealTarget;
     float m_distance;
     float m_identificationRange;
+    int m_startingDamage;
     int m_maxHp;
     int m_hp;
-    unsigned char m_reservedcc[0x7c];
+    EasyParams m_fade;                  // 0xcc
     CSwerveGame* m_game;                // 0x148
     unsigned int m_openedAt;
     int m_state;
     bool m_tagged;
     bool m_civilian;
-    bool m_outOfRange;
+    bool m_revealTarget;
     unsigned int m_duration;
     int m_guid;                        // 0x15c
 };

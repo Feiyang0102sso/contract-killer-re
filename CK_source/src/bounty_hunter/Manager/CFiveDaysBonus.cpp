@@ -139,7 +139,7 @@ const char* CFiveDaysBonus::GetDayBonusIcon(int) const
 
 XString CFiveDaysBonus::GetDayBonusNameForIcon(int day) const
 {
-    if ((unsigned int)day < CASH_DAY_COUNT) {
+    if (day < CASH_DAY_COUNT) {  // 原版为有符号比较（bgt）
         return XString::Format(Window::ResString("IDS_FIVE_DAYS_BONUS_MONEY").c_str(), m_cash[day]);
     }
     return Window::ResString("IDS_FIVE_DAYS_BONUS_CHANCE");
@@ -147,7 +147,7 @@ XString CFiveDaysBonus::GetDayBonusNameForIcon(int day) const
 
 XString CFiveDaysBonus::GetDayBonusNameForMessage(int day) const
 {
-    if ((unsigned int)day < CASH_DAY_COUNT) {
+    if (day < CASH_DAY_COUNT) {  // 原版为有符号比较（bgt）
         return XString::Format(Window::ResString("IDS_FIVE_DAYS_BONUS_MONEY").c_str(), m_cash[day]);
     }
     return m_chanceText;

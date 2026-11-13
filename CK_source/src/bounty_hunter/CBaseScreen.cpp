@@ -27,7 +27,6 @@ CBH_ProgressBar* CreateBalance(const char* icon, int width, int x, int y)
     bar->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT | CBH_ProgressBar::HIDE_FILL;
     bar->SetTextAlign(TEXT_ALIGN_RIGHT);
     bar->SetCorner(x, y);
-    bar->ClearFlags(Window::FLAG_FOCUSABLE);
     return bar;
 }
 }
@@ -51,40 +50,69 @@ CBaseScreen::CBaseScreen(bool redFrame, bool drawBody, bool showBack, bool showO
     if (redFrame) {
         const SScreenAdaptingConstant panelY(40, 40, 40, 60);
         const SScreenAdaptingConstant panelWidth(100, 100, 100, 170);
-        const SScreenAdaptingConstant panelHeight(50, 50, 50, 80);
+        const SScreenAdaptingConstant panelHeight(52, 52, 52, 80);
+        const SScreenAdaptingConstant badgeY(37, 37, 37, 52);
+        const SScreenAdaptingConstant badgeSize(50, 50, 50, 80);
+        const SScreenAdaptingConstant balanceWidth(100, 100, 100, 160);
+        const SScreenAdaptingConstant cashY(42, 42, 42, 65);
+        const SScreenAdaptingConstant creditsY(62, 62, 62, 97);
+        const int scaledBadgeSize = scale * badgeSize();
         FrameRed* frame = new FrameRed();
-        frame->SetRect(scale, scale * panelY(), scale * panelWidth(), scale * panelHeight(), false);
+        frame->SetRect(-scale, scale * panelY(), scale * panelWidth() + scaledBadgeSize,
+                       scale * panelHeight(), false);
+        frame->DisableTop();
         AddToFront(frame);
 
-        m_cash = CreateBalance("IDB_HUD_ICON_MONEY", scale * panelWidth(), scale * panelHeight(), 42 * scale);
-        m_credits = CreateBalance("IDB_HUD_ICON_CREDITS", scale * panelWidth(), scale * panelHeight(), 62 * scale);
+        CBH_Player* player = CBH_Player::GetInstance();
+        Window* badge = new Window(false);
+        badge->SetLayoutType(LAYOUT_NONE);
+        badge->AddToFront(new ImageWindow(ImageWindow::FILL_NONE, ImageRes("SUR_SCOPE_LEVEL")));
+        TextWindow* level = new TextWindow(XString(player->GetLevel()), CFontMgr::GetInstance()->GetFont(9));
+        level->SetLayoutType(LAYOUT_SIMPLE);
+        level->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+        badge->AddToFront(level);
+        badge->SetRect(scale, scale * badgeY(), scaledBadgeSize, scaledBadgeSize, false);
+        AddToFront(badge);
+
+        const int width = scale * balanceWidth();
+        m_cash = CreateBalance("IDB_HUD_ICON_MONEY", width, scaledBadgeSize, scale * cashY());
+        m_credits = CreateBalance("IDB_HUD_ICON_CREDITS", width, scaledBadgeSize, scale * creditsY());
+        m_cash->SetCurrValue(player->m_cash);
+        m_credits->SetCurrValue(player->m_credits);
         AddToFront(m_cash);
         AddToFront(m_credits);
     }
     if (showBack) {
-        m_back = CreateMenuButton("IDB_BUTTON_BACK", 0x5f523cd9);
-        m_back->m_padding = 25 * scale;
-        m_back->UpdateSize();
-        m_back->SetCorner(10, (m_titleHeight - ImageHeight(m_back->m_image)) / 2);
-        m_back->SetBlinkingImage("IDB_BUTTON_BACK_ACTIVE_TUTORIAL");
+        m_back = new CBH_MenuButton();
+        m_back->m_padding = App::Scale() * 25;
         AddToFront(m_back);
+        m_back->setImage("IDB_BUTTON_BACK");
+        // Centered on the title bar; the button height includes the padding on both sides.
+        m_back->SetCorner(10, ImageHeight(m_titleImage.GetSurface()) / 2 - (m_back->m_height - m_back->m_padding * 2) / 2);
+        m_back->SetCommandParameters(0x5f523cd9, 0, 0, 0);
+        m_back->SetBlinkingImage("IDB_BUTTON_BACK_ACTIVE_TUTORIAL");
     }
     if (gpsFrame) {
-        GPSFrame* frame = new GPSFrame();
-        frame->SetSize(m_width, m_height);
-        AddToFront(frame);
+        AddToFront(new GPSFrame());
     }
     if (showOptions) {
-        CBH_MenuButton* options = CreateMenuButton("IDB_BUTTON_OPTIONS", 0x121683a7);
-        options->m_padding = 15 * scale;
-        options->UpdateSize();
-        options->SetCorner(m_width - 10 * scale - ImageWidth(options->m_image),
-                           (m_titleHeight - ImageHeight(options->m_image)) / 2);
+        CBH_MenuButton* options = new CBH_MenuButton();
+        options->m_padding = App::Scale() * 15;
+        options->setImage("IDB_BUTTON_OPTIONS");
+        options->SetCorner(app->m_screenWidth - App::Scale() * 10 - options->m_width + options->m_padding * 2,
+                           m_titleHeight / 2 - (options->m_height - options->m_padding * 2) / 2);
+        options->SetCommandParameters(0x121683a7, 0, 0, 0);
         AddToFront(options);
     }
     m_title = new TextWindow(CFontMgr::GetInstance()->GetFont(7));
     m_title->SetLayoutType(LAYOUT_NONE);
-    m_title->ClearFlags(FLAG_FOCUSABLE);
+    int titleX;
+    if (showBack) {
+        titleX = m_back->Left() + m_back->m_width + 10 - m_back->m_padding * 2;
+    } else {
+        titleX = 10;
+    }
+    m_title->SetCorner(titleX, 0);
     AddToFront(m_title);
 }
 
@@ -111,12 +139,19 @@ int CBaseScreen::GetTitleBarHeight()
 
 void CBaseScreen::SetTitleText(XString title)
 {
+    // Original 0xf6be4: only moves the title (it keeps its own size).
     m_title->SetText(title);
-    int x = 20 * App::Scale();
-    if (m_back != NULL) {
-        x = m_back->Left() + ImageWidth(m_back->m_image) + 10;
+    TextWindow* titleWindow = m_title;
+    int x;
+    int y;
+    if (m_back == NULL) {
+        x = App::Scale() * 20;
+        y = App::Scale();
+    } else {
+        x = m_back->Left() + m_back->m_width + 10 - m_back->m_padding * 2;
+        y = App::Scale();
     }
-    m_title->SetRect(x, 5 * App::Scale(), m_width - x, m_titleHeight, false);
+    titleWindow->SetCorner(x, y * 5);
 }
 
 void CBaseScreen::Init()

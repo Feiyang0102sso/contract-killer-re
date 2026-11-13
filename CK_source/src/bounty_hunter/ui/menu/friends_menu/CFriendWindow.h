@@ -13,7 +13,7 @@ public:
     virtual void OnCommand(Event& event);
 
 private:
-    static Window* CreateFriendIcon(int friendId, bool facebook, bool gameCenter);
+    Window* CreateFriendIcon(int friendId, bool facebook, bool gameCenter);
     Window* CreateFriendInfo(const XString& name, int level, int contracts);
 
     int m_friendId;

@@ -12,7 +12,7 @@ public:
     void Parse(TiXmlNode* node);
 
     XString m_description;       // 0x00 localized "desc" attribute
-    int m_reserved;              // 0x04 initialized to zero; meaning not observed
+    const char* m_picture;       // 0x04 resource id of the "picture" attribute
 };
 
 #endif

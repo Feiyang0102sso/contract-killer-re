@@ -4,14 +4,18 @@
 #include "CXmlHelper.h"
 
 CUltrasoundEmitter::CUltrasoundEmitter(const TiXmlElement& config)
-    : CItem(0), m_count(0)
+    : CItem(0)
 {
-    init(config);
+    // the original leaves m_count for ParseStats() and calls Parse directly
+    Parse(config);
 }
 
-void CUltrasoundEmitter::setAvailable(bool)
+void CUltrasoundEmitter::setAvailable(bool available)
 {
-    CBH_Player::GetInstance()->AddUltrasoundEmitterAttempt(m_count);
+    // the original only acts on true
+    if (available) {
+        CBH_Player::GetInstance()->AddUltrasoundEmitterAttempt(m_count);
+    }
 }
 
 void CUltrasoundEmitter::ParseStats(const TiXmlElement& stats)

@@ -27,8 +27,6 @@ public:
     virtual eDeviceOrientation GetDeviceOrientation() const;
     virtual unsigned char CanSetDeviceOrientation(eDeviceOrientation orientation) const;
     virtual unsigned char SetDeviceOrientation(eDeviceOrientation orientation);
-    virtual unsigned char AutoRotationIsActive() const;
-    virtual eAutoRotationOrientation GetDisplayOrientationInTermsOfAutoRotation() const;
     virtual eSoftkeyPosition GetSoftkeyPosition(eKeyCode key) const;
     virtual CStrWChar GetDeviceIdentifier() const;
     virtual CStrWChar GetPlatformIdentifier() const;
@@ -56,20 +54,17 @@ public:
     }
 
     virtual unsigned int GetDeviceAvailableMemory();
-    virtual void SystemMessageBox(const CStrWChar& title,
-                                  const CStrWChar& message) const;
-    virtual CStrWChar GetDeviceModel() const;
-    virtual unsigned char IsNetworkAvailable() const;
-    virtual unsigned char CanDetectTimezone() const;
-    virtual CStrWChar GetTimezone() const;
-    virtual void UpdateAutoRotationOrientation();
+    void SystemMessageBox(const CStrWChar& title, const CStrWChar& message) const;
+    CStrWChar GetDeviceModel() const;
+    unsigned char IsNetworkAvailable() const;
+    unsigned char CanDetectTimezone() const;
+    CStrWChar GetTimezone() const;
 
     /** Move the application view into the view controller (auto-rotation switched on). */
     void AttachView() const;
     /** Take the application view back out of the view controller (auto-rotation switched off). */
     void DetachView() const;
 
-    unsigned char m_appliedAutoRotationOrientationEnabled[AutoRotation_Count];   // 0x44 state of the last UpdateAutoRotationOrientation()
 };
 
 #endif

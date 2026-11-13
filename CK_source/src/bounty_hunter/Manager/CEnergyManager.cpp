@@ -35,7 +35,7 @@ void CEnergyManager::freeResources()
 
 CItem* CEnergyManager::getItemByInternalId(int index)
 {
-    if (index >= 0 && index < m_items.size()) {
+    if (index < m_items.size()) {  // the original does not test index >= 0
         return m_items[index];
     }
     return NULL;
@@ -43,7 +43,8 @@ CItem* CEnergyManager::getItemByInternalId(int index)
 
 CEnergy* CEnergyManager::getEnergyItem(int id)
 {
-    return static_cast<CEnergy*>(getItemById(id));
+    // the original indexes the item list directly (same body as getItemByInternalId)
+    return static_cast<CEnergy*>(CEnergyManager::getItemByInternalId(id));
 }
 
 int CEnergyManager::getItemsCount()

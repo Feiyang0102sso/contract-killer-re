@@ -17,6 +17,7 @@
 
 bool CGameScene::m_bGGNShowed;
 CGluGamesNetwork* CGameScene::m_pGGN;
+static const char BOUNTY_GAME_CODE[] = "bounty";
 
 CGameScene::CGameScene() : Window(false)
 {
@@ -78,7 +79,7 @@ void CGameScene::OnCreateState(Window** window, int state)
         ICMediaPlayer::GetInstance()->Stop(0);
         ICMediaPlayer::GetInstance()->StopVibrate(0);
         app->m_timeScale = 0.0f;
-        bool allowQuit = app->m_helper->GetGameType() == 1 && !CTutorialManager::IsPlayerInTutorial();
+        bool allowQuit = app->m_helper->GetGameType() == 1 && !static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial();
         created = new CDH_PauseScreen(true, allowQuit);
         break;
     }
@@ -144,7 +145,7 @@ void CGameScene::AtExitGGN(void*)
 void CGameScene::ShowGGN()
 {
     if (m_pGGN == NULL) {
-        m_pGGN = new CGluGamesNetwork("bounty", AtExitGGN, NULL, 0, false);
+        m_pGGN = new CGluGamesNetwork(BOUNTY_GAME_CODE, AtExitGGN, NULL, 0, false);
     }
     m_pGGN->Show();
     CGameApp::GetInstance()->SetRenderingEnabled(0);

@@ -6,18 +6,21 @@
 CCyberScope::CCyberScope(const TiXmlElement& config)
     : CItem(0), m_count(0)
 {
-    init(config);
+    CItem::Parse(config);
 }
 
-void CCyberScope::setAvailable(bool)
+void CCyberScope::setAvailable(bool available)
 {
-    CBH_Player::GetInstance()->AddCyberScopeCount(m_count);
+    // the original only acts on true
+    if (available) {
+        CBH_Player::GetInstance()->AddCyberScopeCount(m_count);
+    }
 }
 
 void CCyberScope::ParseStats(const TiXmlElement& stats)
 {
     CItem::ParseStats(stats);
-    m_count = CXmlHelper::GetAttributeValue(stats, "count").ToInt();
+    m_count = CXmlHelper::GetAttributeValueOrUseDefault(stats, "count", XString("1")).ToInt();
 }
 
 XString CCyberScope::getUIDString() const

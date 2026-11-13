@@ -6,8 +6,9 @@
 #include "CXmlHelper.h"
 #include "tinyxml.h"
 
-CAmmoPack::CAmmoPack() : CItem(0), m_countInPack(0)
+CAmmoPack::CAmmoPack() : CItem(0)
 {
+    // the original leaves m_countInPack for Parse()
 }
 
 void CAmmoPack::Parse(const TiXmlElement& element)
@@ -55,10 +56,9 @@ XString CAmmoPack::getUIDString() const
 void CAmmoPack::setAvailable(bool)
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
+    // the original does not check the ammo type
     CAmmo* ammo = app->InitAmmoManager()->GetAmmoByType(m_ammoType);
-    if (ammo != NULL) {
-        CBH_Player::GetInstance()->IncAmmoByBulletsCount(ammo, m_countInPack);
-    }
+    CBH_Player::GetInstance()->IncAmmoByBulletsCount(ammo, m_countInPack);
 }
 
 XString CAmmoPack::GetStatsString() const

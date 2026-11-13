@@ -71,7 +71,7 @@ public:
 
     virtual void requestCompleteCallback(CObjectMap* response)
     {
-        if (m_callback) {
+        if (m_callback && m_target != NULL) {
             (m_target->*m_callback)(response, this);
         }
     }

@@ -81,19 +81,12 @@ void CEventListener::UnregisterAll()
         CRegistry* listeners = (CRegistry*)eventElement->m_object;
         CSystemElement* listenerElement;
         if (listeners->Query(0, m_handle, &listenerElement)) {
+            listeners->Remove(*listenerElement);
             if (core->m_isDispatching) {
-                // an event is calling the listeners: remove after the dispatch
-                int index;
-                for (index = 0; index < core->m_pendingRemovals.Size(); index++) {
-                    if (listenerElement == core->m_pendingRemovals[index]) {
-                        break;
-                    }
-                }
-                if (index == core->m_pendingRemovals.Size()) {
-                    core->m_pendingRemovals.Add(listenerElement);
-                }
+                // An active iterator can still hold this entry. Skip its callback and free it later.
+                listenerElement->m_object = NULL;
+                core->m_pendingRemovals.Add(listenerElement);
             } else {
-                listeners->Remove(*listenerElement);
                 if (listenerElement != NULL) {
                     delete listenerElement;
                 }

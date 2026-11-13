@@ -63,12 +63,16 @@ ICFile* CFileMgr_Cocoa::Open(const wchar_t* path, eFileAccessMode mode)
     if (path == NULL) {
         return NULL;
     }
+    unsigned int pathLength = wcslen(path);
+    if (pathLength >= PathLength || CUtf::GetUtfLen(path, pathLength) >= PathLength) {
+        return NULL;
+    }
     CFile_Cocoa* file = new CFile_Cocoa();
     if (file == NULL) {
         return NULL;
     }
 
-    int length = CUtf::WcsToUtf8(path, wcslen(path), (unsigned char*)m_utf8Path, PathLength);
+    int length = CUtf::WcsToUtf8(path, pathLength, (unsigned char*)m_utf8Path, PathLength);
     m_utf8Path[length] = 0;
 
     const char* fileMode;
@@ -82,6 +86,9 @@ ICFile* CFileMgr_Cocoa::Open(const wchar_t* path, eFileAccessMode mode)
     case AccessAppend:
         fileMode = "ab";
         break;
+    default:
+        delete file;
+        return NULL;
     }
     file->m_file = fopen(m_utf8Path, fileMode);
     if (file->m_file == NULL) {
@@ -148,15 +155,23 @@ unsigned char CFileMgr_Cocoa::Delete(const wchar_t* path)
 
 unsigned char CFileMgr_Cocoa::MkDir(const wchar_t* path)
 {
-    char directory[1000] = { 0 };
-    wcstombs(directory, path, wcslen(path) + 1);
+    if (path == NULL) {
+        return 0;
+    }
+    char directory[1000];
+    unsigned int pathLength = wcslen(path);
+    if (pathLength >= sizeof(directory) || CUtf::GetUtfLen(path, pathLength) >= sizeof(directory)) {
+        return 0;
+    }
+    CUtf::WcsToUtf8(path, pathLength, (unsigned char*)directory, sizeof(directory));
     int result = mkdir(directory, 0777);
     if (result == 0) {
         return 1;
     }
-    if (result == -1) {
+    if (errno == EEXIST) {
         // an existing directory counts as created
-        return errno == EEXIST;
+        struct stat info;
+        return stat(directory, &info) == 0 && S_ISDIR(info.st_mode);
     }
     return 0;
 }

@@ -32,7 +32,6 @@ public:
     virtual void ReleaseDevice() = 0;
     virtual void* CreateContext(void* format, const int* attributes) = 0;
     virtual void ReleaseContext(void* context) = 0;
-    virtual void SetCurrentContext(void* context) = 0;
 
     void InitializeIntrinsicHardwareShaderManagement();
     void SetWidthAndHeightMappedViewportAndOrthoProjection(CRenderSurface& surface);

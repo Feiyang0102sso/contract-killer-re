@@ -4,6 +4,7 @@
 #include "CNGSLocalUser.h"
 #include "CObjectMapArray.h"
 #include "CObjectMapObject.h"
+#include "CUtil.h"
 #include "ICStdUtil.h"
 
 COfferDataBase::COfferDataBase()
@@ -179,7 +180,10 @@ CObjectMapObject* COfferDataGetOffers::generateJSON() const
 {
     CObjectMapObject* result = new CObjectMapObject;
     generateBaseJSON(*result);
-    result->addEntry(CStrWChar(L"screenWidth"), new CObjectMapInt(CApplet::m_UIScreenMainScreenWidth));
-    result->addEntry(CStrWChar(L"screenHeight"), new CObjectMapInt(CApplet::m_UIScreenMainScreenHeight));
+    int width;
+    int height;
+    CUtil_Cpp::getDeviceScreen(&width, &height);
+    result->addEntry(CStrWChar(L"screenWidth"), new CObjectMapInt(width));
+    result->addEntry(CStrWChar(L"screenHeight"), new CObjectMapInt(height));
     return result;
 }

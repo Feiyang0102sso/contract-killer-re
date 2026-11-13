@@ -9,6 +9,7 @@
 #include "CFontMgr.h"
 #include "CSwerveGame.h"
 #include "DGHelper.h"
+#include "Fixed.h"
 #include "SG_Presenter.h"
 #include "dgCamera.h"
 
@@ -26,8 +27,10 @@ CFPSCursor::CFPSCursor()
 
 CFPSCursor::~CFPSCursor()
 {
-    delete m_cross;
-    m_cross = NULL;
+    if (m_cross != NULL) {
+        delete m_cross;
+        m_cross = NULL;
+    }
 }
 
 int CFPSCursor::GetAimX() const
@@ -77,10 +80,15 @@ void CFPSCursor::onPointerMove(int, int, int deltaX, int deltaY)
     App* app = static_cast<App*>(WindowApp::m_instance);
     DGCamera* camera = app->m_helper->m_swerveGame->m_camera;
     if (camera != NULL) {
-        m_angleV = camera->m_field1c;
-        m_angleH = camera->m_field0c;
-        camera->SetAngleV(m_angleV - deltaY * 0.1f, false);
-        camera->SetAngleH(m_angleH - deltaX * 0.1f, false);
+        // the original does not look at the acceleration setting
+        float moveX = static_cast<float>(deltaX);
+        float moveY = static_cast<float>(deltaY);
+        float angleV = camera->m_field1c;
+        m_angleV = angleV;
+        float angleH = camera->m_field0c;
+        m_angleH = angleH;
+        camera->SetAngleV(angleV - moveY * 0.1f, false);
+        camera->SetAngleH(angleH - moveX * 0.1f, false);
     }
 }
 

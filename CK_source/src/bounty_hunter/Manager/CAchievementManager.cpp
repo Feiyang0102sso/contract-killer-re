@@ -93,7 +93,7 @@ void CAchievementManager::CheckAllAchievements()
 {
     CPlayerGameStats& stats = CBH_Player::GetInstance()->m_gameStats;
     CBH_Player* player = CBH_Player::GetInstance();
-    CheckAchievement("BOUNTY_ACHIEVE_FINISH_TUTORIAL", !CTutorialManager::IsPlayerInTutorial());
+    CheckAchievement("BOUNTY_ACHIEVE_FINISH_TUTORIAL", !static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial());
     CheckAchievement("BOUNTY_ACHIEVE_KILL_3_BOSSES", stats.m_targetsKilled);
     CheckAchievement("BOUNTY_ACHIEVE_KILL_50_BOSSES", stats.m_targetsKilled);
     CheckAchievement("BOUNTY_ACHIEVE_KILL_100_BOSSES", stats.m_targetsKilled);

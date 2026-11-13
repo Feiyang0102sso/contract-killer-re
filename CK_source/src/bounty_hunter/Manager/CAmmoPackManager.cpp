@@ -65,7 +65,7 @@ void CAmmoPackManager::freeResources()
 
 CItem* CAmmoPackManager::getItemByInternalId(int index)
 {
-    if (index >= 0 && index < m_packs.size()) {
+    if (index < m_packs.size()) {  // the original does not test index >= 0
         return m_packs[index];
     }
     return NULL;

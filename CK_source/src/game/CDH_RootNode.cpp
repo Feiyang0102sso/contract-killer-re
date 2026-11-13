@@ -50,14 +50,14 @@ void CDH_RootNode::OnCreateState(Window** window, int state)
 
 void CDH_RootNode::OnStateInterrupt(int state, Window* window)
 {
-    if (state == Game) {
-        ChangeState(GameFinished, STATE_REPLACE);
-    } else if (state == Intro) {
+    if (state == Intro) {
         if (window->GetInterrupt() == 1) {
             ChangeState(Game, STATE_REPLACE);
         } else {
             ChangeState(Exit, STATE_REPLACE);
         }
+    } else if (state == Game) {
+        ChangeState(GameFinished, STATE_REPLACE);
     }
 }
 

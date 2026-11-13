@@ -212,8 +212,8 @@ struct IGraphics3D;
 struct IGraphics3DFunctions {
     // ggn: CK slots, from CK CSwerveGraphics3D::BindTarget / ReleaseTarget / Free / Init. CKZ's
     // BindTarget 0x20 / ReleaseTarget 0x24 / ReleaseImageTarget 0x2c / SetDisplayRotation 0x74 /
-    // OnContextLost 0x78 do not match CK; fx2's SetViewport at 0x34 is the C++ view of tws.h
-    // (IGraphics3DRenderer), this C table takes the target size first there.
+    // OnContextLost 0x78 do not match CK. The C table's 0x34 takes the target size first.
+    // The viewport method of the C++ view in tws.h (IGraphics3DRenderer) uses slot 0x48.
     void* m_slot00;
     void (*Release)(IGraphics3D* self);                                         // 0x04
     void* m_slots08[(0x34 - 0x08) / 4];

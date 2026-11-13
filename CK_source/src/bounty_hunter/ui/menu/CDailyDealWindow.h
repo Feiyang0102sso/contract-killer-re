@@ -3,22 +3,19 @@
 
 #include "CDialogWindow.h"
 
-class CItem;
 class CFont;
 
-class CDailyDealWindow : public CDialogWindow {
+class CDailyDealWindow : public CTextDialog {
 public:
     CDailyDealWindow();
     virtual void OnCommand(Event& event);
 
 private:
     void CreateUI();
-    void CreateItemPriceWindow();
+    Window* CreateItemPriceWindow();
     Window* CreatePriceCountWindow(int price, CFont* font);
-    void CreateTimerWindow();
+    Window* CreateTimerWindow();
     void HandleBuyButtonPressed();
-
-    CItem* m_item;
 };
 
 #endif

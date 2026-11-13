@@ -13,63 +13,73 @@
 
 
 
-ICRenderSurface* CBH_SurfaceManager::CreateSurface(const char* name, bool keep, bool rgb565)
+ICRenderSurface* CBH_SurfaceManager::CreateSurface(const char* name, bool keep)
 {
     if (ImageInCache(name) == 1) {
         CachedSurface* cached = m_surfaces.Get(XString(name));
         ++cached->m_references;
         return cached->m_surface;
     }
-    CInputStream stream;
-    unsigned int mimeType;
-    CSystemElement* element;
-    unsigned char nameDecompressed;
-    CResourceManager_v2* resources = static_cast<CResourceManager_v2*>(CApplet::m_pApp->m_resourceManager);
-    if (!resources->GetStream(name, stream, mimeType, &element, NULL, nameDecompressed)) {
-        return NULL;
-    }
+    // Original: no failure checks; a missing resource still yields (and caches) a surface.
     ICGraphics::Abstraction abstraction = ICGraphics::GetInstance()->GetDefaultActiveAbstractionLayer();
     ICRenderSurface* surface = ICRenderSurface::CreateInstance(abstraction, ICRenderSurface::Type_Default,
                                                              ICRenderSurface::Targetability_0);
-    if (surface == NULL) {
-        return NULL;
-    }
-    ICRenderSurface::InitParam normalParams[] = {
-        {15, mimeType}, {14, (unsigned int)&stream}, {16, 1}, {0, 0}, {0, 0}
+    CSystemElement* element;
+    CInputStream stream;
+    unsigned int mimeType;
+    unsigned char nameDecompressed;
+    static_cast<CResourceManager_v2*>(CApplet::m_pApp->m_resourceManager)
+        ->GetStream(name, stream, mimeType, &element, NULL, nameDecompressed);
+    ICRenderSurface::InitParam params[] = {
+        {15, mimeType}, {14, (unsigned int)&stream}, {16, 1}, {0, 0}, {0, 0}, {0, 0}
     };
-    ICRenderSurface::InitParam rgb565Params[] = {
-        {6, 0x21302}, {15, mimeType}, {14, (unsigned int)&stream}, {0, 0}, {0, 0}
-    };
-    ICRenderSurface::InitParam* params = normalParams;
-    if (rgb565) {
-        params = rgb565Params;
-    }
     if (abstraction == ICGraphics::Abstraction_Hardware) {
         params[3].m_key = 9;
         params[3].m_value = 0x7c1f;
     }
-    if (!surface->Initialize(params)) {
-        delete surface;
-        return NULL;
-    }
-    if (keep == 1) {
+    surface->Initialize(params);
+    if (keep) {
         CachedSurface cached;
-        cached.m_surface = surface;
         cached.m_name = name;
+        cached.m_surface = surface;
         cached.m_references = 1;
         m_surfaces.Add(XString(name), cached);
     }
     return surface;
 }
 
-ICRenderSurface* CBH_SurfaceManager::CreateSurface(const char* name, bool keep)
-{
-    return CreateSurface(name, keep, false);
-}
-
 ICRenderSurface* CBH_SurfaceManager::CreateSurface565(const char* name, bool keep)
 {
-    return CreateSurface(name, keep, true);
+    if (ImageInCache(name) == 1) {
+        CachedSurface* cached = m_surfaces.Get(XString(name));
+        ++cached->m_references;
+        return cached->m_surface;
+    }
+    ICGraphics::Abstraction abstraction = ICGraphics::GetInstance()->GetDefaultActiveAbstractionLayer();
+    ICRenderSurface* surface = ICRenderSurface::CreateInstance(abstraction, ICRenderSurface::Type_Default,
+                                                             ICRenderSurface::Targetability_0);
+    CSystemElement* element;
+    CInputStream stream;
+    unsigned int mimeType;
+    unsigned char nameDecompressed;
+    static_cast<CResourceManager_v2*>(CApplet::m_pApp->m_resourceManager)
+        ->GetStream(name, stream, mimeType, &element, NULL, nameDecompressed);
+    ICRenderSurface::InitParam params[] = {
+        {6, 0x21302}, {15, mimeType}, {14, (unsigned int)&stream}, {0, 0}, {0, 0}, {0, 0}
+    };
+    if (abstraction == ICGraphics::Abstraction_Hardware) {
+        params[3].m_key = 9;
+        params[3].m_value = 0x7c1f;
+    }
+    surface->Initialize(params);
+    if (keep) {
+        CachedSurface cached;
+        cached.m_name = name;
+        cached.m_surface = surface;
+        cached.m_references = 1;
+        m_surfaces.Add(XString(name), cached);
+    }
+    return surface;
 }
 
 ICRenderSurface* CBH_SurfaceManager::CreateSurface(const void* data, unsigned int size, unsigned int mimeType)
@@ -79,20 +89,18 @@ ICRenderSurface* CBH_SurfaceManager::CreateSurface(const void* data, unsigned in
     ICGraphics::Abstraction abstraction = ICGraphics2d::GetInstance()->GetActiveAbstractionLayer();
     ICRenderSurface* surface = ICRenderSurface::CreateInstance(abstraction, ICRenderSurface::Type_Default,
                                                              ICRenderSurface::Targetability_0);
-    if (surface == NULL) {
-        return NULL;
-    }
-    ICRenderSurface::InitParam params[] = {
-        {6, 0}, {4, 0}, {10, 0}, {15, mimeType}, {14, (unsigned int)&stream}, {0, 0}, {0, 0}
+    // Original: two parameter lists (hardware adds the color key), no failure checks.
+    ICRenderSurface::InitParam softwareParams[] = {
+        {6, 0}, {4, 0}, {10, 0}, {15, mimeType}, {14, (unsigned int)&stream}, {0, 0}
     };
+    ICRenderSurface::InitParam hardwareParams[] = {
+        {6, 0}, {4, 0}, {10, 0}, {15, mimeType}, {14, (unsigned int)&stream}, {9, 0xffff00ff}, {0, 0}
+    };
+    ICRenderSurface::InitParam* params = softwareParams;
     if (abstraction == ICGraphics::Abstraction_Hardware) {
-        params[5].m_key = 9;
-        params[5].m_value = 0xffff00ff;
+        params = hardwareParams;
     }
-    if (!surface->Initialize(params)) {
-        delete surface;
-        return NULL;
-    }
+    surface->Initialize(params);
     return surface;
 }
 
@@ -110,11 +118,12 @@ unsigned char CBH_SurfaceManager::IsImageExists(const char* name)
     if (ImageInCache(name)) {
         return 1;
     }
+    CSystemElement* source;
     CInputStream stream;
     unsigned int mimeType;
-    const char* storedName;
     unsigned char nameDecompressed;
-    return ((CResourceManager_v2*)CApplet::m_pApp->m_resourceManager)->GetStream(name, stream, mimeType, NULL, &storedName, nameDecompressed);
+    return ((CResourceManager_v2*)CApplet::m_pApp->m_resourceManager)->GetStream(
+        name, stream, mimeType, &source, NULL, nameDecompressed);
 }
 
 bool CBH_SurfaceManager::ReleaseSurface(const char* name)

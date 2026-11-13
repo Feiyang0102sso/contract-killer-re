@@ -162,7 +162,7 @@ InsetPanel::InsetPanel()
 
 HorizImageWindow::HorizImageWindow(const ImageRes& left, const ImageRes& middle,
                                    const ImageRes& right, bool fill)
-    : Window(false)
+    : WindowTransparent(false)
 {
     SetLayoutType(LAYOUT_SIMPLE);
     SetPercentWidth(100, 0, 0);

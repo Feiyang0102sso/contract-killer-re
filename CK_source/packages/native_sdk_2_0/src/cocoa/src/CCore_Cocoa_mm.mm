@@ -174,27 +174,6 @@ unsigned char CCore_Cocoa::SetBacklightEnabled(unsigned char enabled)
     return 1;
 }
 
-ICCore::eAutoRotationOrientation CCore_Cocoa::GetDisplayOrientationInTermsOfAutoRotation() const
-{
-    id delegate = [[UIApplication sharedApplication] delegate];
-    if ([delegate respondsToSelector:@selector(viewController)]) {
-        UIViewController* controller = [delegate viewController];
-        if (controller != nil) {
-            switch ([controller interfaceOrientation]) {
-            case UIInterfaceOrientationPortrait:
-                return AutoRotation_Portrait;
-            case UIInterfaceOrientationPortraitUpsideDown:
-                return AutoRotation_PortraitUpsideDown;
-            case UIInterfaceOrientationLandscapeRight:
-                return AutoRotation_LandscapeRight;
-            case UIInterfaceOrientationLandscapeLeft:
-                return AutoRotation_LandscapeLeft;
-            }
-        }
-    }
-    return AutoRotation_None;
-}
-
 void CCore_Cocoa::AttachView() const
 {
     id delegate = [[UIApplication sharedApplication] delegate];

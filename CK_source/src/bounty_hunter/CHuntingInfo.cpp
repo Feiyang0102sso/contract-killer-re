@@ -15,7 +15,6 @@ CHuntingInfo::SAssignedData::SAssignedData()
       m_cameraHUDModel(0), m_additionalMinionCount(0), m_weaponCategory(0),
       m_requiredWeaponId(-1), m_randomWeaponId(-1)
 {
-    memset(m_reputationChanges, 0, sizeof(m_reputationChanges));
     memset(m_field18, 0, sizeof(m_field18));
     m_bossType = NULL;
     m_squadType = NULL;
@@ -28,7 +27,7 @@ CHuntingInfo::SAssignedData::SAssignedData()
     m_ambientSound = NULL;
     m_field4c = 0;
     m_cameraIndex = 0;
-    m_field70 = false;
+    m_informantUnlockOnLevelUp = false;
     m_hasTarget = false;
     m_revenge = false;
     m_friendGated = false;

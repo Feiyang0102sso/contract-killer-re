@@ -3,13 +3,6 @@
 #include "CUnitMind.h"
 #include "CUnit.h"
 
-void CAlertExecutor::Tick(int)
-{
-    if (m_activeAnimation == NULL) {
-        Finish(EXECUTOR_RESULT_SUCCESS);
-    }
-}
-
 void CAlertExecutor::OnAnimationComplete(EPersonAnimType animType, const char* animName)
 {
     if (IsAnimationTheSame(animName) == true) {

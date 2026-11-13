@@ -1,4 +1,5 @@
 #include "CShopWindow.h"
+#include "AdBannerSizes.h"
 #include "CBH_GPSMap.h"
 #include "CBH_SurfaceManager.h"
 #include "CPHInterface.h"
@@ -11,9 +12,8 @@
 #include "App.h"
 #include "CDialogWindow.h"
 #include "CFontMgr.h"
-#include "CGameAnalytics.h"
 #include "CIAPCurrencyManager.h"
-#include "ICInAppPurchase.h"
+#include "ICInAppPurchase.h" // The original initializes the IAP class ID in this unit.
 #include "ServiceWindows.h"
 
 namespace {
@@ -93,7 +93,7 @@ Window* CShopWindow::AddShopButton(Window* parent, const XString& text, int x, i
 
 void CShopWindow::SetTab(int tab)
 {
-    if ((unsigned int)tab > TAB_COUNT) {
+    if ((unsigned int)tab >= TAB_COUNT) {
         return;
     }
     int index = m_tabIndices[tab];
@@ -101,7 +101,7 @@ void CShopWindow::SetTab(int tab)
         return;
     }
     // Opening the bank tab asks PlayHaven for its placement (not during the tutorial).
-    if (index == 0 && !CTutorialManager::IsPlayerInTutorial()) {
+    if (index == 0 && !static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
         CPHInterface::startPublisherContentRequest("bank_launch", false, false);
     }
     m_tabs->SetCurrTab(index, false);
@@ -110,7 +110,7 @@ void CShopWindow::SetTab(int tab)
 int CShopWindow::GetTab()
 {
     int current = m_tabs->m_currentTab;
-    for (int tab = 0; tab <= TAB_COUNT; ++tab) {
+    for (int tab = 0; tab < TAB_COUNT; ++tab) {
         if (current == m_tabIndices[tab]) {
             return tab;
         }
@@ -120,7 +120,7 @@ int CShopWindow::GetTab()
 
 void CShopWindow::SetTabLock(int tab, bool locked)
 {
-    if ((unsigned int)tab > TAB_COUNT) {
+    if ((unsigned int)tab >= TAB_COUNT) {
         return;
     }
     if (m_tabIndices[tab] != -1) {
@@ -136,16 +136,6 @@ int CShopWindow::GetTabLeft()
 int CShopWindow::GetTabTop()
 {
     return m_tabs->m_y;
-}
-
-void CShopWindow::RefreshCurrencyProducts()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    ICInAppPurchase* store = ICInAppPurchase::GetInstance();
-    CIAPCurrencyManager* catalog = app->InitIAPCurrencyManager();
-    if (catalog->GetAvailableItemsCount() == 0 && store->IsAvailable() && !store->IsTransactionActive()) {
-        catalog->UpdateIAPInfo(true);
-    }
 }
 
 CIAPCurrency* CShopWindow::FindCurrency(int catalogIndex)
@@ -171,43 +161,6 @@ void CShopWindow::AddCurrencyRows(Window* parent, int y, int command)
             y += 32 * scale;
         }
     }
-}
-
-void CShopWindow::ShowCurrencyDetails(CIAPCurrency* item, int buyCommand)
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDialogWindow* dialog = new CDialogWindow(false);
-    dialog->SetTitleText(item->GetName());
-    XString message = item->GetDescription();
-    if (item->isAvailable()) {
-        dialog->SetButtons(CDialogWindow::BUTTON_BUY, CDialogWindow::BUTTON_NO);
-        dialog->SetButtonsCommands(buyCommand, -1, -1);
-    } else {
-        const char* status = "IDS_SHOP_IAP_ERROR";
-        if (ICInAppPurchase::GetInstance()->IsTransactionActive()) {
-            status = "IDS_SHOP_IAP_LOADING_MESSAGE";
-        }
-        message.Append(XString(L"\n"));
-        message.Append(ResString(status));
-        dialog->SetButtons(CDialogWindow::BUTTON_OK);
-    }
-    dialog->SetMessageText(message);
-    dialog->SetExtraImageFromImageID(item->getBigImageResId());
-    app->m_mainLayer->AddModal(dialog);
-}
-
-void CShopWindow::BuyCurrency(CIAPCurrency* item)
-{
-    ICInAppPurchase* store = ICInAppPurchase::GetInstance();
-    if (store->IsTransactionActive()) {
-        return;
-    }
-    if (!item->isAvailable() || !store->IsAvailable()) {
-        ShowCurrencyResult(IAPPurchaseFailed, NULL);
-        return;
-    }
-    store->BuyProduct(CStrWChar(item->m_appleId.c_str()));
-    CGameAnalytics::logIAPBuyClicked(XString::Format(L"%02d_iap", item->m_id));
 }
 
 void CShopWindow::ShowCurrencyResult(int command, CIAPCurrency* item)

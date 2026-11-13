@@ -29,11 +29,25 @@ static void ScaleCoordinates(int& x, int& y, float viewScale);
 - (id)initWithCoder:(NSCoder*)coder
 {
     m_viewScale = 1.0f;
-    if ([super initWithCoder:coder] == self) {
+    self = [super initWithCoder:coder];
+    if (self != nil) {
         if ([self respondsToSelector:@selector(contentScaleFactor)]) {
             m_viewScale = [[UIScreen mainScreen] scale];
             [self setContentScaleFactor:m_viewScale];
         }
+        g_appView = self;
+
+        // The OpenGL layer and the screen size are published here for the graphics start-up
+        // (CGraphics_OGLES_Cocoa::Initialize reads CApplet::m_eaglLayer).
+        CGRect screenBounds = [[UIScreen mainScreen] bounds];
+        CGPoint corner = [self convertPoint:CGPointMake(screenBounds.size.width, screenBounds.size.height) toView:nil];
+        m_width = (int)floorf(corner.x);
+        m_height = (int)floorf(corner.y);
+        CApplet::m_eaglLayer = [self layer];
+        // The game runs in landscape: the portrait bounds are stored swapped (pixels, as in the original).
+        CApplet::m_UIScreenMainScreenWidth = (short)(int)((int)screenBounds.size.width * m_viewScale);
+        CApplet::m_UIScreenMainScreenHeight = CApplet::m_UIScreenMainScreenWidth;
+        CApplet::m_UIScreenMainScreenWidth = (short)(int)((int)screenBounds.size.height * m_viewScale);
     }
     return self;
 }
@@ -87,11 +101,12 @@ static void TransposeTouchForScreenOrientation(int& x, int& y, int width, int he
         if (orientation == UIInterfaceOrientationPortraitUpsideDown) {
             x = width - x;
             y = height - y;
-        } else if (orientation == UIInterfaceOrientationLandscapeLeft) {
+        } else if (orientation == UIInterfaceOrientationLandscapeRight) {
+            // interface LandscapeRight (3) = device LandscapeLeft: same transform as above (original order 2, 3, 4)
             int previousX = x;
             x = y;
             y = width - previousX;
-        } else if (orientation == UIInterfaceOrientationLandscapeRight) {
+        } else if (orientation == UIInterfaceOrientationLandscapeLeft) {
             int previousX = x;
             x = height - y;
             y = previousX;
@@ -139,152 +154,6 @@ static void ScaleCoordinates(int& x, int& y, float viewScale)
 
         // view coordinates -> coordinates of the current device / interface orientation
         TransposeTouchForScreenOrientation(x, y, m_width, m_height);
-        ScaleCoordinates(x, y, m_viewScale);
-
-        // param2: tap count (2 bits), y (14 bits), x (14 bits)
-        applet->QueueSystemEvent(SystemEvent_TouchEnded, (unsigned int)touch,
-                                 (([touch tapCount] & 3) << 28) | (x & 0x3fff) | ((y & 0x3fff) << 14));
-    }
-}
-
-- (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event
-{
-    CApplet* applet = CApplet::m_pThis;
-    for (UITouch* touch in touches) {
-        applet->QueueSystemEvent(SystemEvent_TouchCancelled, (unsigned int)touch, 0);
-    }
-}
-
-- (BOOL)isMultipleTouchEnabled
-{
-    return CApplet::m_pThis->m_multipleTouchEnabled == 1;
-}
-
-@end
-
-@implementation AppGLView
-
-+ (Class)layerClass
-{
-    return [CAEAGLLayer class];
-}
-
-- (id)initWithFrame:(CGRect)frame
-{
-    m_viewScale = 1.0f;
-    if ([super initWithFrame:frame] == self) {
-        if ([self respondsToSelector:@selector(contentScaleFactor)]) {
-            m_viewScale = [[UIScreen mainScreen] scale];
-            [self setContentScaleFactor:m_viewScale];
-        }
-
-        CGRect screenBounds = [[UIScreen mainScreen] bounds];
-        CGPoint corner = [self convertPoint:CGPointMake(screenBounds.size.width, screenBounds.size.height) toView:nil];
-        m_width = (int)floorf(corner.x);
-        m_height = (int)floorf(corner.y);
-        CApplet::m_eaglLayer = [self layer];
-        CApplet::m_UIScreenMainScreenWidth = (short)(int)((int)screenBounds.size.width * m_viewScale);
-        CApplet::m_UIScreenMainScreenHeight = (short)(int)((int)screenBounds.size.height * m_viewScale);
-    }
-    return self;
-}
-
-- (void)dealloc
-{
-    [super dealloc];
-}
-
-- (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event
-{
-    CApplet* applet = CApplet::m_pThis;
-    for (UITouch* touch in touches) {
-        CGPoint location = [touch locationInView:self];
-        CGPoint point = [self convertPoint:location toView:nil];
-        int x = (int)floorf(point.x);
-        int y = (int)floorf(point.y);
-
-        // view coordinates -> coordinates of the current device orientation
-        ICCore* core = CApplet::m_pCore;
-        if (core->m_deviceOrientationSet) {
-            if (core->m_deviceOrientation == ICCore::DeviceOrientation_LandscapeLeft) {
-                int previousX = x;
-                x = y;
-                y = m_width - previousX;
-            } else if (core->m_deviceOrientation == ICCore::DeviceOrientation_PortraitUpsideDown) {
-                x = m_width - x;
-                y = m_height - y;
-            } else if (core->m_deviceOrientation == ICCore::DeviceOrientation_LandscapeRight) {
-                int previousX = x;
-                x = m_height - y;
-                y = previousX;
-            }
-        }
-        ScaleCoordinates(x, y, m_viewScale);
-
-        // param2: tap count (2 bits), y (14 bits), x (14 bits)
-        applet->QueueSystemEvent(SystemEvent_TouchBegan, (unsigned int)touch,
-                                 (([touch tapCount] & 3) << 28) | (x & 0x3fff) | ((y & 0x3fff) << 14));
-    }
-}
-
-- (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event
-{
-    CApplet* applet = CApplet::m_pThis;
-    for (UITouch* touch in touches) {
-        CGPoint location = [touch locationInView:self];
-        CGPoint point = [self convertPoint:location toView:nil];
-        int x = (int)floorf(point.x);
-        int y = (int)floorf(point.y);
-
-        // view coordinates -> coordinates of the current device orientation
-        ICCore* core = CApplet::m_pCore;
-        if (core->m_deviceOrientationSet) {
-            if (core->m_deviceOrientation == ICCore::DeviceOrientation_LandscapeLeft) {
-                int previousX = x;
-                x = y;
-                y = m_width - previousX;
-            } else if (core->m_deviceOrientation == ICCore::DeviceOrientation_PortraitUpsideDown) {
-                x = m_width - x;
-                y = m_height - y;
-            } else if (core->m_deviceOrientation == ICCore::DeviceOrientation_LandscapeRight) {
-                int previousX = x;
-                x = m_height - y;
-                y = previousX;
-            }
-        }
-        ScaleCoordinates(x, y, m_viewScale);
-
-        // param2: tap count (2 bits), y (14 bits), x (14 bits)
-        applet->QueueSystemEvent(SystemEvent_TouchMoved, (unsigned int)touch,
-                                 (([touch tapCount] & 3) << 28) | (x & 0x3fff) | ((y & 0x3fff) << 14));
-    }
-}
-
-- (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event
-{
-    CApplet* applet = CApplet::m_pThis;
-    for (UITouch* touch in touches) {
-        CGPoint location = [touch locationInView:self];
-        CGPoint point = [self convertPoint:location toView:nil];
-        int x = (int)floorf(point.x);
-        int y = (int)floorf(point.y);
-
-        // view coordinates -> coordinates of the current device orientation
-        ICCore* core = CApplet::m_pCore;
-        if (core->m_deviceOrientationSet) {
-            if (core->m_deviceOrientation == ICCore::DeviceOrientation_LandscapeLeft) {
-                int previousX = x;
-                x = y;
-                y = m_width - previousX;
-            } else if (core->m_deviceOrientation == ICCore::DeviceOrientation_PortraitUpsideDown) {
-                x = m_width - x;
-                y = m_height - y;
-            } else if (core->m_deviceOrientation == ICCore::DeviceOrientation_LandscapeRight) {
-                int previousX = x;
-                x = m_height - y;
-                y = previousX;
-            }
-        }
         ScaleCoordinates(x, y, m_viewScale);
 
         // param2: tap count (2 bits), y (14 bits), x (14 bits)

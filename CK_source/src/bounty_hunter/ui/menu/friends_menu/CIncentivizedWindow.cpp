@@ -157,18 +157,17 @@ void CIncentivizedWindow::OnCommand(Event& event)
 
 void CIncentivizedWindow::HandleAcceptPressed()
 {
-    if (m_command == 0) {
-        return;
-    }
+    // the original sends an untyped event without the parameter and never closes here
     int sender = reinterpret_cast<int>(this);
-    if (m_eventReceiver == NULL) {
-        Window* handler = WindowApp::HandleTunnelCommand(m_command, sender, m_commandParameter, 0);
-        if (handler == NULL && m_commandParameter != 0) {
-            Close();
+    if (m_eventReceiver != NULL) {
+        if (m_command != 0) {
+            Event event(Event::NONE, 0, 0, 0, 0);
+            event.m_id = m_command;
+            event.m_param1 = sender;
+            m_eventReceiver->OnCommand(event);
         }
-    } else {
-        Event event(Event::COMMAND, m_command, sender, m_commandParameter, 0);
-        m_eventReceiver->OnCommand(event);
+    } else if (m_command != 0) {
+        WindowApp::HandleTunnelCommand(m_command, sender, 0, 0);
     }
 }
 
@@ -223,7 +222,7 @@ void CIncentivizedWindow::SelectCheckBox(int index)
 {
     CCheckBox* box = m_checkBoxes[index];
     int friendId = box->m_commandParam;
-    if (m_selectedIds.indexOf(friendId) < 0) {
+    if (m_selectedIds.indexOf(friendId) == -1) {
         m_selectedIds.addElement(friendId);
     }
     box->SetChecked(true);

@@ -1,9 +1,12 @@
 #include "CMovementExecutor.h"
 
+#include "App.h"
 #include "CBH_Player.h"
+#include "DGHelper.h"
 #include "CPathCalculator.h"
 #include "CSwerveGame.h"
 #include "CUnit.h"
+#include "CVisualCharacterType.h"
 
 CMovementExecutor::CMovementExecutor(CUnitMind* mind, float speed, EPersonAnimType animation)
     : IExecutor(mind), m_animation(animation), m_field4030(0)
@@ -33,6 +36,9 @@ void CMovementExecutor::OnReceiveDamage()
         return;
     }
     CUnitBody* body = unit->GetBody();
+    if (body == NULL) {
+        return;
+    }
     if (unit->m_hp == 0 && body->IsRunning()) {
         EHitType hit;
         unit->GetPickInfo(&hit);
@@ -42,9 +48,12 @@ void CMovementExecutor::OnReceiveDamage()
         return;
     }
     if (unit->m_hp < unit->m_maxHp) {
-        unit->GetMovementAnimParam(&m_path.m_speed, &m_animation, true);
+        // original: wounded run animation (7) at the shared wounded running speed
+        float speed = CVisualCharacterType::m_runWoundSpeed;
+        m_animation = static_cast<EPersonAnimType>(7);
         StopActiveAnimation();
         StartAnimation();
+        m_path.m_speed = speed;
     }
 }
 
@@ -61,14 +70,22 @@ const wchar_t* CMovementExecutor::GetName() const
     return L"CMovementExecutor";
 }
 
-void CMovementExecutor::StartAnimation()
+__attribute__((noinline)) void CMovementExecutor::StartAnimation()
 {
-    m_activeAnimation = m_mind->GetUnit()->GetBody()->StartAnimation(m_animation, true);
+    // the original checks the body pointer it gets from the unit
+    CUnitBody* body = m_mind->GetUnit()->GetBody();
+    if (body != NULL) {
+        m_activeAnimation = body->StartAnimation(m_animation, true);
+    }
 }
 
 void CMovementExecutor::OnStartFromPointToPoint(int from, int to)
 {
-    m_path.SetBody(m_mind->GetUnit()->GetBody());
+    // the original only hands over a non-NULL body
+    CUnitBody* body = m_mind->GetUnit()->GetBody();
+    if (body != NULL) {
+        m_path.SetBody(body);
+    }
     if (!m_mind->m_pathCalculator->FindPath(&m_path, from, to)) {
         Finish(EXECUTOR_RESULT_FAILED);
         return;
@@ -78,7 +95,11 @@ void CMovementExecutor::OnStartFromPointToPoint(int from, int to)
 
 void CMovementExecutor::OnStartToExitPoint(int from)
 {
-    m_path.SetBody(m_mind->GetUnit()->GetBody());
+    // the original only hands over a non-NULL body
+    CUnitBody* body = m_mind->GetUnit()->GetBody();
+    if (body != NULL) {
+        m_path.SetBody(body);
+    }
     if (!m_mind->m_pathCalculator->FindPathToNearestExitPoint(&m_path, from)) {
         Finish(EXECUTOR_RESULT_FAILED);
         return;
@@ -88,13 +109,19 @@ void CMovementExecutor::OnStartToExitPoint(int from)
 
 void CMovementExecutor::OnStartToAttackPoint(int from, bool safeOnly)
 {
-    m_path.SetBody(m_mind->GetUnit()->GetBody());
-    int camera = CSwerveGame::m_pInstance->GetCurrCamId();
-    if (!m_mind->m_pathCalculator->FindPathToNearestAttackPoint(&m_path, from, camera, safeOnly)) {
-        Finish(EXECUTOR_RESULT_FAILED);
-        return;
+    // the original only hands over a non-NULL body
+    CUnitBody* body = m_mind->GetUnit()->GetBody();
+    if (body != NULL) {
+        m_path.SetBody(body);
     }
-    StartAnimation();
+    // original: calculator read before the camera id, the game taken through App -> helper
+    CPathCalculator* calculator = m_mind->m_pathCalculator;
+    int camera = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->GetCurrCamId();
+    if (!calculator->FindPathToNearestAttackPoint(&m_path, from, camera, safeOnly)) {
+        Finish(EXECUTOR_RESULT_FAILED);
+    } else {
+        StartAnimation();
+    }
 }
 
 void AddMovementExecutor(CUnitMind* mind, int from, int to, bool run)

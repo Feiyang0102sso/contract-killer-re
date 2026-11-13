@@ -220,10 +220,6 @@ unsigned char CRenderSurface_SW::GetDescription(Description& description)
         description.m_multisample = 0;
         break;
     }
-    description.m_magFilter = 3;
-    description.m_minFilter = 3;
-    description.m_wrapS = 0;
-    description.m_wrapT = 0;
     description.m_ownsPalette = (m_flags & Flag_OwnsPalette) != 0;
     return valid;
 }

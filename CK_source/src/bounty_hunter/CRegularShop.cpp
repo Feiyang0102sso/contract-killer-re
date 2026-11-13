@@ -1,4 +1,5 @@
 #include "CRegularShop.h"
+#include "AdBannerSizes.h"
 #include "CGameAnalytics.h"
 #include "ICInAppPurchase.h"
 #include "CMiscItemManager.h"
@@ -17,9 +18,15 @@
 #include "CBH_MenuButton.h"
 #include "CAmmo.h"
 #include "CAmmoManager.h"
+#include "CAmmoPack.h"
+#include "CAmmoPackManager.h"
+#include "CArmor.h"
+#include "CArmorManager.h"
 #include "CBH_Player.h"
 #include "CDH_WeaponsManager.h"
 #include "CFontMgr.h"
+#include "CGoPill.h"
+#include "CGoPillManager.h"
 #include "CIAPCurrency.h"
 #include "CIAPCurrencyManager.h"
 #include "CDialogWindow.h"
@@ -34,7 +41,6 @@
 
 namespace {
 const int OpenItem = 0x43a30521;
-const int ConfirmPurchase = 0x43a30522;
 const int CloseStore = (int)0x97204784;
 const int CloseButton = 0x43a30524;
 const int WatchAd = 0x71f7f6e0;
@@ -193,9 +199,6 @@ const int CurrencyUpdated = (int)0xff403571;
 const int CloseRequested = 0x5f523cd9;
 const SScreenAdaptingConstant ItemSpacing(200, 440, 550);
 // Bridges for the CK_source helpers Show/ShowItem/ShowDeal (not in the original unit).
-int g_pendingItemId = -1;
-CItem* g_pendingDeal = NULL;
-CItem* g_pendingCurrency = NULL;
 
 }
 
@@ -266,7 +269,7 @@ CRegularShop::CRegularShop()
     CAutoArrangedWindow* energyContainer = CreatePage(energyPage, app->InitIAPCurrencyManager(), container, 1);
     if (CBH_Player::GetInstance()->IsEnegyEnabled() == 1) {
         CreatePage(energyPage, app->m_energyManager, energyContainer, -1);
-        m_tabIndices[2] = AddTab(  // 0xf8 energy slot
+        m_tabIndices[TAB_ENERGY] = AddTab(  // 0xf8 energy slot
             ResString("IDS_TAB_ENERGY"), energyPage, "SUR_TAB_ENERGY", false, -1);
     }
 
@@ -280,7 +283,7 @@ CRegularShop::CRegularShop()
     CreateOtherTab();
     UpdateTabLock();
     SetTab(TAB_WEAPONS);
-    if (!CTutorialManager::IsPlayerInTutorial()) {
+    if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
         CPHInterface::startPublisherContentRequest("store_launch", false, false);
     }
 }
@@ -312,27 +315,9 @@ void CRegularShop::Show(ETab tab)
     app->m_mainLayer->AddModal(shop);
 }
 
-void CRegularShop::ShowItem(ETab tab, int id)
-{
-    Show(tab);
-    g_pendingItemId = id;
-}
-
-void CRegularShop::ShowDeal(CItem* item)
-{
-    ETab tab = TAB_OTHER;
-    if (item->getType() == 0) {
-        tab = TAB_WEAPONS;
-    } else if (item->getType() == 2) {
-        tab = TAB_AMMO;
-    }
-    Show(tab);
-    g_pendingDeal = item;
-}
-
 void CRegularShop::Init()
 {
-    if (CTutorialManager::IsPlayerInTutorial() == 1) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial() == 1) {
         WindowApp::HandleTunnelCommand(-0x7b79c896, 0, 0, 0);
     }
 }
@@ -340,13 +325,13 @@ void CRegularShop::Init()
 void CRegularShop::Update()
 {
     bool showBadge = false;
-    if (GetTab() == TAB_WEAPONS && !HasModalChild() && !CTutorialManager::IsPlayerInTutorial()) {
+    if (GetTab() == TAB_WEAPONS && !HasModalChild() && !static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
         if ((m_flags & 0x200) == 0) {
             showBadge = ((m_flags >> 0x18) & 0x20) != 0;
         }
     }
     m_moreGamesButton->Update(showBadge);
-    if (CTutorialManager::IsPlayerInTutorial() == 1 && CTutorialManager::IsShopCloseBlink() == 1) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial() == 1 && static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsShopCloseBlink() == 1) {
         m_back->SetBlinking(true);
     }
     // Top banner: hidden while a modal child is open, shown again when the shop is active.
@@ -357,21 +342,6 @@ void CRegularShop::Update()
         ICAdManager::GetInstance()->ShowAd(ICAdManager::Type_AdMarvel, ICAdManager::Position_TopRight,
                                           -1, -1, NULL, NULL);
         m_unknownEc = true;
-    }
-    if (g_pendingDeal != NULL) {
-        CItem* deal = g_pendingDeal;
-        g_pendingDeal = NULL;
-        if (deal->m_unlockLevel <= CBH_Player::GetInstance()->GetLevel()) {
-            ShowItem(deal);
-        }
-    }
-    if (g_pendingItemId >= 0) {
-        int itemId = g_pendingItemId;
-        g_pendingItemId = -1;
-        CItem* item = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->getItemById(itemId);
-        if (item != NULL && item->m_unlockLevel <= CBH_Player::GetInstance()->GetLevel()) {
-            ShowItem(item);
-        }
     }
     CBaseScreen::Update();
 }
@@ -425,7 +395,10 @@ void CRegularShop::CreateWeaponsPage(CScrollWindow* scroll, CAutoArrangedWindow*
     offers->SetSize(container->m_width / 2, container->m_height);
     m_moreGamesButton = CreateCustomButton(offers, true, "IDB_SHOP_ICON_PLAYHAVEN_WIDE",
         "IDB_WEAPON_SHOP_ICON_ACTIVE_GREEN", ResString("IDS_MENU_MORE_GAMES"), MoreGames);
-    offers->AddToFront(CreateTapjoyWeaponButton(), 0, 1);
+    CShopItemButton* tapjoy = CreateTapjoyWeaponButton();
+    if (tapjoy != NULL) {
+        offers->AddToFront(tapjoy, 0, 1);
+    }
     container->Add(offers);
     App* app = static_cast<App*>(WindowApp::m_instance);
     int presentId = app->m_helper->m_config.GetIntegerValueByToken("GAME_UPDATE_WEAPON_PRESENT_ID", true);
@@ -536,10 +509,13 @@ void CRegularShop::CreateOtherTab()
     filters->SetPercentHeight(100, 0, 0);
     filters->SetLayoutType(LAYOUT_SIMPLE);
     filters->SetAlign(9);
-    const char* const filterTexts[] = { "IDS_FILTER_HEALTH", "IDS_FILTER_ARMOR", "IDS_FILTER_PILLS" };
-    const char* const filterImages[] = { "IDB_SHOP_FILTER_HEALTH", "IDB_SHOP_FILTER_ARMOR", "IDB_SHOP_FILTER_PILLS" };
-    const int filterBits[] = { 2, 4, 8 };
-    for (int index = 0; index < 3; ++index) {
+    // Original 0xfe1b0: four filters (the pills filter uses the TABLETS image), the page placed at the
+    // tab corner, and the tab icon SUR_TAB_MEDIC (SUR_TAB_OTHER / IDB_SHOP_FILTER_PILLS do not exist).
+    const char* const filterTexts[] = { "IDS_FILTER_HEALTH", "IDS_FILTER_ARMOR", "IDS_FILTER_PILLS", "IDS_FILTER_MISC" };
+    const char* const filterImages[] = { "IDB_SHOP_FILTER_HEALTH", "IDB_SHOP_FILTER_ARMOR", "IDB_SHOP_FILTER_TABLETS",
+                                         "IDB_SHOP_FILTER_MISC" };
+    const int filterBits[] = { 2, 4, 8, 0x10 };
+    for (int index = 0; index < 4; ++index) {
         CFilterButton* button = new CFilterButton(ResString(filterTexts[index]), filterImages[index], m_otherFilter);
         button->m_command = FilterOthers;
         button->m_commandParameter1 = filterBits[index];
@@ -547,15 +523,15 @@ void CRegularShop::CreateOtherTab()
         button->m_commandParameter3 = 0;
         filters->AddToFront(button, 0, index);
     }
-    othersTab->AddToFront(filters);
+    othersTab->AddToFront(filters, 0, 0);
     m_othersPage = new CScrollWindow(true);
-    othersTab->AddToFront(m_othersPage);
-    m_othersPage->SetLayoutType(LAYOUT_SIMPLE);
-    m_othersPage->SetAlign(0x12);
-    m_othersPage->SetSize(SScreenAdaptingConstant(390, 790, 840)(), m_height - GetTabTop() - SScreenAdaptingConstant(51, 125)());
-    m_othersPage->HandleUpdate(false);
+    m_othersPage->SetCorner(GetTabLeft(), GetTabTop());
+    m_othersPage->SetLayoutType(LAYOUT_NONE);
+    m_othersPage->SetAlign(2);
+    othersTab->AddToFront(m_othersPage, 1, 0);
+    othersTab->HandleUpdate(true);
     CreateOthersPage();
-    m_tabIndices[4] = AddTab(ResString("IDS_TAB_OTHER"), othersTab, "SUR_TAB_OTHER", false, -1);  // 0x100
+    m_tabIndices[TAB_OTHER] = AddTab(ResString("IDS_TAB_OTHER"), othersTab, "SUR_TAB_MEDIC", false, -1);  // 0x100
 }
 
 CAutoArrangedWindow* CRegularShop::CreateItemsContainer(int width)
@@ -593,10 +569,10 @@ void CRegularShop::CreateOthersPage()
 void CRegularShop::SwitchWeaponFilter(int filter)
 {
     m_weaponsPage->FlushPages();
-    if ((m_weaponFilter & filter) == 0) {
-        m_weaponFilter = m_weaponFilter | filter;
-    } else {
+    if (m_weaponFilter & filter) {
         m_weaponFilter = m_weaponFilter & ~filter;
+    } else {
+        m_weaponFilter = m_weaponFilter | filter;
     }
     CreateWeaponsPage(m_weaponsPage, NULL, m_weaponFilter);
 }
@@ -633,6 +609,9 @@ CShopItemButton* CRegularShop::CreateTapjoyWeaponButton()
     CShopItemButton* button = new CShopItemButton(manager, 8, pack->GetName(), pack->m_unlockLevel,
                                                   0, pack->m_id, "IDB_SHOP_ICOM_TAPJOY_WEAPON");
     button->m_command = OpenTapjoy;
+    button->m_commandParameter1 = reinterpret_cast<int>(button);
+    button->m_commandParameter2 = 0;
+    button->m_commandParameter3 = 0;
     button->SetAlwaysActive(true);
     return button;
 }
@@ -650,44 +629,11 @@ void CRegularShop::TryOpenTapJoy()
     AddModal(warning);
 }
 
-void CRegularShop::ShowItem(CItem* item)
-{
-    if (item == NULL) {
-        return;
-    }
-    int type = item->getType();
-    if (type == 5) {
-        g_pendingCurrency = item;
-        ShowCurrencyDetails(static_cast<CIAPCurrency*>(item), ConfirmPurchase);
-        return;
-    }
-    CItemManager* manager = App::GetItemManagerByType(type);
-    if (manager == NULL) {
-        return;
-    }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CShopItemInfoWindow* details = new CShopItemInfoWindow(manager, type, item->m_id, item->GetStatsString(),
-                                                           false, CShopItemInfoWindow::SOURCE_SHOP);
-    app->m_mainLayer->AddModal(details);
-}
-
-void CRegularShop::CloseShop()
-{
-    if (CTutorialManager::CanCloseShop()) {
-        OnLostFocus();
-        Close();
-        WindowApp::HandleTunnelCommand(0x4d5de318, 0, 0, 0);
-        WindowApp::HandleTunnelCommand(0x703ba476, 0, 0, 0);
-    } else {
-        WindowApp::HandleTunnelCommand(-0x21e08bf9, 0, 0, 0);
-    }
-}
-
 void CRegularShop::OnCommand(Event& event)
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
-    int id = event.m_id;
-    if (id == FilterOthers) {
+    switch (event.m_id) {
+    case FilterOthers:
         m_othersPage->FlushPages();
         if ((m_otherFilter & event.m_param1) == 0) {
             m_otherFilter = m_otherFilter | event.m_param1;
@@ -695,33 +641,59 @@ void CRegularShop::OnCommand(Event& event)
             m_otherFilter = m_otherFilter & ~event.m_param1;
         }
         CreateOthersPage();
-    } else if (id == AmmoChanged) {
+        break;
+    case AmmoChanged:
         UpdateAmmoPage();
-    } else if (id == TabLockChanged) {
+        break;
+    case TabLockChanged:
         UpdateTabLock();
-    } else if (id == IAPPurchaseComplete) {
+        break;
+    case IAPPurchaseComplete: {
+        // The original only closes the wait dialog; m_waitDialog keeps the stale pointer.
         if (m_waitDialog != NULL) {
             m_waitDialog->Close();
         }
         CIAPCurrency* item = reinterpret_cast<CIAPCurrency*>(event.m_param1);
         CDialogWindow* dialog = new CDialogWindow(true);
-        dialog->SetMessageText(ResString("IDS_SHOP_IAP_SUCCESS") + item->GetName());
+        dialog->SetMessageText(ResString("IDS_SHOP_IAP_SUCCESS") + item->m_name.c_str());
         dialog->SetButtons(CDialogWindow::BUTTON_OK);
         app->m_mainLayer->AddModal(dialog);
-    } else if (id == IAPInfoRequested) {
+        break;
+    }
+    case IAPInfoRequested:
         if (app->InitIAPCurrencyManager()->IsRetryWaiting()) {
             UpdateCurrenciesPage();
         } else {
             app->InitIAPCurrencyManager()->UpdateIAPInfo(false);
-            event.Clear();
         }
-    } else if (id == CurrencyUpdated) {
+        event.Clear();
+        break;
+    case CurrencyUpdated:
         UpdateCurrenciesPage();
-    } else if (id == FilterWeapons) {
+        event.Clear();
+        break;
+    case FilterWeapons:
         SwitchWeaponFilter(event.m_param1);
-    } else if (id == CloseRequested) {
-        CloseShop();
-    } else if (id == IAPPurchaseCancelled) {
+        break;
+    case CloseRequested: {
+        CAdColonyButton* moreGames = m_moreGamesButton;
+        if (moreGames->m_notificationShown) {
+            CPHInterface::hideNotificationView(MoreGamesPlacement);
+            moreGames->m_notificationShown = false;
+        }
+        // Original: a blocked close skips CBaseScreen::OnCommand as well.
+        if (app->m_tutorialManager->CanCloseShop() != true) {
+            return;
+        }
+        WindowApp::HandleTunnelCommand(0x4d5de318, 0, 0, 0);
+        if (CBH_Player::GetInstance()->m_tutorialState < 4) {
+            CGameAnalytics::logTutorialEvents(static_cast<CGameAnalytics::ETutorialEvent>(1));
+        } else if (CBH_Player::GetInstance()->m_tutorialState == 7) {
+            CGameAnalytics::logTutorialEvents(static_cast<CGameAnalytics::ETutorialEvent>(4));
+        }
+        break;
+    }
+    case IAPPurchaseCancelled: {
         if (m_waitDialog != NULL) {
             m_waitDialog->Close();
         }
@@ -730,7 +702,9 @@ void CRegularShop::OnCommand(Event& event)
         dialog->SetMessageText(ResString("IDS_SHOP_IAP_ERROR"));
         dialog->SetButtons(CDialogWindow::BUTTON_OK);
         app->m_mainLayer->AddModal(dialog);
-    } else if (id == IAPPurchaseFailed) {
+        break;
+    }
+    case IAPPurchaseFailed: {
         CDialogWindow* dialog = new CDialogWindow(true);
         dialog->SetTitleText(ResString("IDS_SHOP_IAP_ERROR_TITLE"));
         dialog->SetMessageText(ResString("IDS_SHOP_IAP_ERROR"));
@@ -739,56 +713,162 @@ void CRegularShop::OnCommand(Event& event)
         if (m_waitDialog != NULL) {
             m_waitDialog->Close();
         }
-    } else if (id == WatchAd) {
+        break;
+    }
+    case WatchAd:
         AddModal(new CAdColonyWindow(false));
-    } else if (id == MoreGames) {
+        break;
+    case MoreGames:
         CPHInterface::startPublisherContentRequest(MoreGamesPlacement, false, true);
-    } else if (id == OpenTapjoy) {
+        break;
+    case OpenTapjoy: {
         // A shop card was pressed: event.m_param1 is the card itself.
         CShopItemButton* card = reinterpret_cast<CShopItemButton*>(event.m_param1);
-        if (!card->m_disabled) {
-            OpenCard(card);
+        if (card->m_disabled) {
+            break;
         }
+        switch (card->m_type) {
+        case 0: {
+            int itemId = card->m_itemId;
+            CShopItemInfoWindow* details = new CShopItemInfoWindow(
+                reinterpret_cast<CItemManager*>(app->InitWeaponManager()), card->m_type, itemId,
+                app->InitWeaponManager()->getItemById(itemId)->GetStatsString(), false, CShopItemInfoWindow::SOURCE_SHOP);
+            AddModal(details);
+            break;
+        }
+        case 2: {
+            int itemId = card->m_itemId;
+            XString stats = app->InitAmmoManager()->getItemById(itemId)->GetStatsString();
+            CShopItemInfoWindow* details = new CShopItemInfoWindow(
+                reinterpret_cast<CItemManager*>(app->InitAmmoManager()), card->m_type, itemId, stats, false,
+                CShopItemInfoWindow::SOURCE_SHOP);
+            AddModal(details);
+            break;
+        }
+        case 3: {
+            int itemId = card->m_itemId;
+            CItemManager* manager = reinterpret_cast<CItemManager*>(app->m_medicantManager);
+            CShopItemInfoWindow* details = new CShopItemInfoWindow(
+                manager, card->m_type, itemId, manager->getItemById(itemId)->GetStatsString(), false,
+                CShopItemInfoWindow::SOURCE_SHOP);
+            AddModal(details);
+            break;
+        }
+        case 4: {
+            int itemId = card->m_itemId;
+            CShopItemInfoWindow* details = new CShopItemInfoWindow(
+                reinterpret_cast<CItemManager*>(app->m_energyManager), card->m_type, itemId, XString(), false,
+                CShopItemInfoWindow::SOURCE_SHOP);
+            AddModal(details);
+            break;
+        }
+        case 5: {
+            int itemId = card->m_itemId;
+            CIAPCurrency* currency = static_cast<CIAPCurrency*>(app->InitIAPCurrencyManager()->getItemById(itemId));
+            if (XString(currency->m_type) == XString("tapjoy")) {
+                TryOpenTapJoy();
+                break;
+            }
+            if (app->InitIAPCurrencyManager()->getItemById(itemId)->isAvailable() != true) {
+                app->InitIAPCurrencyManager()->UpdateIAPInfo(true);
+                UpdateCurrenciesPage();
+                break;
+            }
+            ICInAppPurchase* store = ICInAppPurchase::GetInstance();
+            CDialogWindow* wait = new CDialogWindow(true);
+            wait->SetTitleText(ResString("IDS_SHOP_IAP_LOADING_TITLE"));
+            wait->SetMessageText(ResString("IDS_SHOP_IAP_LOADING_MESSAGE"));
+            app->m_mainLayer->AddModal(wait);
+            m_waitDialog = wait;
+            XString clicked = XString::Format(L"%02d_%s", itemId,
+                                              app->InitIAPCurrencyManager()->getItemById(itemId)->m_name.c_str());
+            CGameAnalytics::logIAPBuyClicked(clicked);
+            CIAPCurrency* product = static_cast<CIAPCurrency*>(app->InitIAPCurrencyManager()->getItemById(itemId));
+            store->BuyProduct(CStrWChar(XString(product->m_appleId).c_str()));
+            break;
+        }
+        case 7: {
+            int itemId = card->m_itemId;
+            CShopItemInfoWindow* details = new CShopItemInfoWindow(
+                reinterpret_cast<CItemManager*>(app->m_currencyManager), card->m_type, itemId, XString(), false,
+                CShopItemInfoWindow::SOURCE_SHOP);
+            AddModal(details);
+            break;
+        }
+        case 8: {
+            int itemId = card->m_itemId;
+            CIAPCurrency* currency = static_cast<CIAPCurrency*>(app->InitIAPCurrencyManager()->getItemById(itemId));
+            if (XString(currency->m_type) == XString("tapjoy")) {
+                TryOpenTapJoy();
+                break;
+            }
+            CShopItemInfoWindow* details = new CShopItemInfoWindow(
+                app->InitIAPCurrencyManager(), card->m_type, itemId, XString(), false, CShopItemInfoWindow::SOURCE_SHOP);
+            XString viewed("00_tapjoy");
+            CGameAnalytics::logItemViewed(viewed, 0, CGameAnalytics::CURRENCY_SOFT);
+            AddModal(details);
+            break;
+        }
+        case 9: {
+            int itemId = card->m_itemId;
+            CAmmoPack* pack = static_cast<CAmmoPack*>(app->m_ammoPackManager->getItemById(itemId));
+            XString stats = XString::Format(ResString("IDS_SHOP_AMMO_STATS_COUNT").c_str(), pack->m_countInPack) + L"\n";
+            if (pack->getPriceCredits() > 0) {
+                stats.Append(XString::Format(ResString("IDS_SHOP_AMMO_STATS_PRICE_CREDITS").c_str(),
+                                             pack->getPriceCredits()) + L"\n");
+            }
+            if (pack->m_pricePoints > 0) {
+                stats.Append(XString::Format(ResString("IDS_SHOP_AMMO_STATS_PRICE_CASH").c_str(), pack->m_pricePoints) +
+                             L"\n");
+            }
+            CShopItemInfoWindow* details = new CShopItemInfoWindow(
+                reinterpret_cast<CItemManager*>(app->m_ammoPackManager), card->m_type, itemId, stats, false,
+                CShopItemInfoWindow::SOURCE_SHOP);
+            AddModal(details);
+            break;
+        }
+        case 10: {
+            int itemId = card->m_itemId;
+            if (app->m_goPillManager->GetPillById(itemId) == NULL) {
+                return;
+            }
+            CGoPillManager* manager = app->m_goPillManager;
+            CShopItemInfoWindow* details = new CShopItemInfoWindow(
+                reinterpret_cast<CItemManager*>(manager), card->m_type, itemId,
+                manager->GetPillById(itemId)->GetStatsString(), false, CShopItemInfoWindow::SOURCE_SHOP);
+            AddModal(details);
+            break;
+        }
+        case 11: {
+            int itemId = card->m_itemId;
+            if (app->m_armorManager->GetArmorById(itemId) == NULL) {
+                return;
+            }
+            CArmorManager* manager = app->m_armorManager;
+            CShopItemInfoWindow* details = new CShopItemInfoWindow(
+                reinterpret_cast<CItemManager*>(manager), card->m_type, itemId,
+                manager->GetArmorById(itemId)->GetStatsString(), false, CShopItemInfoWindow::SOURCE_SHOP);
+            AddModal(details);
+            break;
+        }
+        case 12: {
+            int itemId = card->m_itemId;
+            CShopItemInfoWindow* details = new CShopItemInfoWindow(
+                reinterpret_cast<CItemManager*>(app->InitMiscItemManager()), card->m_type, itemId,
+                app->InitMiscItemManager()->getItemById(itemId)->GetStatsString(), false,
+                CShopItemInfoWindow::SOURCE_SHOP);
+            AddModal(details);
+            break;
+        }
+        default:
+            break;
+        }
+        break;
+    }
+    default:
+        break;
     }
     CBaseScreen::OnCommand(event);
-}
-
-void CRegularShop::OpenCard(CShopItemButton* card)
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    int type = card->m_type;
-    int itemId = card->m_itemId;
-    if (type == 5) {
-        CIAPCurrency* currency = static_cast<CIAPCurrency*>(app->InitIAPCurrencyManager()->getItemById(itemId));
-        if (currency->m_type == XString("tapjoy")) {
-            TryOpenTapJoy();
-            return;
-        }
-        if (!currency->isAvailable()) {
-            app->InitIAPCurrencyManager()->UpdateIAPInfo(true);
-            UpdateCurrenciesPage();
-            return;
-        }
-        ICInAppPurchase* store = ICInAppPurchase::GetInstance();
-        CDialogWindow* wait = new CDialogWindow(true);
-        wait->SetTitleText(ResString("IDS_SHOP_IAP_LOADING_TITLE"));
-        wait->SetMessageText(ResString("IDS_SHOP_IAP_LOADING_MESSAGE"));
-        app->m_mainLayer->AddModal(wait);
-        m_waitDialog = wait;
-        CGameAnalytics::logIAPBuyClicked(XString::Format(L"%02d_%ls", itemId,
-            app->InitIAPCurrencyManager()->getItemById(itemId)->m_name.c_str()));
-        CIAPCurrency* product = static_cast<CIAPCurrency*>(app->InitIAPCurrencyManager()->getItemById(itemId));
-        store->BuyProduct(CStrWChar(product->m_appleId.c_str()));
-        return;
-    }
-    CItemManager* manager = App::GetItemManagerByType(type);
-    if (manager == NULL) {
-        return;
-    }
-    CItem* item = manager->getItemById(itemId);
-    CShopItemInfoWindow* details = new CShopItemInfoWindow(manager, type, itemId, item->GetStatsString(),
-                                                           false, CShopItemInfoWindow::SOURCE_SHOP);
-    AddModal(details);
 }
 
 Window* CRegularShop::CreateWeaponDescription(CDH_Weapon* weapon)

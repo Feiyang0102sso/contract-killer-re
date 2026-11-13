@@ -1,13 +1,14 @@
 #include "CGameObjectManager.h"
 
+#include "App.h"
 #include "CExplosiveObject.h"
 #include "CXmlHelper.h"
+#include "ResMap.h"
 
 class IGameObjectCreator {
 public:
     virtual IGameObjectCreator* Clone() = 0;
     virtual IGameObject* Create(const TiXmlNode* config) = 0;
-    virtual ~IGameObjectCreator() {}
 };
 
 class CExplosiveObjectCreator : public IGameObjectCreator {
@@ -16,25 +17,43 @@ public:
     virtual IGameObject* Create(const TiXmlNode* config) { return new CExplosiveObject(config); }
 };
 
+template <>
+void HashTable<XString, IGameObjectCreator*>::DeleteContents()
+{
+    for (int index = 0; index < static_cast<int>(m_bucketCount); ++index) {
+        Entry* entry = m_buckets[index];
+        m_buckets[index] = NULL;
+        while (entry != NULL) {
+            Entry* next = entry->m_next;
+            // The creator ABI has only Clone and Create. This table owns explosive creators.
+            delete static_cast<CExplosiveObjectCreator*>(entry->m_value);
+            delete entry;
+            entry = next;
+        }
+    }
+    m_count = 0;
+}
+
 IGameObject* CGameObjectManager::CreateObjectByName(const XString& name)
 {
-    TiXmlNode* const* config = m_objects.Get(name);
-    IGameObjectCreator* const* creator = m_creators.Get(name);
-    if (config == NULL || creator == NULL) {
-        return NULL;
-    }
-    return (*creator)->Create(*config);
+    // the original does not check either lookup
+    TiXmlNode* config = *m_objects.Get(name);
+    return (*m_creators.Get(name))->Create(config);
 }
 
 CGameObjectManager::CGameObjectManager() : m_objects(8), m_creators(8)
 {
-    CExplosiveObjectCreator creator;
-    ParseConfig(XString(L"res/common/configs/explosive_objects.xml"), &creator);
+    ParseConfig(XString("res/common/configs/explosive_objects.xml"), new CExplosiveObjectCreator());
 }
 
 void CGameObjectManager::ParseConfig(const XString& resource, IGameObjectCreator* creator)
 {
-    const TiXmlDocument document = CXmlHelper::Parse(resource.c_str());
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    char* xml = app->InitResMap()->loadText(XString(resource.c_str()));
+    TiXmlDocument document;
+    document.Parse(xml);
+    delete[] xml;
+
     const TiXmlNode* root = document.FirstChild("objects");
     if (root != NULL) {
         const TiXmlNode* node = root->FirstChild("object");
@@ -45,6 +64,7 @@ void CGameObjectManager::ParseConfig(const XString& resource, IGameObjectCreator
             node = node->NextSibling("object");
         }
     }
+    delete static_cast<CExplosiveObjectCreator*>(creator);
 }
 
 CGameObjectManager::~CGameObjectManager()

@@ -269,6 +269,10 @@ void DGHelper::DrawImageScaled(ICRenderSurface* surface, float scaleX, float sca
     }
     if (alpha < ALPHA_OPAQUE) {
         PushAlphaBlend(alpha);
+    } else {
+        // opaque: the original keeps state 4 enabled for the draw
+        graphics->PushState(ICGraphics2d::State_4);
+        graphics->Enable(ICGraphics2d::State_4);
     }
     graphics->PushTransform();
     graphics->LoadIdentity();
@@ -287,6 +291,9 @@ void DGHelper::DrawImageScaled(ICRenderSurface* surface, float scaleX, float sca
     graphics->PopTransform();
     if (alpha < ALPHA_OPAQUE) {
         PopAlphaBlend();
+    } else {
+        graphics->Disable(ICGraphics2d::State_4);
+        graphics->PopState(ICGraphics2d::State_4);
     }
 }
 
@@ -451,11 +458,6 @@ CDH_PlayerData* DGHelper::GetPlayerData()
     return &m_gamePlayManager.m_playerData;
 }
 
-CDH_BasicGameData* DGHelper::GetGameData()
-{
-    return m_gamePlayManager.GetGameData();
-}
-
 void DGHelper::LaunchRateMe()
 {
     CApplet::m_pCore->LaunchURL(RATE_ME_LINK, 0);
@@ -463,14 +465,8 @@ void DGHelper::LaunchRateMe()
 
 XString DGHelper::GetRandomBackgroundResId()
 {
-    CDH_ResourceManager* resources = ((App*)WindowApp::m_instance)->m_resourceManager;
-    const char* keySet;
-    if (App::IsXGA()) {
-        keySet = "KEYSET_LOADING_SCREENS_XGA";
-    } else {
-        keySet = "KEYSET_LOADING_SCREENS";
-    }
-    CDH_KeySet* keys = (CDH_KeySet*)resources->getResourceData(keySet, false);
+    // the original always uses the one key set (no XGA variant exists in the resources)
+    CDH_KeySet* keys = (CDH_KeySet*)((App*)WindowApp::m_instance)->m_resourceManager->getResourceData("KEYSET_LOADING_SCREENS", false);
     CRandGen* random = CRandGen::GetInstance();
     int index = random->GetRandRange(0, keys->m_count - 1);
     const char* key = keys->GetKey(index);

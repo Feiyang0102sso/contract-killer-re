@@ -19,19 +19,11 @@ public:
     /** FBO surfaces are not lockable: hands out no data. */
     virtual void Lock(unsigned char** data, int& pitch, LockType lockType, const CRectangle* area);
     virtual void Unlock();
-    virtual unsigned char SaveStateForFutureRecreation();
-    virtual unsigned char Recreate();
     virtual void UpdateTargetWithTexture()
     {
     }
-    virtual void RemoveSelfAsTarget();
-    virtual unsigned char InitializeFrameBuffer();
-    virtual void DestroyFrameBuffer();
-    virtual void BindFrameBuffer();
-
-    unsigned int m_framebuffer;         // 0x4c
-    unsigned int m_depthRenderbuffer;   // 0x50
-    unsigned int m_depthFormat;         // 0x54 GL format of the depth renderbuffer (0: none)
+    unsigned int m_framebuffer;         // 0x38
+    unsigned int m_depthRenderbuffer;   // 0x3c
 };
 
        

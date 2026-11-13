@@ -1,4 +1,5 @@
 #include "CIngameShop.h"
+#include "AdBannerSizes.h"
 #include "CAutoArrangedWindow.h"
 #include "CBH_ProgressBar.h"
 #include "CDH_BasicGameData.h"
@@ -190,10 +191,7 @@ void CIngameShop::CreateUI()
     close->AddImage("IDB_CLOSE_ICON", 0, 0);
     close->SetLayoutType(LAYOUT_SIMPLE);
     close->SetAlign(10);
-    close->m_command = ClosePressed;
-    close->m_commandParameter1 = 0;
-    close->m_commandParameter2 = 0;
-    close->m_commandParameter3 = 0;
+    close->SetCommandParameters(ClosePressed, 0, 0, 0);
     background->AddToFront(close);
     SetTab(Armor);
 }
@@ -245,10 +243,7 @@ CImageButton* CIngameShop::CreateEquipButton()
     CImageButton* button = new CImageButton();
     button->AddImage("IDB_SHOP_MONEY_BUTTON", 0, 0);
     button->SetText(ResString("IDS_EQUIP"), 0x24, NULL, 0, 0);
-    button->m_command = EquipPressed;
-    button->m_commandParameter1 = 0;
-    button->m_commandParameter2 = 0;
-    button->m_commandParameter3 = 0;
+    button->SetCommandParameters(EquipPressed, 0, 0, 0);
     return button;
 }
 
@@ -257,10 +252,7 @@ CImageButton* CIngameShop::CreateBuyButton()
     CImageButton* button = new CImageButton();
     button->AddImage("IDB_SHOP_MONEY_BUTTON", 0, 0);
     button->SetText(ResString("IDS_BTN_BUY"), 0x24, NULL, 0, 0);
-    button->m_command = BuyPressed;
-    button->m_commandParameter1 = 0;
-    button->m_commandParameter2 = 0;
-    button->m_commandParameter3 = 0;
+    button->SetCommandParameters(BuyPressed, 0, 0, 0);
     return button;
 }
 
@@ -269,10 +261,7 @@ Window* CIngameShop::CreateFilterButton(const char* image, EItemTabs tab)
     Window* holder = new Window(false);
     CImageButton* button = new CImageButton();
     button->AddImage(image, 0, 0);
-    button->m_command = FilterPressed;
-    button->m_commandParameter1 = tab;
-    button->m_commandParameter2 = 0;
-    button->m_commandParameter3 = 0;
+    button->SetCommandParameters(FilterPressed, tab, 0, 0);
     button->SetLayoutType(LAYOUT_SIMPLE);
     button->SetAlign(0x24);
     holder->AddToFront(button);
@@ -290,10 +279,10 @@ void CIngameShop::SetTab(EItemTabs tab)
     m_scroll->ShowPager(false);
     m_pageHolder->AddToFront(m_scroll);
     m_buyButton->SetFlags(0x2001);
-    App* app = static_cast<App*>(WindowApp::m_instance);
+    ReleaseTabResources(m_tab);
     switch (tab) {
     case Bank:
-        app->InitIAPCurrencyManager()->UpdateIAPInfo(false);
+        static_cast<App*>(WindowApp::m_instance)->InitIAPCurrencyManager()->UpdateIAPInfo(false);
         CreateBankTab();
         break;
     case Ammo:
@@ -301,29 +290,28 @@ void CIngameShop::SetTab(EItemTabs tab)
         ShowEquipButton();
         break;
     case GoPills:
-        CreateTab(reinterpret_cast<CItemManager*>(app->m_goPillManager));
+        CreateTab(reinterpret_cast<CItemManager*>(static_cast<App*>(WindowApp::m_instance)->m_goPillManager));
         break;
     case Medkits:
         CreateMedkitsTab();
         break;
     case Armor:
-        CreateTab(reinterpret_cast<CItemManager*>(app->m_armorManager));
+        CreateTab(reinterpret_cast<CItemManager*>(static_cast<App*>(WindowApp::m_instance)->m_armorManager));
         break;
     default:
         break;
     }
-    if (tab != Ammo) {
+    if (tab != Ammo && tab >= Bank && tab < TabCount) {
         m_equipHolder->SetPercentWidth(0, 0, 0);
         m_buyHolder->SetPercentWidth(50, 0, 0);
     }
     m_tab = tab;
-    // Dim every filter except the selected one.
+    // Dim the filters before highlighting the selected one.
     for (int index = 0; index < m_filterButtons.size(); ++index) {
-        if (index == tab) {
-            m_filterButtons[index]->SetOpacity(1.0f);
-        } else {
-            m_filterButtons[index]->SetOpacity(0.5f);
-        }
+        m_filterButtons[index]->SetOpacity(0.5f);
+    }
+    if (tab >= Bank && tab < m_filterButtons.size()) {
+        m_filterButtons[tab]->SetOpacity(1.0f);
     }
     UpdateEquipUnequipButtonState();
 }
@@ -363,10 +351,7 @@ CAutoArrangedWindow* CIngameShop::CreatePage(CScrollWindow* scroll, CItemManager
     CShopItemButton* button = new CShopItemButton(manager, item->getType(), name, unlockLevel, price, item->m_id,
                                                   item->getShopImageResId());
     button->SetActiveImage("IDB_BUTTON_INGAME_SHOP_ACTIVE");
-    button->m_command = ItemPressed;
-    button->m_commandParameter1 = reinterpret_cast<int>(button);
-    button->m_commandParameter2 = 0;
-    button->m_commandParameter3 = 0;
+    button->SetCommandParameters(ItemPressed, reinterpret_cast<int>(button), 0, 0);
     if (!container->Add(button)) {
         // Page full: flush it and start the next one.
         scroll->Add(container);
@@ -533,10 +518,7 @@ void CIngameShop::ShowEquipButton()
     m_equipHolder->SetPercentWidth(25, 0, 0);
     m_buyHolder->SetPercentWidth(25, 0, 0);
     m_equipButton->SetText(ResString("IDS_EQUIP"), 0x24, NULL, 0, 0);
-    m_equipButton->m_command = EquipPressed;
-    m_equipButton->m_commandParameter1 = 0;
-    m_equipButton->m_commandParameter2 = 0;
-    m_equipButton->m_commandParameter3 = 0;
+    m_equipButton->SetCommandParameters(EquipPressed, 0, 0, 0);
     m_equipButton->Enable();
 }
 
@@ -545,10 +527,7 @@ void CIngameShop::ShowUneqipButton()
     m_equipHolder->SetPercentWidth(25, 0, 0);
     m_buyHolder->SetPercentWidth(25, 0, 0);
     m_equipButton->SetText(ResString("IDS_UNEQUIP"), 0x24, NULL, 0, 0);
-    m_equipButton->m_command = UnequipPressed;
-    m_equipButton->m_commandParameter1 = 0;
-    m_equipButton->m_commandParameter2 = 0;
-    m_equipButton->m_commandParameter3 = 0;
+    m_equipButton->SetCommandParameters(UnequipPressed, 0, 0, 0);
     m_equipButton->Enable();
 }
 

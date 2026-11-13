@@ -5,43 +5,43 @@
 #include "CStdUtil_Cocoa.h"
 #include "DGHelper.h"
 #include "ICRenderSurface.h"
+#include "MathLib.h"
 
 #include <math.h>
 
+// Original 0x12c1ac: position, size and press time are not initialized; an HD device that is
+// neither XGA, VGA nor WVGA leaves the scale unset too (original).
 CGPSItem::CGPSItem()
-    : m_x(0), m_y(0), m_width(0), m_height(0), m_attractSpeed(0), m_blinking(false),
-      m_pressed(false), m_pressTime(0), m_visible(true), m_image(NULL), m_blinkImage(NULL), m_pressImage(NULL)
+    : m_attractSpeed(0), m_blinking(false), m_pressed(false), m_visible(true), m_image(NULL),
+      m_blinkImage(NULL), m_pressImage(NULL)
 {
-    float scale = 1.0f;
-    if (App::IsHD() && (App::IsXGA() || App::IsVGA() || App::IsWVGA())) {
-        scale = 2.0f;
+    if (App::IsHD()) {
+        if (App::IsXGA() || App::IsVGA() || App::IsWVGA()) {
+            m_scaleX = 2.0f;
+            m_scaleY = 2.0f;
+        }
+    } else {
+        m_scaleX = 1.0f;
+        m_scaleY = 1.0f;
     }
-    m_scaleX = scale;
-    m_scaleY = scale;
 }
 
 CGPSItem::~CGPSItem()
 {
-    CBH_SurfaceManager* manager = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager;
     if (m_image != NULL) {
-        manager->ReleaseSurface(m_image);
+        static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface(m_image);
     }
     if (m_blinkImage != NULL) {
-        manager->ReleaseSurface(m_blinkImage);
+        static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface(m_blinkImage);
     }
     if (m_pressImage != NULL) {
-        manager->ReleaseSurface(m_pressImage);
+        static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface(m_pressImage);
     }
 }
 
 CRectangle CGPSItem::GetRect() const
 {
-    CRectangle rect;
-    rect.m_x = GetX();
-    rect.m_y = GetY();
-    rect.m_width = m_width;
-    rect.m_height = m_height;
-    return rect;
+    return CRectangle(GetX(), GetY(), m_width, m_height);
 }
 
 void CGPSItem::SetPos(int x, int y)
@@ -72,26 +72,36 @@ void CGPSItem::SetSize(int width, int height)
     m_height = height;
 }
 
+/** Horizontal center of a rectangle (original reads GetRect() once per axis). */
+static inline int RectCenterX(const CRectangle& rect)
+{
+    return rect.m_x + (rect.m_width >> 1);
+}
+
+/** Vertical center of a rectangle. */
+static inline int RectCenterY(const CRectangle& rect)
+{
+    return rect.m_y + (rect.m_height >> 1);
+}
+
+// Original 0x12c2c4: the blink image is drawn whenever m_blinking is set (no NULL check);
+// GetRect() is called (virtually) once per axis for each draw.
 void CGPSItem::Paint(ICGraphics2d&, int mapX, int mapY)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CRectangle rect = GetRect();
-    int x = mapX + rect.m_x + rect.m_width / 2;
-    int y = mapY + rect.m_y + rect.m_height / 2;
-    if (m_blinking && m_blinkImage != NULL) {
-        int phase = CStdUtil_Cocoa::GetUpTimeMS() % 800 - 400;
-        float alpha = fabsf(static_cast<float>(phase)) / 800.0f + 0.5f;
-        app->m_helper->DrawImage(m_blinkImage, x, y, alpha, 0, 0, 0.0f,
-                                 DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
+    if (m_blinking) {
+        unsigned int time = CStdUtil_Cocoa::GetUpTimeMS();
+        static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+            m_blinkImage, mapX + RectCenterX(GetRect()), mapY + RectCenterY(GetRect()),
+            MathLib::Fabs(static_cast<float>(static_cast<int>(time % 800 - 400))) / 800.0f + 0.5f, 0, 0, 0.0f,
+            DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
     }
     if (m_pressed && m_pressImage != NULL) {
         unsigned int elapsed = CStdUtil_Cocoa::GetUpTimeMS() - m_pressTime;
-        float alpha = elapsed / 100.0f;
-        if (alpha > 1.0f) {
-            alpha = 1.0f;
-        }
-        app->m_helper->DrawImage(m_pressImage, x, y, alpha, 0, 0, 0.0f,
-                                 DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
+        float alpha = elapsed / 100.0;
+        alpha = alpha < 0.0f ? 0.0f : (1.0f < alpha ? 1.0f : alpha);
+        static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+            m_pressImage, mapX + RectCenterX(GetRect()), mapY + RectCenterY(GetRect()), alpha, 0, 0, 0.0f,
+            DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
     }
 }
 
@@ -109,37 +119,33 @@ bool CGPSItem::CheckHit(int x, int y, CGPSItem** item)
     return false;
 }
 
+// Original 0x12c4a8: no NULL check on the created surface.
 void CGPSItem::SetImage(const char* name)
 {
-    CBH_SurfaceManager* manager = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager;
     if (m_image != NULL) {
-        manager->ReleaseSurface(m_image);
+        static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface(m_image);
     }
-    m_image = manager->CreateSurface(name, true);
+    m_image = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->CreateSurface(name, true);
     unsigned int width = 0;
     unsigned int height = 0;
-    if (m_image != NULL) {
-        m_image->GetWidthAndHeight(width, height);
-    }
+    m_image->GetWidthAndHeight(width, height);
     SetSize(width, height);
 }
 
 void CGPSItem::SetBlinkingImage(const char* name)
 {
-    CBH_SurfaceManager* manager = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager;
     if (m_blinkImage != NULL) {
-        manager->ReleaseSurface(m_blinkImage);
+        static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface(m_blinkImage);
     }
-    m_blinkImage = manager->CreateSurface(name, true);
+    m_blinkImage = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->CreateSurface(name, true);
 }
 
 void CGPSItem::SetPressImage(const char* name)
 {
-    CBH_SurfaceManager* manager = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager;
     if (m_pressImage != NULL) {
-        manager->ReleaseSurface(m_pressImage);
+        static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface(m_pressImage);
     }
-    m_pressImage = manager->CreateSurface(name, true);
+    m_pressImage = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->CreateSurface(name, true);
 }
 
 bool CGPSItem::GetPressed() const

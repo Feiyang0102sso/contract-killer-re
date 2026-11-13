@@ -56,11 +56,8 @@ void CAmmoManager::freeResources()
 
 CAmmo* CAmmoManager::GetAmmoByType(const XString& type)
 {
-    CAmmo** entry = m_ammo.Get(type);
-    if (entry == NULL) {
-        return NULL;
-    }
-    return *entry;
+    // the original does not check the lookup result
+    return *m_ammo.Get(type);
 }
 
 int CAmmoManager::getAmount(int id)
@@ -70,17 +67,21 @@ int CAmmoManager::getAmount(int id)
 
 CItem* CAmmoManager::getItemByInternalId(int index)
 {
-    if (index >= 0 && index < m_types.size() && index < m_ammo.m_count) {
-        return GetAmmoByType(m_types[index]);
+    // the original reads the table entry without a NULL check
+    // both ranges are checked with their own index >= 0 test in the original
+    if (index >= 0 && index < m_ammo.m_count) {
+        if (index >= 0 && index < m_types.size()) {
+            return *m_ammo.Get(m_types[index]);
+        }
     }
     return NULL;
 }
 
 bool CAmmoManager::IsAllAmmoTypesOpen()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
+    // the original reads WindowApp::m_instance in every iteration
     for (CItem* item = firstItem(); item != NULL; item = nextItem()) {
-        if (!app->InitWeaponManager()->HasWeaponForAmmo(item->m_id)) {
+        if (!static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->HasWeaponForAmmo(item->m_id)) {
             return false;
         }
     }

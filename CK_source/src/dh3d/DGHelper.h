@@ -99,7 +99,11 @@ public:
 
     game_type_t GetGameType();
     CDH_PlayerData* GetPlayerData();
-    CDH_BasicGameData* GetGameData();
+    /** Game data of the current game type (inline in the original: no symbol of its own). */
+    CDH_BasicGameData* GetGameData()
+    {
+        return m_gamePlayManager.GetGameData();
+    }
 
     /** Open the rating page of the game. */
     static void LaunchRateMe();

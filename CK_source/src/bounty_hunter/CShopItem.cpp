@@ -141,7 +141,8 @@ void CItem::ReleaseBigShopImage()
 bool CItem::checkOverride()
 {
     COverrideManager* manager = static_cast<App*>(WindowApp::m_instance)->m_overrideManager;
-    if (manager != NULL && manager->changesMark() != m_overrideMark) {
+    // the original does not check the override manager for NULL
+    if (manager->changesMark() != m_overrideMark) {
         m_overrideMark = manager->changesMark();
         return doOverride(*manager, getUIDString());
     }
@@ -221,9 +222,9 @@ XString CItem::GetStatsString() const
 
 int CItem::getPriceCredits() const
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (app->InitDailyDealManager()->GetCurrentDealItem() == this) {
-        SDailyDeal* deal = app->InitDailyDealManager()->GetCurrentDailyDeal();
+    // the original reads WindowApp::m_instance for each manager call
+    if (static_cast<App*>(WindowApp::m_instance)->InitDailyDealManager()->GetCurrentDealItem() == this) {
+        SDailyDeal* deal = static_cast<App*>(WindowApp::m_instance)->InitDailyDealManager()->GetCurrentDailyDeal();
         if (deal != NULL) {
             return deal->m_priceCredits;
         }
@@ -272,33 +273,36 @@ CItem* CItemManager::firstItem()
 {
     m_iterator = 0;
     CItem* item = getItemByInternalId(0);
-    if (item != NULL) {
-        item->checkOverride();
+    if (item == NULL) {
+        return NULL;
     }
+    item->checkOverride();
     return item;
 }
 
 CItem* CItemManager::nextItem()
 {
-    CItem* item = getItemByInternalId(++m_iterator);
-    if (item != NULL) {
-        item->checkOverride();
+    m_iterator++;
+    CItem* item = getItemByInternalId(m_iterator);
+    if (item == NULL) {
+        return NULL;
     }
+    item->checkOverride();
     return item;
 }
 
 CItem* CItemManager::getItemById(int id)
 {
-    for (int index = 0; ; ++index) {
-        CItem* item = getItemByInternalId(index);
-        if (item == NULL) {
-            return NULL;
-        }
+    int index = 0;
+    CItem* item = getItemByInternalId(index++);
+    while (item != NULL) {
         if (item->m_id == id) {
             item->checkOverride();
             return item;
         }
+        item = getItemByInternalId(index++);
     }
+    return NULL;
 }
 
 CItem* CItemManager::getItemByStringUId(const XString& id)

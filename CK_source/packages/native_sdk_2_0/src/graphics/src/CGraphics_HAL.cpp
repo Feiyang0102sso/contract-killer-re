@@ -30,13 +30,6 @@ void CGraphicsAbstract::ResetConfiguration()
     m_initialized = false;
 }
 
-CGraphicsSingleton::~CGraphicsSingleton()
-{
-    if (CApplet::m_pApp != NULL) {
-        CApplet::m_pApp->m_graphics = NULL;
-    }
-}
-
 CGraphics_HAL::CGraphics_HAL()
 {
     m_initialized = false;
@@ -51,29 +44,27 @@ CGraphics_HAL::~CGraphics_HAL()
 
 ICRenderSurface* CGraphics_HAL::GetTargetSurface() const
 {
-    if (m_hardware == NULL) {
-        return NULL;
-    }
+    // the original forwards without a NULL check
     return m_hardware->GetTargetSurface();
 }
 
 void CGraphics_HAL::RenderBegin(const RenderBeginSettings* settings)
 {
-    if (GetTargetSurface() != NULL) {
+    if (m_hardware->GetTargetSurface() != NULL) {  // the original asks the device directly
         m_hardware->RenderBegin(settings);
     }
 }
 
 void CGraphics_HAL::RenderEnd()
 {
-    if (GetTargetSurface() != NULL) {
+    if (m_hardware->GetTargetSurface() != NULL) {  // the original asks the device directly
         m_hardware->RenderEnd();
     }
 }
 
 void CGraphics_HAL::ClearBuffers(unsigned int flags)
 {
-    if (GetTargetSurface() != NULL) {
+    if (m_hardware->GetTargetSurface() != NULL) {  // the original asks the device directly
         m_hardware->ClearBuffers(flags);
     }
 }

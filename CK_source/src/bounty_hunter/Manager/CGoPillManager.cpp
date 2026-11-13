@@ -35,7 +35,7 @@ void CGoPillManager::freeResources()
 
 CItem* CGoPillManager::getItemByInternalId(int index)
 {
-    if (index >= 0 && index < m_items.size()) {
+    if (index < m_items.size()) {  // the original does not test index >= 0
         return m_items[index];
     }
     return NULL;
@@ -43,7 +43,8 @@ CItem* CGoPillManager::getItemByInternalId(int index)
 
 CGoPill* CGoPillManager::GetPillById(int id)
 {
-    return static_cast<CGoPill*>(getItemById(id));
+    // the original indexes the item list directly (same body as getItemByInternalId)
+    return static_cast<CGoPill*>(CGoPillManager::getItemByInternalId(id));
 }
 
 int CGoPillManager::getItemsCount()

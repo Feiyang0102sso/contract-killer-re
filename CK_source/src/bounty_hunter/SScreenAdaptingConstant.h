@@ -36,12 +36,7 @@ struct SScreenAdaptingConstant {
         if (m_values[2] != -1 && App::IsVGA() == 1) {
             return m_values[2];
         }
-        if (App::IsHD() == 1) {
-            if (App::IsWVGA() == 1) {
-                return (int)((double)m_values[0] * 1.6);
-            }
-            return (int)(double)(m_values[0] << 1);
-        }
+        // the original has no extra HD scaling here
         return m_values[0];
     }
     int m_values[4];

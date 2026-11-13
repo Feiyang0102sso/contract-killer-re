@@ -43,8 +43,8 @@ unsigned char CFileData1::compareData(const CSaveRestoreInterface* other)
 
 unsigned char CFileData1::copyData(const CSaveRestoreInterface* other)
 {
-    if (other != this) {
-        const CFileData1* file = static_cast<const CFileData1*>(other);
+    const CFileData1* file = static_cast<const CFileData1*>(other);
+    if (file != this) {
         setData(file->m_data, file->m_size);
     }
     return 1;

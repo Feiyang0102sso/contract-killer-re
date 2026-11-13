@@ -6,6 +6,7 @@
 #include "CNGSFromServerMessageQ.h"
 #include "CNGSRemoteUser.h"
 #include "CNGSLocalUser.h"
+#include "CNGSTokens.h"
 #include "CNotificationHandler.h"
 #include "CObjectMap.h"
 #include "CObjectMapObject.h"
@@ -57,9 +58,10 @@ public:
 
 CObjectMapObject* CNGSUser::CreateAvatarIdFromServerRequest()
 {
+    const char* const userKey = NGS_USER_TOKEN;
     CObjectMapObject* message = new CObjectMapObject();
-    InsertHeaderIntoMessageObject(message, "ngs.avatar.query", 1);
-    message->addEntry(CStrWChar("user"), m_credentials.GetUserObject());
+    InsertHeaderIntoMessageObject(message, NGS_MESSAGE_TYPE_AVATAR_QUERY, 1);
+    message->addEntry(CStrWChar(userKey), m_credentials.GetUserObject());
     return message;
 }
 

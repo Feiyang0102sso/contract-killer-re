@@ -42,15 +42,15 @@ bool CWindowQueue::ShowNext()
     if (m_first == NULL) {
         m_active = NULL;
     } else {
-        Entry* entry = m_first;
-        m_active = entry->window;
-        m_first = entry->next;
-        if (m_first == NULL) {
-            m_last = NULL;
+        // the original shows the window first, then unlinks the entry (m_last is left alone)
+        m_active = m_first->window;
+        static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(m_active);
+        Entry* next = m_first->next;
+        if (m_first != NULL) {
+            delete m_first;
+            m_first = NULL;
         }
-        delete entry;
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        app->m_mainLayer->AddModal(m_active);
+        m_first = next;
     }
     return false;
 }
@@ -60,8 +60,8 @@ void CWindowQueue::Update()
     if (m_active == NULL) {
         return;
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (!app->m_mainLayer->IsChildExisting(m_active) || (m_active->m_flags & FLAG_SHUT_DOWN) != 0) {
+    // the original only advances once the active window is shutting down
+    if ((m_active->m_flags & FLAG_SHUT_DOWN) != 0) {
         ShowNext();
     }
 }

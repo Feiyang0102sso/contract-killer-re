@@ -1,5 +1,8 @@
 // Game-specific gServe login steps used by CK 1.5.2.
 #include "CLoginSteps.h"
+#define AD_BANNER_SIZES_NO_MARGINS
+#include "AdBannerSizes.h"
+#undef AD_BANNER_SIZES_NO_MARGINS
 #include "App.h"
 #include "AppSettings.h"
 #include "CFileData1.h"
@@ -7,6 +10,11 @@
 #include "CNGS.h"
 #include "CNGSLocalUser.h"
 #include "CNGSOfferManager.h"
+
+// The original initializes the offer manager class ID before the margins.
+static AdBannerMarginsX s_adBannerMarginsX;
+static AdBannerMarginsY s_adBannerMarginsY;
+
 #include "CNGS_Platform.h"
 #include "CNetworkAvailability.h"
 #include "CNotificationHandler.h"

@@ -27,6 +27,9 @@ public:
         m_top++;
     }
 
+    T& Top() { return m_data[m_top - 1]; }
+    const T& Top() const { return m_data[m_top - 1]; }
+
     void Destroy()
     {
         delete[] m_data;

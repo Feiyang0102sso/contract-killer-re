@@ -65,26 +65,24 @@ int Fixed::rad2grad(int radians)
     return mul(radians, 0x394BB);
 }
 
-/** a * b in 20.12, written as four partial products (the shape Fixed::atan was built from). */
-static inline int mulByParts(int a, int b)
+/** Square in 20.12, combining the two equal cross products. */
+static inline int squareFixed(int value)
 {
-    int aInt = a >> 12;
-    int aFrac = a & 0xfff;
-    int bInt = b >> 12;
-    int bFrac = b & 0xfff;
-    return ((aInt * bInt) << 12) + aInt * bFrac + aFrac * bInt + ((aFrac * bFrac) >> 12);
+    int fraction = value & 0xfff;
+    int integer = value >> 12;
+    return integer * ((value & ~0xfff) + (fraction << 1)) + ((fraction * fraction) >> 12);
 }
 
 int Fixed::atan(int value)
 {
     // Euler: atan(x) = x / (1 + x^2) * sum(c_n * y^n), y = x^2 / (1 + x^2)
-    int square = mulByParts(value, value);
+    int square = squareFixed(value);
     int denominator = square + 0x1000;
     int y = div(square, denominator);
-    int y2 = mulByParts(y, y);
-    int y3 = mulByParts(y2, y);
-    int y4 = mulByParts(y2, y2);
-    int y5 = mulByParts(y2, y3);
+    int y2 = squareFixed(y);
+    int y3 = mul(y2, y);
+    int y4 = squareFixed(y2);
+    int y5 = mul(y2, y3);
     float series = (float)y * (2.0f / 3.0f);
     series = series + (float)y2 * (8.0f / 15.0f);
     series = series + (float)y3 * (16.0f / 35.0f);

@@ -7,12 +7,15 @@
 CSilencer::CSilencer(const TiXmlElement& config)
     : CItem(0), m_shots(0)
 {
-    init(config);
+    CItem::Parse(config);
 }
 
-void CSilencer::setAvailable(bool)
+void CSilencer::setAvailable(bool available)
 {
-    CBH_Player::GetInstance()->AddSilentShotsCount(m_shots);
+    // the original only acts on true
+    if (available) {
+        CBH_Player::GetInstance()->AddSilentShotsCount(m_shots);
+    }
 }
 
 void CSilencer::ParseStats(const TiXmlElement& stats)

@@ -31,7 +31,7 @@ void CScrollWindow::Add(Window* content)
     }
     Window* page = new Window(false);
     page->SetLayoutType(LAYOUT_NONE);
-    int x = WindowApp::m_instance->m_screenWidth * m_pages.size() + offset;
+    int x = m_pages.size() * WindowApp::m_instance->m_screenWidth + offset;
     page->SetRect(x, 0, m_width, content->m_height, true);
     page->AddToFront(content);
     m_pages.addElement(page);
@@ -311,7 +311,9 @@ void CScrollWindow::ScrollRightLeft()
 void CScrollWindow::SendEventToListener(unsigned int command)
 {
     if (m_listener != NULL) {
-        Event event(Event::NONE, command, 0, 0, 0);
+        // the original builds an empty event and sets the id afterwards
+        Event event(Event::NONE, 0, 0, 0, 0);
+        event.m_id = command;
         m_listener->OnCommand(event);
     }
 }
@@ -347,10 +349,10 @@ CScrollWindow::~CScrollWindow()
 
 void CScrollWindow::OnCommand(Event& event)
 {
-    if (event.m_id == NextCommand) {
-        ScrollLeftRight();
-    } else if (event.m_id == PreviousCommand) {
+    if (event.m_id == PreviousCommand) {
         ScrollRightLeft();
+    } else if (event.m_id == NextCommand) {
+        ScrollLeftRight();
     }
 }
 

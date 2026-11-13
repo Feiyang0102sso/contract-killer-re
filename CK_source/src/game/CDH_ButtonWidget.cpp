@@ -6,9 +6,9 @@
 #include "WindowApp.h"
 
 namespace {
-const char ButtonTile[] = "SUR_BUTTON_TILE";
-const char GreenTile[] = "SUR_BUTTON_GREEN_TILE";
-const char BlueTile[] = "SUR_BUTTON_BLUE_TILE";
+const char* const ButtonTile = "SUR_BUTTON_TILE";
+const char* const GreenTile = "SUR_BUTTON_GREEN_TILE";
+const char* const BlueTile = "SUR_BUTTON_BLUE_TILE";
 }
 
 CDH_ButtonWidget::CDH_ButtonWidget() : Window(false)
@@ -23,14 +23,12 @@ CDH_ButtonWidget::CDH_ButtonWidget(XString text, int font) : Window(false)
 
 CDH_ButtonWidget::~CDH_ButtonWidget()
 {
-    if (!m_disabledBackgroundAttached) {
-        delete m_disabledBackground;
-    }
+    // Original never frees m_disabledBackground (leaks if Init was not called).
 }
 
 void CDH_ButtonWidget::init(XString text, int font, const char* tile)
 {
-    m_text = text;
+    m_text = XString(text);
     m_font = font;
     m_tile = tile;
     SetType(Normal);
@@ -41,24 +39,23 @@ void CDH_ButtonWidget::init(XString text, int font, const char* tile)
     m_content->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     m_textWidth = 0;
     m_label = NULL;
-    m_command = 0;
+    m_disabledBackground = NULL;
     m_disabledBackground = new HorizImageWindow(ImageRes("SUR_BUTTON_DISABLED_LEFT"),
                                                  ImageRes("SUR_BUTTON_DISABLED_TILE"),
                                                  ImageRes("SUR_BUTTON_DISABLED_RIGHT"), false);
     m_disabledBackground->ClearFlags(FLAG_VISIBLE);
-    m_disabledBackgroundAttached = false;
 }
 
 void CDH_ButtonWidget::SetType(button_type_t type)
 {
-    if (type == Info) {
-        m_tile = BlueTile;
-        m_text = ResString("IDS_BTN_INFO");
-        m_command = 0x9720a3cb;
-    } else if (type == Add) {
+    if (type == Add) {
         m_tile = GreenTile;
         setText("+");
         m_command = 0x7214ff0d;
+    } else if (type == Info) {
+        m_tile = BlueTile;
+        m_text = ResString("IDS_BTN_INFO");
+        m_command = 0x9720a3cb;
     }
 }
 
@@ -69,33 +66,34 @@ void CDH_ButtonWidget::setContainerAlign(int alignment)
 
 void CDH_ButtonWidget::setText(const char* text)
 {
-    CStrWChar localized = CUtility::GetString(text);
-    m_text = XString(localized.GetWCharPtr());
+    m_text = XString(CUtility::GetString(text).GetWCharPtr());
 }
 
 void CDH_ButtonWidget::Init()
 {
-    const char* left = NULL;
-    const char* right = NULL;
-    if (m_tile == ButtonTile) {
-        left = "SUR_BUTTON_LEFT";
-        right = "SUR_BUTTON_RIGHT";
-    } else if (m_tile == GreenTile) {
-        left = "SUR_BUTTON_GREEN_LEFT";
-        right = "SUR_BUTTON_GREEN_RIGHT";
-    } else if (m_tile == BlueTile) {
-        left = "SUR_BUTTON_BLUE_LEFT";
-        right = "SUR_BUTTON_BLUE_RIGHT";
-    }
     int inset = m_textInset;
-    if (left != NULL) {
-        ImageRes cap(left);
-        m_content->AddToFront(new HorizImageWindow(cap, ImageRes(m_tile), ImageRes(right), false));
-        inset += ImageWidth(cap.GetSurface());
+    if (m_tile == ButtonTile) {
+        ImageRes left("SUR_BUTTON_LEFT");
+        HorizImageWindow* background = new HorizImageWindow(left, ImageRes(ButtonTile), ImageRes("SUR_BUTTON_RIGHT"), false);
+        int leftWidth = ImageWidth(left.GetSurface());
+        m_content->AddToFront(background);
+        inset += leftWidth;
+    } else if (m_tile == GreenTile) {
+        ImageRes left("SUR_BUTTON_GREEN_LEFT");
+        HorizImageWindow* background = new HorizImageWindow(left, ImageRes(GreenTile), ImageRes("SUR_BUTTON_GREEN_RIGHT"), false);
+        int leftWidth = ImageWidth(left.GetSurface());
+        m_content->AddToFront(background);
+        inset += leftWidth;
+    } else if (m_tile == BlueTile) {
+        ImageRes left("SUR_BUTTON_BLUE_LEFT");
+        HorizImageWindow* background = new HorizImageWindow(left, ImageRes(BlueTile), ImageRes("SUR_BUTTON_BLUE_RIGHT"), false);
+        int leftWidth = ImageWidth(left.GetSurface());
+        m_content->AddToFront(background);
+        inset += leftWidth;
     } else if (m_tile != NULL) {
         m_content->AddToFront(new ImageWindow(ImageWindow::FILL_NONE, ImageRes(m_tile)));
     }
-    if (m_text.Length() != 0) {
+    if (!(m_text == XString(""))) {
         m_label = new TextWindow(m_text, CFontMgr::GetInstance()->GetFont(m_font));
         m_label->SetAlign(m_textAlign);
         if (m_textWidth == 0) {
@@ -107,8 +105,8 @@ void CDH_ButtonWidget::Init()
         m_label->SetOutsetSpacing(0, inset);
         m_content->AddToFront(m_label);
     }
+    // Original never sets the attached flag; the dtor does not free the window.
     m_content->AddToFront(m_disabledBackground);
-    m_disabledBackgroundAttached = true;
     m_content->SetWidthByContent(0, 0);
     m_content->SetHeightByContent(0, 0);
     SetWidthByContent(0, 0);

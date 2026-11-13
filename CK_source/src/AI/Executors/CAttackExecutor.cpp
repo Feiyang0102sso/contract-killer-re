@@ -1,9 +1,11 @@
 #include "CAttackExecutor.h"
 
+#include "App.h"
 #include "CAuxRenderText.h"
 #include "CBH_Player.h"
 #include "CSwerveGame.h"
 #include "CUnit.h"
+#include "DGHelper.h"
 
 void CAttackExecutor::DebugRender(CAuxRender*)
 {
@@ -26,115 +28,154 @@ void CAttackExecutor::DebugRender(CAuxRender*)
     }
 }
 
-CAttackExecutor::CAttackExecutor(CUnitMind* mind, int state)
-    : IExecutor(mind), m_camera(-1), m_waitMs(0), m_waiting(false), m_state(state), m_turnElapsed(0)
+CAttackExecutor::CAttackExecutor(CUnitMind* mind)
+    : IExecutor(mind), m_camera(-1), m_waitMs(0), m_waiting(false), m_turnElapsed(0)
 {
 }
 
 CAttackExecutor::~CAttackExecutor()
 {
-    CUnit* unit = m_mind->GetUnit();
-    if (unit != NULL) {
-        unit->m_body.ShowWeapon(false);
+    // the original checks the body pointer it gets from the unit
+    CUnitBody* body = m_mind->GetUnit()->GetBody();
+    if (body != NULL) {
+        body->ShowWeapon(false);
     }
 }
 
 void CAttackExecutor::Tick(int elapsed)
 {
+    // the original only ticks while waiting and always keeps the unit in cover
+    if (!m_waiting) {
+        return;
+    }
     m_turnElapsed += elapsed;
     if (m_turnElapsed > 500) {
         m_turnElapsed = 0;
         OrientBodyToCamera();
     }
-    if (m_waiting) {
-        m_waitMs -= elapsed;
-        if (m_waitMs > 0) {
-            if (IsOnCover()) {
-                m_mind->GetUnit()->OnTakeCover();
-            }
-            return;
-        }
+    m_waitMs -= elapsed;
+    if (m_waitMs <= 0) {
+        StopActiveAnimation();
+        ChooseNextState();
+        ProcessState();
         m_waiting = false;
         m_waitMs = 0;
-    } else if (m_activeAnimation != NULL) {
-        return;
     }
-    StopActiveAnimation();
-    ChooseNextState();
-    ProcessState();
+    m_mind->GetUnit()->OnTakeCover();
 }
 
 void CAttackExecutor::OrientBodyToCamera()
 {
-    CUnit* unit = m_mind->GetUnit();
-    if (unit != NULL) {
-        unit->m_body.SetOrientationToPoint(CSwerveGame::m_pInstance->GetCurrentCameraPos(), true);
+    // the original checks the body pointer and reaches the game through the application
+    CUnitBody* body = m_mind->GetUnit()->GetBody();
+    if (body != NULL) {
+        App* app = static_cast<App*>(WindowApp::m_instance);
+        body->SetOrientationToPoint(app->m_helper->m_swerveGame->GetCurrentCameraPos(), true);
     }
 }
 
 void CAttackExecutor::OnAnimationComplete(EPersonAnimType, const char* name)
 {
-    if (!m_waiting && IsAnimationTheSame(name)) {
+    if (IsAnimationTheSame(name) && !m_waiting) {
         StopActiveAnimation();
         ChooseNextState();
         ProcessState();
     }
 }
 
-void CAttackExecutor::OnStart(int camera)
+__attribute__((noinline)) void CAttackExecutor::OnStart(int camera)
 {
     m_camera = camera;
-    m_mind->GetUnit()->m_body.SetExactlyToPoint();
+    // the original only returns when the body pointer is NULL (no Finish call)
+    CUnitBody* body = m_mind->GetUnit()->GetBody();
+    if (body == NULL) {
+        return;
+    }
+    body->SetExactlyToPoint();
     OrientBodyToCamera();
     GetWeapon();
 }
 
-void CAttackExecutor::GetWeapon()
+__attribute__((noinline)) void CAttackExecutor::GetWeapon()
 {
-    CUnitBody& body = m_mind->GetUnit()->m_body;
-    m_activeAnimation = body.PlayGetWeaponAnimation();
-    body.ShowWeapon(true);
+    // the original checks the body pointer it gets from the unit
+    CUnitBody* body = m_mind->GetUnit()->GetBody();
+    if (body != NULL) {
+        m_activeAnimation = body->PlayGetWeaponAnimation();
+        body->ShowWeapon(true);
+    }
 }
 
 void CAttackExecutor::ProcessState()
 {
-    CUnitBody& body = m_mind->GetUnit()->m_body;
+    // Original 0xcfefc: each animation case checks the body pointer it takes from the unit.
     switch (m_state) {
-    case Hide:
-        m_activeAnimation = body.PlayHideAnimation();
+    case Hide: {
+        CUnitBody* body = m_mind->GetUnit()->GetBody();
+        if (body != NULL) {
+            m_activeAnimation = body->PlayHideAnimation();
+        }
         break;
+    }
     case ReloadWeapon:
         Reload();
         break;
-    case Idle:
-        m_activeAnimation = body.StartAnimation(PERSON_ANIM_TYPE_DEFAULT, false);
+    case Idle: {
+        CUnitBody* body = m_mind->GetUnit()->GetBody();
+        if (body != NULL) {
+            m_activeAnimation = body->PlayIdleAnimation(0);
+        }
         break;
-    case Unhide:
-        m_activeAnimation = body.PlayUnhideAnimation();
+    }
+    case Unhide: {
+        CUnitBody* body = m_mind->GetUnit()->GetBody();
+        if (body != NULL) {
+            m_activeAnimation = body->PlayUnhideAnimation();
+        }
         break;
+    }
     case Shoot:
         Shot();
         break;
     }
 }
 
-void CAttackExecutor::Reload()
+__attribute__((noinline)) void CAttackExecutor::Reload()
 {
-    bool available;
-    m_activeAnimation = m_mind->GetUnit()->m_body.PlayReloadAnimation(&available);
+    // the original checks the body pointer it gets from the unit
+    CUnitBody* body = m_mind->GetUnit()->GetBody();
+    if (body == NULL) {
+        return;
+    }
+    bool available = false;
+    const char* animation = body->PlayReloadAnimation(&available);
+    if (available) {
+        m_activeAnimation = animation;
+    } else if (!m_waiting) {
+        StopActiveAnimation();
+        ChooseNextState();
+        ProcessState();
+    }
 }
 
-void CAttackExecutor::Shot()
+__attribute__((noinline)) void CAttackExecutor::Shot()
 {
-    CUnit* unit = m_mind->GetUnit();
-    m_activeAnimation = unit->m_body.PlayShotAnimation();
-    unit->m_body.PlayWeaponSound();
-    CSwerveGame::m_pInstance->m_missionAlert = true;
-    CBH_Player::GetInstance()->TryShotPlayer(unit);
+    // the original checks the body pointer it gets from the unit
+    CUnitBody* body = m_mind->GetUnit()->GetBody();
+    if (body == NULL) {
+        return;
+    }
+    m_activeAnimation = body->PlayShotAnimation();
+    body->PlayWeaponSound();
+    body->ShowBulletMuzzleFlash();
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    app->m_helper->m_swerveGame->m_missionAlert = true;
+    CBH_Player::GetInstance()->TryShotPlayer(body->m_unit);
 }
 
-CAttackSafeExecutor::CAttackSafeExecutor(CUnitMind* mind) : CAttackExecutor(mind, Shoot)
+CAttackSafeExecutor::CAttackSafeExecutor(CUnitMind* mind) : CAttackExecutor(mind)
 {
+    m_state = Shoot;
 }
 
 bool CAttackSafeExecutor::IsOnCover()
@@ -168,8 +209,9 @@ const wchar_t* CAttackSafeExecutor::GetName() const
     return L"CAttackSafeExecutor";
 }
 
-CAttackUnsafeExecutor::CAttackUnsafeExecutor(CUnitMind* mind) : CAttackExecutor(mind, Idle)
+CAttackUnsafeExecutor::CAttackUnsafeExecutor(CUnitMind* mind) : CAttackExecutor(mind)
 {
+    m_state = Idle;
 }
 
 bool CAttackUnsafeExecutor::IsOnCover()

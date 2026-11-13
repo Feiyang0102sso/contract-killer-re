@@ -68,26 +68,16 @@ SGift* CSocialGiftManager::GetGift(int index)
     return NULL;
 }
 
-CItem* SGift::GetItem() const
-{
-    if (m_itemManager != NULL) {
-        return m_itemManager->getItemById(m_itemId);
-    }
-    return NULL;
-}
-
 void CSocialGiftManager::GiveGift(int index)
 {
-    SGift* gift = GetGift(index);
-    if (gift == NULL) {
-        return;
-    }
-    CItem* item = gift->GetItem();
+    // the original does not check the gift index result
+    CItem* item = GetGift(index)->GetItem();
     if (item == NULL) {
         return;
     }
     if (item->getType() == 4) {
-        CBH_Player::GetInstance()->AddEnergy(static_cast<CEnergy*>(item)->m_energy, true);
+        int energy = static_cast<CEnergy*>(item)->m_energy;
+        CBH_Player::GetInstance()->AddEnergy(energy, true);
     } else {
         item->setAvailable(true);
     }

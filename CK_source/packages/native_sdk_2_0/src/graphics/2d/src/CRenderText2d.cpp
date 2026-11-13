@@ -3,9 +3,8 @@
 #include <string.h>
 #include <wchar.h>
 #include "CRenderText2d.h"
-#include "CSystemFont.h"
+#include "ICSystemFont.h"
 #include "CGraphicFont.h"
-#include "ICGraphics2d.h"
 #include "ICRenderSurface.h"
 #include "CInputStream.h"
 #include "CStrChar.h"
@@ -14,6 +13,7 @@
 #include "CStdUtil_Cocoa.h"
 #include "CResource.h"
 #include "CResourceFactory.h"
+#include "CResourceManager.h"
 #include "CHandleFactory.h"
 
                                                                          
@@ -40,13 +40,13 @@ CRenderText2d::~CRenderText2d()
 
 void CRenderText2d::Destroy()
 {
-    if (m_model.m_surface != NULL) {
-        delete m_model.m_surface;
-        m_model.m_surface = NULL;
+    if (m_model.m_surfaceResource != NULL) {
+        CResourceManager::GetInstance()->ReleaseResource(&m_model.m_surfaceResource);
+        m_model.m_surfaceResource = NULL;
     }
     // a text decoded from a stream is owned
     if (!(m_model.m_flags & Flag_TextReferenced)) {
-        delete[] (wchar_t*)m_model.m_text;
+        free((void*)m_model.m_text);
     }
     m_model.m_length = 0;
     m_model.m_textType = 0;
@@ -123,7 +123,7 @@ unsigned char CRenderText2d::Initialize(const InitParam* params)
 
     if (m_model.m_font != NULL) {
         unsigned int fontType = m_model.m_font->m_classId;
-        if (fontType == CSystemFont::ClassId) {
+        if (fontType == ICSystemFont::ClassId) {
             m_model.m_flags |= Flag_SystemFont;
         } else if (fontType == CGraphicFont::ClassId) {
             m_model.m_flags |= Flag_BitmapFont;
@@ -320,14 +320,18 @@ void CRenderText2d::CreateModelWStr(wchar_t** text, CInputStream& stream, unsign
 
 unsigned char CRenderText2d::AssocSystemFont()
 {
-    if (m_model.m_surface == NULL) {
-        m_model.m_surface = ICRenderSurface::CreateInstance(ICGraphics2d::GetInstance()->GetActiveAbstractionLayer(),
-                                                            ICRenderSurface::Type_Default,
-                                                            ICRenderSurface::Targetability_0);
+    if (m_model.m_surfaceResource == NULL && !CreateUninitializedSurface()) {
+        return 0;
     }
-    CSystemFont* font = (CSystemFont*)m_model.m_font;
-    return font->InitializeSurfaceWithText(*m_model.m_surface, (const wchar_t*)m_model.m_text, m_model.m_length,
-                                           -1, -1);
+    ICRenderSurface* surface = static_cast<ICRenderSurface*>(m_model.m_surfaceResource->GetData());
+    if (surface == NULL) {
+        return 0;
+    }
+    ICSystemFont* font = static_cast<ICSystemFont*>(m_model.m_font);
+    if (!font->InitializeSurfaceWithText(*surface, (const wchar_t*)m_model.m_text, m_model.m_length, -1, -1)) {
+        return 0;
+    }
+    return (surface->m_flags & ICRenderSurface::Flag_Initialized) != 0;
 }
 
 unsigned char CRenderText2d::GetDescription(Description& description)
@@ -365,7 +369,7 @@ ICGraphicsAbstract::Abstraction CRenderText2d::GetAbstraction()
 
 unsigned char CRenderText2d::CreateUninitializedSurface()
 {
-    if (m_model.m_surface != NULL) {
+    if (m_model.m_surfaceResource != NULL) {
         return 0;
     }
 
@@ -375,8 +379,14 @@ unsigned char CRenderText2d::CreateUninitializedSurface()
     if (GetAbstraction() == ICGraphicsAbstract::Abstraction_Hardware) {
         mimeType = 0xe179f4be;
     }
-    CResourceFactory::GetInstance()->CreateResource(mimeType, (CResource**)&m_model.m_surface);
-    CResource* resource = (CResource*)m_model.m_surface;
-    resource->Create(CHandleFactory::GetInstance()->CreateHandle(), NULL, mimeType);
+    CResource* resource = NULL;
+    if (!CResourceFactory::GetInstance()->CreateResource(mimeType, &resource)) {
+        return 0;
+    }
+    if (resource->Create(CHandleFactory::GetInstance()->CreateHandle(), NULL, mimeType) == CResource::CreateResult_Failed) {
+        delete resource;
+        return 0;
+    }
+    m_model.m_surfaceResource = resource;
     return 1;
 }

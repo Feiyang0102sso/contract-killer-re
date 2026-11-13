@@ -76,7 +76,7 @@ void CZoomSliderControl::HandleTouch(Event& event)
         }
         int y = (m_trackHeight >> 1) - event.m_param2;
         int angle = static_cast<int>(atan(static_cast<float>(y) / x) * 180.0 / SliderPi);
-        if (angle > m_maxAngle) {
+        if (m_maxAngle < angle) {
             angle = m_maxAngle;
         }
         if (angle < -m_maxAngle) {

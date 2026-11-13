@@ -65,9 +65,8 @@ void Collision::append(const Collision& other, int, int)
 
 void Collision::append(const CRectangle& rectangle, int dx, int dy)
 {
-    CRectangle translated = rectangle;
-    translated.m_x += dx;
-    translated.m_y += dy;
+    // the original builds the moved rectangle field by field
+    CRectangle translated(rectangle.m_x + dx, rectangle.m_y + dy, rectangle.m_width, rectangle.m_height);
     m_rectangles.addElement(translated);
     m_bounds.Combine(translated);
 }

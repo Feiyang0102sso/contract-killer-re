@@ -1,9 +1,5 @@
 // CCore_Cocoa.cpp - iOS platform core: state, language and orientation handling that needs no UIKit
 // (the UIKit part is in CCore_Cocoa_mm.mm).
-// the auto-rotation tables are copied with the C library (see notes/b002.md: prefix mapping)
-#undef memset
-#undef memcpy
-#include <string.h>
 #include <wchar.h>
 #include <mach/mach.h>
 #include <CoreFoundation/CoreFoundation.h>
@@ -16,8 +12,7 @@
 
 
 
-// ---- constants ----
-static const unsigned int SystemEvent_AutoRotationChanged = 0x58568b6c;   // queued after the view moved
+typedef char CoreCocoaSizeCheck[sizeof(CCore_Cocoa) == 0x40 ? 1 : -1];
 
 ICCore* ICCore::CreateInstance()
 {
@@ -26,8 +21,6 @@ ICCore* ICCore::CreateInstance()
 
 CCore_Cocoa::CCore_Cocoa()
 {
-    memset(m_appliedAutoRotationOrientationEnabled, 0, sizeof(m_appliedAutoRotationOrientationEnabled));
-
     m_maxTouches = 6;
     m_heapBudget = 0x1e951a0;
     m_watchdogMillis = 30000;
@@ -46,9 +39,6 @@ CCore_Cocoa::CCore_Cocoa()
     m_keyboardType = 3;
     m_autoRotationIsActive = 1;
     m_autoRotationAllowed = 1;
-    m_autoRotationOrientationEnabled[AutoRotation_All] = 1;
-    memcpy(m_appliedAutoRotationOrientationEnabled, m_autoRotationOrientationEnabled,
-           sizeof(m_appliedAutoRotationOrientationEnabled));
 }
 
 CCore_Cocoa::~CCore_Cocoa()
@@ -113,11 +103,6 @@ ICCore::eDeviceOrientation CCore_Cocoa::GetDeviceOrientation() const
     return orientation;
 }
 
-unsigned char CCore_Cocoa::AutoRotationIsActive() const
-{
-    return 1;
-}
-
 ICCore::eSoftkeyPosition CCore_Cocoa::GetSoftkeyPosition(eKeyCode key) const
 {
     if (key == KeyCode_SoftkeyLeft) {
@@ -154,31 +139,4 @@ unsigned int CCore_Cocoa::GetDeviceAvailableMemory()
         return 0;
     }
     return statistics.free_count * pageSize;
-}
-
-void CCore_Cocoa::UpdateAutoRotationOrientation()
-{
-    const unsigned char* applied = m_appliedAutoRotationOrientationEnabled;
-    const unsigned char* wanted = m_autoRotationOrientationEnabled;
-
-    // the view lives in the view controller only while some orientation is enabled
-    unsigned char detach = (applied[AutoRotation_Portrait] || applied[AutoRotation_LandscapeRight] ||
-                   applied[AutoRotation_PortraitUpsideDown] || applied[AutoRotation_LandscapeLeft]) &&
-                  !(wanted[AutoRotation_Portrait] || wanted[AutoRotation_LandscapeRight] ||
-                    wanted[AutoRotation_PortraitUpsideDown] || wanted[AutoRotation_LandscapeLeft]);
-    unsigned char attach = !(applied[AutoRotation_Portrait] || applied[AutoRotation_LandscapeRight] ||
-                    applied[AutoRotation_PortraitUpsideDown] || applied[AutoRotation_LandscapeLeft]) &&
-                  (wanted[AutoRotation_Portrait] || wanted[AutoRotation_LandscapeRight] ||
-                   wanted[AutoRotation_PortraitUpsideDown] || wanted[AutoRotation_LandscapeLeft]);
-
-    if (detach == 1) {
-        DetachView();
-    }
-    for (int index = 0; index < AutoRotation_Count; index++) {
-        m_appliedAutoRotationOrientationEnabled[index] = m_autoRotationOrientationEnabled[index];
-    }
-    if (attach == 1) {
-        AttachView();
-    }
-    CApplet::m_pThis->QueueSystemEvent(SystemEvent_AutoRotationChanged, 0, 0);
 }

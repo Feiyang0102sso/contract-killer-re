@@ -33,8 +33,12 @@ void CDeathExecutor::OnAnimationComplete(EPersonAnimType, const char* name)
 void CDeathExecutor::OnStart()
 {
     CUnit* unit = m_mind->GetUnit();
+    // the original checks both the unit and the body pointer
+    CUnitBody* body = NULL;
     if (unit != NULL) {
-        CUnitBody* body = unit->GetBody();
+        body = unit->GetBody();
+    }
+    if (body != NULL) {
         body->OnNeutralization();
         if (m_death) {
             m_activeAnimation = body->PlayDeathAnimation(m_direction);

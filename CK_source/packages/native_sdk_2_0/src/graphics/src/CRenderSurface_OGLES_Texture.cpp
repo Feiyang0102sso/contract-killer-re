@@ -64,16 +64,15 @@ static inline void CRenderSurface_OGLES_Texture_SetFormatMap(CRenderSurfaceBuffe
     keyed[7].m_to = keyedAlpha;
 }
 
+typedef char TextureSizeCheck[sizeof(CRenderSurface_OGLES_Texture) == 0x30 ? 1 : -1];
+typedef char SurfaceDescriptionSizeCheck[sizeof(ICRenderSurface::Description) == 0x34 ? 1 : -1];
+
 CRenderSurface_OGLES_Texture::CRenderSurface_OGLES_Texture()
 {
     m_flags = (m_flags & ~(Flag_Texture | Flag_Software | Flag_Hardware | Flag_400 | Flag_Lockable)) | Flag_Texture |
               Flag_Hardware;
     m_textureCount = 0;
     m_texture = 0;
-    m_magFilter = Filter_Nearest;
-    m_minFilter = Filter_Nearest;
-    m_wrapS = Wrap_ClampToEdge;
-    m_wrapT = Wrap_ClampToEdge;
     m_keepBufferData = 0;
     m_contentsUndefined = 1;
     m_sourceTexture = NULL;
@@ -97,10 +96,6 @@ void CRenderSurface_OGLES_Texture::Destroy()
     } else {
         DestroyTextureObjects();
     }
-    m_magFilter = Filter_Nearest;
-    m_minFilter = Filter_Nearest;
-    m_wrapS = Wrap_ClampToEdge;
-    m_wrapT = Wrap_ClampToEdge;
     m_keepBufferData = 0;
     CRenderSurface::Destroy();
     m_contentsUndefined = 1;
@@ -216,10 +211,6 @@ void CRenderSurface_OGLES_Texture::InitializeTextureObjects()
     void* pixels;
     unsigned int uploadWidth;
     unsigned int uploadHeight;
-    GLint magFilter;
-    GLint minFilter;
-    GLint wrapS;
-    GLint wrapT;
     unsigned short column = 0;
     unsigned short row = 0;
     for (int index = 0; index < source->m_textureCount; index++) {
@@ -281,46 +272,6 @@ void CRenderSurface_OGLES_Texture::InitializeTextureObjects()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, source->GetTextureName(index));
 
-        if (m_magFilter == Filter_Nearest) {
-            magFilter = GL_NEAREST;
-        } else if (m_magFilter == Filter_Linear) {
-            magFilter = GL_LINEAR;
-        }
-        switch (m_minFilter) {
-        case Filter_Linear:
-            minFilter = GL_LINEAR;
-            break;
-        case Filter_LinearMipmapLinear:
-            minFilter = GL_LINEAR_MIPMAP_LINEAR;
-            break;
-        case Filter_LinearMipmapNearest:
-            minFilter = GL_LINEAR_MIPMAP_NEAREST;
-            break;
-        case Filter_Nearest:
-            minFilter = GL_NEAREST;
-            break;
-        case Filter_NearestMipmapLinear:
-            minFilter = GL_NEAREST_MIPMAP_LINEAR;
-            break;
-        case Filter_NearestMipmapNearest:
-            minFilter = GL_NEAREST_MIPMAP_NEAREST;
-            break;
-        }
-        if (m_wrapS == Wrap_Repeat) {
-            wrapS = GL_REPEAT;
-        } else if (m_wrapS == Wrap_ClampToEdge) {
-            wrapS = GL_CLAMP_TO_EDGE;
-        }
-        if (m_wrapT == Wrap_Repeat) {
-            wrapT = GL_REPEAT;
-        } else if (m_wrapT == Wrap_ClampToEdge) {
-            wrapT = GL_CLAMP_TO_EDGE;
-        }
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
-
         if ((int)buffer->m_format < 0) {
             // compressed formats are uploaded as they are
             glCompressedTexImage2D(GL_TEXTURE_2D, 0, glType, uploadWidth, uploadHeight, 0,
@@ -331,6 +282,10 @@ void CRenderSurface_OGLES_Texture::InitializeTextureObjects()
         if ((m_flags & Flag_PowerOfTwo) == 0) {
             glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         }
+        glTexParameterx(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameterx(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameterx(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameterx(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     }
 
     if (tileBuffer != NULL) {
@@ -585,24 +540,8 @@ unsigned char CRenderSurface_OGLES_Texture::GetDescription(Description& descript
         description.m_multisample = 0;
         break;
     }
-    description.m_magFilter = m_magFilter;
-    description.m_minFilter = m_minFilter;
-    description.m_wrapS = m_wrapS;
-    description.m_wrapT = m_wrapT;
     description.m_ownsPalette = (m_flags & Flag_OwnsPalette) != 0;
     return valid;
-}
-
-unsigned char CRenderSurface_OGLES_Texture::SaveStateForFutureRecreation()
-{
-    DestroyTextureObjects();
-    return 0;
-}
-
-unsigned char CRenderSurface_OGLES_Texture::Recreate()
-{
-    InitializeTextureObjects();
-    return 0;
 }
 
 unsigned char CRenderSurface_OGLES_Texture::InitializeBuffers(const InitParam* params)
@@ -733,22 +672,6 @@ unsigned char CRenderSurface_OGLES_Texture::InitializeBuffers(const InitParam* p
                 break;
             }
             break;
-        case InitParam_MagFilter:
-            if (param->m_value != Filter_Linear && param->m_value != Filter_Nearest) {
-                failed = 1;
-            } else {
-                m_magFilter = param->m_value;
-            }
-            break;
-        case InitParam_MinFilter:
-            m_minFilter = param->m_value;
-            break;
-        case InitParam_WrapS:
-            m_wrapS = param->m_value;
-            break;
-        case InitParam_WrapT:
-            m_wrapT = param->m_value;
-            break;
         case InitParam_SourceTexture:
             sourceTexture = (ICRenderSurface*)param->m_value;
             break;
@@ -759,14 +682,8 @@ unsigned char CRenderSurface_OGLES_Texture::InitializeBuffers(const InitParam* p
     }
 
     if (!failed) {
-        CGraphics_OGLES* graphics = CGraphics_OGLES::GetHardware();
-        if (!graphics->m_npotTextures) {
-            // limited npot: clamped, unfiltered by mipmaps and without mipmaps only
-            if (!graphics->m_npotRenderTargets || m_wrapS != Wrap_ClampToEdge || m_wrapT != Wrap_ClampToEdge ||
-                (m_minFilter != Filter_Linear && m_minFilter != Filter_Nearest) || (m_flags & Flag_Mipmaps)) {
-                m_flags |= Flag_PowerOfTwo;
-            }
-        }
+        // CK allocates power-of-two buffers for texture surfaces.
+        m_flags |= Flag_PowerOfTwo;
 
         if (sourceTexture != NULL) {
             // use the textures of another surface of this device

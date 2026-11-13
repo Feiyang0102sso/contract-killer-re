@@ -27,9 +27,6 @@ CNationalityTypeManager::~CNationalityTypeManager()
 
 CNationalityType* CNationalityTypeManager::GetType(const XString& name) const
 {
-    CNationalityType* const* type = m_types.Get(name);
-    if (type != NULL) {
-        return *type;
-    }
-    return NULL;
+    // the original does not check the lookup result
+    return *m_types.Get(name);
 }

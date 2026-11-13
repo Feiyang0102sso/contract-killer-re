@@ -28,7 +28,6 @@ public:
     void Load(TiXmlElement* element);
 
 private:
-    void ResolveBoss(const CMission& mission);
     int m_missionId;
 };
 

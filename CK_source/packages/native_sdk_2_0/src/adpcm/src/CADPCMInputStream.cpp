@@ -95,7 +95,7 @@ void CADPCMInputStream::SkipInternal(unsigned int size)
     }
     while (!m_error && size != 0) {
         if (m_decodedPosition < m_decodedLength) {
-            unsigned int count = CMath::Min(size, m_decodedLength - m_decodedPosition);
+            unsigned int count = CMath::Min<int>(size, m_decodedLength - m_decodedPosition);
             m_decodedPosition += count;
             size -= count;
             m_pcmPosition += count;
@@ -113,7 +113,7 @@ void CADPCMInputStream::ADPCMReadChunk()
     m_decodedLength = 0;
     m_decodedPosition = 0;
     if (m_isOpen && m_compressedRead < m_compressedLength) {
-        unsigned int count = CMath::Min((unsigned int)InputBlockSize, m_compressedLength - m_compressedRead);
+        unsigned int count = CMath::Min<int>(InputBlockSize, m_compressedLength - m_compressedRead);
         m_compressed->Read((unsigned char*)m_input, count);
         m_compressedRead += count;
         m_error = m_compressed->m_error;
@@ -141,7 +141,7 @@ void CADPCMInputStream::ReadInternal(unsigned char* buffer, unsigned int size)
         unsigned int written = 0;
         while (!m_error && size != 0) {
             if (m_decodedPosition < m_decodedLength) {
-                unsigned int count = CMath::Min(size, m_decodedLength - m_decodedPosition);
+                unsigned int count = CMath::Min<int>(size, m_decodedLength - m_decodedPosition);
                 memcpy(buffer + written, &m_output[m_decodedPosition], count);
                 size -= count;
                 written += count;

@@ -210,6 +210,10 @@ unsigned char CNGSRemoteUser::downloadFileBackedDataFriend(unsigned int index)
         return 0;
     }
     contentManager->GetRemoteUserContentFriend(GetClientID(), fileName.GetCharPtr());
+    if (contentManager->m_transport == NULL) {
+        contentManager->m_isFriendContent = 0;
+        return 0;
+    }
     return 1;
 }
 

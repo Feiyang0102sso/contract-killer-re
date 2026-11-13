@@ -10,6 +10,8 @@
 #include "CSaveManager.h"
 #include "CStdUtil_Cocoa.h"
 #include "CXmlHelper.h"
+#include "ResMap.h"
+#include <stdlib.h>
 
 namespace {
 const int SecondsPerDay = 86400;
@@ -31,16 +33,20 @@ CChallengeManager::~CChallengeManager()
 
 void CChallengeManager::ParseConfig()
 {
-    TiXmlDocument document = CXmlHelper::Parse(L"res/common/configs/challenges.xml");
-    TiXmlElement* root = document.FirstChildElement("challenges");
-    if (root == NULL) {
-        return;
+    char* text = static_cast<App*>(WindowApp::m_instance)->InitResMap()->loadText(
+        XString(L"res/common/configs/challenges.xml"));
+    TiXmlDocument document;
+    document.Parse(text, NULL, TIXML_ENCODING_UNKNOWN);
+    if (text != NULL) {
+        free(text);
     }
+    // Original: the root node is not checked.
+    TiXmlNode* root = document.FirstChild("challenges");
     for (TiXmlElement* element = root->FirstChildElement("challenge"); element != NULL;
          element = element->NextSiblingElement("challenge")) {
         CChallenge* challenge = new CChallenge(element);
         m_challenges.addElement(challenge);
-        if (challenge->m_day > m_lastDay) {
+        if (m_lastDay < challenge->m_day) {
             m_lastDay = challenge->m_day;
         }
     }
@@ -48,33 +54,25 @@ void CChallengeManager::ParseConfig()
 
 void CChallengeManager::Load()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    TiXmlElement* root = app->m_saveManager->GetRootElement();
-    TiXmlElement* section = root->FirstChildElement("challenges");
-    if (section == NULL) {
-        return;
-    }
-    m_finishTime = CXmlHelper::GetIntAttributeValueOrUseDefault(section, "challenges_finish_time", 0);
-    m_activeCount = 0;
-    for (int index = 0; index < m_challenges.size(); ++index) {
-        CChallenge* challenge = m_challenges[index];
-        challenge->Load(section);
-        if (challenge->m_active) {
-            ++m_activeCount;
+    TiXmlElement* root = static_cast<App*>(WindowApp::m_instance)->m_saveManager->GetRootElement();
+    // Original bug: the next section is looked up among the root's siblings, not the section's.
+    for (TiXmlElement* section = root->FirstChildElement("challenges"); section != NULL;
+         section = root->NextSiblingElement("challenges")) {
+        m_activeCount = CXmlHelper::GetAttributeValueOrUseDefault(section, "active_challenges_count", XString(0)).ToInt();
+        m_finishTime = CXmlHelper::GetAttributeValueOrUseDefault(section, "challenges_finish_time", XString(0)).ToInt();
+        for (int index = 0; index < m_challenges.size(); ++index) {
+            m_challenges[index]->Load(section);
         }
     }
 }
 
 void CChallengeManager::Update()
 {
-    unsigned int now = CStdUtil_Cocoa::GetTimeSeconds();
-    if (now == m_lastUpdateSecond) {
-        return;
-    }
-    m_lastUpdateSecond = now;
-    CheckChallengesFinishByTime();
+    // the original only checks the active challenges (no per-second throttle here)
     for (int index = 0; index < m_challenges.size(); ++index) {
-        m_challenges[index]->CheckCompletion();
+        if (m_challenges[index]->m_active) {
+            m_challenges[index]->CheckCompletion();
+        }
     }
 }
 
@@ -94,10 +92,22 @@ Vector<CChallenge*> CChallengeManager::GetActiveChallenges()
 
 void CChallengeManager::CheckChallengesFinishByTime()
 {
-    int now = GetTimeSec();
-    if (now == 0 || (m_activeCount > 0 && now <= m_finishTime)) {
+    // the original compares unsigned and deactivates the expired challenges here
+    unsigned int now = GetTimeSec();
+    if (now == 0) {
         return;
     }
+    if (m_activeCount != 0) {
+        if (m_activeCount < 1 || now <= static_cast<unsigned int>(m_finishTime)) {
+            return;
+        }
+        for (int index = 0; index < m_challenges.size(); ++index) {
+            if (m_challenges[index]->m_active) {
+                m_challenges[index]->m_active = false;
+            }
+        }
+    }
+    m_finishTime = now + SecondsPerDay - now % SecondsPerDay;
     StartNewChallenges(now);
 }
 
@@ -131,7 +141,8 @@ int CChallengeManager::GetTimeSec()
 
 int CChallengeManager::DayForTime(int time) const
 {
-    if (time < ChallengeEpoch || m_lastDay == 0) {
+    // the original does not check the epoch
+    if (m_lastDay == 0) {
         return 0;
     }
     return (time - ChallengeEpoch) / SecondsPerDay % (m_lastDay + 1);
@@ -144,26 +155,18 @@ int CChallengeManager::GetCurrentChallengeDay()
 
 void CChallengeManager::StartNewChallenges(int time)
 {
-    for (int index = 0; index < m_challenges.size(); ++index) {
-        m_challenges[index]->m_active = false;
-    }
+    // the original only resets the challenge stats (no hunt re-registration, no player save)
+    CBH_Player::GetInstance()->m_challengeStats->ResetStats();
+    int day = DayForTime(time);
     Vector<CChallenge*> active;
-    GetChallengesForDay(DayForTime(time), active);
-    m_finishTime = (time / SecondsPerDay + 1) * SecondsPerDay;
+    GetChallengesForDay(day, active);
+    // the original stores the finish time inside the loop (only reached when a challenge starts)
     for (int index = 0; index < active.size(); ++index) {
+        m_finishTime = (time / SecondsPerDay + 1) * SecondsPerDay;
         active[index]->Start(m_finishTime);
     }
     m_activeCount = active.size();
-    CBH_Player* player = CBH_Player::GetInstance();
-    CChallengeStats* stats = player->m_challengeStats;
-    bool huntActive = stats->m_huntActive;
-    XString location = stats->m_location;
-    stats->ResetStats();
-    if (huntActive) {
-        stats->RegisterHuntStart(location);
-    }
     Save();
-    player->Save();
 }
 
 void CChallengeManager::GetChallengesForDay(int day, Vector<CChallenge*>& challenges)
@@ -178,10 +181,15 @@ void CChallengeManager::GetChallengesForDay(int day, Vector<CChallenge*>& challe
 
 CChallenge* CChallengeManager::GetChallengeById(int id)
 {
+    CheckChallengesFinishByTime();
+    if (id > m_challenges.size()) {
+        return NULL;
+    }
     for (int index = 0; index < m_challenges.size(); ++index) {
-        if (m_challenges[index]->m_id == id) {
-            m_challenges[index]->CheckOverride();
-            return m_challenges[index];
+        CChallenge* challenge = m_challenges[index];
+        if (challenge->m_id == id) {
+            challenge->CheckOverride();
+            return challenge;
         }
     }
     return NULL;
@@ -189,15 +197,19 @@ CChallenge* CChallengeManager::GetChallengeById(int id)
 
 bool CChallengeManager::IsChallengeActive(int id)
 {
-    CheckChallengesFinishByTime();
-    CChallenge* challenge = GetChallengeById(id);
-    return challenge != NULL && challenge->m_active;
+    // the original neither refreshes the timers nor checks for NULL here
+    return GetChallengeById(id)->m_active;
 }
 
 int CChallengeManager::GetChallengesFinishTime()
 {
-    CheckChallengesFinishByTime();
-    return m_finishTime;
+    // the original reads the finish time of the first active challenge
+    int finishTime = 0;
+    Vector<CChallenge*> active = GetActiveChallenges();
+    if (active.size() > 0) {
+        finishTime = active[0]->m_finishTime;
+    }
+    return finishTime;
 }
 
 typedef char CKChallengeManagerSize[sizeof(CChallengeManager) == 0x24 ? 1 : -1];

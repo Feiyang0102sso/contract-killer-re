@@ -85,8 +85,8 @@ void CZipInputStream::SkipInternal(unsigned int size)
 
     while (!m_error && size != 0) {
         if (m_outputPos < m_outputSize) {
-            unsigned int chunk = m_outputSize - m_outputPos;
-            if (size < chunk) {
+            int chunk = m_outputSize - m_outputPos;
+            if ((int)size < chunk) {
                 chunk = size;
             }
             m_outputPos += chunk;
@@ -120,8 +120,8 @@ void CZipInputStream::ZipReadChunk()
 
         // top it up from the source
         if (buffered < InputBufferSize && m_compressedRead < m_compressedSize) {
-            unsigned int toRead = m_compressedSize - m_compressedRead;
-            if (InputBufferSize - buffered < toRead) {
+            int toRead = m_compressedSize - m_compressedRead;
+            if ((int)(InputBufferSize - buffered) < toRead) {
                 toRead = InputBufferSize - buffered;
             }
             m_compressed->Read(m_input + buffered, toRead);
@@ -169,8 +169,8 @@ void CZipInputStream::ReadInternal(unsigned char* buffer, unsigned int size)
         unsigned int copied = 0;
         while (!m_error && size != 0) {
             if (m_outputPos < m_outputSize) {
-                unsigned int chunk = m_outputSize - m_outputPos;
-                if (size < chunk) {
+                int chunk = m_outputSize - m_outputPos;
+                if ((int)size < chunk) {
                     chunk = size;
                 }
                 memcpy(buffer + copied, m_output + m_outputPos, chunk);

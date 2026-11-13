@@ -55,7 +55,7 @@ unsigned int CResourceShader::CreateInternal(unsigned int handle, const char* na
             abstraction = ICGraphics::Abstraction_Software;
         }
         m_shader = ICShader::CreateInstance(abstraction);
-        success = 1;
+        success = m_shader != NULL;
         result = CreateResult_Failed;
         if (m_shader != NULL) {
             result = CreateResult_Created;
@@ -67,7 +67,9 @@ unsigned int CResourceShader::CreateInternal(unsigned int handle, const char* na
         }
     }
     if (success) {
-        SetName(name, copyName);
+        if (name != NULL) {
+            SetName(name, copyName);
+        }
         m_isCreated = 1;
     } else {
         // unknown shader type or load failure

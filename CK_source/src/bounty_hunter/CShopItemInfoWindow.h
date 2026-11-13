@@ -39,8 +39,6 @@ private:
     void ShowArmorDialog();
     void ShowFullEnergyDialog();
     void ShowLowMoneyDialog();
-    void Purchase();
-    bool PurchaseWithCurrency(CItem* item, int price, bool credits);
 
     ImageRes m_redBackground;
     ICRenderSurface* m_itemImage;

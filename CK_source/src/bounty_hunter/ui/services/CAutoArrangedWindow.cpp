@@ -87,11 +87,12 @@ bool CAutoArrangedWindow::UpdateContentLayout()
 bool CAutoArrangedWindow::Add(Window* window)
 {
     m_items.addElement(window);
-    bool arranged = UpdateContentLayout();
-    if (!arranged) {
-        m_items.removeElementAt(m_items.size() - 1);
+    if (UpdateContentLayout()) {
+        return true;
     }
-    return arranged;
+    // it does not fit: take it out again
+    m_items.removeElementAt(m_items.size() - 1);
+    return false;
 }
 
 void CAutoArrangedWindow::SetOneLineMode(bool oneLine)

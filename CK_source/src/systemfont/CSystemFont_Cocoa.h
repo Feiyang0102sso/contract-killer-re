@@ -14,15 +14,13 @@ class NSString;
 class UIFont;
 #endif
 
-/** Render texts of all system fonts, keyed by the Java hash of "<text><font address>". */
-extern CHash* g_text2d;
-
 class CSystemFont_Cocoa : public ICSystemFont {
 public:
     CSystemFont_Cocoa();
-    virtual ~CSystemFont_Cocoa();
 
+    // GetFontHeight (CSystemFont_Cocoa_mm.mm) is the key function: the vtable belongs to that unit, as in the original
     virtual int GetFontHeight() const;
+    virtual ~CSystemFont_Cocoa();
     virtual int GetMinLineSpacing() const;
     virtual int GetMinCharSpacing() const;
     virtual int MeasureTextWidth(const wchar_t* text, int length, int maxWidth, int* fitCount) const;

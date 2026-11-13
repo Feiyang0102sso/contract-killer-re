@@ -1,7 +1,9 @@
 #include "CWarriorLogicExecutor.h"
 
 #include "CRunAwayExecutor.h"
+#include "App.h"
 #include "CSwerveGame.h"
+#include "DGHelper.h"
 #include "CWarTimeExecutor.h"
 
 CWarriorLogicExecutor::CWarriorLogicExecutor(CUnitMind* mind, bool scripted, bool inSquad)
@@ -11,10 +13,10 @@ CWarriorLogicExecutor::CWarriorLogicExecutor(CUnitMind* mind, bool scripted, boo
 
 void CWarriorLogicExecutor::OnTranquillize()
 {
-    CSwerveGame* game = CSwerveGame::m_pInstance;
-    if (game->m_peaceTime) {
-        game->m_peaceTime = false;
-        game->m_missionAlert = true;
+    // the original reaches the game through App -> m_helper and reloads it per access
+    if (static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_peaceTime) {
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_peaceTime = false;
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_missionAlert = true;
     }
     CHumanLogicExecutor::OnTranquillize();
 }
@@ -24,8 +26,8 @@ void CWarriorLogicExecutor::OnChildFinished(EExecutosResult result)
     if (result == EXECUTOR_RESULT_STUN_OVER) {
         AddWarTimeExecutor(m_mind);
     } else if (!m_reacted) {
-        m_reacted = true;
         AddRunAwayExecutor(m_mind);
+        m_reacted = true;
     }
 }
 

@@ -106,7 +106,8 @@ bool CPath::AddCell(int cellId)
     if (m_cellCount >= 256) {
         return false;
     }
-    m_cellIds[m_cellCount++] = cellId;
+    m_cellIds[m_cellCount] = cellId;
+    m_cellCount++;
     return true;
 }
 

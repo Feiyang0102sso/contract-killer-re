@@ -180,6 +180,7 @@ class TiXmlParsingData
 	// Only used by the document!
 	TiXmlParsingData( const char* start, int _tabsize, int row, int col )
 	{
+#line 185 /* 对齐原版 tinyxml 的 assert __LINE__ */
 		assert( start );
 		stamp = start;
 		tabsize = _tabsize;

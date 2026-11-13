@@ -18,12 +18,8 @@ public:
     virtual void Unlock();
     /** Draw the textures of the surface into the current target. */
     virtual void UpdateTargetWithTexture();
-    /** Stop being the target of the device (unbind the framebuffer). */
-    virtual void RemoveSelfAsTarget();
-
-    unsigned int m_targetType;          // 0x40 kind of target; targets of one kind share the binding
-    int m_lockCount;                    // 0x44
-    unsigned char m_textureUpdated;     // 0x48 the textures were rebuilt by Unlock
+    int m_lockCount;                    // 0x30
+    unsigned char m_textureUpdated;     // 0x34 the textures were rebuilt by Unlock
 };
 
        

@@ -57,8 +57,9 @@ CGPSBounty::CGPSBounty(CGPSHauntCamera* camera, int type, const CGPSInstantInfor
 }
 
 CGPSBounty::CGPSBounty(CGPSHauntCamera* camera, TiXmlElement* element)
-    : CGPSHuntingItem(camera), m_bountyType(0), m_messageType(BountyMessageDefault)
+    : CGPSHuntingItem(camera), m_messageType(BountyMessageDefault)
 {
+    // the original leaves m_bountyType for Load()
     Load(element);
 }
 
@@ -196,13 +197,11 @@ float CGPSBounty::GenerateDiffRandomizer() const
 
 XString CGPSBounty::GetScriptName(CGPSHauntCamera* camera) const
 {
+    // the original checks neither the bounty info nor the camera
     App* app = static_cast<App*>(WindowApp::m_instance);
     const CBountyManager::SBountyGeneralInfo* info = app->m_bountyManager->GetInfo(m_bountyType);
-    if (info != NULL && camera != NULL) {
-        return app->m_bountyManager->GetRandomScriptWithSeed(*info, m_bountyType, camera->m_location,
-                                                             camera->m_cameraIndex, m_playerLevel, m_seed);
-    }
-    return XString();
+    return app->m_bountyManager->GetRandomScriptWithSeed(*info, m_bountyType, camera->m_location,
+                                                         camera->m_cameraIndex, m_playerLevel, m_seed);
 }
 
 bool CGPSBounty::IsNeedToBeDeleted() const

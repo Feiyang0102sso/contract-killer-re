@@ -36,10 +36,7 @@ void CGPSZombiesPromo::Paint(ICGraphics2d& graphics, int mapX, int mapY)
 {
     CGPSItem::Paint(graphics, mapX, mapY);
     if (m_visible) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        ICRenderSurface* image = GetImage();
-        int x = GetX() + mapX;
-        int y = GetY() + mapY;
-        app->m_helper->DrawImage(image, x, y, 1.0f, 0, 0, 0.0f, 0);
+        static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+            GetImage(), GetX() + mapX, GetY() + mapY, 1.0f, 0, 0, 0.0f, 0);
     }
 }

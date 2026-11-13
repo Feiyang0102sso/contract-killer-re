@@ -28,7 +28,9 @@ public:
 
     virtual void requestCompleteCallback(CObjectMap* response)
     {
-        (m_receiver->*m_callback)(response, this);
+        if (m_callback) {
+            (m_receiver->*m_callback)(response, this);
+        }
     }
 
 private:
@@ -190,18 +192,18 @@ unsigned char COfferManager::selectOffer(int index)
     m_state = STATE_SELECTING;
     CDataOffer* offer = m_offers[index];
     switch (offer->m_featureType) {
-    case CDataOffer::FEATURE_TYPE_FEATURED_GAME:
-        m_featuredGameDelegate->m_selectedData->m_offerItemId = offer->m_offerItemId;
-        m_featuredGameDelegate->m_selectedData->m_sourceGameId = offer->m_sourceGameId;
-        m_featuredGameDelegate->m_selectedData->m_featureType = CDataOffer::FEATURE_TYPE_FEATURED_GAME;
-        sendRequest(SERVICE_OFFER_SELECTED, m_featuredGameDelegate->m_selectedData,
-            new OfferRequestComplete(this, &COfferManager::handleResponse_select));
-        break;
     case CDataOffer::FEATURE_TYPE_INVITE:
         m_inviteDelegate->m_selectedData->m_offerItemId = offer->m_offerItemId;
         m_inviteDelegate->m_selectedData->m_sourceGameId = offer->m_sourceGameId;
         m_inviteDelegate->m_selectedData->m_featureType = CDataOffer::FEATURE_TYPE_INVITE;
         sendRequest(SERVICE_OFFER_SELECTED, m_inviteDelegate->m_selectedData,
+            new OfferRequestComplete(this, &COfferManager::handleResponse_select));
+        break;
+    case CDataOffer::FEATURE_TYPE_FEATURED_GAME:
+        m_featuredGameDelegate->m_selectedData->m_offerItemId = offer->m_offerItemId;
+        m_featuredGameDelegate->m_selectedData->m_sourceGameId = offer->m_sourceGameId;
+        m_featuredGameDelegate->m_selectedData->m_featureType = CDataOffer::FEATURE_TYPE_FEATURED_GAME;
+        sendRequest(SERVICE_OFFER_SELECTED, m_featuredGameDelegate->m_selectedData,
             new OfferRequestComplete(this, &COfferManager::handleResponse_select));
         break;
     default:
@@ -679,7 +681,7 @@ void COfferManager::collectRewardedIncentives()
 
 void COfferManager::allUnconsumedIncentivesRewarded()
 {
-    if (m_rewardedData.m_userGameRewardIds.Size() != 0) {
+    if (m_rewardedData.m_userGameRewardIds.Size() > 0) {
         sendRequest(GOFFER_OFFER_REWARDED, &m_rewardedData,
             new OfferRequestComplete(this, &COfferManager::handleResponse_setRewardedOffer));
     }

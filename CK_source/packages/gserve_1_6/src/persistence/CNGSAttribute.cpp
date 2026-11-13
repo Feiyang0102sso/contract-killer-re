@@ -1,9 +1,10 @@
 // CNGSAttribute.cpp - typed profile attribute stored as a JSON object (b025x).
+#undef free
+#include <stdlib.h>
 #include "CNGSAttribute.h"
 #include "CNGSTokens.h"
 #include "CNGSUtil.h"
 #include "CStrChar.h"
-#include "NPMalloc.h"
 
 
 CNGSAttribute::CNGSAttribute(CStrWChar& name, unsigned char value, int collectionType)
@@ -77,7 +78,7 @@ CNGSAttribute::CNGSAttribute(CStrWChar& name, unsigned char* data, int size, int
     init(name, DATA_TYPE_BASE64, collectionType);
     char* encoded = CNGSUtil::Base64Encode(data, size);
     CStrWChar value(encoded);
-    np_free(encoded);
+    free(encoded);
     m_object.addEntry(CStrWChar(NGS_STRING_VALUE_TOKEN), new CObjectMapString(value));
 }
 

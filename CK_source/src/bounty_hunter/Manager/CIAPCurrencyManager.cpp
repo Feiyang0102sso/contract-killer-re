@@ -1,5 +1,8 @@
 // CIAPCurrencyManager.cpp - read the game currency catalog and request the matching store products.
 #include "CIAPCurrencyManager.h"
+#define AD_BANNER_SIZES_NO_MARGINS
+#include "AdBannerSizes.h"
+#undef AD_BANNER_SIZES_NO_MARGINS
 #include "App.h"
 #include "ICInAppPurchase.h"
 #include "ResMap.h"
@@ -113,7 +116,7 @@ void CIAPCurrencyManager::freeResources()
 
 CItem* CIAPCurrencyManager::getItemByInternalId(int index)
 {
-    if (index >= 0 && index < m_items.size()) {
+    if (index < m_items.size()) {  // the original does not test index >= 0
         return m_items[index];
     }
     return NULL;

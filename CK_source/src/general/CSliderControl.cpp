@@ -1,6 +1,7 @@
 // CSliderControl.cpp - slider window of the HUD.
 // Constructor, progress handling, pointer events and Paint: original 0x178bc4..0x17908c.
 #include "CSliderControl.h"
+#include "CMath.h"
 
 #include "ICRenderSurface.h"
 
@@ -58,13 +59,12 @@ void CSliderControl::Enable(bool enable)
 
 void CSliderControl::SetProgress(float progress)
 {
+    // the original stores the raw value first, then the clamped one (CMath::Min)
     m_progress = progress;
-    if (m_progress >= 0.0f) {
-        if (m_progress > 1.0f) {
-            m_progress = 1.0f;
-        }
-    } else {
+    if (m_progress < 0.0f) {
         m_progress = 0.0f;
+    } else {
+        m_progress = CMath::Min(1.0f, m_progress);
     }
 }
 

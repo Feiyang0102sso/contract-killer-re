@@ -8,6 +8,8 @@
 class Window;
 class TextWindow;
 class ImageWindow;
+struct SScreenAdaptingConstant;
+extern const SScreenAdaptingConstant MARGIN_BARTEXT;
 void SetSizesByContent(Window* window, int flags);
 Window* createTD(Window* window, int index); // original 15b45c
 Window* createTD(Window* window, int index, int parameter, int flags);
@@ -64,9 +66,9 @@ public:
     ImageRes m_right;   // bc, total c4
 };
 
-class SpacerWindow : public Window {
+class SpacerWindow : public WindowTransparent {
 public:
-    SpacerWindow(int width, int height) : Window(false)
+    SpacerWindow(int width, int height) : WindowTransparent(false)
     {
         SetDesiredHeight(height);
         SetDesiredWidth(width);

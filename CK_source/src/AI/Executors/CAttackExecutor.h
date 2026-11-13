@@ -5,13 +5,14 @@
 
 class CAttackExecutor : public IExecutor {
 public:
-    CAttackExecutor(CUnitMind* mind, int state);
+    /** The derived constructors set m_state in their bodies (after the vtable store, as the original). */
+    explicit CAttackExecutor(CUnitMind* mind);
     virtual ~CAttackExecutor();
     virtual void Tick(int elapsed);
     virtual void DebugRender(CAuxRender* render);
     virtual void OnAnimationComplete(EPersonAnimType type, const char* name);
-    virtual bool IsOnCover() = 0;
     virtual void ChooseNextState() = 0;
+    virtual bool IsOnCover() = 0;
 
     void OnStart(int camera);
     void OrientBodyToCamera();

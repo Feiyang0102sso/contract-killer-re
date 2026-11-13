@@ -40,6 +40,7 @@
 
   // Ensures that UI elements behind the dialog are disabled.
   UIView* _modalBackgroundView;
+  BOOL m_feedClicked;
 }
 
 /**

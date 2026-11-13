@@ -10,14 +10,14 @@
 
                                                                          
 
-class ICRenderSurface;
+class CResource;
 
 class CRenderText2d : public ICRenderText2d {
 public:
     /** TextModel::m_flags bits. */
     enum Flag {
         Flag_BitmapFont = 0x0001,       // drawn glyph by glyph
-        Flag_SystemFont = 0x0002,       // rendered into m_surface
+        Flag_SystemFont = 0x0002,       // rendered into the surface resource
         Flag_Software = 0x0020,         // belongs to the software abstraction
         Flag_Hardware = 0x0040,         // belongs to the device abstraction
         Flag_TextReferenced = 0x0800,   // m_text points into the caller's text (not owned)
@@ -31,7 +31,7 @@ public:
         unsigned int m_textType;        // 0x0c MimeType of m_text
         const void* m_text;             // 0x10
         CFont* m_font;                  // 0x14
-        ICRenderSurface* m_surface;     // 0x18 system fonts: the rendered text
+        CResource* m_surfaceResource;  // 0x18 system fonts: owns the rendered text surface
     };
 
     CRenderText2d();
@@ -51,9 +51,9 @@ public:
      */
     static void CreateModelWStr(wchar_t** text, CInputStream& stream, unsigned int type,
                                 unsigned int offset, unsigned int span, void** formatArguments);
-    /** Render the text into m_surface with the system font. */
+    /** Render the text into the surface with the system font. */
     unsigned char AssocSystemFont();
-    /** Create the (uninitialized) render surface resource of m_surface; 0 when it already exists. */
+    /** Create and register an empty render surface. Returns 0 when it already exists or creation fails. */
     unsigned char CreateUninitializedSurface();
 
     TextModel m_model;                  // 0x08

@@ -28,6 +28,7 @@
 #include "ICFileMgr.h"
 #include "ICGraphics.h"
 #include "ICInAppPurchase.h"
+#include "AdBannerSizes.h"
 #include "ICLicenseMgr.h"
 #include "ICMediaPlayer.h"
 #include "ICMoviePlayer.h"
@@ -363,9 +364,20 @@ int CGameApp::OnInit()
     CFontMgr::GetInstance();
 
     const ICGraphics::Param graphicsParams[] = {{0, 0}};
-    if (!ICGraphics::GetInstance()->Initialize(graphicsParams) || !ICGraphics2d::GetInstance()->Initialize()) {
+    ICGraphics* graphics = ICGraphics::GetInstance();
+    if (!graphics->Initialize(graphicsParams)) {
         return 1;
     }
+    const unsigned int clearFlags = ICGraphics::ClearFlag_Color | ICGraphics::ClearFlag_Depth |
+                                    ICGraphics::ClearFlag_Stencil;
+    graphics->ClearBuffers(clearFlags);
+    graphics->SwapBuffers();
+    graphics->ClearBuffers(clearFlags);
+    ICGraphics2d* graphics2d = ICGraphics2d::GetInstance();
+    if (!graphics2d->Initialize()) {
+        return 1;
+    }
+    graphics->SetDefaultActiveAbstractionLayer(graphics2d->GetActiveAbstractionLayer());
     // Third-party advertising providers use the integration available in the CK rebuild.
     ICAdManager::GetInstance()->Init(9657, 9658);
     CPHInterface::initFromBundle();
@@ -398,8 +410,12 @@ void CGameApp::OnFree()
     void* fonts = NULL;
     m_singletons->Find(CFontMgr::SingletonId, &fonts);
     delete static_cast<CFontMgr*>(fonts);
-    if (m_executor != NULL) {
-        ICAdManager::GetInstance()->Destroy();
+    void* ads = NULL;
+    m_singletons->Find(ICAdManager::ClassId, &ads);
+    if (ads != NULL) {
+        ICAdManager* adManager = static_cast<ICAdManager*>(ads);
+        adManager->Destroy();
+        delete adManager;
     }
     CPHInterface::destroy();
     if (m_graphics2d != NULL) {

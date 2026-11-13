@@ -21,6 +21,7 @@
 #include "CFriendGatedMissionManager.h"
 #include "CGameAnalytics.h"
 #include "CHuntingInfo.h"
+#include "CMissionManager.h"
 #include "COverrideManager.h"
 #include "CProgressSystem.h"
 #include "CSaveManager.h"
@@ -30,6 +31,7 @@
 #include "CXmlHelper.h"
 #include "DGHelper.h"
 #include "GameCenter_Facade.h"
+#include "GamePlayHUD.h"
 
 typedef char CBH_Player_ARMv7_Size[(sizeof(CBH_Player) == 0x28c) ? 1 : -1];
 
@@ -41,22 +43,6 @@ namespace {
             return XString(value).ToInt();
         }
         return defaultValue;
-    }
-
-    void WriteNamedCounters(TiXmlElement* parent, const char* section, const char* child,
-                            const char* keyAttribute, const char* valueAttribute,
-                            const HashTable<XString, int>& values)
-    {
-        TiXmlElement* container = CXmlHelper::ObtainElement(parent, XString(section));
-        container->Clear();
-        for (int index = 0; index < values.m_count; ++index) {
-            XString* name;
-            const int count = *values.GetAt(index, &name);
-            TiXmlElement* element = new TiXmlElement(child);
-            element->SetStringAttribute(keyAttribute, XString::AnsiString(name->c_str()));
-            element->SetAttribute(valueAttribute, count);
-            container->LinkEndChild(element);
-        }
     }
 
     int Nonnegative(int value)
@@ -167,6 +153,7 @@ CBH_Player::CBH_Player()
     m_playerName = m_playerName.Upper();
     m_challengeStats = new CChallengeStats();
     Init();
+    m_energyRemainingSeconds = m_energyRestoreSeconds;
 }
 
 void CBH_Player::Init()
@@ -277,16 +264,17 @@ void CBH_Player::Update()
 
 void CBH_Player::AddEnergy(int amount, bool allowOverflow)
 {
-    if (allowOverflow) {
-        m_energy += amount;
-    } else {
-        const int maximum = GetMaxEnergy();
-        if (m_energy <= maximum) {
-            m_energy += amount;
-            if (m_energy > maximum) {
-                m_energy = maximum;
+    // the original asks the progress system for the maximum each time it needs it
+    if (!allowOverflow) {
+        if (m_energy <= GetMaxEnergy()) {
+            if (m_energy + amount > GetMaxEnergy()) {
+                m_energy = GetMaxEnergy();
+            } else {
+                m_energy += amount;
             }
         }
+    } else {
+        m_energy += amount;
     }
     Save();
 }
@@ -294,7 +282,7 @@ void CBH_Player::AddEnergy(int amount, bool allowOverflow)
 bool CBH_Player::TryMakeFiveDaysBonus(bool* newDay)
 {
     *newDay = false;
-    if (!m_fiveDayIncentiveBonusForbidden || CTutorialManager::IsPlayerInTutorial()
+    if (!m_fiveDayIncentiveBonusForbidden || static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()
         || CStdUtil_Cocoa::GetTimeSeconds() == 0xffffffffu) {
         return false;
     }
@@ -424,27 +412,37 @@ void CBH_Player::Save()
 
 void CBH_Player::SetAmmoForWeaponId(int id, int packs)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_Weapon* weapon = app->InitWeaponManager()->GetWeaponById(id);
-    if (weapon != NULL && packs > 0) {
-        const CAmmo* ammo = weapon->GetActiveAmmo();
-        if (ammo != NULL) {
-            SetAmmoCount(ammo, ammo->m_countInPack * packs);
-        }
+    // the original looks the ammo up again by its type name and does not check the weapon
+    CDH_Weapon* weapon = static_cast<CDH_Weapon*>(static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->getItemById(id));
+    const CAmmo* active = weapon->GetActiveAmmo();
+    if (active == NULL) {
+        return;
+    }
+    XString type = active->m_ammoType;
+    const CAmmo* ammo = static_cast<App*>(WindowApp::m_instance)->InitAmmoManager()->GetAmmoByType(type);
+    if (ammo != NULL && packs > 0) {
+        SetAmmoCount(ammo, ammo->m_countInPack * packs);
     }
 }
 
 void CBH_Player::IncAmmo(const CAmmo* ammo, int packs)
 {
+    // the original has IncAmmoByBulletsCount expanded here (without its second count test)
     if (ammo != NULL && packs > 0) {
-        IncAmmoByBulletsCount(ammo, ammo->m_countInPack * packs);
+        int count = ammo->m_countInPack * packs;
+        int total = *m_ammoCounts.Get(HashTableKey<const CAmmo*>(ammo)) + count;
+        m_ammoCounts.Set(HashTableKey<const CAmmo*>(ammo), total);
+        m_gameStats.AddBulletsEarned(count);
+        Save();
     }
 }
 
 void CBH_Player::IncAmmoByBulletsCount(const CAmmo* ammo, int count)
 {
     if (ammo != NULL && count > 0) {
-        AmmoCount(m_ammoCounts, ammo) += count;
+        // the original reads the current count without a missing-entry check and stores the sum with Set
+        int total = *m_ammoCounts.Get(HashTableKey<const CAmmo*>(ammo)) + count;
+        m_ammoCounts.Set(HashTableKey<const CAmmo*>(ammo), total);
         m_gameStats.AddBulletsEarned(count);
         Save();
     }
@@ -453,40 +451,40 @@ void CBH_Player::IncAmmoByBulletsCount(const CAmmo* ammo, int count)
 void CBH_Player::SetAmmoCount(const CAmmo* ammo, int count)
 {
     if (ammo != NULL) {
-        AmmoCount(m_ammoCounts, ammo) = count;
+        m_ammoCounts.Set(HashTableKey<const CAmmo*>(ammo), count);
         Save();
     }
 }
 
 int CBH_Player::GetAvailableAmmo(const CAmmo* ammo, bool estimate)
 {
-    if (ammo == NULL) {
-        return 0;
-    }
-    if (ammo->m_ammoType == XString("infinite")) {
+    // the original compares a copy of the type name and checks neither the ammo nor the table entry
+    if (XString(ammo->m_ammoType) == XString("infinite")) {
         return 0xfffffff;
     }
     if (estimate && m_estimatedWeapon != NULL && m_estimatedAmmo != -1) {
-        const CAmmo* base = m_estimatedWeapon->GetDefaultAmmo();
-        if (base != NULL && base->m_id == ammo->m_id) {
+        if (m_estimatedWeapon->GetDefaultAmmo()->m_id == ammo->m_id) {
             return m_estimatedAmmo;
         }
     }
-    const int* count = m_ammoCounts.Get(HashTableKey<const CAmmo*>(ammo));
-    if (count != NULL) {
-        return *count;
-    }
-    return 0;
+    return *m_ammoCounts.Get(HashTableKey<const CAmmo*>(ammo));
 }
 
 void CBH_Player::UseAmmo(const CAmmo* ammo)
 {
     if (ammo != NULL) {
         if (m_estimatedWeapon != NULL && m_estimatedAmmo != -1) {
-            m_estimatedAmmo = Nonnegative(m_estimatedAmmo - 1);
+            m_estimatedAmmo--;
+            if (m_estimatedAmmo < 0) {
+                m_estimatedAmmo = 0;
+            }
         } else {
-            int& count = AmmoCount(m_ammoCounts, ammo);
-            count = Nonnegative(count - 1);
+            // the original reads the count without a missing-entry check and stores it back with Set
+            int total = *m_ammoCounts.Get(HashTableKey<const CAmmo*>(ammo)) - 1;
+            if (total < 0) {
+                total = 0;
+            }
+            m_ammoCounts.Set(HashTableKey<const CAmmo*>(ammo), total);
             Save();
         }
     }
@@ -494,89 +492,90 @@ void CBH_Player::UseAmmo(const CAmmo* ammo)
 
 bool CBH_Player::HasAnyAmmo()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_BasicGameData* data = app->m_helper->GetGameData();
-    CDH_Weapon* first = data->GetWeapon01(true);
-    CDH_Weapon* second = data->GetWeapon02(true);
-    return (first != NULL && GetAvailableAmmo(first->GetActiveAmmo(), true) > 0)
-        || (second != NULL && GetAvailableAmmo(second->GetActiveAmmo(), true) > 0);
+    // the original evaluates both weapons (no short circuit, no NULL checks)
+    bool first = GetAvailableAmmo(static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true)->GetActiveAmmo(), true) > 0;
+    bool second = GetAvailableAmmo(static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true)->GetActiveAmmo(), true) > 0;
+    return second || first;
 }
 
 bool CBH_Player::HasAmmoInBothWeapons()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_BasicGameData* data = app->m_helper->GetGameData();
-    CDH_Weapon* first = data->GetWeapon01(true);
-    CDH_Weapon* second = data->GetWeapon02(true);
-    return first != NULL && second != NULL && GetAvailableAmmo(first->GetActiveAmmo(), true) > 0
-        && GetAvailableAmmo(second->GetActiveAmmo(), true) > 0;
+    bool first = GetAvailableAmmo(static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true)->GetActiveAmmo(), true) > 0;
+    bool second = GetAvailableAmmo(static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true)->GetActiveAmmo(), true) > 0;
+    return first && second;
 }
 
 bool CBH_Player::HasTranqWeapon()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    Vector<CDH_Weapon*>& weapons = app->InitWeaponManager()->GetWeapons();
-    for (int index = 0; index < weapons.size(); ++index) {
-        CDH_Weapon* weapon = weapons[index];
-        if (weapon->isAvailable() && weapon->m_tranquillizer) {
+    // the original walks the weapon manager with firstItem / nextItem
+    CItem* item = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->firstItem();
+    while (item != NULL) {
+        CDH_Weapon* weapon = static_cast<CDH_Weapon*>(item);
+        if (weapon->isAvailable() == true && weapon->m_tranquillizer) {
             return true;
         }
+        item = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->nextItem();
     }
     return false;
 }
 
 bool CBH_Player::HasTranqWeaponWithin()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_BasicGameData* data = app->m_helper->GetGameData();
-    CDH_Weapon* first = data->GetWeapon01(true);
-    CDH_Weapon* second = data->GetWeapon02(true);
-    return (first != NULL && first->m_tranquillizer) || (second != NULL && second->m_tranquillizer);
+    // the original does not check the slots for NULL
+    if (static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true)->m_tranquillizer) {
+        return true;
+    }
+    return static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true)->m_tranquillizer;
 }
 
 bool CBH_Player::HasAmmoForTranqWeaponWithin()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_BasicGameData* data = app->m_helper->GetGameData();
-    CDH_Weapon* weapons[] = {data->GetWeapon01(true), data->GetWeapon02(true)};
-    for (int index = 0; index < 2; ++index) {
-        CDH_Weapon* weapon = weapons[index];
-        if (weapon != NULL && weapon->m_tranquillizer && GetAvailableAmmo(weapon->GetActiveAmmo(), true) > 0) {
-            return true;
-        }
+    // the original fetches each weapon again for every access and does not check for NULL
+    if (static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true)->m_tranquillizer
+        && GetAvailableAmmo(static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true)->GetActiveAmmo(), true) > 0) {
+        return true;
+    }
+    if (static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true)->m_tranquillizer
+        && GetAvailableAmmo(static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true)->GetActiveAmmo(), true) > 0) {
+        return true;
     }
     return false;
 }
 
 bool CBH_Player::HasWeaponWithRange(float range)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    Vector<CDH_Weapon*>& weapons = app->InitWeaponManager()->GetWeapons();
-    for (int index = 0; index < weapons.size(); ++index) {
-        CDH_Weapon* weapon = weapons[index];
-        if (weapon->isAvailable() && weapon->effectiveRange() >= range) {
+    // the original walks the weapon manager with firstItem / nextItem
+    CItem* item = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->firstItem();
+    while (item != NULL) {
+        CDH_Weapon* weapon = static_cast<CDH_Weapon*>(item);
+        if (weapon->isAvailable() == true && weapon->effectiveRange() >= range) {
             return true;
         }
+        item = static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->nextItem();
     }
     return false;
 }
 
 bool CBH_Player::HasWeaponWithRangeInHands(float range)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_BasicGameData* data = app->m_helper->GetGameData();
-    CDH_Weapon* first = data->GetWeapon01(true);
-    CDH_Weapon* second = data->GetWeapon02(true);
-    return (first != NULL && first->effectiveRange() >= range)
-        || (second != NULL && second->effectiveRange() >= range);
+    CDH_Weapon* first = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true);
+    CDH_Weapon* second = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true);
+    if (first != NULL && first->effectiveRange() >= range) {
+        return true;
+    }
+    if (second != NULL && second->effectiveRange() >= range) {
+        return true;
+    }
+    return false;
 }
 
 int CBH_Player::WeaponsWithCategoryCount(CDH_Weapon::EWeaponCategory category)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
+    // the original reads WindowApp::m_instance for each manager call
     int count = 0;
-    for (CDH_Weapon* weapon = static_cast<CDH_Weapon*>(app->InitWeaponManager()->firstItem()); weapon != NULL;
-         weapon = static_cast<CDH_Weapon*>(app->InitWeaponManager()->nextItem())) {
+    for (CDH_Weapon* weapon = static_cast<CDH_Weapon*>(static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->firstItem());
+         weapon != NULL;
+         weapon = static_cast<CDH_Weapon*>(static_cast<App*>(WindowApp::m_instance)->InitWeaponManager()->nextItem())) {
         if (weapon->isAvailable() == true) {
             count += weapon->m_category == category;
         }
@@ -586,13 +585,20 @@ int CBH_Player::WeaponsWithCategoryCount(CDH_Weapon::EWeaponCategory category)
 
 void CBH_Player::AddMoney(int amount, EGainSource source)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (source != GAIN_SOURCE_IAP && app->m_overrideManager != NULL) {
-        XString group(L"missions_mult");
-        if (source == GAIN_SOURCE_CHALLENGE) {
-            group = XString(L"challenge_mult");
+    if (source != GAIN_SOURCE_IAP) {
+        // the original does not check the override manager for NULL
+        COverrideManager* manager = static_cast<App*>(WindowApp::m_instance)->m_overrideManager;
+        int multiplier;
+        {
+            XString group(L"");
+            if (source == GAIN_SOURCE_CHALLENGE) {
+                group = L"challenge_mult";
+            } else {
+                group = L"missions_mult";
+            }
+            XString name(L"soft");
+            multiplier = GetOverride(*manager, group, name);
         }
-        int multiplier = GetOverride(*app->m_overrideManager, group, XString(L"soft"));
         if (multiplier > 100) {
             amount = (multiplier * amount) / 100;
         }
@@ -654,11 +660,9 @@ void CBH_Player::EndCover()
     m_field39 = false;
     m_field23c = 0;
     m_field240 = 1;
+    // the original does not check the active weapon
     App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_Weapon* weapon = app->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon();
-    if (weapon != NULL) {
-        weapon->ResetInScropeRoutine();
-    }
+    app->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon()->ResetInScropeRoutine();
 }
 
 bool CBH_Player::IsNeedHide() const
@@ -754,22 +758,23 @@ void CBH_Player::RestoreHealth()
     if (m_medkits <= 0) {
         return;
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    int amount = app->m_helper->m_config.GetIntegerValueByToken("MEDKIT_HP_RESTORE", true);
+    int amount = static_cast<App*>(WindowApp::m_instance)->m_helper->m_config.GetIntegerValueByToken("MEDKIT_HP_RESTORE", true);
     AddHp(amount);
     --m_medkits;
+    CGameAnalytics::logItemUsed(XString("00_medkit"));
     m_gameStats.AddMedkitsUsed(1);
-    app->m_soundManager->PlaySound("IDM_SPECIAL_AP_MEDKIT", false, false);
+    static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlaySound("IDM_SPECIAL_AP_MEDKIT", false, false);
     WindowApp::HandleTunnelCommand(0x48a1ff19, amount, 0, 0);
     Save();
 }
 
 void CBH_Player::AddHp(int amount)
 {
-    m_hp += amount;
-    const int maximum = GetMaxHp();
-    if (m_hp > maximum) {
-        m_hp = maximum;
+    // the original compares the new value and asks GetMaxHp() again for the clamp
+    int hp = m_hp + amount;
+    m_hp = hp;
+    if (hp > GetMaxHp()) {
+        m_hp = GetMaxHp();
     }
     Save();
 }
@@ -813,15 +818,16 @@ void CBH_Player::ConsumeGoPill()
         App* app = static_cast<App*>(WindowApp::m_instance);
         app->m_soundManager->PlaySound("IDM_SLOW_START", false, false);
     }
-    if (m_speedModeAvailableTimeMS < 10000) {
-        m_speedTimeMS += m_speedModeAvailableTimeMS;
-        m_speedModeAvailableTimeMS = 0;
-    } else {
+    if (m_speedModeAvailableTimeMS >= 10000) {
         m_speedTimeMS += 10000;
         m_speedModeAvailableTimeMS -= 10000;
+    } else {
+        m_speedTimeMS += m_speedModeAvailableTimeMS;
+        m_speedModeAvailableTimeMS = 0;
     }
     m_gameStats.RegisterPillAddTime(10000);
     Save();
+    CGameAnalytics::logReactixUsed(static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_missionId, m_level);
 }
 
 void CBH_Player::SetArmor(int id, int damageProof)
@@ -844,13 +850,18 @@ bool CBH_Player::CanRevive()
 
 void CBH_Player::Revive()
 {
-    if (m_reviveCount > 0) {
-        AddHp(GetMaxHp());
-        --m_reviveCount;
-        ++m_gameStats.m_resurrects;
-        ++m_challengeStats->m_revives;
-        m_field39 = true;
-        Save();
+    // the original does not check the count and does not save here
+    AddHp(GetMaxHp());
+    m_reviveCount--;
+    if (m_reviveCount < 0) {
+        m_reviveCount = 0;
+    }
+    CGameAnalytics::logItemUsed(XString("phoenix_serum"));
+    ++m_challengeStats->m_revives;
+    ++CBH_Player::GetInstance()->m_gameStats.m_resurrects;
+    m_field39 = true;
+    if (CSwerveGame::m_pInstance != NULL) {
+        CSwerveGame::m_pInstance->m_hud->SetFireHeld(false);
     }
 }
 
@@ -868,11 +879,11 @@ bool CBH_Player::IsPlayerLevelMax()
 
 int CBH_Player::GetXpForNextLvl()
 {
-    CProgressSystem* progress = static_cast<App*>(WindowApp::m_instance)->InitProgressSystem();
-    if (m_level >= progress->GetMaxLevel()) {
-        return progress->GetMaxXP();
+    // the original asks for the current level's XP at the maximum level, else for the next one
+    if (m_level == static_cast<App*>(WindowApp::m_instance)->InitProgressSystem()->GetMaxLevel()) {
+        return static_cast<App*>(WindowApp::m_instance)->InitProgressSystem()->GetMaxXPForLevel(m_level);
     }
-    return progress->GetMaxXPForLevel(m_level + 1);
+    return static_cast<App*>(WindowApp::m_instance)->InitProgressSystem()->GetMaxXPForLevel(m_level + 1);
 }
 
 int CBH_Player::GetXpForCurrentLvl()
@@ -885,32 +896,39 @@ int CBH_Player::AddXp(int amount, EGainSource source)
     if (amount < 0) {
         return 0;
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (source != GAIN_SOURCE_IAP && app->m_overrideManager != NULL) {
-        XString group(L"missions_mult");
-        if (source == GAIN_SOURCE_CHALLENGE) {
-            group = XString(L"challenge_mult");
+    if (source != GAIN_SOURCE_IAP) {
+        // the original does not check the override manager for NULL
+        COverrideManager* manager = static_cast<App*>(WindowApp::m_instance)->m_overrideManager;
+        int multiplier;
+        {
+            // the original releases both strings before testing the multiplier
+            XString group(L"");
+            if (source == GAIN_SOURCE_CHALLENGE) {
+                group = L"challenge_mult";
+            } else {
+                group = L"missions_mult";
+            }
+            XString name(L"xp");
+            multiplier = GetOverride(*manager, group, name);
         }
-        const int multiplier = GetOverride(*app->m_overrideManager, group, XString(L"xp"));
         if (multiplier > 100) {
             amount = multiplier * amount / 100;
         }
     }
 
     m_experience += amount;
-    CProgressSystem* progress = app->InitProgressSystem();
-    const int level = progress->GetLevel(m_experience);
-    const int maximum = progress->GetMaxXP();
+    const int level = static_cast<App*>(WindowApp::m_instance)->InitProgressSystem()->GetLevel(m_experience);
+    const int maximum = static_cast<App*>(WindowApp::m_instance)->InitProgressSystem()->GetMaxXP();
     if (level > m_level) {
         m_level = level;
-        m_energy = progress->GetMaxEnergyForLevel(m_level);
+        m_energy = static_cast<App*>(WindowApp::m_instance)->InitProgressSystem()->GetMaxEnergyForLevel(m_level);
         m_hp = GetMaxHpForLevel(m_level);
-        CGameAnalytics::logLevelGained(m_level, m_cash, m_credits);
+        CGameAnalytics::logLevelGained(level, m_cash, m_credits);
     }
     if (amount > 0) {
-        CGameAnalytics::logXPGain(amount, progress->GetMaxXPForLevel(level) - m_experience);
+        CGameAnalytics::logXPGain(amount, static_cast<App*>(WindowApp::m_instance)->InitProgressSystem()->GetMaxXPForLevel(level) - m_experience);
     }
-    if (maximum < m_experience) {
+    if (m_experience > maximum) {
         m_experience = maximum;
     }
     if (amount > 0) {
@@ -921,24 +939,24 @@ int CBH_Player::AddXp(int amount, EGainSource source)
 
 void CBH_Player::OnEnemyKilled()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_huntingInfo->OnEnemyKilled();
-    if (app->m_helper->m_swerveGame->m_multiplier == 3) {
+    // the original reads WindowApp::m_instance for each access
+    static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->OnEnemyKilled();
+    if (static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_multiplier == 3) {
         m_gameStats.AddX3MultiplierKills(1);
     }
-    if (app->m_helper->m_swerveGame->m_multiplier == 2) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_multiplier == 2) {
         m_gameStats.AddX2MultiplierKills(1);
     }
 }
 
 void CBH_Player::OnEnemyTranquillized()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_huntingInfo->OnEnemyTranqullized();
-    if (app->m_helper->m_swerveGame->m_multiplier == 3) {
+    // the original reads WindowApp::m_instance for each access
+    static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->OnEnemyTranqullized();
+    if (static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_multiplier == 3) {
         m_gameStats.AddX3MultiplierKills(1);
     }
-    if (app->m_helper->m_swerveGame->m_multiplier == 2) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_multiplier == 2) {
         m_gameStats.AddX2MultiplierKills(1);
     }
 }
@@ -951,6 +969,8 @@ void CBH_Player::OnEnemyEscaped()
 
 void CBH_Player::OnMissionFinished(int id)
 {
+    // the original looks the mission up and discards the result
+    static_cast<App*>(WindowApp::m_instance)->m_missionManager->GetMissionById(id);
     if (!IsMissionCompleted(id)) {
         const SCompletedMissionInfo completion = { id, false };
         m_completedMissions.addElement(completion);
@@ -999,23 +1019,27 @@ bool CBH_Player::IsMissionCompleted(int id)
 
 int CBH_Player::GetEnergyCooldownTimeLeft()
 {
-    return Nonnegative(static_cast<int>(m_energyRestoreSeconds) * (GetMaxEnergy() - m_energy));
+    int seconds = (GetMaxEnergy() - m_energy) * static_cast<int>(m_energyRestoreSeconds);
+    if (seconds <= 0) {
+        return 0;
+    }
+    return seconds;
 }
 
 int CBH_Player::GetMaxEnergyForLevel(int level)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (app->InitProgressSystem() == NULL) {
+    // the original reads WindowApp::m_instance for each call
+    if (static_cast<App*>(WindowApp::m_instance)->InitProgressSystem() == NULL) {
         return 0;
     }
-    return app->InitProgressSystem()->GetMaxEnergyForLevel(level);
+    return static_cast<App*>(WindowApp::m_instance)->InitProgressSystem()->GetMaxEnergyForLevel(level);
 }
 
 int CBH_Player::GetMaxHpForLevel(int level)
 {
-    ConfigReader& config = static_cast<App*>(WindowApp::m_instance)->m_helper->m_config;
-    const int base = config.GetIntegerValueByToken("BASE_PLAYER_HP", true);
-    const int perLevel = config.GetIntegerValueByToken("PLAYER_HP_PER_LEVEL_GROWTH", true);
+    // the original reads WindowApp::m_instance for each value
+    const int base = static_cast<App*>(WindowApp::m_instance)->m_helper->m_config.GetIntegerValueByToken("BASE_PLAYER_HP", true);
+    const int perLevel = static_cast<App*>(WindowApp::m_instance)->m_helper->m_config.GetIntegerValueByToken("PLAYER_HP_PER_LEVEL_GROWTH", true);
     return base + perLevel * Nonnegative(level - 1);
 }
 
@@ -1069,7 +1093,19 @@ void CBH_Player::SaveStats(TiXmlElement* element)
 
 void CBH_Player::SaveReputation(TiXmlElement* element)
 {
-    WriteNamedCounters(element, "reputation", "fraction", "name", "reputation", m_reputation);
+    // the original writes the loop out here (an inlined helper keeps cmp+beq instead of cbz)
+    TiXmlElement* section = CXmlHelper::ObtainElement(element, XString("reputation"));
+    section->Clear();
+    for (int index = 0; index < m_reputation.m_count; ++index) {
+        TiXmlElement* child = new TiXmlElement("fraction");
+        XString* name;
+        const int value = *m_reputation.GetAt(index, &name);
+        child->SetStringAttribute("name", XString::AnsiString(name->c_str()));
+        child->SetAttribute("reputation", value);
+        // the original inserts a copy and deletes the temporary element
+        section->InsertEndChild(*child);
+        delete child;
+    }
 }
 
 void CBH_Player::SaveMissionInfo(TiXmlElement* element)
@@ -1077,11 +1113,13 @@ void CBH_Player::SaveMissionInfo(TiXmlElement* element)
     TiXmlElement* section = CXmlHelper::ObtainElement(element, XString("completed_missions"));
     section->Clear();
     for (int index = 0; index < m_completedMissions.size(); ++index) {
-        const SCompletedMissionInfo& completion = m_completedMissions[index];
+        SCompletedMissionInfo completion = m_completedMissions[index];
         TiXmlElement* child = new TiXmlElement("completed_mission");
         child->SetAttribute("id", completion.m_id);
         child->SetAttribute("tranq", completion.m_tranquillized);
-        section->LinkEndChild(child);
+        // the original inserts a copy and deletes the temporary element
+        section->InsertEndChild(*child);
+        delete child;
     }
 }
 
@@ -1102,7 +1140,18 @@ void CBH_Player::SaveAmmo(TiXmlElement* element)
 
 void CBH_Player::SaveTjPoints(TiXmlElement* element)
 {
-    WriteNamedCounters(element, "tapjoy_info", "tapjoy_points", "devId", "points", m_tapjoyPoints);
+    TiXmlElement* section = CXmlHelper::ObtainElement(element, XString("tapjoy_info"));
+    section->Clear();
+    for (int index = 0; index < m_tapjoyPoints.m_count; ++index) {
+        TiXmlElement* child = new TiXmlElement("tapjoy_points");
+        XString* name;
+        const int points = *m_tapjoyPoints.GetAt(index, &name);
+        child->SetStringAttribute("devId", XString::AnsiString(name->c_str()));
+        child->SetAttribute("points", points);
+        // the original inserts a copy and deletes the temporary element
+        section->InsertEndChild(*child);
+        delete child;
+    }
 }
 
 void CBH_Player::SaveFriendGiftLasDay(TiXmlElement* element)
@@ -1113,68 +1162,70 @@ void CBH_Player::SaveFriendGiftLasDay(TiXmlElement* element)
     TiXmlElement* section = CXmlHelper::ObtainElement(element, XString("friendGiftsInfo"));
     section->Clear();
     for (int index = 0; index < m_friendGiftDays.m_count; ++index) {
+        TiXmlElement* child = new TiXmlElement("friendGift");
         XString* name;
         const int day = *m_friendGiftDays.GetAt(index, &name);
-        TiXmlElement* child = new TiXmlElement("friendGift");
         child->SetAttribute("socialID", name->ToInt());
         child->SetAttribute("lastDay", day);
-        section->LinkEndChild(child);
+        // the original inserts a copy and deletes the temporary element
+        section->InsertEndChild(*child);
+        delete child;
     }
 }
 
 void CBH_Player::LoadStats(TiXmlElement* element)
 {
-    m_hp = ReadInt(element, "hp");
-    m_energy = ReadInt(element, "energy");
-    m_medkits = ReadInt(element, "medkits");
-    m_reviveCount = ReadInt(element, "revive");
-    m_credits = ReadInt(element, "hunt_credits");
-    m_experience = ReadInt(element, "xp");
-    m_cash = ReadInt(element, "points");
-    m_level = ReadInt(element, "level");
-    m_tutorialState = ReadInt(element, "tutorial_state");
-    m_lastDailyBonusTime = ReadInt(element, "last_daily_bonus_time");
-    m_dailyBonusesInRow = ReadInt(element, "daily_bonus_row");
-    m_lastFiveDaysBonusTime = ReadInt(element, "last_five_days_bonus_time");
-    m_activeFiveDaysBonusDay = ReadInt(element, "active_five_days_bonus_day");
-    m_currentFriendGatedMissionId = ReadInt(element, "current_friend_gated_mission_id");
-    m_speedModeAvailableTimeMS = ReadInt(element, "speedModeAvailableTimeMS");
-    m_armorId = ReadInt(element, "armorID");
-    m_armorDamageProof = ReadInt(element, "armorDamageProof");
-    m_armorDamageProofMax = ReadInt(element, "armorDamageProofMax");
-    m_lastHuntItem = ReadInt(element, "last_hunt_item");
-    m_lastHuntResult = ReadInt(element, "last_hunt_result");
-    m_appRated = CXmlHelper::GetAttributeValueOptional(*element, "app_rated").ToBool();
-    m_lastEnergyUpdateTime = ReadInt(element, "last_energy_update_time");
-    m_lastGameVersionPlayed = ReadInt(element, "last_game_version_played", 100);
-    m_silentShotsCount = ReadInt(element, "silentShotsCount");
-    m_cyberScopesCount = ReadInt(element, "cyberScopesCount");
-    m_reactixControlTime = ReadInt(element, "reactixControlTime");
-    m_hitechVisorEquipped = CXmlHelper::GetAttributeValueOptional(*element, "isHitechVisorEquiped").ToBool();
-    m_lastFiveDaysIncentiveBonusTimestamp = ReadInt(element, "lastFiveDaysIncentiveBonusTimestamp");
-    m_activeFiveDaysIncentiveBonusDay = ReadInt(element, "activeFiveDaysIncentiveBonusDay");
-    m_fiveDayIncentiveBonusForbidden = CXmlHelper::GetAttributeValueOptional(*element, "fiveDayIncentiveBonusForbidden").ToBool();
-    m_receivedFiveDaysIncentiveBonus = CXmlHelper::GetAttributeValueOptional(*element, "ReceivedFiveDaysIncentiveBonus").ToBool();
-    m_incentiveBonusExpirationShown = CXmlHelper::GetAttributeValueOptional(*element, "FiveDaysIncentiveBonusExpirationMessageShown").ToBool();
-    m_lastMissionVersionPlayed = ReadInt(element, "last_mission_version_played", 100);
-    m_ultrasoundAttemptCount = ReadInt(element, "ultrasoundAttemptCount");
-    m_credits = Nonnegative(m_credits);
+    m_hp = CXmlHelper::GetAttributeValue(element, "hp").ToInt();
+    m_energy = CXmlHelper::GetAttributeValue(element, "energy").ToInt();
+    m_medkits = CXmlHelper::GetAttributeValue(element, "medkits").ToInt();
+    m_credits = CXmlHelper::GetAttributeValue(element, "hunt_credits").ToInt();
+    m_experience = CXmlHelper::GetAttributeValue(element, "xp").ToInt();
+    m_cash = CXmlHelper::GetAttributeValue(element, "points").ToInt();
+    m_level = CXmlHelper::GetAttributeValue(element, "level").ToInt();
+    m_tutorialState = CXmlHelper::GetAttributeValue(element, "tutorial_state").ToInt();
+    m_lastDailyBonusTime = CXmlHelper::GetAttributeValue(element, "last_daily_bonus_time").ToInt();
+    m_dailyBonusesInRow = CXmlHelper::GetAttributeValue(element, "daily_bonus_row").ToInt();
+    m_lastHuntItem = CXmlHelper::GetAttributeValue(element, "last_hunt_item").ToInt();
+    m_lastHuntResult = CXmlHelper::GetAttributeValue(element, "last_hunt_result").ToInt();
+    m_appRated = CXmlHelper::GetAttributeValue(element, "app_rated").ToBool();
+    m_lastEnergyUpdateTime = CXmlHelper::GetAttributeValue(element, "last_energy_update_time").ToInt();
+    m_silentShotsCount = CXmlHelper::GetAttributeValueOrUseDefault(element, "silentShotsCount", XString("0")).ToInt();
+    m_cyberScopesCount = CXmlHelper::GetAttributeValueOrUseDefault(element, "cyberScopesCount", XString("0")).ToInt();
+    m_reactixControlTime = CXmlHelper::GetAttributeValueOrUseDefault(element, "reactixControlTime", XString("0")).ToInt();
+    m_hitechVisorEquipped = CXmlHelper::GetAttributeValueOrUseDefault(element, "isHitechVisorEquiped", XString("0")).ToInt() != 0;
+    m_lastGameVersionPlayed = CXmlHelper::GetAttributeValueOrUseDefault(element, "last_game_version_played", XString(L"100")).ToInt();
+    m_lastFiveDaysBonusTime = CXmlHelper::GetAttributeValueOrUseDefault(element, "last_five_days_bonus_time", XString(L"0")).ToInt();
+    m_activeFiveDaysBonusDay = CXmlHelper::GetAttributeValueOrUseDefault(element, "active_five_days_bonus_day", XString(L"0")).ToInt();
+    m_speedModeAvailableTimeMS = CXmlHelper::GetAttributeValueOrUseDefault(element, "speedModeAvailableTimeMS", XString(L"0")).ToInt();
+    m_ultrasoundAttemptCount = CXmlHelper::GetAttributeValueOrUseDefault(element, "ultrasoundAttemptCount", XString(L"0")).ToInt();
+    m_armorId = CXmlHelper::GetAttributeValueOrUseDefault(element, "armorID", XString(L"0")).ToInt();
+    m_armorDamageProof = CXmlHelper::GetAttributeValueOrUseDefault(element, "armorDamageProof", XString(L"0")).ToInt();
+    m_armorDamageProofMax = CXmlHelper::GetAttributeValueOrUseDefault(element, "armorDamageProofMax", XString(L"0")).ToInt();
     App* app = static_cast<App*>(WindowApp::m_instance);
-    if (app->m_helper != NULL) {
-        CDH_WeaponsManager* weapons = app->InitWeaponManager();
-        CDH_BasicGameData* data = app->m_helper->m_gamePlayManager.GetGameData();
-        const int first = ReadInt(element, "weapon_slot1");
-        const int second = ReadInt(element, "weapon_slot2");
-        if (weapons->GetWeaponById(first) != NULL) {
-            data->SetWeapon(0, first);
-        }
-        if (weapons->GetWeaponById(second) != NULL) {
-            data->SetWeapon(1, second);
-        }
+    int firstId = CXmlHelper::GetAttributeValue(element, "weapon_slot1").ToInt();
+    CItem* first = app->InitWeaponManager()->getItemById(firstId);
+    if (first != NULL) {
+        app->m_helper->m_gamePlayManager.SetWeapon01(first->m_id);
     }
+    int secondId = CXmlHelper::GetAttributeValue(element, "weapon_slot2").ToInt();
+    CItem* second = app->InitWeaponManager()->getItemById(secondId);
+    if (second != NULL) {
+        app->m_helper->m_gamePlayManager.SetWeapon02(second->m_id);
+    }
+    if (m_credits < 0) {
+        m_credits = 0;
+    }
+    m_currentFriendGatedMissionId = CXmlHelper::GetAttributeValueOrUseDefault(element, "current_friend_gated_mission_id", XString(L"0")).ToInt();
+    m_lastFiveDaysIncentiveBonusTimestamp = CXmlHelper::GetAttributeValueOrUseDefault(element, "lastFiveDaysIncentiveBonusTimestamp", XString(L"0")).ToInt();
+    m_activeFiveDaysIncentiveBonusDay = CXmlHelper::GetAttributeValueOrUseDefault(element, "activeFiveDaysIncentiveBonusDay", XString(L"0")).ToInt();
+    m_fiveDayIncentiveBonusForbidden = CXmlHelper::GetAttributeValueOrUseDefault(element, "fiveDayIncentiveBonusForbidden", XString(L"0")).ToBool();
+    m_reviveCount = CXmlHelper::GetAttributeValueOrUseDefault(element, "revive", XString(L"0")).ToInt();
+    m_receivedFiveDaysIncentiveBonus = CXmlHelper::GetAttributeValueOrUseDefault(element, "ReceivedFiveDaysIncentiveBonus", XString(L"0")).ToBool();
+    m_incentiveBonusExpirationShown = CXmlHelper::GetAttributeValueOrUseDefault(element, "FiveDaysIncentiveBonusExpirationMessageShown", XString(L"0")).ToBool();
     if (m_lastGameVersionPlayed >= 101 && m_lastGameVersionPlayed < 140) {
         m_fiveDayIncentiveBonusForbidden = true;
     }
+    m_lastMissionVersionPlayed = CXmlHelper::GetAttributeValueOrUseDefault(element, "last_mission_version_played", XString(L"100")).ToInt();
 }
 
 void CBH_Player::LoadMissionInfo(TiXmlElement* element)
@@ -1183,12 +1234,15 @@ void CBH_Player::LoadMissionInfo(TiXmlElement* element)
     if (section == NULL) {
         return;
     }
+    // the original looks up the first child before clearing the list
+    const TiXmlElement* child = section->FirstChildElement("completed_mission");
     m_completedMissions.removeAllElements();
-    for (const TiXmlElement* child = section->FirstChildElement("completed_mission"); child != NULL;
-         child = child->NextSiblingElement("completed_mission")) {
+    for (; child != NULL; child = child->NextSiblingElement("completed_mission")) {
+        int id = CXmlHelper::GetAttributeValue(child, "id").ToInt();
+        bool tranquillized = CXmlHelper::GetAttributeValue(child, "tranq").ToBool();
         SCompletedMissionInfo completion;
-        completion.m_id = ReadInt(child, "id");
-        completion.m_tranquillized = CXmlHelper::GetAttributeValueOptional(*child, "tranq").ToBool();
+        completion.m_id = id;
+        completion.m_tranquillized = tranquillized;
         m_completedMissions.addElement(completion);
     }
 }
@@ -1212,21 +1266,21 @@ void CBH_Player::LoadAmmo(TiXmlElement* element)
 
 void CBH_Player::LoadAvatar(TiXmlElement* element)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CAvatar* avatar = app->InitAvatarManager()->GetAvatar(ReadInt(element, "avatar_id"));
-    if (avatar != NULL) {
-        m_avatar = avatar;
-    }
+    int id = CXmlHelper::GetAttributeValue(element, "avatar_id").ToInt();
+    m_avatar = static_cast<App*>(WindowApp::m_instance)->InitAvatarManager()->GetAvatar(id);
 }
 
 void CBH_Player::LoadTjPoints(TiXmlElement* element)
 {
     const TiXmlElement* section = element->FirstChildElement("tapjoy_info");
     if (section != NULL) {
-        for (const TiXmlElement* child = section->FirstChildElement("tapjoy_points"); child != NULL;
-             child = child->NextSiblingElement("tapjoy_points")) {
-            const XString name = CXmlHelper::GetAttributeValueOptional(*child, "devId");
-            m_tapjoyPoints.Set(name, ReadInt(child, "points"));
+        const TiXmlElement* child = section->FirstChildElement("tapjoy_points");
+        while (child != NULL) {
+            // the original releases the name only after stepping to the next sibling
+            XString name = CXmlHelper::GetAttributeValue(child, "devId");
+            int points = CXmlHelper::GetAttributeValue(child, "points").ToInt();
+            m_tapjoyPoints.Set(name, points);
+            child = child->NextSiblingElement("tapjoy_points");
         }
     }
 }
@@ -1277,24 +1331,24 @@ void CBH_Player::GamePlayTick(int elapsed)
     bool speedActive = IsSpeedMode();
     CSwerveGame* game = CSwerveGame::m_pInstance;
     bool ultrasoundActive = game != NULL && game->m_stunMs > 0;
-    App* app = static_cast<App*>(WindowApp::m_instance);
     if (m_speedModeWasActive && !speedActive) {
-        app->m_soundManager->PlaySound("IDM_SLOW_END", false, false);
+        static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlaySound("IDM_SLOW_END", false, false);
     }
     if (m_ultrasoundWasActive && !ultrasoundActive) {
-        app->m_soundManager->PlaySound("IDM_ULTRASOUND_END", false, false);
+        static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlaySound("IDM_ULTRASOUND_END", false, false);
     }
     m_speedModeWasActive = speedActive;
     m_ultrasoundWasActive = ultrasoundActive;
     if (m_consumingReactixControl) {
         m_reactixControlTime -= elapsed;
         m_gameStats.RegisterPillAddTime(elapsed);
-        if (m_reactixControlTime < 1) {
+        Save();
+        if (m_reactixControlTime <= 0) {
             m_reactixControlTime = 0;
             m_consumingReactixControl = false;
             m_speedTimeMS = 0;
+            Save();
         }
-        Save();
     }
 }
 
@@ -1351,12 +1405,15 @@ void CBH_Player::SetEstimatedWeapon(CDH_Weapon* weapon, int count)
 
 bool CBH_Player::IsEnegyEnabled()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (app->m_overrideManager != NULL) {
-        unsigned long long disabled;
-        if (app->m_overrideManager->FindIntAttribute(CStrWChar("energy_disable"), CStrWChar("disable"), &disabled)) {
-            m_energyEnabled = disabled != 1;
-        }
+    COverrideManager* manager = static_cast<App*>(WindowApp::m_instance)->m_overrideManager;
+    if (manager == NULL) {
+        return m_energyEnabled;
+    }
+    CStrWChar group("energy_disable");
+    CStrWChar key("disable");
+    unsigned long long disabled = 0;
+    if (manager->FindIntAttribute(group, key, &disabled)) {
+        m_energyEnabled = disabled != 1;
     }
     return m_energyEnabled;
 }
@@ -1413,7 +1470,12 @@ void CBH_Player::StartConsumeReactixControl()
 
 void CBH_Player::ConsumeUltrasoundEmitter()
 {
-    m_ultrasoundAttemptCount = Nonnegative(m_ultrasoundAttemptCount - 1);
+    if (m_ultrasoundAttemptCount > 0) {
+        m_ultrasoundAttemptCount--;
+    } else {
+        m_ultrasoundAttemptCount = 0;
+    }
+    CGameAnalytics::logItemUsed(XString("untrasound_emitter"));
     CSwerveGame* game = CSwerveGame::m_pInstance;
     if (game != NULL && game->m_stunMs < 1) {
         App* app = static_cast<App*>(WindowApp::m_instance);

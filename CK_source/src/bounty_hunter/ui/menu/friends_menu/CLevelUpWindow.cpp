@@ -48,29 +48,61 @@ void CLevelUpAnimWindow::Update()
     m_animation->Update(WindowApp::m_instance->m_updateFrameTime);
 }
 
-CLevelUpWindow::CLevelUpWindow(XString message, bool)
+CLevelUpWindow::CLevelUpWindow(XString message, bool allowShare)
     : CTextDialog(), m_closeCommand(0), m_levelMessage(message)
 {
-    SetMessageText(m_levelMessage);
-    SetSound("IDM_LEVEL_UP");
-    SetButtons(BUTTON_OK);
+    SetTitleText("");
+    Window* controls = new Window(false);
+    controls->SetPercentWidth(100, 0, 0);
+    controls->SetPercentHeight(100, 0, 0);
+    AddToFront(controls);
+
     ImageWindow* backdrop = new ImageWindow();
+    backdrop->SetFillType(ImageWindow::FILL_NONE);
     backdrop->SetImageById("IDB_SHOP_BACKGROUND");
     backdrop->SetLayoutType(LAYOUT_SIMPLE);
     backdrop->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+    backdrop->SetOutsetSpacing(SScreenAdaptingConstant(-50, -100)(), 0, 0, 0);
     GetBackgroundImage()->AddToFront(backdrop);
-    CLevelUpAnimWindow* animation = new CLevelUpAnimWindow();
-    animation->SetLayoutType(LAYOUT_NONE);
-    animation->SetRect(0, 0, m_width, m_height / 3, false);
-    AddToFront(animation);
+    AddMessageText();
+
+    if (allowShare) {
+        WindowTransparent* shareSpacing = new WindowTransparent(false);
+        shareSpacing->SetCellPos(0, 1, 1, 1);
+        TextWindow* spacer = new TextWindow(XString(" "), CFontMgr::GetInstance()->GetFont(22));
+        spacer->SetCellPos(0, 1, 1, 1);
+        spacer->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+        shareSpacing->AddToFront(spacer);
+        int right = SScreenAdaptingConstant(90, 180)();
+        int bottom = SScreenAdaptingConstant(70, 140)();
+        shareSpacing->SetOutsetSpacing(0, right, bottom, 0);
+        AddToFront(shareSpacing);
+    }
+
+    Window* buttons = CreateButtons(allowShare);
+    buttons->SetPercentHeight(20, 0, 0);
+    buttons->SetPercentWidth(40, 0, 0);
+    buttons->SetLayoutType(LAYOUT_SIMPLE);
+    buttons->SetAlign(ALIGN_HCENTER | ALIGN_BOTTOM);
+    buttons->SetOutsetSpacing(0, 0, SScreenAdaptingConstant(40, 80)(), 0);
+    controls->AddToFront(buttons);
 }
 
 void CLevelUpWindow::OnCommand(Event& event)
 {
-    CDialogWindow::OnCommand(event);
-    if (event.m_handler == this && m_closeCommand != 0) {
-        WindowApp::HandleTunnelCommand(m_closeCommand, 0, 0, 0);
+    if (event.m_id == 0x6e7d5203) {
+        WindowApp::HandleTunnelCommand(0x6e7d5204, 0, 0, 0);
+    } else {
+        if (event.m_id != 0x2074d009 && event.m_id != 0x5749) {
+            return;
+        }
+        if (m_closeCommand != 0) {
+            WindowApp::HandleTunnelCommand(m_closeCommand, 0, 0, 0);
+        }
+        App* app = static_cast<App*>(WindowApp::m_instance);
+        app->m_soundManager->Stop("IDM_LEVEL_UP");
     }
+    Close();
 }
 
 Window* CLevelUpWindow::CreateButtons(bool allowShare)

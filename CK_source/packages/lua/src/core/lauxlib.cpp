@@ -759,7 +759,7 @@ LUA_API int lua_ispunct (int c) {
 
 
 LUA_API int lua_isspace (int c) {
-  return (c == ' ') | (c >= '\t' && c <= '\r');
+  return (c >= '\t' && c <= '\r') | (c == ' ');
 }
 
 

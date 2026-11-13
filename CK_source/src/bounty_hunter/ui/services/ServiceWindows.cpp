@@ -8,6 +8,9 @@
 #include "ICGraphics2d.h"
 #include "MathLib.h"
 #include "CStdUtil_Cocoa.h"
+#include "SScreenAdaptingConstant.h"
+
+const SScreenAdaptingConstant MARGIN_BARTEXT(2, 4);
 
 typedef char AnimatedWindowSizeCheck[sizeof(AnimatedWindow) == 0xf4 ? 1 : -1];
 typedef char LabelWithIconSizeCheck[sizeof(LabelWithIcon) == 0xb0 ? 1 : -1];

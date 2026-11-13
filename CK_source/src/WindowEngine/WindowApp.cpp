@@ -19,8 +19,9 @@ WindowApp::WindowApp()
 
 void WindowApp::reinit()
 {
+    const int initialFrameTime = 100;
     m_frameStartTime = -10;
-    m_averageFrameTime = 100;
+    m_averageFrameTime = initialFrameTime;
     m_time = 0;
     m_updateTime = 0;
     m_updateFrameTime = 0;
@@ -28,7 +29,7 @@ void WindowApp::reinit()
     m_timeSeconds = 0;
     m_frameTimeSeconds = 0;
     for (int frame = 0; frame < 8; frame++) {
-        m_frameTimes[frame] = 0x7fffffff;
+        m_frameTimes[frame] = initialFrameTime;
     }
     m_eventsDuration = 0;
     m_updateDuration = 0;

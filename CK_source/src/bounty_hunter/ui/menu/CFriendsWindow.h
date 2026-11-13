@@ -48,6 +48,7 @@ private:
     void ShowFacebookIncentiveWindow(unsigned int offer);
     void ShowFacebookInviteFriendsWindow();
     void HandleFacebookInvitation(CIncentivizedWindow* picker);
+    void CloseInviteWait();
     void ShowSelectGiftRecipient();
     void HandleGiftSending(CIncentivizedWindow* picker);
     int GetNonPlayingFriendsCount();
@@ -64,8 +65,8 @@ private:
     CImageButton* m_loginButton130;               // 0x130
     Window* m_loginButton134;                     // 0x134
     Window* m_loginButton138;                     // 0x138
-    Window* m_waitWindow;                         // 0x13c CWaitWindow shown while invitations are sent
-    int m_sentInviteCount;                        // 0x140 invitations sent by the last batch
+    Window* m_waitWindow;                         // 0x13c CWaitWindow, only valid for a pending batch
+    int m_sentInviteCount;                        // 0x140 zero when no batch is pending
     bool m_incentiveShown;                        // 0x144
     bool m_inviteFailShown;                       // 0x145
     bool m_selectingGiftRecipient;                // 0x146

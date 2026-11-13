@@ -37,6 +37,8 @@ public:
     };
 
     struct SSpecialPointAI {
+        // original LoadSpecialPoint: id and type are left uninitialized
+        SSpecialPointAI() : m_cell(NULL), m_occupant(NULL) {}
         int m_id;
         Vector<SCameraAttitude> m_cameraAttitudes;
         vec3 m_position;
@@ -84,6 +86,7 @@ public:
     int GetHideBehaviour(int point, int camera) const;
     bool FindAnotherPoint(int* point, int previous) const;
     bool FindAnotherAttackPoint(int camera, int* point, int previous) const;
+
     bool RegisterUnitBodyInPoint(const CUnitBody* body, int point);
     void UnregisterUnitBody(const CUnitBody* body);
     bool DoesGateCollideWithBody(SGateAI* gate, CUnitBody* body, vec3* nearest) const;

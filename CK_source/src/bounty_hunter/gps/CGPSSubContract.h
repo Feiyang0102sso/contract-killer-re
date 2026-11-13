@@ -17,7 +17,6 @@ public:
     virtual void OnClick();
     virtual void Save(TiXmlElement* element);
     virtual void Load(TiXmlElement* element);
-    virtual bool CheckHit(int x, int y, CGPSItem** item);
 
     void Init();
     void Init(unsigned int activate, unsigned int disappear, float rewardFactor);

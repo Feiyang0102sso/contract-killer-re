@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 
+typedef char MessageSizeCheck[sizeof(CMessage) == 0xc0 ? 1 : -1];
                                                                         
 
 CMessage::CMessage(CClass* sender, unsigned int messageId, unsigned int param, int argumentCount, ...)

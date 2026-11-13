@@ -33,18 +33,16 @@ void CSquadType::ParseMinion(TiXmlNode* node)
 void CSquadType::CalcDPM()
 {
     m_damage = 0.0f;
-    App* app = static_cast<App*>(WindowApp::m_instance);
+    // the original checks neither the person type nor its weapon
     for (int index = 0; index < m_minions.size(); ++index) {
-        CBH_PersonType* type = app->InitPersonTypeManager()->GetType(m_minions[index]);
-        if (type != NULL && type->m_weapon != NULL) {
-            m_damage += type->m_weapon->m_baseDamage;
-        }
+        m_damage += static_cast<App*>(WindowApp::m_instance)->InitPersonTypeManager()->GetType(m_minions[index])->m_weapon->m_baseDamage;
     }
 }
 
 const XString& CSquadType::GetMiniomName() const
 {
-    return m_minions[CRandGen::GetInstance()->GetRandRange(0, m_minions.size() - 1)];
+    int last = m_minions.size() - 1;
+    return m_minions[CRandGen::GetInstance()->GetRandRange(0, last)];
 }
 
 const XString& CSquadType::GetMiniomNameByIndex(int index) const

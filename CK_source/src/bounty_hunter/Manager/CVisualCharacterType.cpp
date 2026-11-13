@@ -1,4 +1,7 @@
 #include "CVisualCharacterType.h"
+#define AD_BANNER_SIZES_NO_MARGINS
+#include "AdBannerSizes.h"
+#undef AD_BANNER_SIZES_NO_MARGINS
 
 #include <stdio.h>
 #include <string.h>
@@ -59,6 +62,7 @@ void CVisualCharacterType::Parse(TiXmlNode* node)
     m_name = CXmlHelper::GetAttributeValue(node, "name");
     ParseInfo(node->FirstChild("info"));
     ParseModel(node->FirstChild("model"));
+    node->FirstChild("sounds");
 }
 
 void CVisualCharacterType::ParseInfo(TiXmlNode* node)
@@ -66,11 +70,12 @@ void CVisualCharacterType::ParseInfo(TiXmlNode* node)
     if (node == NULL) {
         return;
     }
-    int gender = CXmlHelper::GetAttributeValue(node, "gender").ToInt();
-    m_isWoman = gender == 1;
-    m_isMan = gender == 0;
+    m_isMan = CXmlHelper::GetAttributeValue(node, "gender").ToInt() == 0;
+    m_isWoman = CXmlHelper::GetAttributeValue(node, "gender").ToInt() == 1;
     const char* screenImage = node->ToElement()->Attribute("screenImage");
-    if (screenImage != NULL) {
+    if (screenImage == NULL) {
+        m_screenImage = 0;
+    } else {
         App* app = static_cast<App*>(WindowApp::m_instance);
         m_screenImage = app->InitResMap()->getResourceID(XString(screenImage).Replace(L"\\n", L"\n", true));
     }
@@ -185,7 +190,8 @@ CVisualCharacterType::Group CVisualCharacterType::GetCharacterModelCopy() const
 
 void CVisualCharacterType::ReleaseCharacterModelCopy() const
 {
-    if (m_modelCopies > 0 && --m_modelCopies == 0) {
+    // the original does not test for a positive count first
+    if (--m_modelCopies == 0) {
         CleanupResources();
     }
 }
@@ -283,11 +289,15 @@ AnimationImpl* CVisualCharacterType::GetIdleAnimation(int index) const
 
 AnimationImpl* CVisualCharacterType::GetBossAfraidAnimation() const
 {
+    // the original returns NULL for a negative index and does not clamp
     int index = GetEnumerateAnimationCount(&m_afraid);
+    if (index < 0) {
+        return NULL;
+    }
     if (index == 1) {
         index = 0;
     }
-    return AnimationAt(m_afraid, index);
+    return m_afraid[index];
 }
 
 AnimationImpl* CVisualCharacterType::GetShotAnimation(EPersonAnimShotAttitudeType attitude,
@@ -297,6 +307,7 @@ AnimationImpl* CVisualCharacterType::GetShotAnimation(EPersonAnimShotAttitudeTyp
     return AnimationAt(m_shot, attitude * 8 + direction * 4 + weapon);
 }
 
+__attribute__((noinline))
 AnimationImpl* CVisualCharacterType::GetHideAndReloadAnimationImpl(const Vector<AnimationImpl*>* animations,
                                                                   EPersonAnimShotAttitudeType attitude,
                                                                   EPersonAnimWeaponType weapon) const
@@ -326,11 +337,8 @@ AnimationImpl* CVisualCharacterType::GetTakeOutWeaponAnimation(EPersonAnimWeapon
 
 EPersonAnimType CVisualCharacterType::GetAnimationTypeByName(const char* name) const
 {
-    const EPersonAnimType* type = m_animationTypes.Get(XString(name));
-    if (type != NULL) {
-        return *type;
-    }
-    return PERSON_ANIM_TYPE_DEFAULT;
+    // the original does not check for an unknown name
+    return *m_animationTypes.Get(XString(name));
 }
 
 void CVisualCharacterType::ParseAnimation() const

@@ -9,8 +9,9 @@
 namespace {
 const int Back = static_cast<int>(0x97204784u);
 const int LeftButton = 0x21204844;
-const char* const SUR_MI_MINIGAMES = "SUR_MI_MINIGAMES";
 }
+
+static const char* const SUR_MI_MINIGAMES = "SUR_MI_MINIGAMES";
 
 CDH_MenuScreen::CDH_MenuScreen()
     : MenuDialog(NULL), m_selectedIndex(-1), m_showBack(true)

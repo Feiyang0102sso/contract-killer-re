@@ -798,11 +798,13 @@ void SimpleDialog::AddResourceItem(const char* text, const ImageRes& pressed, co
 {
     AddResourceItem(text, id, type);
     Item* item = ItemByKey(id);
-    item->m_pressedIcon = pressed;
-    item->m_icon = image;
+    if (item != NULL) {
+        item->m_pressedIcon = pressed;
+        item->m_icon = image;
+    }
 }
 
-SimpleDialog::Item* SimpleDialog::ItemByKey(int id) const
+__attribute__((noinline)) SimpleDialog::Item* SimpleDialog::ItemByKey(int id) const
 {
     if (m_itemsWindow != NULL) {
         for (int index = 0; index < m_itemsWindow->m_items.size(); ++index) {

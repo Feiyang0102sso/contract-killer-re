@@ -1,11 +1,11 @@
 // CEvent.h - executable event delivered to the listeners registered for its id.
 // (first drafted by b005 as PROVISIONAL; completed by b011x, the owner)
 //
-// Event plumbing: the root system of the application (CApp +0x14) holds the event system under
+// Event plumbing: the root system of the application (CApp +0x0c) holds the event system under
 // the handle CHandle::FromName("...") = kEventSystemHandle. The event system holds one CRegistry
 // per event id (element handle = event id); each of those registries holds the CEventListener
-// objects (element handle = listener handle). Listeners unregistered while an event is being
-// dispatched are parked in CEventCore and removed after the dispatch.
+// objects (element handle = listener handle). Listener entries unlinked during a dispatch
+// stay allocated in CEventCore until the outermost dispatch returns.
 #ifndef CEVENT_H
 #define CEVENT_H
 
@@ -75,7 +75,7 @@ public:
         return core;
     }
 
-    CVectorLegacy<CSystemElement*> m_pendingRemovals;   // 0x08 listener elements to drop after the dispatch
+    CVectorLegacy<CSystemElement*> m_pendingRemovals;   // 0x08 unlinked listener elements awaiting deletion
     unsigned char m_isDispatching;                      // 0x20 an event is calling its listeners
 };
 

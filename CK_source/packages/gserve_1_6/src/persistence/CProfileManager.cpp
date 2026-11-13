@@ -264,10 +264,10 @@ void CProfileManager::ReplaceDescriptorWithFile(TCVector<int>& collectionTypes)
 void CProfileManager::resetDataBuffer(const TCVector<int>& collectionTypes, ProfileDataSaveStatus status)
 {
     TCVector<CSaveRestoreInterface*>* buffer;
-    if (status == PROFILE_DATA_SYNCED) {
-        buffer = &m_serverData;
-    } else if (status == PROFILE_DATA_SAVED_LOCAL) {
+    if (status == PROFILE_DATA_SAVED_LOCAL) {
         buffer = &m_localData;
+    } else if (status == PROFILE_DATA_SYNCED) {
+        buffer = &m_serverData;
     } else {
         buffer = &m_currentData;
     }
@@ -335,8 +335,12 @@ bool CProfileManager::downloadFileBackedData(const TCVector<int>& collectionType
     if (manager->getContentManagerStatus() != CONTENT_MANAGER_READY) {
         return false;
     }
-    manager->GetProfileContentSelf(name.GetCharPtr(), collection);
-    return true;
+    if (manager->GetProfileContentSelf(name.GetCharPtr(), collection)) {
+        return true;
+    }
+    manager->m_isProfileContent = 0;
+    manager->m_profileData = NULL;
+    return false;
 }
 
 unsigned char CProfileManager::loadFromFileSystem(int collectionType, int userId)
@@ -461,12 +465,17 @@ void CProfileManager::handleResponseResolveLocalServerDataConflicts(CObjectMap* 
 void CProfileManager::ApplyProfileResponse(CObjectMap* response, ProfileManagerFunctor* functor, bool conflict)
 {
     const TCVector<int>& query = functor->m_collectionTypes;
-    unsigned char success = WasErrorInResponse(response, functor, "CProfileManager::ApplyProfileResponse") == 0;
+    const char* operation = "CProfileManager::handleResponseLoadFromServer";
+    if (conflict) {
+        operation = "CProfileManager::handleResponseResolveLocalServerDataConflicts";
+    }
+    unsigned char success = WasErrorInResponse(response, functor, operation) == 0;
     if (!success) {
         TCVector<int> files(query);
         ReplaceDescriptorWithFile(files);
         if (conflict) {
             useDataFromLocal(files);
+            invalidateLocalData(files, false);
         }
         m_pendingCollections.RemoveAll(files);
     } else {
@@ -506,13 +515,24 @@ void CProfileManager::ApplyProfileResponse(CObjectMap* response, ProfileManagerF
                 if (downloadFileBackedData(files, file)) {
                     continue;
                 }
+                if (conflict) {
+                    server->setDataSaveStatus(PROFILE_DATA_NOT_LOADED);
+                }
             }
             m_pendingCollections.Remove(fileType);
         }
         DeleteAttributes(attributes);
     }
+    if (conflict && success) {
+        CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
+        if (user != NULL && user->m_notificationHandler != NULL) {
+            CNGSHandleProfileDataConflict(query);
+        } else if (m_pendingCollections.Size() == 0) {
+            loadSaveEnd();
+        }
+    }
     CompleteReadRequestOutstanding();
-    if (m_pendingCollections.Size() == 0 && isReady()) {
+    if ((!conflict || !success) && m_pendingCollections.Size() == 0 && isReady()) {
         FinishProfileLoad(success);
     }
 }
@@ -521,7 +541,11 @@ void CProfileManager::FinishProfileLoad(unsigned char success)
 {
     loadSaveEnd();
     CNGSLocalUser* user = CNGS::GetInstance()->GetLocalUser();
-    if (user->m_notificationHandler == NULL) {
+    if (user == NULL || user->m_notificationHandler == NULL) {
+        return;
+    }
+    if (!success) {
+        user->m_notificationHandler->HandleProfileLoaded(false, m_savingCollections);
         return;
     }
     TCVector<int> conflicts;
@@ -1182,10 +1206,12 @@ unsigned char CProfileManager::HandleContentFileDownloadedSelf(unsigned char suc
     m_pendingCollections.Remove(collectionType);
     if (m_pendingCollections.Size() == 0) {
         loadSaveEnd();
-        if (currentData == collection || !success) {
-            localUser->m_notificationHandler->HandleProfileLoaded(success, m_savingCollections);
-        } else if (serverData == collection) {
-            localUser->m_notificationHandler->HandleProfileDataConflict(m_savingCollections);
+        if (localUser->m_notificationHandler != NULL) {
+            if (currentData == collection || !success) {
+                localUser->m_notificationHandler->HandleProfileLoaded(success, m_savingCollections);
+            } else if (serverData == collection) {
+                localUser->m_notificationHandler->HandleProfileDataConflict(m_savingCollections);
+            }
         }
     }
     return 1;

@@ -8,6 +8,7 @@
 #include "CTip.h"
 #include "CTipManager.h"
 #include "DGHelper.h"
+#include "CBH_SurfaceManager.h"
 
 CLoadingScreen::CLoadingScreen(CSwerveGame* game)
     : Window(false), m_game(game), m_bar(NULL), m_tip(NULL), m_currentStep(0), m_ready(false)
@@ -27,10 +28,12 @@ void CLoadingScreen::AddLoadingStep(LoadingStep step)
 void CLoadingScreen::Init()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
-    m_backgroundId = app->m_helper->GetRandomBackgroundResId();
+    // Original: preloads the title surface into a local that is never used.
+    ICRenderSurface* title;
+    app->m_helper->LoadImageSurface(&title, "SUR_TITLE", false);
     ImageWindow* background = new ImageWindow();
-    XString::AnsiString id(m_backgroundId.c_str());
-    background->SetImageById(id);
+    m_backgroundId = app->m_helper->GetRandomBackgroundResId();
+    background->SetImage(app->m_surfaceManager->CreateSurface(XString::AnsiString(m_backgroundId.c_str()), true));
     background->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     AddToFront(background);
 
@@ -44,7 +47,8 @@ void CLoadingScreen::Init()
             WindowTransparent* panel = new WindowTransparent(false);
             panel->SetAlign(ALIGN_RIGHT | ALIGN_VCENTER);
             panel->SetPercentWidth(50, 0, 0);
-            TextWindow* text = new TextWindow(m_tip->m_description, font);
+            TextWindow* text = new TextWindow();
+            text->SetText(m_tip->m_description, font);
             text->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
             text->SetPercentWidth(100, 0, 0);
             text->SetPercentHeight(100, 0, 0);

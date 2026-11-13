@@ -83,12 +83,6 @@ public:
         m_pool.Destroy();
     }
 
-    // slots 0x10 / 0x14 are 0 in the shipped CVertexBuffer vtable (dead-stripped bodies); the
-    // class itself is instantiated by PriorityStacks::AquireVtxBuffer, so they are not pure here
-    /** Index pool of `indexSize` bytes plus the vertex data (CIndexVertexBuffer). */
-    virtual void Initialize(int indexSize, int size, int attributeCount) {}
-    virtual void Slot5() {}
-
     unsigned int m_field4;          // 0x04 resource type (Type_*)
     CIndexVertexPool m_pool;        // 0x08
     Attribute* m_attributes;        // 0x1c
@@ -113,6 +107,7 @@ public:
         m_indices.Destroy();
     }
 
+    /** Index pool of `indexSize` bytes plus the vertex data. */
     inline virtual void Initialize(int indexSize, int size, int attributeCount)
     {
         m_indices.Destroy();

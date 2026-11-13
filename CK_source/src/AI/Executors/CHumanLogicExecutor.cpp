@@ -14,6 +14,7 @@
 #include "CSquad.h"
 #include "CSwerveGame.h"
 #include "CUnit.h"
+#include "DGHelper.h"
 
 CHumanLogicExecutor::CHumanLogicExecutor(CUnitMind* mind, bool scripted, bool inSquad)
     : IExecutor(mind), m_reacted(false), m_scripted(scripted), m_inSquad(inSquad)
@@ -40,8 +41,8 @@ void CHumanLogicExecutor::OnTranquillize()
 
 void CHumanLogicExecutor::Tick(int)
 {
-    CUnit* unit = m_mind->GetUnit();
-    if (unit != NULL && CSwerveGame::m_pInstance->m_stunMs > 0 && !unit->m_invulnerable
+    // the original checks the mind first and reads the unit without a NULL check
+    if (m_mind != NULL && CSwerveGame::m_pInstance->m_stunMs > 0 && !m_mind->GetUnit()->m_invulnerable
         && m_mind->GetExecutor(L"CStunExecutor") == NULL) {
         CancelChildren();
         AddStunExecutor(m_mind);
@@ -74,37 +75,62 @@ void CHumanLogicExecutor::RegisterAsTranquillized()
         return;
     }
     App* app = static_cast<App*>(WindowApp::m_instance);
-    CSwerveGame::m_pInstance->RegisterUnitNeutralization(unit->m_type);
-    if (unit->m_type == UnitBoss) {
-        app->m_huntingInfo->OnBossTranquillized();
-    }
+    app->m_helper->m_swerveGame->RegisterUnitNeutralization(unit->m_type);
     if (unit->m_type != UnitCivilian) {
-        app->InitProgressSystem()->RegisterGameEvent(CProgressSystem::EVENT_ENEMY_TRANQUILLIZED,
-                                                   CProgressSystem::CalcXpForKilledUnit(unit), -1);
+        int previousExperience = app->m_huntingInfo->m_experienceEarned;
+        int experience = CProgressSystem::CalcXpForKilledUnit(unit);
+        app->InitProgressSystem()->RegisterGameEvent(CProgressSystem::EVENT_ENEMY_TRANQUILLIZED, experience, -1);
+        unit->m_field1f0 = app->m_huntingInfo->m_experienceEarned - previousExperience;
+        RegisterAsNeutralized();
     }
     unit->m_tranquillized = true;
-    RegisterAsNeutralized();
 }
 
 void CHumanLogicExecutor::OnDeath(const vec3& direction)
 {
     RegisterAsDead();
     CancelChildren();
-    AddDeathExecutorExecutor(m_mind, direction);
+    CSwerveGame* game = CSwerveGame::m_pInstance;
+    if (game == NULL || game->m_specialWeapon == NULL) {
+        AddDeathExecutorExecutor(m_mind, direction);
+        return;
+    }
+    CUnit* unit = m_mind->GetUnit();
+    if (unit != NULL) {
+        game->PlayInternalBodyBlast(unit->m_body.m_position);
+        unit->m_dead = true;
+        unit->MarkAsRemoved();
+        m_mind->CancelAllExecutors();
+    }
 }
 
-void CHumanLogicExecutor::RegisterAsDead()
+__attribute__((noinline)) void CHumanLogicExecutor::RegisterAsDead()
 {
-    RegisterAsNeutralized();
+    if (m_mind == NULL || m_mind->GetUnit() == NULL) {
+        return;
+    }
+    CUnit* unit = m_mind->GetUnit();
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    app->m_helper->m_swerveGame->RegisterUnitNeutralization(unit->m_type);
+    if (unit->m_type != UnitCivilian) {
+        EHitType hitType;
+        unit->GetPickInfo(&hitType);
+        int experience = CProgressSystem::CalcXpForKilledUnit(unit);
+        app->InitProgressSystem()->RegisterGameEvent(CProgressSystem::EVENT_ENEMY_KILLED, experience,
+                                                   hitType == HitHead);
+        RegisterAsNeutralized();
+    }
 }
 
 void CHumanLogicExecutor::RegisterAsNeutralized()
 {
+    // the original leaves the squad first and does not skip civilians
     CUnit* unit = m_mind->GetUnit();
-    if (unit != NULL && unit->m_type != UnitCivilian) {
-        unit->m_invulnerable = true;
-        if (unit->m_squad != NULL) {
-            unit->m_squad->LeaveSquad(unit);
-        }
+    if (unit == NULL) {
+        return;
     }
+    if (unit->m_squad != NULL) {
+        unit->m_squad->LeaveSquad(unit);
+    }
+    unit->m_invulnerable = true;
 }

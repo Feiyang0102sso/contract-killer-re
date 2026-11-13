@@ -32,11 +32,11 @@ public:
     void UpdateOtherText();
 
 private:
-    void CreateAvatarWindow();
-    void CreateInfoWindow();
-    void CreateBarsWindow();
-    void CreateWeaponWindow(int slot, const char* title, unsigned int command);
-    void CreateMenuBar();
+    Window* CreateAvatarWindow();
+    Window* CreateInfoWindow();
+    Window* CreateBarsWindow();
+    Window* CreateWeaponWindow(int slot, const char* title, unsigned int command);
+    Window* CreateMenuBar();
     CImageButton* CreateSwapWeaponsWindow(unsigned int command);
 
     static CBH_NetworkWindow* m_pInstance;
@@ -48,14 +48,13 @@ private:
     CBH_ProgressBar* m_money;
     CBH_ProgressBar* m_creditsBar;
     CBH_WeaponButton* m_weaponButtons[2];
-    TextWindow* m_profileInfo;
-    TextWindow* m_inventory;
+    unsigned char m_reservedF8[8];
     TextWindow* m_weaponLabels[2];
     CDH_Weapon* m_weapons[2];
     bool m_showingShop;
     unsigned char m_reserved111[0xb];
     Window* m_notificationLayer;
-    CBH_MenuButton* m_swapButton;
+    TextWindow* m_inventory;
 };
 
 #endif

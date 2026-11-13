@@ -47,7 +47,7 @@ public:
     void ShowDistanceTag(bool show);
     void InitDistanceTag();
     void UpdateDistanceTag();
-    void SetDistanceTag(int distance);
+    bool SetDistanceTag(int distance);
     void CombineCharImages(unsigned char** pixels, int* width, int* height, const XString& text);
     static ICRenderSurface* CreateDistanceTagSurface();
     void InitWeapon();

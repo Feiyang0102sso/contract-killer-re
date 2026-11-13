@@ -23,6 +23,9 @@ enum ENewsType {
 };
 
 struct SMessage {
+    // the original constructor only clears the two flags
+    SMessage() : m_read(false), m_flag09(false) {}
+
     ENewsType m_type;         // 0x00
     int m_senderId;           // 0x04
     mutable bool m_read;      // 0x08
@@ -88,7 +91,7 @@ public:
     const SMessage* GetNewsAt(int index);
 
     Vector<const SMessage*> m_messages;
-    const SMessage* m_emptyMessage; // 0x10
+    SMessage* m_emptyMessage; // 0x10 (non-const: adding it to m_messages converts through a temporary)
 
 private:
     void AppendMessage(const SMessage* message);

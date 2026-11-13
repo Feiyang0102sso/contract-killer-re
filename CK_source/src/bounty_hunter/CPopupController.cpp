@@ -28,8 +28,9 @@ CPopupController::~CPopupController()
             popup->CloseChilds();
             popup->HandleUpdate(true);
             popup->HandleUpdate(true);
-            delete popup;
+            popup->Close();
         }
+        m_queues[position].removeAllElements();
     }
 }
 
@@ -83,7 +84,7 @@ void CPopupController::OnCommand(Event& event)
 
 Window* CPopupController::AddPopup(const char* icon, XString text, EPosition position, EAnimationStyle style, int font)
 {
-    if (m_queues[position].size() >= POPUP_STACK_MAX_SIZE[position]) {
+    if (m_queues[position].size() > POPUP_STACK_MAX_SIZE[position]) {
         return NULL;
     }
     AnimatedWindow* popup = new AnimatedWindow(static_cast<AnimatedWindow::EMode>(2));
@@ -94,9 +95,14 @@ Window* CPopupController::AddPopup(const char* icon, XString text, EPosition pos
     return popup;
 }
 
-Window* CPopupController::AddPopup(const char* icon, int value, EPosition position, EAnimationStyle style, int font)
+Window* CPopupController::AddPopup(const char* icon, int value, EPosition position, EAnimationStyle style, int)
 {
-    return AddPopup(icon, XString::Format(L"+%d", value), position, style, font);
+    XString text;
+    if (value > 0) {
+        text = XString("+");
+    }
+    text.Append(XString(value));
+    return AddPopup(icon, text, position, style, 8);
 }
 
 void CPopupController::AddAchievementPopup(const CAchievement* achievement)
@@ -112,7 +118,8 @@ void CPopupController::AddAchievementPopup(const CAchievement* achievement)
 
 void CPopupController::AddTrickShotPopup(const XString& name, const XString& points)
 {
-    AddPopup(NULL, XString::Format(L"%ls %ls", name.c_str(), points.c_str()), Center, Brief, 9);
+    XString text = name + XString(" ") + points;
+    AddPopup(NULL, text, Center, Brief, 9);
 }
 
 void CPopupController::SetupStyle(AnimatedWindow* window, EAnimationStyle style)
@@ -172,11 +179,11 @@ void CPopupController::SetupPosition(AnimatedWindow* window, EPosition position)
 void CPopupController::AddPopupInQueue(Window* window, EPosition position)
 {
     Vector<Window*>& queue = m_queues[position];
-    if (queue.size() >= POPUP_STACK_MAX_SIZE[position]) {
+    if (queue.size() > POPUP_STACK_MAX_SIZE[position]) {
         window->CloseChilds();
         window->HandleUpdate(true);
         window->HandleUpdate(true);
-        delete window;
+        window->Close();
     } else {
         queue.insertElementAt(window, 0);
     }
@@ -185,17 +192,20 @@ void CPopupController::AddPopupInQueue(Window* window, EPosition position)
 void CPopupController::Update()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
-    unsigned int now = CStdUtil_Cocoa::GetUpTimeMS();
     for (int position = 0; position < PositionCount; ++position) {
         Vector<Window*>& queue = m_queues[position];
-        if (queue.size() > 0 && now - m_lastPopupMS[position] > POPUP_TIME_INTERVAL_MS[position]) {
+        if (queue.size() == 0) {
+            continue;
+        }
+        unsigned int now = CStdUtil_Cocoa::GetUpTimeMS();
+        if (now - m_lastPopupMS[position] > POPUP_TIME_INTERVAL_MS[position]) {
             int index = queue.size() - 1;
             Window* popup = queue[index];
             queue.removeElementAt(index);
             if (popup == m_enemiesLeft) {
                 m_enemiesLeft = NULL;
             }
-            app->m_topLayer->AddToFront(popup);
+            app->m_mainLayer->AddToFront(popup);
             m_lastPopupMS[position] = now;
         }
     }

@@ -8,6 +8,7 @@
 #include "CDH_Weapon.h"
 #include "CSwerveGame.h"
 #include "DGHelper.h"
+#include "Fixed.h"
 #include "GamePlayHUD.h"
 #include "dgCamera.h"
 #include "ICResourceManager.h"
@@ -61,14 +62,21 @@ void DGScopeCursor::onFire()
 void DGScopeCursor::onPointerMove(int, int, int deltaX, int deltaY)
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
-    if (!app->m_settings->IsAccelerationEnabled()) {
+    bool acceleration = app->m_settings->IsAccelerationEnabled();
+    if (!acceleration) {
         m_moved = true;
     }
     if (m_motionDelayMs < 0) {
         setTargetAndTime(m_targetX + deltaX, m_targetY + deltaY, 1);
         DGHelper* helper = app->m_helper;
-        helper->m_swerveGame->m_camera->SetTargetPoint(0.5f + (float)deltaX / helper->m_screenWidth,
-                                                        0.5f + (float)deltaY / helper->m_screenHeight);
+        float moveX = static_cast<float>(deltaX);
+        float moveY = static_cast<float>(deltaY);
+        if (acceleration) {
+            moveX = Fixed::toFloat(deltaX);
+            moveY = Fixed::toFloat(deltaY);
+        }
+        helper->m_swerveGame->m_camera->SetTargetPoint(0.5f + moveX / helper->m_screenWidth,
+                                                     0.5f + moveY / helper->m_screenHeight);
     }
 }
 

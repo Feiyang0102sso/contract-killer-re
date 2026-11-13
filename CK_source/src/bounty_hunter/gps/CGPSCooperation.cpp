@@ -8,11 +8,6 @@
 #include "CUtility.h"
 #include "DGHelper.h"
 
-CCountNotificationWindow::~CCountNotificationWindow()
-{
-    // The three image resources and text belong to the badge.
-}
-
 CGPSCooperation::CGPSCooperation()
     : m_listener(NULL), m_font(NULL), m_titleWidth(0), m_elapsed(2000)
 {

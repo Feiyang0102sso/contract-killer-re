@@ -12,7 +12,7 @@ namespace {
 const EPersonAnimType BurnStart = static_cast<EPersonAnimType>(18);
 const EPersonAnimType BurnLoop = static_cast<EPersonAnimType>(19);
 const EPersonAnimType BurnEnd = static_cast<EPersonAnimType>(20);
-const char FireSound[] = "IDM_ENEMY_FIRE_01";
+const char* const FireSound = "IDM_ENEMY_FIRE_01";
 }
 
 typedef char BurnExecutorSizeCheck[sizeof(CBurnExecutor) == 0x34 ? 1 : -1];
@@ -47,8 +47,11 @@ void CBurnExecutor::UnbindFireFX()
 
 void CBurnExecutor::Cleanup()
 {
-    delete m_fireAnimation;
-    m_fireAnimation = NULL;
+    // the original only clears the pointer when there was an animation
+    if (m_fireAnimation != NULL) {
+        delete m_fireAnimation;
+        m_fireAnimation = NULL;
+    }
     m_fireRoot.Clear();
 }
 

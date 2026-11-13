@@ -57,9 +57,9 @@ private:
     ImageWindow* m_weaponImage;          // 0xd8
     TextWindow* m_weaponName;
     ImageRes m_background;
-    CScrollWindow* m_chooser;            // 0xe8
-    ScrollingContainer* m_itemButtons;
-    TextWindow* m_stats;
+    Window* m_chooser;                   // 0xe8
+    Window* m_itemButtons;
+    Window* m_equipmentPanel;
     CEquipItemButton* m_silencer;
     CEquipItemButton* m_hitechVisor;
     CEquipItemButton* m_cyberScope;

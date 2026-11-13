@@ -3,9 +3,11 @@
 #include "ICResourceManager.h"
 
 #include <math.h>
+#include <string.h>
 #include "App.h"
 #include "AppSettings.h"
 #include "CAmmo.h"
+#include "CBH_GPSHud.h"
 #include "CBH_Player.h"
 #include "CBH_ProgressBar.h"
 #include "CBH_SurfaceManager.h"
@@ -20,7 +22,9 @@
 #include "CSwerveGame.h"
 #include "CHuntingInfo.h"
 #include "CGameAnalytics.h"
+#include "CIngameShop.h"
 #include "CFont.h"
+#include "CMath.h"
 #include "CFontMgr.h"
 #include "CImageButton.h"
 #include "DGHelper.h"
@@ -31,23 +35,7 @@
 #include "SwerveHelper.h"
 #include "ICStdUtil.h"
 
-namespace {
-const int ReviveDurationMs = 5000;
-const int ReviveSoundDelayMs = 1800;
-const int WoundingDurationMs = 667;
-enum ModelAnimationState {
-    ModelReady = 0, WeaponLeaving = 1, WeaponEntering = 2, ScopeTransition = 3,
-    ReviveWeaponLeaving = 4, RevivePlaying = 5
-};
-
-bool Contains(const CRectangle& bounds, int x, int y)
-{
-    return x >= bounds.m_x && x < bounds.m_x + bounds.m_width
-        && y >= bounds.m_y && y < bounds.m_y + bounds.m_height;
-}
-}
-
-// The original window is allocated separately and drawn by GamePlayHUD::Paint.
+// Scope view of the zoomed weapon (0xe4 bytes), drawn by GamePlayHUD::Paint.
 class GamePlayHUD::CZoomedScopeWindow : public ViewWindow {
 public:
     CZoomedScopeWindow();
@@ -70,6 +58,7 @@ public:
     bool m_zoomEnabled;                     // 0xe1
 };
 
+// Hit direction effect (0xb4 bytes); a child of the HUD.
 class GamePlayHUD::WoundingWindow : public ViewWindow {
 public:
     explicit WoundingWindow(bool armor);
@@ -77,34 +66,29 @@ public:
     void StopEffect();
     virtual void Update();
 
-private:
     int m_remainingMs;                // 0xa8
     SwerveHelper::Group m_screen;     // 0xac
     SwerveHelper::Group m_arrow;      // 0xb0
 };
 
+// Phoenix serum effect (0xb4 bytes); a child of the HUD.
 class GamePlayHUD::ReviveWindow : public ViewWindow {
 public:
     ReviveWindow();
     void StopEffect();
     virtual void Update();
 
-    int m_remainingMs;
-    SwerveHelper::Group m_controller;
-    bool m_soundPlayed;
+    int m_remainingMs;                // 0xa8
+    SwerveHelper::Group m_controller; // 0xac
+    bool m_soundPlayed;               // 0xb0
 };
 
 GamePlayHUD::ReviveWindow::ReviveWindow()
-    : ViewWindow(World()), m_remainingMs(0), m_soundPlayed(false)
+    : ViewWindow(World()), m_remainingMs(0)
 {
     m_world = World(App::LoadObject3D("BIN_PHOENIX_SERUM"));
-    if (m_world != NULL) {
-        Background background = m_world.getBackground();
-        if (background != NULL) {
-            background.setColorClearEnable(false);
-        }
-        m_controller = SwerveHelper::Group(m_world.find(DGHelper::getSwerveID("weaponControllerTransform")));
-    }
+    m_world.getBackground().setColorClearEnable(false);
+    m_controller = SwerveHelper::Group(m_world.find(DGHelper::getSwerveID("weaponControllerTransform")));
 }
 
 void GamePlayHUD::ReviveWindow::StopEffect()
@@ -117,106 +101,329 @@ void GamePlayHUD::ReviveWindow::StopEffect()
 
 void GamePlayHUD::ReviveWindow::Update()
 {
-    if (m_remainingMs <= 0) {
-        return;
+    if (m_remainingMs > 0) {
+        m_remainingMs -= WindowApp::m_instance->m_updateFrameTime;
+        if (m_controller != NULL) {
+            m_controller.animate(5000 - m_remainingMs);
+        }
+        if (!m_soundPlayed && m_remainingMs < 3200) {
+            static_cast<App*>(WindowApp::m_instance)->m_soundManager->PlaySound("IDM_SPECIAL_REVIVE", false, false);
+            m_soundPlayed = true;
+        }
+        if (m_remainingMs < 1) {
+            StopEffect();
+        }
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    m_remainingMs -= app->m_updateFrameTime;
-    int elapsed = ReviveDurationMs - m_remainingMs;
-    if (m_controller != NULL) {
-        m_controller.animate(elapsed);
-    }
-    if (!m_soundPlayed && elapsed > ReviveSoundDelayMs) {
-        app->m_soundManager->PlaySound("IDM_SPECIAL_REVIVE", false, false);
-        m_soundPlayed = true;
-    }
-    if (m_remainingMs <= 0) {
-        StopEffect();
-    }
-}
-
-namespace {
-void SetBounds(CRectangle& bounds, ICRenderSurface* surface, int x, int y, unsigned int anchor)
-{
-    unsigned int width = 0;
-    unsigned int height = 0;
-    if (surface != NULL) {
-        surface->GetWidthAndHeight(width, height);
-    }
-    if (anchor & DGHelper::DRAW_RIGHT) {
-        x -= width;
-    }
-    if (anchor & DGHelper::DRAW_BOTTOM) {
-        y -= height;
-    }
-    bounds.m_x = x;
-    bounds.m_y = y;
-    bounds.m_width = width;
-    bounds.m_height = height;
-}
-
-void DrawControl(DGHelper* helper, ICRenderSurface* image, const CRectangle& bounds)
-{
-    if (image != NULL) {
-        helper->DrawImage(image, bounds.m_x, bounds.m_y, 1.0f, 0, 0, 0.0f, 0);
-    }
-}
-
-void PaintBar(ICGraphics2d& graphics, CBH_ProgressBar* bar)
-{
-    int x = bar->m_x * 65536;
-    int y = bar->m_y * 65536;
-    graphics.Translate(x, y);
-    bar->Paint(graphics);
-    graphics.Translate(-x, -y);
-}
 }
 
 GamePlayHUD::GamePlayHUD()
-    : Window(false), m_displayedAmmo(NULL), m_scoped(false), m_hasAlternateWeapon(true),
-      m_ingameShop(NULL), m_weaponSwitch(NULL),
-      m_steadyOn(NULL), m_steadyOff(NULL),
-      m_scopeEnter(NULL), m_scopeExit(NULL), m_bulletIcon(NULL),
-      m_silencerIcon(NULL), m_reload(NULL), m_medkit(NULL), m_reactix(NULL), m_ultrasound(NULL),
-      m_fireOn(NULL), m_fireOff(NULL), m_tapToShoot(NULL), m_aimAssistIcon(NULL),
-      m_cameraFrame(NULL), m_cameraFrameSelected(NULL),
-      m_healthBar(NULL), m_armorBar(NULL),
-      m_multiplierBar(NULL), m_missionTimer(NULL), m_showCountdownTimer(false), m_firePointer(-1), m_fireHeld(false),
-      m_zoomedScope(new CZoomedScopeWindow()), m_displayedMultiplier(3),
-      m_reviveWindow(NULL), m_steadyRemainingMs(0), m_steadyLimitMs(0), m_steadyActive(false),
-      m_steadyUsed(false), m_visibilityAlpha(0.0f), m_enabled(true),
-      m_currentHint(NULL), m_modelAnimationState(ModelReady)
+    : Window(false), m_inputEnabled(true), m_scoped(false), m_showMedkit(false), m_showUltrasound(false),
+      m_hasAlternateWeapon(true), m_scopeButtonAlways(true),
+      m_steadyOn(NULL), m_steadyOff(NULL), m_scopeEnter(NULL), m_scopeExit(NULL), m_bulletIcon(NULL),
+      m_silencerIcon(NULL), m_medkit(NULL), m_tablet(NULL), m_ultrasound(NULL),
+      m_aimAssistIcon(NULL), m_cameraFrame(NULL), m_cameraFrameSelected(NULL),
+      m_scopeButtonWidth(0),
+      m_coverButton(NULL), m_healthBar(NULL), m_armorBar(NULL), m_multiplierBar(NULL), m_missionTimer(NULL),
+      m_experienceHud(NULL), m_pauseButton(NULL), m_showCountdownTimer(false), m_field274(false),
+      m_firePointer(-1), m_fireHeld(false), m_commandsReady(false),
+      m_zoomedScope(NULL), m_woundingWindow(NULL), m_armorHitWindow(NULL), m_reviveWindow(NULL),
+      m_steadyRemainingMs(-1), m_steadyLimitMs(-1), m_steadyActive(false), m_visibilityAlpha(0.0f),
+      m_enabled(false), m_currentHint(NULL), m_field2dc(false), m_field2e0(0)
 {
-    m_weaponImages[0] = NULL;
-    m_weaponImages[1] = NULL;
-    m_weaponImagesFor[0] = NULL;
-    m_weaponImagesFor[1] = NULL;
     m_pauseButton = new CDH_GameSofkeyWidget();
     m_pauseButton->SetAlign(ALIGN_LEFT | ALIGN_TOP);
     int pauseInset = App::Scale() * 5;
     m_pauseButton->SetOutsetSpacing(pauseInset, 0);
-    m_pauseButton->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
     AddToFront(m_pauseButton);
+    m_weaponImages[0] = NULL;
+    m_weaponImages[1] = NULL;
+    m_zoomedScope = new CZoomedScopeWindow();
     m_woundingWindow = new WoundingWindow(false);
     m_armorHitWindow = new WoundingWindow(true);
     AddToFront(m_woundingWindow);
     AddToFront(m_armorHitWindow);
-
+    m_reviveWindow = new ReviveWindow();
+    AddToFront(m_reviveWindow);
     InitFireButton();
-    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(
-        &m_tapToShoot, "SUR_TUTORIAL_TAP_TO_SHOT", false);
     InitWeaponButton();
+    InitIngameShopButton();
     InitSteadyButton();
     InitScopeButton();
-    InitReloadButton();
-    InitCameraButton();
-    InitZoomAndDock();
     InitHealthReplehishButton();
     InitGoPillButton();
     InitUltrasoundEmitterButton();
-    UpdateButtonPosition();
-    InitIngameShopButton();
+    InitCameraButton();
+    InitReloadButton();
+    m_aimAssistIcon = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->CreateSurface(
+        "IDB_HUD_AIM_ASSIST_ICON", true);
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&m_tapToShoot, "SUR_TUTORIAL_TAP_TO_SHOT",
+                                                                         false);
+    InitZoomAndDock();
     InitBars();
+    m_experienceHud = new CBH_GPSHud(true);
+    m_experienceHud->SetOutsetSpacing(0, SScreenAdaptingConstant(150, 300)());
+    AddToFront(m_experienceHud);
+}
+
+void GamePlayHUD::InitFireButton()
+{
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&m_fireOn, "SUR_HUD_FIRE_BUTTON_ON", false);
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&m_fireOff, "SUR_HUD_FIRE_BUTTON_OFF", false);
+    if (m_fireOn != NULL && m_fireOff != NULL) {
+        unsigned int width = 0;
+        unsigned int height = 0;
+        m_fireOn->GetWidthAndHeight(width, height);
+        DGHelper* helper = static_cast<App*>(WindowApp::m_instance)->m_helper;
+        m_fireArea.append(CRectangle(helper->m_screenWidth - width, helper->m_screenHeight - height, width, height),
+                          0, 0);
+    }
+}
+
+void GamePlayHUD::InitWeaponButton()
+{
+    CDH_Weapon* weapon01 = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true);
+    CDH_Weapon* weapon02 = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true);
+    if (weapon01 == weapon02) {
+        m_hasAlternateWeapon = false;
+    }
+    m_weaponImages[0] = weapon01->getGameImage();
+    m_weaponImages[1] = weapon02->getGameImage();
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&m_weaponSwitch,
+                                                                         "SUR_HUD_WEAPON_SWITCH_BUTTON", false);
+    int x = static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenWidth - ImageWidth(m_weaponSwitch);
+    int y = static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenHeight - ImageHeight(m_fireOn)
+        - ImageHeight(m_weaponSwitch) - ImageHeight(m_weaponSwitch) / 2;
+    m_weaponSwitchArea.append(CRectangle(x, y, ImageWidth(m_weaponSwitch), ImageHeight(m_weaponSwitch)), 0, 0);
+    int scale = App::Scale();
+    for (int index = 0; index < 2; index++) {
+        unsigned int width = 0;
+        unsigned int height = 0;
+        m_weaponImages[index]->GetWidthAndHeight(width, height);
+        int left = static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenWidth - scale * 5 - width;
+        m_weaponAreas[index].append(CRectangle(left, 2, width, height), 0, 0);
+    }
+}
+
+void GamePlayHUD::InitIngameShopButton()
+{
+    m_ingameShop = new CImageButton();
+    m_ingameShop->AddImage("IDB_HUD_INGAME_SHOP_BUTTON_ON", 0, 0);
+    m_ingameShop->SetCommandParameters(0x2ebf5358, 0, 0, 0);
+    m_ingameShop->SetLayoutType(LAYOUT_SIMPLE);
+    m_ingameShop->SetAlign(ALIGN_LEFT | ALIGN_TOP);
+    m_ingameShop->SetOutsetSpacing(SScreenAdaptingConstant(50, 100)(), 0, 0, 0);
+    AddToFront(m_ingameShop);
+}
+
+void GamePlayHUD::InitSteadyButton()
+{
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&m_steadyOn, "SUR_HUD_STEADY_BUTTON_ON",
+                                                                         false);
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&m_steadyOff, "SUR_HUD_STEADY_BUTTON_OFF",
+                                                                         false);
+    unsigned int width = 0;
+    unsigned int height = 0;
+    m_steadyOn->GetWidthAndHeight(width, height);
+    m_steadyLimitMs = 5000;
+    float skill = static_cast<App*>(WindowApp::m_instance)->m_helper->GetPlayerData()->GetSkillLevelCoef(
+        static_cast<CDH_PlayerData::skill_type_t>(2));
+    m_steadyRemainingMs = m_steadyLimitMs = static_cast<int>((skill * 1.5f + 1.0f) * m_steadyLimitMs);
+    m_steadyActive = false;
+    m_steadyArea.append(CRectangle(0, 0, width, height), -(static_cast<int>(width) / 2),
+                        -(static_cast<int>(height) / 2));
+    m_modelAnimationState = 0;
+    m_steadyArea.SetPosition(static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenWidth >> 1,
+                             static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenHeight - 2 - (height >> 1));
+}
+
+void GamePlayHUD::InitScopeButton()
+{
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&m_scopeEnter, "SUR_HUD_SCOPE_BUTTON_ENTER",
+                                                                         false);
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&m_scopeExit, "SUR_HUD_SCOPE_BUTTON_EXIT",
+                                                                         false);
+    const CAmmo* ammo = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()
+        ->GetActiveAmmo();
+    m_ammo = ammo;
+    CBH_SurfaceManager* surfaces = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager;
+    if (ammo != NULL) {
+        XString icon = ammo->m_bulletIcon;
+        m_bulletIcon = surfaces->CreateSurface(XString::AnsiString(icon.c_str()), true);
+    } else {
+        m_bulletIcon = surfaces->CreateSurface("IDB_HUD_HANDGUN_BULLET_ICON", true);
+    }
+    m_silencerIcon = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->CreateSurface("IDB_HUD_SILENCER", true);
+    if (m_scopeEnter != NULL && m_scopeExit != NULL) {
+        unsigned int width = 0;
+        unsigned int height = 0;
+        m_scopeEnter->GetWidthAndHeight(width, height);
+        m_scopeButtonWidth = width;
+        m_scopeArea.append(CRectangle(0, static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenHeight - height,
+                                      width, height), 0, 0);
+    }
+}
+
+void GamePlayHUD::InitHealthReplehishButton()
+{
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&m_medkit, "SUR_HUD_HEALTH_REPLENISH_BUTTON",
+                                                                         false);
+    if (m_medkit != NULL) {
+        unsigned int width = 0;
+        unsigned int height = 0;
+        m_medkit->GetWidthAndHeight(width, height);
+        int x = m_scopeButtonWidth + 2;
+        int y = static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenHeight - 2 - height;
+        unsigned int scopeHeight = 0;
+        m_scopeEnter->GetWidthAndHeight(width, scopeHeight);
+        m_medkitArea.append(CRectangle(x, y, width, height), 0, 0);
+    }
+}
+
+void GamePlayHUD::InitGoPillButton()
+{
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&m_tablet, "SUR_HUD_TABLET_BUTTON", false);
+    if (m_tablet != NULL) {
+        unsigned int width = 0;
+        unsigned int height = 0;
+        m_tablet->GetWidthAndHeight(width, height);
+        CRectangle& medkit = m_medkitArea.m_bounds;
+        m_tabletArea.append(CRectangle(medkit.m_x + medkit.m_width + 2,
+                                       static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenHeight - 2 - height,
+                                       width, height), 0, 0);
+    }
+}
+
+void GamePlayHUD::InitUltrasoundEmitterButton()
+{
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&m_ultrasound, "SUR_HUD_ULTRASOUND_EMITTER",
+                                                                         false);
+    if (m_ultrasound != NULL) {
+        unsigned int width = 0;
+        unsigned int height = 0;
+        m_ultrasound->GetWidthAndHeight(width, height);
+        CRectangle& tablet = m_tabletArea.m_bounds;
+        int x = tablet.m_x + tablet.m_width + 2 + SScreenAdaptingConstant(2, 4)();
+        int y = static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenHeight - 2 - height
+            + SScreenAdaptingConstant(3, 0)();
+        m_ultrasoundArea.append(CRectangle(x, y, width, height), 0, 0);
+    }
+}
+
+void GamePlayHUD::InitCameraButton()
+{
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&m_cameraFrame, "SUR_HUD_CAMERA_FRAME", false);
+    static_cast<App*>(WindowApp::m_instance)->m_helper->LoadImageSurface(&m_cameraFrameSelected,
+                                                                         "SUR_HUD_CAMERA_FRAME_SELECT", false);
+}
+
+void GamePlayHUD::InitReloadButton()
+{
+    m_reload = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->CreateSurface("IDB_HUD_RELOAD_BUTTON_ON",
+                                                                                         true);
+    int width = 0;
+    int height = 0;
+    m_reload->GetWidthAndHeight(reinterpret_cast<unsigned int&>(width), reinterpret_cast<unsigned int&>(height));
+    m_reloadButtonArea.append(CRectangle(0, 0, width, height), 0, 0);
+    m_reloadButtonArea.SetPosition(static_cast<App*>(WindowApp::m_instance)->m_screenWidth - width,
+                                   SScreenAdaptingConstant(60, 120)());
+    CRectangle& button = m_reloadButtonArea.m_bounds;
+    m_reloadTouchArea.append(CRectangle(0, 0, width * 2, button.m_y + button.m_height + height * 2), 0, 0);
+    m_reloadTouchArea.SetPosition(static_cast<App*>(WindowApp::m_instance)->m_screenWidth - width * 2, 0);
+}
+
+void GamePlayHUD::InitZoomAndDock()
+{
+    CZoomSliderControl* slider = new CZoomSliderControl("SUR_ZOOM_SLIDER", "SUR_ZOOM_TRACK");
+    m_zoomSliderControl = slider;
+    int centerOffset = 370;
+    if (!App::IsXGA()) {
+        centerOffset = App::IsVGA() ? 330 : 168;
+    }
+    int radius = 463;
+    if (!App::IsXGA()) {
+        radius = App::IsVGA() ? 424 : 216;
+    }
+    slider->SetParams(21, centerOffset, radius);
+    m_zoomSliderControl->SetProgress(1.0f);
+    m_zoomSliderControl->Enable(false);
+    AddToFront(m_zoomSliderControl);
+    CDH_GameSofkeyWidget::GetPauseButtonHeight();
+    ImageRes hide("SUR_DOCKCOVER_HIDE");
+    ImageRes unhide("SUR_DOCKCOVER_UNHIDE");
+    m_coverButton = new CBH_TriggerButton("SUR_DOCKCOVER_UNHIDE", "SUR_DOCKCOVER_HIDE");
+    m_coverButton->SetAlign(ALIGN_LEFT | ALIGN_BOTTOM);
+    m_coverButton->SetOutsetSpacing(m_scopeArea.m_bounds.m_height + m_coverButton->m_height / 2, 0);
+    m_coverButton->SetCommand(static_cast<int>(0x811575c5u));
+    AddToFront(m_coverButton);
+}
+
+void GamePlayHUD::InitBars()
+{
+    ImageRes pauseImage("SUR_HUD_PAUSE_BUTTON");
+    unsigned int pauseWidth;
+    unsigned int pauseHeight;
+    ICRenderSurface* pauseSurface = pauseImage.GetSurface();
+    pauseHeight = 0;
+    if (pauseSurface != NULL) {
+        pauseSurface->GetWidthAndHeight(pauseWidth, pauseHeight);
+    }
+    int x = pauseWidth + SScreenAdaptingConstant(11, 22)() + 2;
+    int healthY = SScreenAdaptingConstant(6, 12)();
+    int width = SScreenAdaptingConstant(110, 220)();
+    m_healthBar = new CBH_ProgressBar(2, width, -1);
+    m_healthBar->SetCorner(x, healthY + 2);
+    m_healthBar->SetMaxValue(CBH_Player::GetInstance()->GetMaxHp() / 1000);
+    m_healthBar->SetCurrValue(static_cast<int>(MathLib::Ceil(CBH_Player::GetInstance()->m_hp / 1000.0)));
+    m_healthBar->SetDescImage("IDB_HUD_ICON_HEALTH");
+    AddToFront(m_healthBar);
+    int y = healthY + 2 + m_healthBar->m_height;
+    m_armorBar = new CBH_ProgressBar(1, width, -1);
+    m_armorBar->SetCorner(x, y);
+    m_armorBar->SetStyle(CBH_ProgressBar::STYLE_VALUE);
+    m_armorBar->SetMaxValue(CBH_Player::GetInstance()->m_armorDamageProofMax / 1000);
+    m_armorBar->SetCurrValue(CBH_Player::GetInstance()->m_armorDamageProof / 1000);
+    m_armorBar->SetDescImage("IDB_HUD_ICON_ARMOR");
+    AddToFront(m_armorBar);
+    if (!CBH_Player::GetInstance()->IsArmorAvailable()) {
+        m_armorBar->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
+    }
+    const SScreenAdaptingConstant multiplierX(158, 316);
+    int multiplierSeconds = static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData
+        .m_tripleMultiplierSeconds;
+    m_multiplierBar = new CBH_ProgressBar(4, width, -1);
+    m_multiplierBar->SetCorner(multiplierX(), y);
+    m_multiplierBar->SetStyle(CBH_ProgressBar::STYLE_CLOCK);
+    m_multiplierBar->SetCurrValue(multiplierSeconds);
+    m_multiplierBar->SetMaxValue(multiplierSeconds);
+    m_multiplierBar->SetDescImage("IDB_HUD_ICON_XP_MULTY_3");
+    AddToFront(m_multiplierBar);
+    if (static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_cameraDurationMs > 0) {
+        const SScreenAdaptingConstant timerWidth(75, 150);
+        const SScreenAdaptingConstant timerX(270, 540);
+        const SScreenAdaptingConstant timerY(32, 64);
+        m_missionTimer = new CBH_ProgressBar(6, timerWidth(), -1);
+        m_missionTimer->SetCorner(timerX(), timerY());
+        m_missionTimer->SetStyle(CBH_ProgressBar::STYLE_CLOCK);
+        m_missionTimer->SetCurrValue(0);
+        m_missionTimer->SetMaxValue(static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData
+                                        .m_cameraDurationMs / 1000);
+        m_missionTimer->SetDescImage("IDB_HUD_ICON_TIMER");
+        AddToFront(m_missionTimer);
+    }
+}
+
+void GamePlayHUD::setCamerasCount(int count)
+{
+    unsigned int width = 0;
+    unsigned int height = 0;
+    m_cameraFrame->GetWidthAndHeight(width, height);
+    if (count > 0) {
+        int top = (static_cast<App*>(WindowApp::m_instance)->m_helper->m_screenHeight - static_cast<int>(height) * count)
+            / 2;
+        for (int index = 0; index < count; index++) {
+            m_cameraButtonAreas.addElement(Collision(CRectangle(2, height * index + top, width, height), 0, 0));
+        }
+    }
 }
 
 inline GamePlayHUD::TutorialHint::~TutorialHint()
@@ -226,201 +433,667 @@ inline GamePlayHUD::TutorialHint::~TutorialHint()
 
 GamePlayHUD::~GamePlayHUD()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CleanBulletIcon();
-    CleanWeaponImage();
-    ICResourceManager* resources = CApplet::m_pApp->m_resourceManager;
-    if (m_cameraFrame != NULL) {
-        resources->ReleaseResource("SUR_HUD_CAMERA_FRAME");
-    }
-    if (m_cameraFrameSelected != NULL) {
-        resources->ReleaseResource("SUR_HUD_CAMERA_FRAME_SELECT");
-    }
-    if (m_tapToShoot != NULL) {
-        resources->ReleaseResource("SUR_TUTORIAL_TAP_TO_SHOT");
-    }
-    ICRenderSurface* surfaces[] = {
-        m_fireOn, m_fireOff, m_weaponSwitch, m_scopeEnter, m_scopeExit, m_reload,
-        m_medkit, m_reactix, m_ultrasound, m_steadyOn, m_steadyOff,
-        m_silencerIcon, m_aimAssistIcon
-    };
-    for (unsigned int index = 0; index < sizeof(surfaces) / sizeof(surfaces[0]); ++index) {
-        if (surfaces[index] != NULL) {
-            app->m_surfaceManager->ReleaseSurface(surfaces[index]);
+    for (int index = 0; index < m_cameraImages.size(); index++) {
+        if (m_cameraImages[index] != NULL) {
+            static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface(m_cameraImages[index]);
         }
     }
+    if (m_aimAssistIcon != NULL) {
+        static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface("IDB_HUD_AIM_ASSIST_ICON");
+        m_aimAssistIcon = NULL;
+    }
+    m_cameraImages.removeAllElements();
+    static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface(m_bulletIcon);
+    if (m_zoomedScope != NULL) {
+        delete m_zoomedScope;
+        m_zoomedScope = NULL;
+    }
+    ICResourceManager* resources = CApplet::m_pApp->m_resourceManager;
+    resources->ReleaseResource("SUR_HUD_WEAPON_SWITCH_BUTTON");
+    resources->ReleaseResource("SUR_HUD_STEADY_BUTTON_ON");
+    resources->ReleaseResource("SUR_HUD_STEADY_BUTTON_OFF");
+    resources->ReleaseResource("SUR_HUD_SCOPE_BUTTON_ENTER");
+    resources->ReleaseResource("SUR_HUD_SCOPE_BUTTON_EXIT");
+    resources->ReleaseResource("SUR_HUD_FIRE_BUTTON_ON");
+    resources->ReleaseResource("SUR_HUD_FIRE_BUTTON_OFF");
+    resources->ReleaseResource("SUR_TUTORIAL_TAP_TO_SHOT");
+    resources->ReleaseResource("SUR_HUD_CAMERA_FRAME");
+    resources->ReleaseResource("SUR_HUD_CAMERA_FRAME_SELECT");
+    resources->ReleaseResource("SUR_HUD_DOWNTOWN_01_CAMERA_01");
+    resources->ReleaseResource("SUR_HUD_DOWNTOWN_01_CAMERA_02");
+    resources->ReleaseResource("SUR_HUD_DOWNTOWN_01_CAMERA_03");
+    resources->ReleaseResource("SUR_HUD_DOWNTOWN_01_CAMERA_04");
+    resources->ReleaseResource("SUR_HUD_HEALTH_REPLENISH_BUTTON");
+    resources->ReleaseResource("SUR_HUD_TABLET_BUTTON");
+    resources->ReleaseResource("SUR_HUD_ULTRASOUND_EMITTER");
+    CleanWeaponImage();
+    resources->ReleaseResource("IDB_HUD_HANDGUN_BULLET_ICON");
+    static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface("IDB_HUD_SILENCER");
     SAFE_DELETE_VECTOR(m_tutorialHints);
-    delete m_missionTimer;
-    delete m_multiplierBar;
-    delete m_armorBar;
-    delete m_healthBar;
-    delete m_zoomedScope;
-    delete m_reviveWindow;
+    static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface("IDB_HUD_RELOAD_BUTTON_ON");
 }
 
-void GamePlayHUD::InitFireButton()
+void GamePlayHUD::CleanWeaponImage()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    m_fireOn = app->m_surfaceManager->CreateSurface("SUR_HUD_FIRE_BUTTON_ON", true);
-    m_fireOff = app->m_surfaceManager->CreateSurface("SUR_HUD_FIRE_BUTTON_OFF", true);
-    if (m_fireOn != NULL && m_fireOff != NULL) {
-        CRectangle bounds;
-        SetBounds(bounds, m_fireOn, app->m_helper->m_screenWidth, app->m_helper->m_screenHeight,
-                  DGHelper::DRAW_RIGHT | DGHelper::DRAW_BOTTOM);
-        m_fireHitArea.append(bounds, 0, 0);
+    CDH_Weapon* weapon01 = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true);
+    CDH_Weapon* weapon02 = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true);
+    ICResourceManager* resources = CApplet::m_pApp->m_resourceManager;
+    if (resources != NULL) {
+        if (m_weaponImages[0] != NULL) {
+            resources->ReleaseResource(weapon01->m_gameImageId);
+            resources->ReleaseResource(weapon01->m_bulletOnImageId);
+            weapon01->releaseResources();
+            m_weaponImages[0] = NULL;
+        }
+        if (m_weaponImages[1] != NULL) {
+            resources->ReleaseResource(weapon02->m_gameImageId);
+            resources->ReleaseResource(weapon02->m_bulletOnImageId);
+            weapon02->releaseResources();
+            m_weaponImages[1] = NULL;
+        }
     }
 }
 
-void GamePlayHUD::InitWeaponButton()
+void GamePlayHUD::UpdateHUDsVisibility()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    m_weaponSwitch = app->m_surfaceManager->CreateSurface("SUR_HUD_WEAPON_SWITCH_BUTTON", true);
-    m_silencerIcon = app->m_surfaceManager->CreateSurface("IDB_HUD_SILENCER", true);
-    m_aimAssistIcon = app->m_surfaceManager->CreateSurface("IDB_HUD_AIM_ASSIST_ICON", true);
-    ReInitWeaponButton();
-    CDH_Weapon* weapon = app->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon();
-    if (weapon != NULL) {
-        UpdateAmmoIcon(weapon->GetActiveAmmo());
+    if (m_pauseButton != NULL) {
+        if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
+            m_pauseButton->SetFlags(FLAG_VISIBLE);
+        } else {
+            m_pauseButton->ClearFlags(FLAG_VISIBLE);
+        }
+    }
+    if (m_healthBar != NULL) {
+        if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
+            m_healthBar->SetFlags(FLAG_VISIBLE);
+        } else {
+            m_healthBar->ClearFlags(FLAG_VISIBLE);
+        }
+    }
+    if (m_armorBar != NULL) {
+        if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
+            m_armorBar->SetFlags(FLAG_VISIBLE);
+        } else {
+            m_armorBar->ClearFlags(FLAG_VISIBLE);
+        }
+    }
+    if (m_missionTimer != NULL) {
+        if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
+            m_missionTimer->SetFlags(FLAG_VISIBLE);
+        } else {
+            m_missionTimer->ClearFlags(FLAG_VISIBLE);
+        }
+    }
+    if (m_multiplierBar != NULL) {
+        if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f && m_showCountdownTimer) {
+            m_multiplierBar->SetFlags(FLAG_VISIBLE);
+        } else {
+            m_multiplierBar->ClearFlags(FLAG_VISIBLE);
+        }
+    }
+    if (m_ingameShop != NULL) {
+        if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
+            m_ingameShop->SetFlags(FLAG_VISIBLE);
+        } else {
+            m_ingameShop->ClearFlags(FLAG_VISIBLE);
+        }
+    }
+    if (m_experienceHud != NULL) {
+        if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
+            m_experienceHud->SetFlags(FLAG_VISIBLE);
+        } else {
+            m_experienceHud->ClearFlags(FLAG_VISIBLE);
+        }
+    }
+}
+
+void GamePlayHUD::Update()
+{
+    UpdateHUDsVisibility();
+    const CAmmo* ammo = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()
+        ->GetActiveAmmo();
+    if (ammo != m_ammo) {
+        {
+            CBH_SurfaceManager* surfaces = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager;
+            XString icon = m_ammo->m_bulletIcon;
+            surfaces->ReleaseSurface(XString::AnsiString(icon.c_str()));
+        }
+        {
+            CBH_SurfaceManager* surfaces = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager;
+            XString icon = ammo->m_bulletIcon;
+            m_bulletIcon = surfaces->CreateSurface(XString::AnsiString(icon.c_str()), true);
+        }
+        m_ammo = ammo;
+    }
+    if (m_zoomSliderControl != NULL) {
+        CZoomedScopeWindow* scope = m_zoomedScope;
+        if (scope != NULL && scope->m_zoomEnabled) {
+            if (!scope->m_shooting) {
+                float position = 1.0f - m_zoomSliderControl->GetValue();
+                // written as a select so it compiles to vmax like the original
+                position = 0.0f > position ? 0.0f : position;
+                scope->m_zoomPosition = scope->m_zoom->m_durationSec * position * 0.5f;
+            }
+            m_zoomedScope->Update();
+        }
+    }
+    if (CBH_Player::GetInstance()->IsArmorAvailable() && (m_armorBar->m_flags & FLAG_VISIBLE) == 0
+        && static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
+        m_armorBar->SetMaxValue(CBH_Player::GetInstance()->m_armorDamageProofMax / 1000);
+        m_armorBar->SetCurrValue(CBH_Player::GetInstance()->m_armorDamageProof / 1000);
+        m_armorBar->SetFlags(FLAG_VISIBLE | FLAG_ENABLED);
+    } else if (!CBH_Player::GetInstance()->IsArmorAvailable() && (m_armorBar->m_flags & FLAG_VISIBLE) != 0) {
+        m_armorBar->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
+    }
+    if (m_healthBar != NULL) {
+        m_healthBar->SetMaxValue(CBH_Player::GetInstance()->GetMaxHp() / 1000);
+        m_healthBar->SetCurrValue(static_cast<int>(MathLib::Ceil(CBH_Player::GetInstance()->m_hp / 1000.0)));
+    }
+    if (m_armorBar != NULL) {
+        int proof = CBH_Player::GetInstance()->m_armorDamageProof;
+        int proofMax = CBH_Player::GetInstance()->m_armorDamageProofMax;
+        if (proof >= 1000) {
+            m_armorBar->SetCurrValue(proof / 1000);
+            m_armorBar->SetMaxValue(proofMax / 1000);
+        } else {
+            m_armorBar->ClearFlags(FLAG_VISIBLE);
+        }
+    }
+    UpdateButtonPosition();
+    if (m_modelAnimationState != 0) {
+        processModelAnimation();
+    }
+    int frameTime = WindowApp::m_instance->m_updateFrameTime;
+    float alpha = m_visibilityAlpha + (m_enabled ? 1.0f : -1.0f) * frameTime / 1000.0f;
+    // selects compile to vmax / vmin like the original
+    alpha = 0.0f > alpha ? 0.0f : alpha;
+    m_visibilityAlpha = 1.0f < alpha ? 1.0f : alpha;
+    if (m_steadyActive) {
+        m_steadyRemainingMs -= frameTime;
+        if (m_steadyRemainingMs < 0) {
+            m_steadyActive = false;
+        }
+    }
+    if (m_currentHint != NULL) {
+        m_currentHint->m_elapsed += frameTime;
+        if (m_currentHint->m_elapsed >= m_currentHint->m_duration) {
+            int index = m_tutorialHints.indexOf(m_currentHint);
+            m_currentHint = NULL;
+            if (index >= 0) {
+                if (index + 1 < m_tutorialHints.size()) {
+                    m_currentHint = m_tutorialHints[index + 1];
+                } else {
+                    SAFE_DELETE_VECTOR(m_tutorialHints);
+                }
+            }
+        }
+    }
+    if (!static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->IsGamePaused()) {
+        const CAmmo* ammo01 = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true)
+            ->GetActiveAmmo();
+        const CAmmo* ammo02 = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true)
+            ->GetActiveAmmo();
+        int available01 = CBH_Player::GetInstance()->GetAvailableAmmo(ammo01, true);
+        int available02 = CBH_Player::GetInstance()->GetAvailableAmmo(ammo02, true);
+        CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
+        if (weapon != NULL && weapon->IsReadyForUse() && weapon->m_ammo == 0 && m_hasAlternateWeapon
+            && m_modelAnimationState == 0 && available02 + available01 > 0 && !weapon->CheckForReload(false)) {
+            if (!m_scoped) {
+                switchWeapons();
+            } else {
+                switchScope();
+            }
+        }
+    }
+}
+
+void GamePlayHUD::UpdateButtonPosition()
+{
+    m_showMedkit = CBH_Player::GetInstance()->CanRestoreHealth()
+        && CBH_Player::GetInstance()->m_hp < CBH_Player::GetInstance()->GetMaxHp();
+    m_showUltrasound = CBH_Player::GetInstance()->m_ultrasoundAttemptCount > 0;
+}
+
+void GamePlayHUD::processModelAnimation()
+{
+    switch (m_modelAnimationState) {
+    case 1:
+        if (static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()
+                ->isModelAnimationComplete() != 1) {
+            return;
+        }
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->OnWeaponHided();
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.SwitchWeapons();
+        static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()->fetchWeaponModel();
+        m_modelAnimationState = 2;
+        break;
+    case 2:
+        if (static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()
+                ->isModelAnimationComplete() != 1) {
+            return;
+        }
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->OnWeaponShown();
+        m_modelAnimationState = 0;
+        break;
+    case 4:
+        if (static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()
+                ->isModelAnimationComplete() != 1) {
+            return;
+        }
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->OnWeaponHided();
+        {
+            ReviveWindow* revive = m_reviveWindow;
+            if (revive != NULL && static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
+                revive->m_remainingMs = 5000;
+                revive->m_soundPlayed = false;
+            }
+        }
+        m_modelAnimationState = 5;
+        break;
+    case 5:
+        if (m_reviveWindow->m_remainingMs > 0) {
+            return;
+        }
+        static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()->fetchWeaponModel();
+        m_modelAnimationState = 2;
+        break;
+    }
+}
+
+void GamePlayHUD::switchWeapons()
+{
+    static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()->unfetchWeaponModel();
+    m_modelAnimationState = 1;
+    CBH_Player::GetInstance()->m_gameStats.AddInMIssionWeaponChanges(1);
+}
+
+void GamePlayHUD::switchScope()
+{
+    CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
+    if (m_scoped) {
+        if (!weapon->m_scopeAttached) {
+            static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_camera->restoreView(true);
+        } else {
+            m_zoomSliderControl->Enable(false);
+            m_zoomedScope->m_zoomEnabled = false;
+        }
+        weapon->ScopeOut();
+        CSwerveGame* game = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame;
+        game->setCursor(game->m_fpsCursor);
     } else {
-        UpdateAmmoIcon(NULL);
+        weapon->ScopeIn();
     }
-    SetBounds(m_weaponBounds, m_weaponSwitch, app->m_helper->m_screenWidth, m_fireHitArea.m_bounds.m_y,
-              DGHelper::DRAW_RIGHT | DGHelper::DRAW_BOTTOM);
-    m_weaponBounds.m_y -= m_weaponBounds.m_height / 2;
+    m_modelAnimationState = 3;
 }
 
-void GamePlayHUD::InitCameraButton()
+void GamePlayHUD::Paint(ICGraphics2d& graphics)
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_helper->LoadImageSurface(&m_cameraFrame, "SUR_HUD_CAMERA_FRAME", false);
-    app->m_helper->LoadImageSurface(&m_cameraFrameSelected, "SUR_HUD_CAMERA_FRAME_SELECT", false);
-}
-
-void GamePlayHUD::setCamerasCount(int count)
-{
-    m_cameraButtonAreas.setSize(0);
-    if (m_cameraFrame == NULL || count <= 0) {
+    if (!m_enabled && !(m_visibilityAlpha > 0.0f)) {
         return;
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    unsigned int width = 0;
-    unsigned int height = 0;
-    m_cameraFrame->GetWidthAndHeight(width, height);
-    int step = static_cast<int>(height);
-    int top = (app->m_helper->m_screenHeight - count * step) / 2;
-    for (int index = 0; index < count; ++index) {
-        CRectangle bounds(2, top + index * step, width, height);
-        m_cameraButtonAreas.addElement(Collision(bounds, 0, 0));
+    m_zoomedScope->RunPaint3D(graphics);
+    DGHelper* helper = static_cast<App*>(WindowApp::m_instance)->m_helper;
+    int screenWidth = helper->m_screenWidth;
+    int screenHeight = helper->m_screenHeight;
+    helper->PushAlphaBlend(m_visibilityAlpha);
+    CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
+    CFontMgr::GetInstance()->GetFont(1);
+    DrawWeaponButton(weapon);
+    if (m_steadyRemainingMs >= 0 && m_modelAnimationState == 0) {
+        DrawSteadyButton();
+    }
+    DrawScopeButton();
+    DrawReloadButton(weapon);
+    if (static_cast<App*>(WindowApp::m_instance)->m_settings->IsFireButtonEnabled()) {
+        DrawFireButton();
+    }
+    if (m_showMedkit) {
+        DrawHealthReplenishButton();
+    }
+    if (CBH_Player::GetInstance()->IsSpeedModeAvailable() || CBH_Player::GetInstance()->IsSpeedMode()) {
+        DrawGoPillButton();
+    }
+    if (m_showUltrasound) {
+        DrawUnltrasoundEmitterButton();
+    }
+    if (m_currentHint != NULL) {
+        const char* name = m_currentHint->m_imageName;
+        if (strcmp(name, "SUR_TUTORIAL_SLIDE_TO_LOOK_AROUND") == 0) {
+            static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(m_currentHint->m_image, screenWidth / 2, 10,
+                                                                          0.6f, 0, 0, 0.0f, DGHelper::DRAW_HCENTER);
+        } else if (strcmp(name, "SUR_TUTORIAL_SLIDE_TO_ZOOM_OUT") == 0) {
+            static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(m_currentHint->m_image, 11, 144, 0.6f, 0, 0,
+                                                                          0.0f, DGHelper::DRAW_VCENTER);
+        } else if (strcmp(name, "SUR_TUTORIAL_SLIDE_TO_ZOOM_IN") == 0) {
+            static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+                m_currentHint->m_image, screenWidth - 11, 144, 0.6f, 0, 0, 0.0f,
+                DGHelper::DRAW_RIGHT | DGHelper::DRAW_VCENTER);
+        } else if (strcmp(name, "SUR_TUTORIAL_SLIDE_TO_AIM") == 0) {
+            static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(m_currentHint->m_image, screenWidth / 2, 80,
+                                                                          0.6f, 0, 0, 0.0f, DGHelper::DRAW_HCENTER);
+        } else if (strcmp(name, "SUR_TUTORIAL_BUTTON_TO_SHOT") == 0) {
+            if (!static_cast<App*>(WindowApp::m_instance)->m_settings->IsFireButtonEnabled()) {
+                static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+                    m_tapToShoot, screenWidth / 2, screenHeight / 2, 0.6f, 0, 0, 0.0f,
+                    DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
+            } else {
+                static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+                    m_currentHint->m_image, screenWidth - 50, screenHeight - 5, 0.6f, 0, 0, 0.0f,
+                    DGHelper::DRAW_RIGHT | DGHelper::DRAW_BOTTOM);
+            }
+        }
+    }
+    static_cast<App*>(WindowApp::m_instance)->m_helper->PopAlphaBlend();
+}
+
+void GamePlayHUD::DrawWeaponButton(CDH_Weapon* weapon)
+{
+    if (!static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
+        return;
+    }
+    if (static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->IsIntroTime()) {
+        return;
+    }
+    int index = GetActiveWeaponIndex();
+    if (m_weaponImages[index] != NULL && !m_scoped) {
+        CRectangle& image = m_weaponAreas[index].m_bounds;
+        static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+            m_weaponImages[index], image.m_x + (image.m_width >> 1), image.m_y + (image.m_height >> 1), 1.0f, 0, 0,
+            0.0f, DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
+        if (m_hasAlternateWeapon) {
+            CRectangle& button = m_weaponSwitchArea.m_bounds;
+            static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+                m_weaponSwitch, button.m_x + (button.m_width >> 1), button.m_y + (button.m_height >> 1), 1.0f, 0, 0,
+                0.0f, DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
+        }
+    }
+    CFont* font = CFontMgr::GetInstance()->GetFont(8);
+    if (weapon == NULL || font == NULL) {
+        return;
+    }
+    wchar_t text[20];
+    const CAmmo* ammo = weapon->GetActiveAmmo();
+    if (ammo != NULL && CBH_Player::GetInstance()->GetAvailableAmmo(ammo, true) != 0xfffffff) {
+        int clip = weapon->m_ammo;
+        int reserve = CBH_Player::GetInstance()->GetAvailableAmmo(ammo, true) - clip;
+        if (reserve < 0) {
+            reserve = 0;
+        }
+        ICStdUtil::SWPrintF(text, L"%d / %d ", clip, reserve);
+    } else {
+        ICStdUtil::SWPrintF(text, L"\x221e");
+    }
+    int textWidth = font->MeasureTextWidth(text, -1, -1, NULL);
+    CRectangle& image = m_weaponAreas[index].m_bounds;
+    int x = image.m_x - textWidth + image.m_width - App::Scale() * 6;
+    int y = image.m_y + image.m_height + 2;
+    font->PaintText(text, wcslen(text), x, y, -1, -1);
+    CDH_Weapon* active = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
+    int bulletWidth = ImageWidth(active->getBulletOnImage());
+    int fontHeight = font->GetFontHeight();
+    static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+        m_bulletIcon, x - bulletWidth, y + fontHeight / 2, 1.0f, 0, 0, 0.0f,
+        DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
+    int textHeight = ImageHeight(m_bulletIcon);
+    if (textHeight < fontHeight) {
+        textHeight = fontHeight;
+    }
+    int silencerTextX = 0;
+    int bottom = -1;
+    if (active->m_silencerAvailable && active->isSilent()) {
+        XString count = XString::Format(L"%d", CBH_Player::GetInstance()->m_silentShotsCount);
+        int silencerY = fontHeight + y;
+        static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+            m_silencerIcon, x - bulletWidth * 4, silencerY, 1.0f, 0, 0, 0.0f,
+            DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
+        unsigned int silencerWidth;
+        unsigned int silencerHeight;
+        m_silencerIcon->GetWidthAndHeight(silencerWidth, silencerHeight);
+        int iconHeight = ImageHeight(m_silencerIcon);
+        int countWidth = font->MeasureTextWidth(count.c_str(), -1, -1, NULL);
+        silencerTextX = x - bulletWidth * 5 - countWidth + ImageWidth(m_silencerIcon) / 2;
+        font->PaintText(count.c_str(), count.Length(), silencerTextX, silencerY - ImageHeight(m_silencerIcon), -1, -1);
+        bottom = silencerY + iconHeight / 2;
+    }
+    if (static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()->m_cyberScopeEquipped) {
+        int aimAssistX;
+        if (silencerTextX == 0) {
+            aimAssistX = x - bulletWidth * 4;
+        } else {
+            aimAssistX = silencerTextX - SScreenAdaptingConstant(20, 40)();
+        }
+        ICRenderSurface* icon = m_aimAssistIcon;
+        static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+            icon, aimAssistX, SScreenAdaptingConstant(50, 100)(), 1.0f, 0, 0, 0.0f,
+            DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
+    }
+    int reloadWidth;
+    int reloadHeight;
+    m_reload->GetWidthAndHeight(reinterpret_cast<unsigned int&>(reloadWidth),
+                                reinterpret_cast<unsigned int&>(reloadHeight));
+    int reloadX = static_cast<App*>(WindowApp::m_instance)->m_screenWidth - reloadWidth;
+    if (bottom < textHeight + y) {
+        bottom = textHeight + y;
+    }
+    m_reloadButtonArea.SetPosition(reloadX, bottom + App::Scale() * 2);
+    m_reloadTouchArea.SetPosition(static_cast<App*>(WindowApp::m_instance)->m_screenWidth - reloadWidth * 2, 0);
+}
+
+void GamePlayHUD::DrawSteadyButton()
+{
+    if (!static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f
+        || static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->IsIntroTime()) {
+        return;
+    }
+    unsigned int width;
+    unsigned int height;
+    m_steadyOn->GetWidthAndHeight(width, height);
+    CRectangle& bounds = m_steadyArea.m_bounds;
+    unsigned int fill = width * m_steadyRemainingMs / m_steadyLimitMs;
+    ICGraphics2d* graphics = ICGraphics2d::GetInstance();
+    int x = bounds.m_x - (width >> 1) + (bounds.m_width >> 1);
+    int y = bounds.m_y - (height >> 1) + (bounds.m_height >> 1);
+    CRectangle clip = graphics->GetClip();
+    graphics->SetClip(width + x - fill, y, fill, height);
+    static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(m_steadyOn, x, y, 1.0f, 0, 0, 0.0f, 0);
+    graphics->SetClip(x, y, width - fill, height);
+    static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(m_steadyOff, x, y, 1.0f, 0, 0, 0.0f, 0);
+    graphics->SetClip(clip);
+}
+
+void GamePlayHUD::DrawScopeButton()
+{
+    if (!static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f
+        || static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->IsIntroTime()
+        || CSwerveGame::m_pInstance->m_specialWeapon != NULL) {
+        return;
+    }
+    m_scopeButtonShown = false;
+    if (!m_scopeButtonAlways
+        && !static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()->m_scopeAttached) {
+        return;
+    }
+    m_scopeButtonShown = true;
+    ICRenderSurface* image = m_scopeEnter;
+    if (m_scoped) {
+        image = m_scopeExit;
+    }
+    CRectangle& bounds = m_scopeArea.m_bounds;
+    static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+        image, bounds.m_x + (bounds.m_width >> 1), bounds.m_y + (bounds.m_height >> 1), 1.0f, 0, 0, 0.0f,
+        DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
+}
+
+void GamePlayHUD::DrawReloadButton(CDH_Weapon* weapon)
+{
+    if (weapon == NULL) {
+        return;
+    }
+    const CAmmo* ammo = weapon->GetDefaultAmmo();
+    int available = CBH_Player::GetInstance()->GetAvailableAmmo(ammo, true);
+    if (!m_scoped && static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f
+        && !static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->IsIntroTime()
+        && available != 0xfffffff) {
+        CRectangle& bounds = m_reloadButtonArea.m_bounds;
+        static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+            m_reload, bounds.m_x + (bounds.m_width >> 1), bounds.m_y + (bounds.m_height >> 1), 1.0f, 0, 0, 0.0f,
+            DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
     }
 }
 
-void GamePlayHUD::InitIngameShopButton()
+void GamePlayHUD::DrawFireButton()
 {
-    m_ingameShop = new CImageButton();
-    m_ingameShop->AddImage("IDB_HUD_INGAME_SHOP_BUTTON_ON", 0, 0);
-    m_ingameShop->m_command = 0x2ebf5358;
-    m_ingameShop->SetLayoutType(LAYOUT_SIMPLE);
-    m_ingameShop->SetAlign(ALIGN_LEFT | ALIGN_TOP);
-    const SScreenAdaptingConstant top(50, 100);
-    m_ingameShop->SetOutsetSpacing(top(), 0, 0, 0);
-    m_ingameShop->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
-    AddToFront(m_ingameShop);
-}
-
-void GamePlayHUD::BlinkIngameShop(int duration)
-{
-    m_ingameShop->Blink(duration);
-}
-
-void GamePlayHUD::InitScopeButton()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    m_scopeEnter = app->m_surfaceManager->CreateSurface("SUR_HUD_SCOPE_BUTTON_ENTER", true);
-    m_scopeExit = app->m_surfaceManager->CreateSurface("SUR_HUD_SCOPE_BUTTON_EXIT", true);
-    SetBounds(m_scopeBounds, m_scopeEnter, 0, app->m_helper->m_screenHeight, DGHelper::DRAW_BOTTOM);
-}
-
-void GamePlayHUD::InitReloadButton()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    m_reload = app->m_surfaceManager->CreateSurface("IDB_HUD_RELOAD_BUTTON_ON", true);
-    CRectangle rectangle;
-    SetBounds(rectangle, m_reload, 0, 0, 0);
-    m_reloadButtonArea.append(rectangle, 0, 0);
-    const SScreenAdaptingConstant top(60, 120);
-    m_reloadButtonArea.SetPosition(app->m_screenWidth - rectangle.m_width, top());
-    rectangle.m_width *= 2;
-    rectangle.m_height = rectangle.m_height * 2 + m_reloadButtonArea.m_bounds.m_y
-        + m_reloadButtonArea.m_bounds.m_height;
-    m_reloadTouchArea.append(rectangle, 0, 0);
-    m_reloadTouchArea.SetPosition(app->m_screenWidth - rectangle.m_width, 0);
-}
-
-void GamePlayHUD::InitZoomAndDock()
-{
-    m_zoomSliderControl = new CZoomSliderControl("SUR_ZOOM_SLIDER", "SUR_ZOOM_TRACK");
-    int centerOffset = 168;
-    int radius = 216;
-    if (App::IsXGA()) {
-        centerOffset = 370;
-        radius = 463;
-    } else if (App::IsVGA()) {
-        centerOffset = 330;
-        radius = 424;
+    if (!static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f
+        || static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->IsIntroTime()) {
+        return;
     }
-    m_zoomSliderControl->SetParams(21, centerOffset, radius);
-    m_zoomSliderControl->SetProgress(1.0f);
-    m_zoomSliderControl->Enable(false);
-    AddToFront(m_zoomSliderControl);
-
-    CDH_GameSofkeyWidget::GetPauseButtonHeight();
-    m_coverButton = new CBH_TriggerButton("SUR_DOCKCOVER_UNHIDE", "SUR_DOCKCOVER_HIDE");
-    m_coverButton->SetAlign(ALIGN_LEFT | ALIGN_BOTTOM);
-    m_coverButton->SetOutsetSpacing(m_scopeBounds.m_height + m_coverButton->m_height / 2, 0);
-    m_coverButton->SetCommand(static_cast<int>(0x811575c5u));
-    m_coverButton->m_commandParam = 0;
-    m_coverButton->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
-    AddToFront(m_coverButton);
-
-    // The neighboring candidate consumable button still uses manual bounds.
+    bool ready = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()->IsReadyForShot();
+    // select between the two images like the original (load after the call)
+    ICRenderSurface* image = ready ? m_fireOn : m_fireOff;
+    CRectangle& bounds = m_fireArea.m_bounds;
+    static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+        image, bounds.m_x + (bounds.m_width >> 1), bounds.m_y + (bounds.m_height >> 1), 1.0f, 0, 0, 0.0f,
+        DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
 }
 
-void GamePlayHUD::InitBars()
+/** Number centered in the area (font 8). */
+static void DrawNumberWithinThe(const Collision& area, int number)
 {
-    const SScreenAdaptingConstant width(110, 220);
-    const SScreenAdaptingConstant healthX(11, 22);
-    const SScreenAdaptingConstant healthY(6, 12);
-    const SScreenAdaptingConstant multiplierX(158, 316);
-    const SScreenAdaptingConstant timerX(270, 540);
-    const SScreenAdaptingConstant timerY(32, 64);
-    const SScreenAdaptingConstant timerWidth(75, 150);
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    const CHuntingInfo::SAssignedData& assignment = app->m_huntingInfo->m_assignedData;
-    int x = ImageWidth(m_pauseButton->m_images[0].GetSurface()) + healthX() + 2;
-    int y = healthY() + 2;
-
-    m_healthBar = new CBH_ProgressBar(2, width(), -1);
-    m_healthBar->SetCorner(x, y);
-    m_healthBar->SetDescImage("IDB_HUD_ICON_HEALTH");
-    y += m_healthBar->m_height;
-
-    m_armorBar = new CBH_ProgressBar(1, width(), -1);
-    m_armorBar->SetCorner(x, y);
-    m_armorBar->SetDescImage("IDB_HUD_ICON_ARMOR");
-
-    m_multiplierBar = new CBH_ProgressBar(4, width(), -1);
-    m_multiplierBar->SetCorner(multiplierX(), y);
-    m_multiplierBar->SetStyle(CBH_ProgressBar::STYLE_CLOCK);
-    m_multiplierBar->SetDescImage("IDB_HUD_ICON_XP_MULTY_3");
-
-    if (assignment.m_cameraDurationMs > 0) {
-        m_missionTimer = new CBH_ProgressBar(6, timerWidth(), -1);
-        m_missionTimer->SetCorner(timerX(), timerY());
-        m_missionTimer->SetStyle(CBH_ProgressBar::STYLE_CLOCK);
-        m_missionTimer->SetCurrValue(0);
-        m_missionTimer->SetMaxValue(assignment.m_cameraDurationMs / 1000);
-        m_missionTimer->SetDescImage("IDB_HUD_ICON_TIMER");
+    CFont* font = CFontMgr::GetInstance()->GetFont(8);
+    if (font != NULL) {
+        wchar_t text[20];
+        ICStdUtil::SWPrintF(text, L"%d", number);
+        int width = font->MeasureTextWidth(text, -1, -1, NULL);
+        int height = font->GetFontHeight();
+        int x = area.m_bounds.m_x - width / 2 + (area.m_bounds.m_width >> 1) + App::Scale() * 2;
+        int y = area.m_bounds.m_y - height / 2 + (area.m_bounds.m_height >> 1) - App::Scale() * 3;
+        font->PaintText(text, wcslen(text), x, y, -1, -1);
     }
+}
+
+/** Text centered horizontally on the top edge of the area (font 8). */
+static void DrawStringAboveThe(const Collision& area, const wchar_t* text)
+{
+    CFont* font = CFontMgr::GetInstance()->GetFont(8);
+    if (font != NULL) {
+        int width = font->MeasureTextWidth(text, -1, -1, NULL);
+        int height = font->GetFontHeight();
+        int x = area.m_bounds.m_x - width / 2 + (area.m_bounds.m_width >> 1) + App::Scale() * 2;
+        int y = area.m_bounds.m_y - height / 2 - App::Scale() * 3;
+        font->PaintText(text, wcslen(text), x, y, -1, -1);
+    }
+}
+
+void GamePlayHUD::DrawHealthReplenishButton()
+{
+    if (!static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f
+        || static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->IsIntroTime()) {
+        return;
+    }
+    CRectangle& bounds = m_medkitArea.m_bounds;
+    static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+        m_medkit, bounds.m_x + (bounds.m_width >> 1), bounds.m_y + (bounds.m_height >> 1), 1.0f, 0, 0, 0.0f,
+        DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
+    DrawNumberWithinThe(m_medkitArea, CBH_Player::GetInstance()->m_medkits);
+}
+
+void GamePlayHUD::DrawGoPillButton()
+{
+    if (!static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f
+        || static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->IsIntroTime()) {
+        return;
+    }
+    CRectangle& bounds = m_tabletArea.m_bounds;
+    static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+        m_tablet, bounds.m_x + (bounds.m_width >> 1), bounds.m_y + (bounds.m_height >> 1), 1.0f, 0, 0, 0.0f,
+        DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
+    int pills = CBH_Player::GetInstance()->GetRemainingPillCount();
+    int speedMs = CBH_Player::GetInstance()->GetSpeedTimeMS();
+    int seconds;
+    if (CBH_Player::GetInstance()->GetReactixControlTimeSec() >= 1) {
+        seconds = CBH_Player::GetInstance()->GetReactixControlTimeSec();
+    } else {
+        DrawNumberWithinThe(m_tabletArea, pills);
+        seconds = speedMs / 1000;
+    }
+    if (seconds > 0) {
+        wchar_t text[20];
+        const wchar_t* format = L"%d : %d";
+        if (seconds % 60 < 10) {
+            format = L"%d : 0%d";
+        }
+        ICStdUtil::SWPrintF(text, format, seconds / 60, seconds % 60);
+        DrawStringAboveThe(m_tabletArea, text);
+    }
+}
+
+void GamePlayHUD::DrawUnltrasoundEmitterButton()
+{
+    if (!static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f
+        || static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->IsIntroTime()) {
+        return;
+    }
+    CRectangle& bounds = m_ultrasoundArea.m_bounds;
+    static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+        m_ultrasound, bounds.m_x + (bounds.m_width >> 1), bounds.m_y + (bounds.m_height >> 1), 1.0f, 0, 0, 0.0f,
+        DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER);
+    CBH_Player* player = CBH_Player::GetInstance();
+    int stunMs = CSwerveGame::m_pInstance->m_stunMs;
+    DrawNumberWithinThe(m_ultrasoundArea, player->m_ultrasoundAttemptCount);
+    if (stunMs > 999) {
+        int seconds = stunMs / 1000;
+        wchar_t text[20];
+        const wchar_t* format = L"%d : %d";
+        if (seconds % 60 < 10) {
+            format = L"%d : 0%d";
+        }
+        ICStdUtil::SWPrintF(text, format, stunMs / 60000, seconds % 60);
+        DrawStringAboveThe(m_ultrasoundArea, text);
+    }
+}
+
+void GamePlayHUD::Shot()
+{
+    CZoomedScopeWindow* scope = m_zoomedScope;
+    if (scope != NULL) {
+        scope->m_shooting = true;
+        scope->m_shotTime = 0;
+    }
+}
+
+void GamePlayHUD::PlayEnjureEffect(float angle, bool armor)
+{
+    if (armor) {
+        if (m_armorHitWindow != NULL) {
+            m_armorHitWindow->StartEffect(angle);
+        }
+    } else {
+        if (m_woundingWindow != NULL) {
+            m_woundingWindow->StartEffect(angle);
+        }
+    }
+}
+
+void GamePlayHUD::WoundingWindow::StartEffect(float angle)
+{
+    if (static_cast<App*>(WindowApp::m_instance)->m_settings->m_field1f) {
+        m_remainingMs = 667;
+        SwerveHelper::Transform rotation = SwerveHelper::NewTransform();
+        const float angleAxis[4] = { angle, 0.0f, 0.0f, 1.0f };
+        rotation.postRotate(angleAxis);
+        m_arrow.setTransform(rotation);
+    }
+}
+
+void GamePlayHUD::PlayReviveEffect(float)
+{
+    CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
+    if (weapon == NULL) {
+        return;
+    }
+    weapon->ResetAutoShot();
+    weapon->unfetchWeaponModel();
+    m_modelAnimationState = 4;
 }
 
 void GamePlayHUD::ShowCountdownTimer(bool show)
@@ -446,16 +1119,15 @@ void GamePlayHUD::SetCountdownTimerLimit(int limitMs)
 
 void GamePlayHUD::SetCountdownTimerMultiplier(int multiplier)
 {
-    if (m_multiplierBar == NULL) {
-        return;
-    }
-    switch (multiplier) {
-    case 1:
-        m_multiplierBar->SetDescImage("IDB_HUD_ICON_XP_MULTY_1");
-        break;
-    case 2:
-        m_multiplierBar->SetDescImage("IDB_HUD_ICON_XP_MULTY_2");
-        break;
+    if (m_multiplierBar != NULL) {
+        switch (multiplier) {
+        case 1:
+            m_multiplierBar->SetDescImage("IDB_HUD_ICON_XP_MULTY_1");
+            break;
+        case 2:
+            m_multiplierBar->SetDescImage("IDB_HUD_ICON_XP_MULTY_2");
+            break;
+        }
     }
 }
 
@@ -466,752 +1138,6 @@ void GamePlayHUD::SetMissionTimerValue(int elapsedMs)
     }
 }
 
-void GamePlayHUD::InitSteadyButton()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    m_steadyOn = app->m_surfaceManager->CreateSurface("SUR_HUD_STEADY_BUTTON_ON", true);
-    m_steadyOff = app->m_surfaceManager->CreateSurface("SUR_HUD_STEADY_BUTTON_OFF", true);
-    float skill = app->m_helper->GetPlayerData()->GetSkillLevelCoef(static_cast<CDH_PlayerData::skill_type_t>(2));
-    m_steadyLimitMs = static_cast<int>(5000.0f * (1.0f + 1.5f * skill));
-    m_steadyRemainingMs = m_steadyLimitMs;
-    SetBounds(m_steadyBounds, m_steadyOn, app->m_helper->m_screenWidth / 2,
-        app->m_helper->m_screenHeight - 2, DGHelper::DRAW_HCENTER | DGHelper::DRAW_BOTTOM);
-}
-
-void GamePlayHUD::DrawSteadyButton()
-{
-    if (m_steadyRemainingMs <= 0 || m_steadyLimitMs <= 0 || m_steadyOn == NULL || m_steadyOff == NULL) {
-        return;
-    }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    ICGraphics2d* graphics = ICGraphics2d::GetInstance();
-    CRectangle clip = graphics->GetClip();
-    int fill = m_steadyBounds.m_width * m_steadyRemainingMs / m_steadyLimitMs;
-    int empty = m_steadyBounds.m_width - fill;
-    graphics->SetClip(m_steadyBounds.m_x + empty, m_steadyBounds.m_y, fill, m_steadyBounds.m_height);
-    DrawControl(app->m_helper, m_steadyOn, m_steadyBounds);
-    if (empty > 0) {
-        graphics->SetClip(m_steadyBounds.m_x, m_steadyBounds.m_y, empty, m_steadyBounds.m_height);
-        DrawControl(app->m_helper, m_steadyOff, m_steadyBounds);
-    }
-    graphics->SetClip(clip);
-}
-
-void GamePlayHUD::InitHealthReplehishButton()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    m_medkit = app->m_surfaceManager->CreateSurface("SUR_HUD_HEALTH_REPLENISH_BUTTON", true);
-    SetBounds(m_medkitArea.m_bounds, m_medkit, m_scopeBounds.m_x + m_scopeBounds.m_width + 2,
-              app->m_helper->m_screenHeight - 2, DGHelper::DRAW_BOTTOM);
-}
-
-void GamePlayHUD::InitGoPillButton()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    m_reactix = app->m_surfaceManager->CreateSurface("SUR_HUD_TABLET_BUTTON", true);
-    SetBounds(m_reactixArea.m_bounds, m_reactix, m_medkitArea.m_bounds.m_x + m_medkitArea.m_bounds.m_width + 2,
-              app->m_helper->m_screenHeight - 2, DGHelper::DRAW_BOTTOM);
-}
-
-void GamePlayHUD::InitUltrasoundEmitterButton()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    m_ultrasound = app->m_surfaceManager->CreateSurface("SUR_HUD_ULTRASOUND_EMITTER", true);
-    const SScreenAdaptingConstant gap(2, 4);
-    const SScreenAdaptingConstant verticalOffset(3, 0);
-    int x = m_reactixArea.m_bounds.m_x + m_reactixArea.m_bounds.m_width + 2 + gap();
-    int y = app->m_helper->m_screenHeight - 2 + verticalOffset();
-    SetBounds(m_ultrasoundArea.m_bounds, m_ultrasound, x, y, DGHelper::DRAW_BOTTOM);
-}
-
-/** Number centered in the area (font 8). */
-static void DrawNumberWithinThe(const Collision& area, int number)
-{
-    CFont* font = CFontMgr::GetInstance()->GetFont(8);
-    if (font != NULL) {
-        wchar_t text[20];
-        ICStdUtil::SWPrintF(text, L"%d", number);
-        int width = font->MeasureTextWidth(text, -1, -1, NULL);
-        int height = font->GetFontHeight();
-        int x = area.m_bounds.m_x - width / 2 + (area.m_bounds.m_width >> 1) + 2 * App::Scale();
-        int y = area.m_bounds.m_y - height / 2 + (area.m_bounds.m_height >> 1) - 3 * App::Scale();
-        font->PaintText(text, wcslen(text), x, y, -1, -1);
-    }
-}
-
-/** Text centered horizontally on the top edge of the area (font 8). */
-static void DrawStringAboveThe(const Collision& area, const wchar_t* text)
-{
-    CFont* font = CFontMgr::GetInstance()->GetFont(8);
-    if (font != NULL) {
-        int width = font->MeasureTextWidth(text, -1, -1, NULL);
-        int height = font->GetFontHeight();
-        int x = area.m_bounds.m_x - width / 2 + (area.m_bounds.m_width >> 1) + 2 * App::Scale();
-        int y = area.m_bounds.m_y - height / 2 - 3 * App::Scale();
-        font->PaintText(text, wcslen(text), x, y, -1, -1);
-    }
-}
-
-void GamePlayHUD::UpdateButtonPosition()
-{
-    CBH_Player* player = CBH_Player::GetInstance();
-    m_showMedkit = player->CanRestoreHealth() && player->m_hp < player->GetMaxHp();
-    m_showUltrasound = player->m_ultrasoundAttemptCount > 0;
-}
-
-void GamePlayHUD::DrawHealthReplenishButton()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    DrawControl(app->m_helper, m_medkit, m_medkitArea.m_bounds);
-    DrawNumberWithinThe(m_medkitArea, CBH_Player::GetInstance()->m_medkits);
-}
-
-void GamePlayHUD::DrawGoPillButton()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CBH_Player* player = CBH_Player::GetInstance();
-    DrawControl(app->m_helper, m_reactix, m_reactixArea.m_bounds);
-    int seconds = player->GetReactixControlTimeSec();
-    if (seconds < 1) {
-        DrawNumberWithinThe(m_reactixArea, player->GetRemainingPillCount());
-        seconds = player->GetSpeedTimeMS() / 1000;
-    }
-    if (seconds > 0) {
-        XString text = XString::Format(L"%d : %02d", seconds / 60, seconds % 60);
-        DrawStringAboveThe(m_reactixArea, text.c_str());
-    }
-}
-
-void GamePlayHUD::DrawUnltrasoundEmitterButton()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    DrawControl(app->m_helper, m_ultrasound, m_ultrasoundArea.m_bounds);
-    DrawNumberWithinThe(m_ultrasoundArea, CBH_Player::GetInstance()->m_ultrasoundAttemptCount);
-    int seconds = app->m_helper->m_swerveGame->m_stunMs / 1000;
-    if (seconds > 0) {
-        XString text = XString::Format(L"%d : %02d", seconds / 60, seconds % 60);
-        DrawStringAboveThe(m_ultrasoundArea, text.c_str());
-    }
-}
-
-void GamePlayHUD::PaintBars(ICGraphics2d& graphics)
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    const CSwerveGame* game = app->m_helper->m_swerveGame;
-    const CHuntingInfo::SAssignedData& assignment = app->m_huntingInfo->m_assignedData;
-    CBH_Player* player = game->m_player;
-    m_healthBar->SetMaxValue(player->GetMaxHp() / 1000);
-    m_healthBar->SetCurrValue((player->m_hp + 999) / 1000);
-    PaintBar(graphics, m_healthBar);
-    if (player->IsArmorAvailable()) {
-        m_armorBar->SetMaxValue(player->m_armorDamageProofMax / 1000);
-        m_armorBar->SetCurrValue(player->m_armorDamageProof / 1000);
-        PaintBar(graphics, m_armorBar);
-    }
-    ShowCountdownTimer(game->m_multiplierEnabled && game->m_multiplier > 1);
-    if (m_showCountdownTimer) {
-        int limit = assignment.m_tripleMultiplierSeconds;
-        if (game->m_multiplier == 2) {
-            limit = assignment.m_doubleMultiplierSeconds;
-        }
-        if (m_displayedMultiplier != game->m_multiplier) {
-            if (game->m_multiplier == 3) {
-                m_multiplierBar->SetDescImage("IDB_HUD_ICON_XP_MULTY_3");
-            } else {
-                SetCountdownTimerMultiplier(game->m_multiplier);
-            }
-            m_displayedMultiplier = game->m_multiplier;
-        }
-        SetCountdownTimerLimit(limit * 1000);
-        SetCountdownTimerValue(game->m_multiplierTimeMs);
-        PaintBar(graphics, m_multiplierBar);
-    }
-    if (m_missionTimer != NULL) {
-        PaintBar(graphics, m_missionTimer);
-    }
-}
-
-void GamePlayHUD::Paint(ICGraphics2d& graphics)
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CSwerveGame* game = app->m_helper->m_swerveGame;
-    if (game->IsIntroTime() || m_visibilityAlpha <= 0.0f) {
-        return;
-    }
-    m_zoomedScope->RunPaint3D(graphics);
-    app->m_helper->PushAlphaBlend(m_visibilityAlpha);
-    CDH_Weapon* weapon = app->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon();
-    DrawScopeButton();
-    DrawWeaponButton(weapon);
-    DrawReloadButton(weapon);
-    DrawFireButton();
-    if (app->m_settings->m_field1f) {
-        PaintBars(graphics);
-        if (m_modelAnimationState == ModelReady) {
-            DrawSteadyButton();
-        }
-    }
-    if (app->m_settings->m_field1f) {
-        if (m_showMedkit) {
-            DrawHealthReplenishButton();
-        }
-        if (game->m_player->IsSpeedModeAvailable() || game->m_player->IsSpeedMode()) {
-            DrawGoPillButton();
-        }
-        if (m_showUltrasound) {
-            DrawUnltrasoundEmitterButton();
-        }
-    }
-    if (m_currentHint != NULL) {
-        const char* imageName = m_currentHint->m_imageName;
-        ICRenderSurface* image = m_currentHint->m_image;
-        int screenWidth = app->m_helper->m_screenWidth;
-        int screenHeight = app->m_helper->m_screenHeight;
-        int x = screenWidth / 2;
-        int y = 10;
-        unsigned int align = DGHelper::DRAW_HCENTER;
-        if (strcmp(imageName, "SUR_TUTORIAL_SLIDE_TO_ZOOM_OUT") == 0) {
-            x = 11;
-            y = 144;
-            align = DGHelper::DRAW_VCENTER;
-        } else if (strcmp(imageName, "SUR_TUTORIAL_SLIDE_TO_ZOOM_IN") == 0) {
-            x = screenWidth - 11;
-            y = 144;
-            align = DGHelper::DRAW_RIGHT | DGHelper::DRAW_VCENTER;
-        } else if (strcmp(imageName, "SUR_TUTORIAL_SLIDE_TO_AIM") == 0) {
-            y = 80;
-        } else if (strcmp(imageName, "SUR_TUTORIAL_BUTTON_TO_SHOT") == 0) {
-            if (app->m_settings->IsFireButtonEnabled()) {
-                x = screenWidth - 50;
-                y = screenHeight - 5;
-                align = DGHelper::DRAW_RIGHT | DGHelper::DRAW_BOTTOM;
-            } else {
-                image = m_tapToShoot;
-                y = screenHeight / 2;
-                align = DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER;
-            }
-        } else if (strcmp(imageName, "SUR_TUTORIAL_SLIDE_TO_LOOK_AROUND") != 0) {
-            image = NULL;
-        }
-        if (image != NULL) {
-            app->m_helper->DrawImage(image, x, y, 0.6f, 0, 0, 0.0f, align);
-        }
-    }
-    app->m_helper->PopAlphaBlend();
-}
-
-void GamePlayHUD::DrawFireButton()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (!app->m_settings->IsFireButtonEnabled() || app->m_helper->m_swerveGame->IsIntroTime()) {
-        return;
-    }
-    CDH_Weapon* weapon = app->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon();
-    ICRenderSurface* image = m_fireOff;
-    if (weapon != NULL && weapon->IsReadyForShot()) {
-        image = m_fireOn;
-    }
-    DrawControl(app->m_helper, image, m_fireHitArea.m_bounds);
-}
-
-void GamePlayHUD::DrawScopeButton()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_Weapon* weapon = app->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon();
-    if (weapon != NULL && (weapon->m_scopeAttached || weapon->m_zoomWithoutScope)) {
-        ICRenderSurface* image = m_scopeEnter;
-        if (m_scoped) {
-            image = m_scopeExit;
-        }
-        DrawControl(app->m_helper, image, m_scopeBounds);
-    }
-}
-
-void GamePlayHUD::DrawReloadButton(CDH_Weapon* weapon)
-{
-    if (m_scoped || weapon == NULL) {
-        return;
-    }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (CBH_Player::GetInstance()->GetAvailableAmmo(weapon->GetDefaultAmmo(), true) != 0xfffffff) {
-        DrawControl(app->m_helper, m_reload, m_reloadButtonArea.m_bounds);
-    }
-}
-
-void GamePlayHUD::DrawWeaponButton(CDH_Weapon* weapon)
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (weapon == NULL || !app->m_settings->m_field1f) {
-        return;
-    }
-    CDH_BasicGameData* data = app->m_helper->m_gamePlayManager.GetGameData();
-    ICRenderSurface* image = NULL;
-    if (weapon == m_weaponImagesFor[0]) {
-        image = m_weaponImages[0];
-    } else if (weapon == m_weaponImagesFor[1]) {
-        image = m_weaponImages[1];
-    } else {
-        image = weapon->getGameImage();
-    }
-    int imageRight = app->m_helper->m_screenWidth - 5 * App::Scale();
-    if (!m_scoped) {
-        CDH_Weapon* first = data->GetWeapon01(true);
-        CDH_Weapon* second = data->GetWeapon02(true);
-        if (first != NULL && second != NULL && first != second) {
-            DrawControl(app->m_helper, m_weaponSwitch, m_weaponBounds);
-        }
-        if (image != NULL) {
-            app->m_helper->DrawImage(image, imageRight, 2, 1.0f, 0, 0, 0.0f, DGHelper::DRAW_RIGHT);
-        }
-    }
-
-    const CAmmo* ammo = weapon->GetActiveAmmo();
-    int available = CBH_Player::GetInstance()->GetAvailableAmmo(ammo, true);
-    XString text(L"\u221e");
-    if (ammo != NULL && available != 0xfffffff) {
-        int reserve = available - weapon->m_ammo;
-        if (reserve < 0) {
-            reserve = 0;
-        }
-        text = XString::Format(L"%d / %d ", weapon->m_ammo, reserve);
-    }
-    CFont* font = CFontMgr::GetInstance()->GetFont(8);
-    if (font == NULL) {
-        return;
-    }
-    int x = imageRight - 6 * App::Scale() - font->MeasureTextWidth(text.c_str(), -1, -1, NULL);
-    int y = ImageHeight(image) + 4;
-    font->PaintText(text.c_str(), -1, x, y, -1, -1);
-    int bulletWidth = ImageWidth(weapon->getBulletOnImage());
-    int fontHeight = font->GetFontHeight();
-    const unsigned int centered = DGHelper::DRAW_HCENTER | DGHelper::DRAW_VCENTER;
-    if (m_bulletIcon != NULL) {
-        app->m_helper->DrawImage(m_bulletIcon, x - bulletWidth, y + fontHeight / 2,
-                                 1.0f, 0, 0, 0.0f, centered);
-    }
-    int height = ImageHeight(m_bulletIcon);
-    if (height < fontHeight) {
-        height = fontHeight;
-    }
-    int bottom = y + height;
-    int aimAssistX = x - 4 * bulletWidth;
-    if (weapon->m_silencerAvailable && weapon->isSilent() && m_silencerIcon != NULL) {
-        int silencerY = y + fontHeight;
-        app->m_helper->DrawImage(m_silencerIcon, aimAssistX, silencerY, 1.0f, 0, 0, 0.0f, centered);
-        XString count(CBH_Player::GetInstance()->m_silentShotsCount);
-        int countWidth = font->MeasureTextWidth(count.c_str(), -1, -1, NULL);
-        int silencerHeight = ImageHeight(m_silencerIcon);
-        int countX = x - 5 * bulletWidth - countWidth + ImageWidth(m_silencerIcon) / 2;
-        font->PaintText(count.c_str(), -1, countX, silencerY - silencerHeight, -1, -1);
-        int silencerBottom = silencerY + silencerHeight / 2;
-        if (silencerBottom > bottom) {
-            bottom = silencerBottom;
-        }
-        const SScreenAdaptingConstant gap(20, 40);
-        aimAssistX = countX - gap();
-    }
-    if (weapon->m_cyberScopeEquipped && m_aimAssistIcon != NULL) {
-        const SScreenAdaptingConstant aimAssistY(50, 100);
-        app->m_helper->DrawImage(m_aimAssistIcon, aimAssistX, aimAssistY(), 1.0f, 0, 0, 0.0f, centered);
-    }
-
-    int reloadWidth = m_reloadButtonArea.m_bounds.m_width;
-    m_reloadButtonArea.SetPosition(app->m_screenWidth - reloadWidth, bottom + App::Scale() * 2);
-    m_reloadTouchArea.SetPosition(app->m_screenWidth - reloadWidth * 2, 0);
-}
-
-void GamePlayHUD::UpdateAmmoIcon(const CAmmo* ammo)
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CleanBulletIcon();
-    if (ammo != NULL) {
-        XString::AnsiString icon(ammo->m_bulletIcon.c_str());
-        m_bulletIcon = app->m_surfaceManager->CreateSurface(icon, true);
-    }
-    if (m_bulletIcon == NULL) {
-        m_bulletIcon = app->m_surfaceManager->CreateSurface("IDB_HUD_HANDGUN_BULLET_ICON", true);
-    }
-    m_displayedAmmo = ammo;
-}
-
-void GamePlayHUD::CleanBulletIcon()
-{
-    if (m_bulletIcon != NULL) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        app->m_surfaceManager->ReleaseSurface(m_bulletIcon);
-        m_bulletIcon = NULL;
-    }
-    m_displayedAmmo = NULL;
-}
-
-void GamePlayHUD::CleanWeaponImage()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    for (int slot = 0; slot < 2; ++slot) {
-        if (m_weaponImages[slot] != NULL) {
-            app->m_surfaceManager->ReleaseSurface(m_weaponImages[slot]);
-            m_weaponImages[slot] = NULL;
-        }
-        m_weaponImagesFor[slot] = NULL;
-    }
-}
-
-void GamePlayHUD::ReInitWeaponButton()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_BasicGameData* data = app->m_helper->m_gamePlayManager.GetGameData();
-    CDH_Weapon* weapons[] = { data->GetWeapon01(true), data->GetWeapon02(true) };
-    m_hasAlternateWeapon = weapons[0] != weapons[1];
-    CleanWeaponImage();
-    for (int slot = 0; slot < 2; ++slot) {
-        CDH_Weapon* weapon = weapons[slot];
-        m_weaponImagesFor[slot] = weapon;
-        if (weapon != NULL && weapon->m_gameImageId != NULL) {
-            m_weaponImages[slot] = app->m_surfaceManager->CreateSurface(weapon->m_gameImageId, true);
-        }
-    }
-}
-
-void GamePlayHUD::switchWeapons()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon()->unfetchWeaponModel();
-    m_modelAnimationState = WeaponLeaving;
-    CBH_Player::GetInstance()->m_gameStats.AddInMIssionWeaponChanges(1);
-}
-
-void GamePlayHUD::CheckForAutomaticWeaponSwitch(CDH_Weapon* weapon)
-{
-    if (!m_enabled || IsModelAnimationActive() || !weapon->IsReadyForUse() || weapon->m_ammo > 0) {
-        return;
-    }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_BasicGameData* data = app->m_helper->m_gamePlayManager.GetGameData();
-    CDH_Weapon* alternate = data->GetWeapon01(true);
-    if (alternate == weapon) {
-        alternate = data->GetWeapon02(true);
-    }
-    if (alternate == NULL || alternate == weapon
-        || CBH_Player::GetInstance()->GetAvailableAmmo(alternate->GetActiveAmmo(), true) <= 0
-        || weapon->CheckForReload(false)) {
-        return;
-    }
-    if (m_scoped) {
-        switchScope();
-    } else {
-        ResetFireButton();
-        weapon->ResetAutoShot();
-        switchWeapons();
-    }
-}
-
-void GamePlayHUD::switchScope()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CSwerveGame* game = app->m_helper->m_swerveGame;
-    CDH_Weapon* weapon = app->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon();
-    if (m_scoped) {
-        if (!weapon->m_scopeAttached) {
-            game->m_camera->restoreView(true);
-        }
-        weapon->ScopeOut();
-    } else {
-        if (weapon->m_scopeTime <= 0) {
-            weapon->m_scopeTime = 1;
-        }
-        weapon->ScopeIn();
-    }
-    m_modelAnimationState = ScopeTransition;
-}
-
-void GamePlayHUD::Update()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CSwerveGame* game = app->m_helper->m_swerveGame;
-    bool controlsVisible = m_enabled && !game->IsIntroTime();
-    float alphaStep = app->m_updateFrameTime * 0.001f;
-    if (!m_enabled) {
-        alphaStep = -alphaStep;
-    }
-    m_visibilityAlpha += alphaStep;
-    if (m_visibilityAlpha < 0.0f) {
-        m_visibilityAlpha = 0.0f;
-    } else if (m_visibilityAlpha > 1.0f) {
-        m_visibilityAlpha = 1.0f;
-    }
-    UpdateHUDsVisibility();
-    if (m_steadyActive && controlsVisible && app->m_timeScale != 0.0f) {
-        m_steadyRemainingMs -= app->m_updateFrameTime;
-        if (m_steadyRemainingMs <= 0) {
-            m_steadyRemainingMs = 0;
-            m_steadyActive = false;
-        }
-    }
-    if (controlsVisible && app->m_settings->m_field1f) {
-        m_pauseButton->SetFlags(FLAG_VISIBLE | FLAG_ENABLED);
-    } else {
-        m_pauseButton->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
-    }
-    if (controlsVisible && !game->IsGamePaused() && !game->m_finishing && !game->m_inGameShopOpen
-        && !game->m_waitingForAmmo && app->m_settings->m_field1f) {
-        m_ingameShop->SetFlags(FLAG_VISIBLE | FLAG_ENABLED);
-    } else {
-        m_ingameShop->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
-    }
-    bool coverVisible = controlsVisible && game->HasCoverAnimation() && app->m_settings->m_field1f;
-    SetDockCoverButtonVisibility(!coverVisible);
-    EnableDockCoverButton(coverVisible && !game->m_player->IsInProgress());
-    UpdateButtonPosition();
-
-    CDH_BasicGameData* data = app->m_helper->m_gamePlayManager.GetGameData();
-    if (m_weaponImagesFor[0] != data->GetWeapon01(true) || m_weaponImagesFor[1] != data->GetWeapon02(true)) {
-        ReInitWeaponButton();
-    }
-    CDH_Weapon* weapon = data->GetActiveWeapon();
-    if (weapon != NULL) {
-        const CAmmo* ammo = weapon->GetActiveAmmo();
-        if (ammo != m_displayedAmmo) {
-            UpdateAmmoIcon(ammo);
-        }
-    }
-
-    if (m_zoomSliderControl != NULL && m_zoomedScope != NULL && m_zoomedScope->m_zoomEnabled) {
-        if (!m_zoomedScope->m_shooting && m_zoomedScope->m_zoom != NULL) {
-            float position = 1.0f - m_zoomSliderControl->GetValue();
-            if (position < 0.0f) {
-                position = 0.0f;
-            }
-            m_zoomedScope->m_zoomPosition = m_zoomedScope->m_zoom->m_durationSec * position * 0.5f;
-        }
-        m_zoomedScope->Update();
-    }
-    CBH_Player* player = game->m_player;
-    if (m_healthBar != NULL) {
-        m_healthBar->SetMaxValue(player->GetMaxHp() / 1000);
-        m_healthBar->SetCurrValue(static_cast<int>(MathLib::Ceil(player->m_hp / 1000.0)));
-    }
-    if (m_armorBar != NULL) {
-        if (player->IsArmorAvailable() && !(m_armorBar->m_flags & FLAG_VISIBLE) && app->m_settings->m_field1f) {
-            m_armorBar->SetMaxValue(player->m_armorDamageProofMax / 1000);
-            m_armorBar->SetCurrValue(player->m_armorDamageProof / 1000);
-            m_armorBar->SetFlags(FLAG_VISIBLE | FLAG_ENABLED);
-        } else if (!player->IsArmorAvailable() && (m_armorBar->m_flags & FLAG_VISIBLE)) {
-            m_armorBar->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
-        }
-        if (player->m_armorDamageProof < 1000) {
-            m_armorBar->ClearFlags(FLAG_VISIBLE);
-        } else {
-            m_armorBar->SetCurrValue(player->m_armorDamageProof / 1000);
-            m_armorBar->SetMaxValue(player->m_armorDamageProofMax / 1000);
-        }
-    }
-    if (m_modelAnimationState != ModelReady) {
-        processModelAnimation();
-    }
-    if (m_currentHint != NULL) {
-        m_currentHint->m_elapsed += app->m_updateFrameTime;
-        if (m_currentHint->m_elapsed >= m_currentHint->m_duration) {
-            int index = m_tutorialHints.indexOf(m_currentHint);
-            m_currentHint = NULL;
-            if (index >= 0) {
-                if (index + 1 < m_tutorialHints.size()) {
-                    m_currentHint = m_tutorialHints[index + 1];
-                } else {
-                    SAFE_DELETE_VECTOR(m_tutorialHints);
-                }
-            }
-        }
-    }
-    if (!game->IsGamePaused() && weapon != NULL && m_hasAlternateWeapon) {
-        CheckForAutomaticWeaponSwitch(weapon);
-    }
-}
-
-void GamePlayHUD::UpdateHUDsVisibility()
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    bool visible = app->m_settings->m_field1f;
-    Window* bars[] = { m_healthBar, m_armorBar, m_missionTimer };
-    for (unsigned int index = 0; index < sizeof(bars) / sizeof(bars[0]); ++index) {
-        Window* bar = bars[index];
-        if (bar != NULL && visible) {
-            bar->SetFlags(FLAG_VISIBLE);
-        } else if (bar != NULL) {
-            bar->ClearFlags(FLAG_VISIBLE);
-        }
-    }
-    if (m_multiplierBar != NULL) {
-        if (visible && m_showCountdownTimer) {
-            m_multiplierBar->SetFlags(FLAG_VISIBLE);
-        } else {
-            m_multiplierBar->ClearFlags(FLAG_VISIBLE);
-        }
-    }
-}
-
-void GamePlayHUD::Shot()
-{
-    CZoomedScopeWindow* scope = m_zoomedScope;
-    if (scope != NULL) {
-        scope->m_shooting = true;
-        scope->m_shotTime = 0;
-    }
-}
-
-void GamePlayHUD::PlayEnjureEffect(float angle, bool armor)
-{
-    WoundingWindow* window = m_woundingWindow;
-    if (armor) {
-        window = m_armorHitWindow;
-    }
-    if (window != NULL) {
-        window->StartEffect(angle);
-    }
-}
-
-void GamePlayHUD::WoundingWindow::StartEffect(float angle)
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (app->m_settings->m_field1f && m_arrow != NULL) {
-        m_remainingMs = WoundingDurationMs;
-        SwerveHelper::Transform rotation = SwerveHelper::NewTransform();
-        const float angleAxis[4] = { angle, 0.0f, 0.0f, 1.0f };
-        rotation.postRotate(angleAxis);
-        m_arrow.setTransform(rotation);
-    }
-}
-
-GamePlayHUD::WoundingWindow::WoundingWindow(bool armor)
-    : ViewWindow(World()), m_remainingMs(0)
-{
-    typedef char WoundingWindowSizeCheck[sizeof(WoundingWindow) == 0xb4 ? 1 : -1];
-    if (armor) {
-        m_world = World(App::LoadObject3D("BIN_ARMOR_HIT"));
-    } else {
-        m_world = World(App::LoadObject3D("BIN_WOUNDING"));
-    }
-    if (m_world != NULL) {
-        m_screen = SwerveHelper::Group(m_world.find(DGHelper::getSwerveID("injure_screenTransform")));
-        m_arrow = SwerveHelper::Group(m_world.find(DGHelper::getSwerveID("arrowTransform")));
-    }
-}
-
-void GamePlayHUD::WoundingWindow::StopEffect()
-{
-    m_remainingMs = 0;
-    if (m_screen != NULL) {
-        m_screen.animate(0);
-    }
-    m_arrow.animate(0);
-}
-
-void GamePlayHUD::WoundingWindow::Update()
-{
-    if (m_remainingMs > 0) {
-        m_remainingMs -= WindowApp::m_instance->m_updateFrameTime;
-        if (m_screen != NULL) {
-            m_screen.animate(WoundingDurationMs - m_remainingMs);
-        }
-        m_arrow.animate(WoundingDurationMs - m_remainingMs);
-        if (m_remainingMs <= 0) {
-            StopEffect();
-        }
-    }
-}
-
-void GamePlayHUD::PlayReviveEffect(float)
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_Weapon* weapon = app->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon();
-    if (weapon == NULL) {
-        return;
-    }
-    // The original neither resets the fire button nor leaves the scope here.
-    weapon->ResetAutoShot();
-    weapon->unfetchWeaponModel();
-    m_modelAnimationState = ReviveWeaponLeaving;
-}
-
-void GamePlayHUD::processModelAnimation()
-{
-    if (m_modelAnimationState == ModelReady) {
-        return;
-    }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    DGHelper* helper = app->m_helper;
-    CSwerveGame* game = helper->m_swerveGame;
-    CDH_BasicGameData* data = helper->GetGameData();
-    CDH_Weapon* weapon = data->GetActiveWeapon();
-    if (weapon == NULL) {
-        m_modelAnimationState = ModelReady;
-        return;
-    }
-    bool waitingForModel = m_modelAnimationState != RevivePlaying && weapon->m_animation != NULL
-        && !weapon->isModelAnimationComplete();
-    if (waitingForModel) {
-        return;
-    }
-    switch (m_modelAnimationState) {
-    case WeaponLeaving:
-        game->OnWeaponHided();
-        helper->m_gamePlayManager.SwitchWeapons();
-        weapon = data->GetActiveWeapon();
-        if (weapon != NULL) {
-            weapon->fetchWeaponModel();
-            m_modelAnimationState = WeaponEntering;
-        } else {
-            m_modelAnimationState = ModelReady;
-        }
-        break;
-    case WeaponEntering:
-        game->OnWeaponShown();
-        m_modelAnimationState = ModelReady;
-        break;
-    case ReviveWeaponLeaving:
-        game->OnWeaponHided();
-        if (app->m_settings->m_field1f) {
-            if (m_reviveWindow == NULL) {
-                m_reviveWindow = new ReviveWindow();
-            }
-            if (m_reviveWindow->m_world != NULL) {
-                m_reviveWindow->m_remainingMs = ReviveDurationMs;
-                m_reviveWindow->m_soundPlayed = false;
-            }
-        }
-        m_modelAnimationState = RevivePlaying;
-        break;
-    case RevivePlaying: {
-        if (m_reviveWindow != NULL) {
-            m_reviveWindow->Update();
-            if (m_reviveWindow->m_remainingMs > 0) {
-                return;
-            }
-        }
-        int ammo = weapon->m_ammo;
-        weapon->fetchWeaponModel();
-        weapon->m_ammo = ammo;
-        m_modelAnimationState = WeaponEntering;
-        break;
-    }
-    }
-}
-
-bool GamePlayHUD::PaintReviveEffect(Graphics3D& graphics)
-{
-    if (m_modelAnimationState != RevivePlaying || m_reviveWindow == NULL || m_reviveWindow->m_remainingMs <= 0) {
-        return false;
-    }
-    m_reviveWindow->Paint3D(graphics);
-    return true;
-}
-
-bool GamePlayHUD::IsModelAnimationActive() const
-{
-    return m_modelAnimationState != ModelReady;
-}
-
-// The provisional declaration only exposed +0xe1 to SetZoomSliderEnable.
-// The full layout follows the constructor at 0x14f1e0 (size 0xe4).
 GamePlayHUD::CZoomedScopeWindow::CZoomedScopeWindow()
     : ViewWindow(World()),
       m_shoot(NULL), m_zoom(NULL), m_zoomPosition(0.0f), m_shotPosition(0.0f), m_zoomRecoil(0.0f),
@@ -1219,8 +1145,7 @@ GamePlayHUD::CZoomedScopeWindow::CZoomedScopeWindow()
       m_zoomEnabled(false)
 {
     typedef char ScopeWindowSizeCheck[sizeof(CZoomedScopeWindow) == 0xe4 ? 1 : -1];
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_Weapon* weapon = app->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon();
+    CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
     if (weapon != NULL) {
         InitResources(weapon);
     }
@@ -1253,13 +1178,12 @@ GamePlayHUD::CZoomedScopeWindow::~CZoomedScopeWindow()
 
 void GamePlayHUD::CZoomedScopeWindow::Update()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_Weapon* weapon = app->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon();
-    if (weapon != NULL && weapon->GetId() != m_weaponId) {
-        InitResources(weapon);
-    }
     if (m_shoot == NULL || m_zoom == NULL) {
         return;
+    }
+    CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
+    if (weapon->GetId() != m_weaponId) {
+        InitResources(weapon);
     }
     if (m_shooting && m_shoot->m_durationSec > 0.0f) {
         float duration = m_shoot->m_durationSec;
@@ -1277,14 +1201,14 @@ void GamePlayHUD::CZoomedScopeWindow::Update()
     m_zoom->Pause();
     if (m_shooting) {
         m_shotPosition = m_shotTime * 0.001f;
-        m_shotTime += app->m_updateFrameTime;
+        m_shotTime += WindowApp::m_instance->m_updateFrameTime;
         if (m_shotPosition > m_shoot->m_durationSec) {
             m_shotTime = 0;
             m_shooting = false;
             m_shotPosition = 0.0f;
         }
     }
-    m_worldTime += app->m_updateFrameTime;
+    m_worldTime += WindowApp::m_instance->m_updateFrameTime;
     m_world.animate(m_worldTime);
 }
 
@@ -1292,6 +1216,168 @@ void GamePlayHUD::CZoomedScopeWindow::Paint3D(Graphics3D& graphics)
 {
     if (m_zoomEnabled) {
         ViewWindow::Paint3D(graphics);
+    }
+}
+
+GamePlayHUD::WoundingWindow::WoundingWindow(bool armor)
+    : ViewWindow(World()), m_remainingMs(0)
+{
+    typedef char WoundingWindowSizeCheck[sizeof(WoundingWindow) == 0xb4 ? 1 : -1];
+    if (armor) {
+        m_world = World(App::LoadObject3D("BIN_ARMOR_HIT"));
+    } else {
+        m_world = World(App::LoadObject3D("BIN_WOUNDING"));
+    }
+    m_screen = SwerveHelper::Group(m_world.find(DGHelper::getSwerveID("injure_screenTransform")));
+    m_arrow = SwerveHelper::Group(m_world.find(DGHelper::getSwerveID("arrowTransform")));
+}
+
+void GamePlayHUD::WoundingWindow::StopEffect()
+{
+    m_remainingMs = 0;
+    if (m_screen != NULL) {
+        m_screen.animate(0);
+    }
+    m_arrow.animate(0);
+}
+
+void GamePlayHUD::WoundingWindow::Update()
+{
+    if (m_remainingMs > 0) {
+        m_remainingMs -= WindowApp::m_instance->m_updateFrameTime;
+        if (m_screen != NULL) {
+            m_screen.animate(667 - m_remainingMs);
+        }
+        m_arrow.animate(667 - m_remainingMs);
+        if (m_remainingMs < 1) {
+            StopEffect();
+        }
+    }
+}
+
+int GamePlayHUD::PointerPressed(int x, int y, int pointer)
+{
+    if (!m_inputEnabled) {
+        return -1;
+    }
+    if (m_modelAnimationState != 0) {
+        return 6;
+    }
+    const CAmmo* ammo01 = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true)
+        ->GetActiveAmmo();
+    const CAmmo* ammo02 = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true)
+        ->GetActiveAmmo();
+    int available01 = CBH_Player::GetInstance()->GetAvailableAmmo(ammo01, true);
+    int available02 = CBH_Player::GetInstance()->GetAvailableAmmo(ammo02, true);
+    if (!m_enabled) {
+        return -1;
+    }
+    if (static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->IsIntroTime()) {
+        return -1;
+    }
+    if (CSwerveGame::m_pInstance->m_specialWeapon == NULL && m_scopeButtonShown && m_scopeArea.checkCollision(x, y)) {
+        CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
+        if (weapon != NULL && weapon->IsReadyForUse()) {
+            static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_usedHudButton = true;
+            switchScope();
+            return 6;
+        }
+        return -1;
+    }
+    if (!m_scoped && m_hasAlternateWeapon && m_weaponSwitchArea.checkCollision(x, y) && available01 + available02 > 0) {
+        CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
+        if (weapon != NULL && weapon->IsReadyForUse()) {
+            switchWeapons();
+            return 6;
+        }
+        return -1;
+    }
+    if (static_cast<App*>(WindowApp::m_instance)->m_settings->IsFireButtonEnabled() && m_fireArea.checkCollision(x, y)) {
+        m_fireHeld = true;
+        m_firePointer = pointer;
+        return 2;
+    }
+    if (m_showMedkit && m_medkitArea.checkCollision(x, y)) {
+        return 4;
+    }
+    if (m_steadyRemainingMs >= 0 && !m_steadyActive && m_steadyArea.checkCollision(x, y)) {
+        // the original tests the flag again after the hit test
+        if (m_steadyActive) {
+            return 1;
+        }
+        static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_usedSteadyAim = true;
+        m_steadyActive = true;
+        CGameAnalytics::logSteadyActivated(
+            static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->m_assignedData.m_missionName,
+            static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon()->GetId());
+        return 0;
+    }
+    if (CBH_Player::GetInstance()->IsSpeedModeAvailable() && m_tabletArea.checkCollision(x, y)) {
+        if (CBH_Player::GetInstance()->GetReactixControlTimeSec() >= 1) {
+            if (CBH_Player::GetInstance()->IsSpeedMode()) {
+                CBH_Player::GetInstance()->StopConsumeReactixControl();
+                return 1;
+            }
+            CBH_Player::GetInstance()->StartConsumeReactixControl();
+            CGameAnalytics::logItemUsed(XString("reactix_control"));
+        } else {
+            CBH_Player::GetInstance()->ConsumeGoPill();
+            CGameAnalytics::logItemUsed(XString("reactix"));
+        }
+        return 1;
+    }
+    if (CBH_Player::GetInstance()->m_ultrasoundAttemptCount > 0 && m_ultrasoundArea.checkCollision(x, y)) {
+        CBH_Player::GetInstance()->ConsumeUltrasoundEmitter();
+        CSwerveGame::m_pInstance->AddStunTimerMS(10000);
+        return 5;
+    }
+    if (m_reloadTouchArea.checkCollision(x, y)) {
+        CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
+        if (weapon != NULL) {
+            const CAmmo* ammo = weapon->GetActiveAmmo();
+            if (ammo != NULL && CBH_Player::GetInstance()->GetAvailableAmmo(ammo, true) != 0xfffffff) {
+                int clip = weapon->m_ammo;
+                int available = CBH_Player::GetInstance()->GetAvailableAmmo(weapon->GetActiveAmmo(), true);
+                int clipSize = weapon->m_clipSize;
+                if (weapon->IsReadyForUse() && !weapon->IsReloading() && clip < available && clip < clipSize) {
+                    weapon->CheckForReload(true);
+                }
+                return 1;
+            }
+        }
+    }
+    return -1;
+}
+
+void GamePlayHUD::CheckContollStateOnPointerReleased(int x, int y, int pointer)
+{
+    if (static_cast<App*>(WindowApp::m_instance)->m_settings->IsFireButtonEnabled() && m_fireArea.checkCollision(x, y)
+        && m_firePointer == pointer) {
+        m_fireHeld = false;
+        m_firePointer = -1;
+    }
+}
+
+void GamePlayHUD::CheckContollStateOnPointerMove(int x, int y, int oldX, int oldY, int pointer)
+{
+    if (static_cast<App*>(WindowApp::m_instance)->m_settings->IsFireButtonEnabled()) {
+        if (!m_fireArea.checkCollision(x, y) && m_fireArea.checkCollision(oldX, oldY) && m_firePointer == pointer) {
+            m_fireHeld = false;
+            m_firePointer = -1;
+        }
+    }
+}
+
+void GamePlayHUD::Show()
+{
+    m_enabled = true;
+}
+
+void GamePlayHUD::Hide(bool immediate)
+{
+    m_enabled = false;
+    if (immediate) {
+        m_visibilityAlpha = 0.0f;
     }
 }
 
@@ -1303,10 +1389,34 @@ void GamePlayHUD::SetZoomSliderEnable(bool enable)
 
 float GamePlayHUD::GetZoomSliderProgress() const
 {
-    if (m_zoomSliderControl != NULL) {
-        return m_zoomSliderControl->GetValue();
+    if (m_zoomSliderControl == NULL) {
+        return 0.0f;
     }
-    return 0.0f;
+    return m_zoomSliderControl->GetValue();
+}
+
+void GamePlayHUD::ReInitWeaponButton()
+{
+    CDH_Weapon* weapon01 = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true);
+    CDH_Weapon* weapon02 = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true);
+    if (weapon01 == weapon02) {
+        m_hasAlternateWeapon = false;
+    }
+    m_weaponImages[0] = weapon01->getGameImage();
+    m_weaponImages[1] = weapon02->getGameImage();
+}
+
+void GamePlayHUD::CleanBulletIcon()
+{
+    CDH_Weapon* weapon = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true);
+    if (weapon != NULL) {
+        const CAmmo* ammo = weapon->GetActiveAmmo();
+        if (ammo != NULL) {
+            CBH_SurfaceManager* surfaces = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager;
+            XString icon = ammo->m_bulletIcon;
+            surfaces->ReleaseSurface(XString::AnsiString(icon.c_str()));
+        }
+    }
 }
 
 void GamePlayHUD::ReInitBulletIcon(CDH_Weapon* weapon)
@@ -1314,17 +1424,18 @@ void GamePlayHUD::ReInitBulletIcon(CDH_Weapon* weapon)
     if (weapon != NULL) {
         const CAmmo* ammo = weapon->GetActiveAmmo();
         if (ammo != NULL) {
-            App* app = static_cast<App*>(WindowApp::m_instance);
-            XString icon = ammo->m_bulletIcon;
-            m_bulletIcon = app->m_surfaceManager->CreateSurface(XString::AnsiString(icon.c_str()), true);
-            m_displayedAmmo = ammo;
+            CBH_SurfaceManager* surfaces = static_cast<App*>(WindowApp::m_instance)->m_surfaceManager;
+            {
+                XString icon = ammo->m_bulletIcon;
+                m_bulletIcon = surfaces->CreateSurface(XString::AnsiString(icon.c_str()), true);
+            }
+            m_ammo = ammo;
         }
     }
 }
 
 bool GamePlayHUD::isWeaponModelVisible() const
 {
-    // Outside the scope the model is always shown; in the scope only while it animates.
     if (!m_scoped) {
         return true;
     }
@@ -1347,10 +1458,11 @@ void GamePlayHUD::EnableDockCoverButton(bool enable)
 void GamePlayHUD::SetDockCoverButtonVisibility(bool hide)
 {
     if (m_coverButton != NULL) {
+        // the original only toggles visibility
         if (hide) {
-            m_coverButton->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
+            m_coverButton->ClearFlags(FLAG_VISIBLE);
         } else {
-            m_coverButton->SetFlags(FLAG_VISIBLE | FLAG_ENABLED);
+            m_coverButton->SetFlags(FLAG_VISIBLE);
         }
     }
 }
@@ -1362,184 +1474,43 @@ void GamePlayHUD::ChangeDockCoverButtonState()
     }
 }
 
-bool GamePlayHUD::ContainsFireButton(int x, int y) const
-{
-    return m_fireHitArea.checkCollision(x, y);
-}
-
 void GamePlayHUD::OnCommand(Event& event)
 {
-    if (event.m_id != 0x2ebf5358 && event.m_id != static_cast<int>(0x811575c5u)) {
-        return;
+    if (m_commandsReady) {
+        if (event.m_id == static_cast<int>(0x811575c5u)) {
+            static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->ChangeCover();
+            event.Clear();
+        } else if (event.m_id == 0x2ebf5358) {
+            CIngameShop* shop = new CIngameShop();
+            static_cast<App*>(WindowApp::m_instance)->m_mainLayer->AddModal(shop);
+        }
     }
-    if (!m_enabled) {
-        event.Clear();
-        return;
-    }
-    // The game owns the mission-state checks and the shop window's lifetime.
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    app->m_helper->m_swerveGame->OnCommand(event);
 }
 
 int GamePlayHUD::GetActiveWeaponIndex()
 {
-    CDH_Weapon* weapon01 = static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.GetGameData()->GetWeapon01(true);
+    CDH_Weapon* weapon01 = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon01(true);
     // The second weapon is fetched but not compared (original behaviour).
-    CDH_Weapon* weapon02 = static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.GetGameData()->GetWeapon02(true);
-    CDH_Weapon* active = static_cast<App*>(WindowApp::m_instance)->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon();
-    if (active == weapon01) {
-        return 0;
-    }
-    return 1;
-}
-
-int GamePlayHUD::PointerPressed(int x, int y, int pointer)
-{
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    if (!m_enabled) {
-        return -1;
-    }
-    CSwerveGame* game = app->m_helper->m_swerveGame;
-    CBH_Player* player = game->m_player;
-    if (player->IsInHide() || player->IsInProgress()) {
-        return -1;
-    }
-    if (app->m_settings->IsFireButtonEnabled() && ContainsFireButton(x, y)) {
-        m_fireHeld = true;
-        m_firePointer = pointer;
-        return 2;
-    }
-    bool hudVisible = app->m_settings->m_field1f;
-    if (hudVisible && player->CanRestoreHealth() && player->m_hp < player->GetMaxHp()
-        && Contains(m_medkitArea.m_bounds, x, y)) {
-        player->RestoreHealth();
-        return 4;
-    }
-    if (hudVisible && m_modelAnimationState == ModelReady && m_steadyRemainingMs > 0
-        && !m_steadyActive && Contains(m_steadyBounds, x, y)) {
-        CDH_Weapon* weapon = app->m_helper->m_gamePlayManager.GetGameData()->GetActiveWeapon();
-        if (weapon != NULL) {
-            game->m_usedSteadyAim = true;
-            m_steadyUsed = true;
-            m_steadyActive = true;
-            CGameAnalytics::logSteadyActivated(app->m_huntingInfo->m_assignedData.m_missionName, weapon->GetId());
-            return 0;
-        }
-    }
-    if (hudVisible && player->IsSpeedModeAvailable() && Contains(m_reactixArea.m_bounds, x, y)) {
-        if (player->GetReactixControlTimeSec() < 1) {
-            player->ConsumeGoPill();
-            CGameAnalytics::logItemUsed(XString("reactix"));
-        } else if (player->IsSpeedMode()) {
-            player->StopConsumeReactixControl();
-        } else {
-            player->StartConsumeReactixControl();
-            CGameAnalytics::logItemUsed(XString("reactix_control"));
-        }
-        return 1;
-    }
-    if (hudVisible && player->m_ultrasoundAttemptCount > 0 && Contains(m_ultrasoundArea.m_bounds, x, y)) {
-        player->ConsumeUltrasoundEmitter();
-        game->AddStunTimerMS(10000);
-        return 5;
-    }
-    CDH_BasicGameData* data = app->m_helper->m_gamePlayManager.GetGameData();
-    CDH_Weapon* weapon = data->GetActiveWeapon();
-    if (weapon == NULL) {
-        return -1;
-    }
-    if ((weapon->m_scopeAttached || weapon->m_zoomWithoutScope) && Contains(m_scopeBounds, x, y)) {
-        if (weapon->IsReadyForUse()) {
-            game->m_usedHudButton = true;
-            switchScope();
-        }
-        return 6;
-    }
-    if (!m_scoped && Contains(m_weaponBounds, x, y)) {
-        CDH_Weapon* first = data->GetWeapon01(true);
-        CDH_Weapon* second = data->GetWeapon02(true);
-        if (first != NULL && second != NULL && first != second) {
-            if (weapon->IsReadyForUse()) {
-                ResetFireButton();
-                weapon->ResetAutoShot();
-                switchWeapons();
-            }
-            return 6;
-        }
-    }
-    if (!m_scoped && m_reloadTouchArea.checkCollision(x, y)) {
-        const CAmmo* ammo = weapon->GetActiveAmmo();
-        if (ammo != NULL && weapon->IsReadyForUse() && !weapon->IsReloading()
-            && weapon->m_ammo < weapon->m_clipSize
-            && weapon->m_ammo < CBH_Player::GetInstance()->GetAvailableAmmo(ammo, true)) {
-            weapon->CheckForReload(true);
-        }
-        return 1;
-    }
-    return -1;
-}
-
-void GamePlayHUD::CheckContollStateOnPointerReleased(int, int, int pointer)
-{
-    if (IsFirePointer(pointer)) {
-        ResetFireButton();
-    }
-}
-
-void GamePlayHUD::CheckContollStateOnPointerMove(int x, int y, int, int, int pointer)
-{
-    if (IsFirePointer(pointer) && !ContainsFireButton(x, y)) {
-        ResetFireButton();
-    }
-}
-
-void GamePlayHUD::ResetFireButton()
-{
-    m_fireHeld = false;
-    m_firePointer = -1;
-}
-
-bool GamePlayHUD::IsFirePointer(int pointer) const
-{
-    return m_fireHeld && m_firePointer == pointer;
-}
-
-bool GamePlayHUD::IsFireHeld() const
-{
-    return m_fireHeld;
-}
-
-bool GamePlayHUD::IsSteadyAimActive() const
-{
-    return m_steadyActive;
-}
-
-bool GamePlayHUD::HasUsedSteadyAim() const
-{
-    return m_steadyUsed;
+    static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetWeapon02(true);
+    CDH_Weapon* active = static_cast<App*>(WindowApp::m_instance)->m_helper->GetGameData()->GetActiveWeapon();
+    return active != weapon01;
 }
 
 void GamePlayHUD::SetEnabled(bool enabled)
 {
+    m_inputEnabled = enabled;
     if (enabled) {
-        Show();
+        SetFlags(FLAG_ENABLED);
+        SetFlags(FLAG_EVENTS_TO_CHILDREN);
     } else {
-        Hide(false);
-        ResetFireButton();
+        ClearFlags(FLAG_ENABLED);
+        ClearFlags(FLAG_EVENTS_TO_CHILDREN);
     }
 }
 
-void GamePlayHUD::Show()
+void GamePlayHUD::BlinkIngameShop(int duration)
 {
-    m_enabled = true;
-}
-
-void GamePlayHUD::Hide(bool immediate)
-{
-    m_enabled = false;
-    if (immediate) {
-        m_visibilityAlpha = 0.0f;
-    }
+    m_ingameShop->Blink(duration);
 }
 
 typedef char AssertGamePlayHUDSize[sizeof(GamePlayHUD) == 0x330 ? 1 : -1];

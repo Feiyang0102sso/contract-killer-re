@@ -7,8 +7,10 @@
 typedef char CIAPCurrencySizeCheck[sizeof(CIAPCurrency) == 0x6c ? 1 : -1];
 
 CIAPCurrency::CIAPCurrency()
-    : CItem(0), m_available(false)
+    : CItem(0)
 {
+    // set after the string members, as in the original
+    m_available = false;
 }
 
 void CIAPCurrency::init(const TiXmlElement& element)

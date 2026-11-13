@@ -49,8 +49,10 @@ void CBH_GPSScan::Paint(int x, int y)
 CBH_GPSScan::~CBH_GPSScan()
 {
     DeleteScanAnimation();
-    delete m_instance;
-    m_instance = NULL;
+    if (m_instance != NULL) {
+        delete m_instance;
+        m_instance = NULL;
+    }
 }
 
 void CBH_GPSScan::DeleteScanAnimation()
@@ -59,6 +61,8 @@ void CBH_GPSScan::DeleteScanAnimation()
     SG_Instance* instance = app->m_sgInstance;
     App::IsHD();
     instance->DumpArchetypeCharacter(0, 0);
-    delete m_presenter;
-    m_presenter = NULL;
+    if (m_presenter != NULL) {
+        delete m_presenter;
+        m_presenter = NULL;
+    }
 }

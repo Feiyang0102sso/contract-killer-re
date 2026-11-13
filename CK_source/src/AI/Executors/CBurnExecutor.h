@@ -13,7 +13,9 @@ public:
         : IExecutor(mind), m_bodyPhase(Start), m_firePhase(Start),
           m_duration(duration), m_elapsed(0), m_damageElapsed(0), m_damage(damage), m_expired(false)
     {
-        // The original stores the animation pointer after the counters.
+        // The original clears the model handles and the animation pointer after the counters.
+        m_model.Clear();
+        m_fireRoot.Clear();
         m_fireAnimation = NULL;
     }
     virtual ~CBurnExecutor();

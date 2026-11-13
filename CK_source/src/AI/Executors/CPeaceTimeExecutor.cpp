@@ -10,37 +10,48 @@
 #include "CStdUtil_Cocoa.h"
 #include "CSwerveGame.h"
 #include "CUnit.h"
+#include "DGHelper.h"
 
 bool CPeaceTimeExecutor::m_alertSoundPlayed;
 
 CPeaceTimeExecutor::CPeaceTimeExecutor(CUnitMind* mind)
-    : IExecutor(mind), m_alertTime(0), m_idleNext(true), m_alerted(false), m_tryAttackPoint(false), m_ticks(0)
+    : IExecutor(mind), m_idleNext(true), m_alerted(false), m_tryAttackPoint(false), m_ticks(0)
 {
+    // the original constructor does not set m_alertTime
     m_alertSoundPlayed = false;
 }
 
 void CPeaceTimeExecutor::Tick(int)
 {
-    CSwerveGame* game = CSwerveGame::m_pInstance;
-    if (m_ticks < 2) {
-        ++m_ticks;
+    // Original 0xd14fc: after adding the alert child it falls through to the alert sound check
+    // (our old early finish of an animation-less alert child was not in the original).
+    CSwerveGame* game = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame;
+    bool missionAlert = game->m_missionAlert;
+    bool peaceTime = game->m_peaceTime;
+    int ticks = m_ticks;
+    if (ticks < 2) {
+        ticks++;
+        m_ticks = ticks;
     }
-    if (game == NULL || m_mind == NULL || (!game->m_missionAlert && game->m_peaceTime)) {
-        return;
-    }
-    if (!m_alerted && (game->m_missionAlert || m_mind->GetUnit()->m_type != UnitCivilian)) {
-        if (m_ticks < 2) {
-            Finish(EXECUTOR_RESULT_STUN_OVER);
-            return;
+    if ((missionAlert || !peaceTime) && m_mind != NULL) {
+        if ((missionAlert || (m_mind->GetUnit()->m_type != UnitCivilian && !peaceTime)) && !m_alerted) {
+            if (ticks < 2) {
+                Finish(EXECUTOR_RESULT_STUN_OVER);
+                return;
+            }
+            CancelChildren();
+            m_alerted = true;
+            AddAlertExecutor(m_mind);
+            m_alertTime = CStdUtil_Cocoa::GetUpTimeMS();
         }
-        CancelChildren();
-        m_alerted = true;
-        m_alertTime = CStdUtil_Cocoa::GetUpTimeMS();
-        AddAlertExecutor(m_mind);
-    }
-    if (!m_alertSoundPlayed && CStdUtil_Cocoa::GetUpTimeMS() - m_alertTime >= 801) {
-        PlayAlertSound();
-        m_alertSoundPlayed = true;
+        unsigned int now = CStdUtil_Cocoa::GetUpTimeMS();
+        if (!m_alertSoundPlayed) {
+            if (now - m_alertTime < 801) {
+                return;
+            }
+            PlayAlertSound();
+            m_alertSoundPlayed = true;
+        }
     }
 }
 
@@ -86,13 +97,13 @@ void CPeaceTimeExecutor::OnChildFinished(EExecutosResult result)
 
 void CPeaceTimeExecutor::ChooseFutherAction()
 {
-    bool idle = m_idleNext;
-    m_idleNext = !m_idleNext;
-    if (idle) {
+    // the original makes the call first and toggles the flag afterwards
+    if (m_idleNext) {
         SetPeaceIdleBehaviour();
     } else {
         MoveToNewPoint();
     }
+    m_idleNext = !m_idleNext;
 }
 
 void CPeaceTimeExecutor::OnStart()
@@ -102,21 +113,28 @@ void CPeaceTimeExecutor::OnStart()
 
 void CPeaceTimeExecutor::MoveToNewPoint()
 {
-    CUnitBody* body = m_mind->GetUnit()->GetBody();
-    const CGameAIMap* map = body->m_map;
-    if (map == NULL) {
-        SetPeaceIdleBehaviour();
+    // Original 0xd16a8: the walk starts from the cell of the current point (not the body's cell);
+    // while units are pre-simulated only ordinary points are used.
+    CUnit* unit = m_mind->GetUnit();
+    if (unit == NULL || unit->GetBody() == NULL) {
         return;
     }
-    int destination = body->m_pointId;
-    int camera = CSwerveGame::m_pInstance->GetCurrCamId();
-    if (m_tryAttackPoint) {
-        map->FindAnotherAttackPoint(camera, &destination, body->m_pointId);
+    CUnitBody* body = unit->GetBody();
+    int point = body->m_pointId;
+    int camera = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->GetCurrCamId();
+    int destination;
+    bool found;
+    if (!m_tryAttackPoint || static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_preSimulatingUnits) {
+        found = body->m_map->FindAnotherPoint(&destination, point);
     } else {
-        map->FindAnotherPoint(&destination, body->m_pointId);
+        found = body->m_map->FindAnotherAttackPoint(camera, &destination, point);
     }
+    if (!found) {
+        destination = point;
+    }
+    int cell = body->m_map->GetCellIdByPointId(point);
+    AddMovementExecutor(m_mind, cell, destination, false);
     m_tryAttackPoint = !m_tryAttackPoint;
-    AddMovementExecutor(m_mind, body->m_cellId, destination, false);
 }
 
 void CPeaceTimeExecutor::SetPeaceIdleBehaviour()

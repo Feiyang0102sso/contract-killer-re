@@ -185,6 +185,7 @@ void TiXmlNode::Clear()
 
 TiXmlNode* TiXmlNode::LinkEndChild( TiXmlNode* node )
 {
+#line 190 /* 对齐原版 tinyxml 的 assert __LINE__ */
 	assert( node->parent == 0 || node->parent == this );
 	assert( node->GetDocument() == 0 || node->GetDocument() == this->GetDocument() );
 
@@ -340,6 +341,7 @@ bool TiXmlNode::RemoveChild( TiXmlNode* removeThis )
 
 	if ( removeThis->parent != this )
 	{	
+#line 341 /* 对齐原版 tinyxml 的 assert __LINE__ */
 		assert( 0 );
 		return false;
 	}
@@ -800,6 +802,7 @@ void TiXmlElement::SetAttribute( const std::string& _name, const std::string& _v
 void TiXmlElement::Print( FILE* cfile, int depth ) const
 {
 	int i;
+#line 761 /* 对齐原版 tinyxml 的 assert __LINE__ */
 	assert( cfile );
 	for ( i=0; i<depth; i++ ) {
 		fprintf( cfile, "    " );
@@ -1154,6 +1157,7 @@ TiXmlNode* TiXmlDocument::Clone() const
 
 void TiXmlDocument::Print( FILE* cfile, int depth ) const
 {
+#line 1112 /* 对齐原版 tinyxml 的 assert __LINE__ */
 	assert( cfile );
 	for ( const TiXmlNode* node=FirstChild(); node; node=node->NextSibling() )
 	{
@@ -1306,6 +1310,7 @@ TiXmlComment& TiXmlComment::operator=( const TiXmlComment& base )
 
 void TiXmlComment::Print( FILE* cfile, int depth ) const
 {
+#line 1263 /* 对齐原版 tinyxml 的 assert __LINE__ */
 	assert( cfile );
 	for ( int i=0; i<depth; i++ )
 	{
@@ -1516,6 +1521,7 @@ TiXmlAttributeSet::TiXmlAttributeSet()
 
 TiXmlAttributeSet::~TiXmlAttributeSet()
 {
+#line 1472 /* 对齐原版 tinyxml 的 assert __LINE__ */
 	assert( sentinel.next == &sentinel );
 	assert( sentinel.prev == &sentinel );
 }

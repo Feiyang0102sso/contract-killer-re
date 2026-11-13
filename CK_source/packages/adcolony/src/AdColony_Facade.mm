@@ -15,13 +15,16 @@
          withV4VCPrePopup:(BOOL)prePopup andV4VCPostPopup:(BOOL)postPopup;
 @end
 
+// The original armv7 Objective-C ivar starts at offset 0x0c.
+typedef CFTimeInterval AdColonyVideoTime __attribute__((aligned(4)));
+
 @interface AdColony_Internal : NSObject
 {
 @public
-    NSMutableDictionary* zones;
     NSString* appID;
+    NSMutableDictionary* zones;
+    AdColonyVideoTime videoStartTime;
     AdColony_Facade::IVideoEndedCallbackDelegate* m_delegate;
-    CFTimeInterval videoStartTime;
     Class backend;
     NSString* playingZone;
 }

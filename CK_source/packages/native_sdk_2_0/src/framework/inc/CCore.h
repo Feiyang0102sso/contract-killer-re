@@ -15,18 +15,9 @@ public:
 
     CCore()
     {
-        m_classId = ClassId;
-        m_canSetDeviceOrientation[0] = 0;
-        m_canSetDeviceOrientation[1] = 1;
-        m_canSetDeviceOrientation[2] = 0;
-        m_canSetDeviceOrientation[3] = 0;
-        m_canSetDeviceOrientation[4] = 0;
-        m_applicationCanSetOrientation = 0;
+        // class id and the orientation table are set by ICCore()
         m_deviceOrientationSet = 0;
         m_deviceOrientation = DeviceOrientation_Portrait;
-        for (int index = 0; index < AutoRotation_Count; index++) {
-            m_autoRotationOrientationEnabled[index] = 0;
-        }
         m_windowToDisplayScale.x = 0x10000;
         m_windowToDisplayScale.y = 0x10000;
         m_displayToWindowScale.x = 0x10000;
@@ -73,49 +64,6 @@ public:
         return SetDeviceOrientation(DeviceOrientation_Default);
     }
 
-    virtual unsigned char ApplicationCanSelectivelyEnableAllAutoRotationOrientations() const
-    {
-        return m_autoRotationOrientationEnabled[AutoRotation_All];
-    }
-
-    virtual unsigned char ApplicationCanSelectivelyEnableAutoRotationOrientation(eAutoRotationOrientation orientation) const
-    {
-        return ApplicationCanSelectivelyEnableAllAutoRotationOrientations();
-    }
-
-    virtual unsigned char AutoRotationOrientationIsEnabled(eAutoRotationOrientation orientation) const
-    {
-        return m_autoRotationOrientationEnabled[orientation];
-    }
-
-    /** Enable one auto-rotation orientation; 0 when the application may not choose. */
-    virtual unsigned char AutoRotationOrientationEnable(eAutoRotationOrientation orientation)
-    {
-        if (!ApplicationCanSelectivelyEnableAutoRotationOrientation(orientation)) {
-            return 0;
-        }
-        if (m_autoRotationOrientationEnabled[orientation]) {
-            return 1;
-        }
-        m_autoRotationOrientationEnabled[orientation] = 1;
-        UpdateAutoRotationOrientation();
-        return 1;
-    }
-
-    /** Disable one auto-rotation orientation; 0 when the application may not choose. */
-    virtual unsigned char AutoRotationOrientationDisable(eAutoRotationOrientation orientation)
-    {
-        if (!ApplicationCanSelectivelyEnableAutoRotationOrientation(orientation)) {
-            return 0;
-        }
-        if (!m_autoRotationOrientationEnabled[orientation]) {
-            return 1;
-        }
-        m_autoRotationOrientationEnabled[orientation] = 0;
-        UpdateAutoRotationOrientation();
-        return 1;
-    }
-
     virtual const CVector2dx& GetDisplayToWindowScale() const
     {
         return m_displayToWindowScale;
@@ -125,9 +73,6 @@ public:
     {
         return m_windowToDisplayScale;
     }
-
-    /** Apply a change of the enabled auto-rotation orientations. */
-    virtual void UpdateAutoRotationOrientation() = 0;
 
 private:
     /** Orientation one quarter turn to the left of `orientation`. */

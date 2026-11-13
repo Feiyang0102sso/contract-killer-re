@@ -130,7 +130,8 @@ int AppSettings::Load()
 int AppSettings::Save()
 {
     if (!App::IsEnoughFreeSpace() && WindowApp::m_instance->m_desktop != NULL) {
-        WindowApp::AddModal(new SimpleMessage(Window::ResString("IDS_NO_FREESPACE_WARNING"), 0));
+        // the original passes a NULL resource id (original bug, kept)
+        WindowApp::AddModal(new SimpleMessage(Window::ResString(NULL), 0));
         return 0;
     }
     int result = 0;
@@ -246,6 +247,7 @@ void AppSettings::SetSoundEnabled(bool enabled)
     if (!enabled) {
         ((App*)WindowApp::m_instance)->m_soundManager->StopAllSounds();
     }
+    CGameAnalytics::logSoundSwitch(enabled);
 }
 
 bool AppSettings::IsMusicEnabled() const
@@ -259,6 +261,7 @@ void AppSettings::SetMusicEnabled(bool enabled)
     if (!enabled) {
         ((App*)WindowApp::m_instance)->m_soundManager->StopAllMusic();
     }
+    CGameAnalytics::logMusicSwitch(enabled);
 }
 
 bool AppSettings::IsVibrationEnabled() const

@@ -1,5 +1,7 @@
 // CK game-side gServe notifications.
 #include "CNotificationHandler.h"
+#include "AdBannerSizes.h"
+#include "ICInAppPurchase.h"
 #include "App.h"
 #include "CBHFriend.h"
 #include "CBH_Player.h"
@@ -376,13 +378,10 @@ unsigned char CNotificationHandler::HandleGameSpecificMessage(long long type, co
 
 void CNotificationHandler::RemoveGameSpecificMessage(int messageId)
 {
-    if (messageId >= 0) {
-        CNGSFromServerMessageQ* queue = CNGS::GetInstance()->GetLocalUser()->m_messageQueue;
-        CNGSFromServerMessage* message = queue->GetMessageById(messageId);
-        if (queue->MarkMessageForAck(messageId)) {
-            m_giftMessageIds.Remove(messageId);
-            delete message;
-        }
+    // the original looks the message up only after acknowledging it and keeps the gift id list
+    CNGSFromServerMessageQ* queue = CNGS::GetInstance()->GetLocalUser()->m_messageQueue;
+    if (messageId >= 0 && queue->MarkMessageForAck(messageId)) {
+        delete queue->GetMessageById(messageId);
     }
 }
 

@@ -2,16 +2,9 @@
 #ifndef CGRAPHICS_HAL_H
 #define CGRAPHICS_HAL_H
 
-#include "CGraphicsAbstract.h"
-#include "CSingleton.h"
+#include "CGraphicsSingleton.h"
 
 class CGraphics_OGLES_Cocoa;
-
-class CGraphicsSingleton : public CGraphicsAbstract, public CSingleton {
-public:
-    CGraphicsSingleton() : CSingleton(ICGraphics::ClassId) {}
-    virtual ~CGraphicsSingleton();
-};
 
 class CGraphics_HAL : public CGraphicsSingleton {
 public:

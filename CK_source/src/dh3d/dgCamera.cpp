@@ -15,6 +15,15 @@ typedef ::Group Group;
 typedef int (*SetVector)(IQueryInterface*, const float*);
 typedef int (*SetChild)(IQueryInterface*, IQueryInterface*);
 typedef int (*SetRendering)(IQueryInterface*, bool);
+
+float AimAngleFromSlope(float slope)
+{
+    // The original fixed-point series is accurate near the scope center.
+    if (fabsf(slope) <= 1.0f) {
+        return Fixed::toFloat(Fixed::rad2grad(Fixed::atan(Fixed::fromFloat(slope))));
+    }
+    return atanf(slope) * 57.2957795f;
+}
 }
 
 DGCamera::DGCamera(Camera camera, float horizontalLimit, float verticalLimit)
@@ -455,9 +464,16 @@ void DGCamera::CheckConstraints()
 void DGCamera::SetTargetPoint(float x, float y)
 {
     vec3 nearPoint = DGHelper::GetPointOnNear(x, y, m_camera);
-    const float degreesPerRadian = 57.2957795f;
-    float horizontal = atanf(nearPoint.m_x / nearPoint.m_z) * degreesPerRadian;
-    float vertical = atanf(nearPoint.m_y / nearPoint.m_z) * degreesPerRadian;
+    if (nearPoint.m_z == 0.0f) {
+        return;
+    }
+    float horizontalSlope = nearPoint.m_x / nearPoint.m_z;
+    float verticalSlope = nearPoint.m_y / nearPoint.m_z;
+    if (!isfinite(horizontalSlope) || !isfinite(verticalSlope)) {
+        return;
+    }
+    float horizontal = AimAngleFromSlope(horizontalSlope);
+    float vertical = AimAngleFromSlope(verticalSlope);
     if (horizontal >= 0) {
         rotateLeft(horizontal, false);
     } else {

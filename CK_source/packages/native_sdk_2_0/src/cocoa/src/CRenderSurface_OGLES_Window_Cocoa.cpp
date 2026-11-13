@@ -15,6 +15,7 @@
 
 // Color depth (bits) up to which the window uses 16 bit color.
 static const unsigned int Window_MaxHighColorBits = 0x10;
+typedef char WindowSurfaceSizeCheck[sizeof(CRenderSurface_OGLES_Window_Cocoa) == 0x50 ? 1 : -1];
 
 CRenderSurface_OGLES_Window_Cocoa::CRenderSurface_OGLES_Window_Cocoa()
 {
@@ -27,9 +28,7 @@ CRenderSurface_OGLES_Window_Cocoa::CRenderSurface_OGLES_Window_Cocoa()
     m_multisampleFramebuffer = 0;
     m_multisampleColorRenderbuffer = 0;
     m_multisampleDepthRenderbuffer = 0;
-    m_framebufferStatus = FramebufferStatus_None;
     m_lockCount = 0;
-    m_keepContext = 0;
 }
 
 CRenderSurface_OGLES_Window_Cocoa::~CRenderSurface_OGLES_Window_Cocoa()
@@ -41,12 +40,10 @@ void CRenderSurface_OGLES_Window_Cocoa::Destroy()
 {
     DestroyFrameBuffer();
     CRenderSurface_OGLES_Texture::Destroy();
-    if (m_context != NULL && !m_keepContext) {
-        CGraphics_OGLES_Cocoa_SetCurrentContext(NULL);
+    if (m_context != NULL) {
         CGraphics_OGLES_Cocoa_ReleaseContext(m_context);
         m_context = NULL;
     }
-    m_keepContext = 0;
 }
 
 unsigned char CRenderSurface_OGLES_Window_Cocoa::Initialize(const InitParam* params)
@@ -56,8 +53,7 @@ unsigned char CRenderSurface_OGLES_Window_Cocoa::Initialize(const InitParam* par
     formats[Buffer_Depth] = RSBFormat_None;
     formats[Buffer_Stencil] = RSBFormat_None;
     if (m_context != NULL) {
-        // initialized again while the context lives (it is kept by the next Destroy)
-        m_keepContext = 1;
+        // Repeated initialization keeps the current context and framebuffer.
         return 1;
     }
     Destroy();
@@ -106,22 +102,6 @@ unsigned char CRenderSurface_OGLES_Window_Cocoa::Initialize(const InitParam* par
             m_flags = (m_flags & ~Flag_MultisampleMask) | multisample;
             break;
         }
-        case InitParam_MagFilter:
-            if (param->m_value != Filter_Linear && param->m_value != Filter_Nearest) {
-                failed = 1;
-            } else {
-                m_magFilter = param->m_value;
-            }
-            break;
-        case InitParam_MinFilter:
-            m_minFilter = param->m_value;
-            break;
-        case InitParam_WrapS:
-            m_wrapS = param->m_value;
-            break;
-        case InitParam_WrapT:
-            m_wrapT = param->m_value;
-            break;
         }
     }
     // the window always has a 16 bit depth buffer
@@ -129,12 +109,12 @@ unsigned char CRenderSurface_OGLES_Window_Cocoa::Initialize(const InitParam* par
     formats[Buffer_Depth] = RSBFormat_Depth16;
 
     if (!failed && (m_flags & (Flag_HasColorFormat | Flag_Window)) == (Flag_HasColorFormat | Flag_Window)) {
-        // keep the bindings of the caller (the original reads the renderbuffer binding twice)
+        // Keep the bindings of the caller. CK originally reads the renderbuffer binding twice.
         GLint previousFramebuffer = 0;
         GLint previousRenderbuffer = 0;
-        glGetIntegerv(GL_RENDERBUFFER_BINDING_OES, &previousFramebuffer);
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING_OES, &previousFramebuffer);
         glGetIntegerv(GL_RENDERBUFFER_BINDING_OES, &previousRenderbuffer);
-        CGraphics_OGLES* graphics = CGraphics_OGLES::GetHardware();
+        CGraphics_OGLES_Cocoa* graphics = static_cast<CGraphics_OGLES_Cocoa*>(CGraphics_OGLES::GetHardware());
         RSBFormat contextFormat = RSBFormat_A8B8G8R8;
         if (graphics->m_colorBits <= Window_MaxHighColorBits) {
             contextFormat = RSBFormat_R5G6B5;
@@ -144,9 +124,7 @@ unsigned char CRenderSurface_OGLES_Window_Cocoa::Initialize(const InitParam* par
             return 0;
         }
         graphics->SetCurrentContext(m_context);
-        InitializeFrameBuffer();
-        if (m_framebufferStatus == FramebufferStatus_StorageFailed ||
-            m_framebufferStatus == FramebufferStatus_Incomplete) {
+        if (!InitializeFrameBuffer()) {
             Destroy();
             glBindRenderbufferOES(GL_RENDERBUFFER_OES, previousRenderbuffer);
             glBindFramebufferOES(GL_FRAMEBUFFER_OES, previousFramebuffer);
@@ -242,7 +220,6 @@ unsigned char CRenderSurface_OGLES_Window_Cocoa::InitializeFrameBuffer()
     glGenRenderbuffersOES(1, &m_colorRenderbuffer);
     glBindRenderbufferOES(GL_RENDERBUFFER_OES, m_colorRenderbuffer);
     if (!CGraphics_OGLES_Cocoa_RenderBufferStorage(CApplet::m_eaglLayer, m_context)) {
-        m_framebufferStatus = FramebufferStatus_StorageFailed;
         return 0;
     }
     glGenFramebuffersOES(1, &m_framebuffer);
@@ -257,7 +234,6 @@ unsigned char CRenderSurface_OGLES_Window_Cocoa::InitializeFrameBuffer()
     glRenderbufferStorageOES(GL_RENDERBUFFER_OES, GL_DEPTH_COMPONENT16_OES, width, height);
     glFramebufferRenderbufferOES(GL_FRAMEBUFFER_OES, GL_DEPTH_ATTACHMENT_OES, GL_RENDERBUFFER_OES, m_depthRenderbuffer);
     if (glCheckFramebufferStatusOES(GL_FRAMEBUFFER_OES) != GL_FRAMEBUFFER_COMPLETE_OES) {
-        m_framebufferStatus = FramebufferStatus_Incomplete;
         return 0;
     }
 
@@ -287,7 +263,6 @@ unsigned char CRenderSurface_OGLES_Window_Cocoa::InitializeFrameBuffer()
     GLsizei samples;
     switch (multisample) {
     case 0:
-        m_framebufferStatus = FramebufferStatus_Complete;
         return 1;
     case 1:
         samples = 2;
@@ -332,7 +307,6 @@ unsigned char CRenderSurface_OGLES_Window_Cocoa::InitializeFrameBuffer()
         }
         m_flags &= ~Flag_MultisampleMask;
     }
-    m_framebufferStatus = FramebufferStatus_Complete;
     return 1;
 }
 
@@ -362,35 +336,4 @@ void CRenderSurface_OGLES_Window_Cocoa::DestroyFrameBuffer()
         glDeleteFramebuffersOES(1, &m_framebuffer);
         m_framebuffer = 0;
     }
-    m_framebufferStatus = FramebufferStatus_None;
-}
-
-void CRenderSurface_OGLES_Window_Cocoa::BindFrameBuffer()
-{
-    if (m_multisampleFramebuffer != 0) {
-        glBindFramebufferOES(GL_FRAMEBUFFER_OES, m_multisampleFramebuffer);
-        glBindRenderbufferOES(GL_RENDERBUFFER_OES, m_multisampleColorRenderbuffer);
-    } else {
-        glBindFramebufferOES(GL_FRAMEBUFFER_OES, m_framebuffer);
-        glBindRenderbufferOES(GL_RENDERBUFFER_OES, m_colorRenderbuffer);
-    }
-}
-
-void CRenderSurface_OGLES_Window_Cocoa::RemoveSelfAsTarget()
-{
-    CGraphics_OGLES* graphics = CGraphics_OGLES::GetHardware();
-    if (this == graphics->m_target) {
-        glBindFramebufferOES(GL_FRAMEBUFFER_OES, 0);
-        glBindRenderbufferOES(GL_RENDERBUFFER_OES, 0);
-    }
-}
-
-unsigned char CRenderSurface_OGLES_Window_Cocoa::SaveStateForFutureRecreation()
-{
-    return 1;
-}
-
-unsigned char CRenderSurface_OGLES_Window_Cocoa::Recreate()
-{
-    return 1;
 }

@@ -64,7 +64,7 @@ public:
     void CNGSHandleContentUploadResponse(CObjectMap* response, CNGSContentRequestFunctor* functor);
     /** Upload a CProfileManager collection; the result goes back to the profile manager. */
     void UploadProfileContent(const char* fileName, const unsigned char* data, int size, CSaveRestoreInterface* profileData);
-    void GetProfileContentSelf(const char* fileName, CSaveRestoreInterface* profileData);
+    unsigned char GetProfileContentSelf(const char* fileName, CSaveRestoreInterface* profileData);
     void GetRemoteUserContentFriend(int userId, const char* fileName);
     void Lock();
     void Unlock();

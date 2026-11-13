@@ -4,15 +4,18 @@
 #include "CXmlHelper.h"
 
 CEnergy::CEnergy()
-    : CItem(0), m_energy(0)
+    : CItem(0)
 {
+    // the original leaves m_energy for ParseStats()
 }
 
-void CEnergy::setAvailable(bool)
+void CEnergy::setAvailable(bool available)
 {
-    CBH_Player* player = CBH_Player::GetInstance();
-    player->AddEnergy(m_energy, true);
-    player->m_gameStats.AddEnergyBought(m_energy);
+    // the original only acts on true and caps the energy at the maximum
+    if (available) {
+        CBH_Player::GetInstance()->AddEnergy(m_energy, false);
+        CBH_Player::GetInstance()->m_gameStats.AddEnergyBought(m_energy);
+    }
 }
 
 void CEnergy::ParseStats(const TiXmlElement& stats)

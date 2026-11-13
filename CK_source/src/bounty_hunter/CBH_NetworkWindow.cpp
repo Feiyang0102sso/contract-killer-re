@@ -24,6 +24,7 @@
 #include "CTutorialManager.h"
 #include "DGHelper.h"
 #include "GameCenter_Facade.h"
+#include "SScreenAdaptingConstant.h"
 
 namespace {
 const int SelectFirstSlot = 0x69b54947;
@@ -45,26 +46,6 @@ MenuButtonDesc BUTTON_DESCRIPTION[] = {
     { "IDB_BUTTON_GLOBALNAV", OpenGlobalNav, "IDS_BUTTON_GLOBALNAV" }
 };
 
-TextWindow* AddLabel(Window* parent, const XString& text, int font, int x, int y, int width, int height)
-{
-    TextWindow* label = new TextWindow(CFontMgr::GetInstance()->GetFont(font));
-    label->SetLayoutType(Window::LAYOUT_NONE);
-    label->SetRect(x, y, width, height, false);
-    label->SetText(text);
-    label->ClearFlags(Window::FLAG_FOCUSABLE);
-    parent->AddToFront(label);
-    return label;
-}
-
-CBH_ProgressBar* AddProfileBar(Window* parent, int color, const char* icon, int x, int y, int width)
-{
-    CBH_ProgressBar* bar = new CBH_ProgressBar(color, width, -1);
-    bar->SetDescImage(icon);
-    bar->SetCorner(x, y);
-    bar->ClearFlags(Window::FLAG_FOCUSABLE);
-    parent->AddToFront(bar);
-    return bar;
-}
 }
 
 CBH_NetworkWindow* CBH_NetworkWindow::m_pInstance;
@@ -76,18 +57,75 @@ CBH_NetworkWindow::CBH_NetworkWindow()
     App* app = static_cast<App*>(WindowApp::m_instance);
     m_upperBackground = app->m_surfaceManager->CreateSurface("IDB_MENU_HONEYCOMD_UP", true);
     SetTitleText(ResString("IDS_TAB_NAME_NETWORK"));
-    CreateAvatarWindow();
-    CreateInfoWindow();
-    CreateBarsWindow();
-    CreateWeaponWindow(0, "IDS_MENU_WEAPON_SLOT1", SelectFirstSlot);
-    CreateWeaponWindow(1, "IDS_MENU_WEAPON_SLOT2", SelectSecondSlot);
-    m_swapButton = CreateMenuButton("IDB_HUD_WEAPON_SWITCH_BUTTON", SwapCommand);
-    m_swapButton->SetCorner((m_content->m_width - m_swapButton->m_width) / 2, m_content->m_height * 3 / 5);
-    m_content->AddToFront(m_swapButton);
-    CreateMenuBar();
+
+    int profileHeight = 55;
+    int weaponHeight = 35;
+    if (App::IsWVGA()) {
+        profileHeight = 50;
+        weaponHeight = 32;
+    }
+    Window* profile = new Window(false);
+    profile->SetPercentHeight(profileHeight, 0, 0);
+    m_content->AddToFront(profile, 0, 0);
+
+    Window* avatarColumn = new Window(false);
+    avatarColumn->SetPercentWidth(25, 0, 0);
+    avatarColumn->SetPercentHeight(100, 0, 0);
+    avatarColumn->AddToFront(CreateAvatarWindow());
+    profile->AddToFront(avatarColumn, 0, 0);
+
+    Window* infoColumn = new Window(false);
+    infoColumn->SetPercentWidth(25, 0, 0);
+    Window* info = CreateInfoWindow();
+    info->SetPercentHeight(100, 0, 0);
+    info->SetPercentWidth(100, 0, 0);
+    info->SetLayoutType(LAYOUT_SIMPLE);
+    info->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+    infoColumn->AddToFront(info);
+    profile->AddToFront(infoColumn, 1, 0);
+
+    Window* barsColumn = new Window(false);
+    barsColumn->SetPercentWidth(50, 0, 0);
+    barsColumn->AddToFront(CreateBarsWindow());
+    profile->AddToFront(barsColumn, 2, 0);
+
+    Window* weaponRow = new Window(false);
+    weaponRow->SetPercentHeight(weaponHeight, 0, 0);
+    Window* firstColumn = new Window(false);
+    firstColumn->SetPercentWidth(35, 0, 0);
+    Window* firstSlot = CreateWeaponWindow(0, "IDS_MENU_WEAPON_SLOT1", SelectFirstSlot);
+    firstSlot->SetWidthByContent(0, 0);
+    firstSlot->SetHeightByContent(0, 0);
+    firstSlot->SetLayoutType(LAYOUT_SIMPLE);
+    firstSlot->SetAlign(ALIGN_RIGHT | ALIGN_BOTTOM);
+    firstColumn->AddToFront(firstSlot);
+    weaponRow->AddToFront(firstColumn, 0, 0);
+
+    Window* swapColumn = new Window(false);
+    swapColumn->SetPercentWidth(10, 0, 0);
+    swapColumn->AddToFront(new Window(false), 0, 0);
+    swapColumn->FindCell(0, 0)->SetPercentHeight(25, 0, 0);
+    CImageButton* swap = CreateSwapWeaponsWindow(SwapCommand);
+    swap->m_debugFrame = true;
+    swapColumn->AddToFront(swap, 0, 1);
+    weaponRow->AddToFront(swapColumn, 1, 0);
+
+    Window* secondColumn = new Window(false);
+    secondColumn->SetPercentWidth(35, 0, 0);
+    Window* secondSlot = CreateWeaponWindow(1, "IDS_MENU_WEAPON_SLOT2", SelectSecondSlot);
+    secondSlot->SetWidthByContent(0, 0);
+    secondSlot->SetHeightByContent(0, 0);
+    secondSlot->SetLayoutType(LAYOUT_SIMPLE);
+    secondSlot->SetAlign(ALIGN_LEFT | ALIGN_BOTTOM);
+    secondColumn->AddToFront(secondSlot);
+    weaponRow->AddToFront(secondColumn, 2, 0);
+    m_content->AddToFront(weaponRow, 0, 1);
+
     m_notificationLayer = new Window(false);
     m_notificationLayer->ClearFlags(FLAG_FOCUSABLE | FLAG_ENABLED);
     AddToFront(m_notificationLayer);
+    m_content->AddToFront(CreateMenuBar(), 0, 2);
+    m_content->FindCell(0, 2)->SetPercentHeight(30, 0, 0);
 }
 
 CBH_NetworkWindow::~CBH_NetworkWindow()
@@ -100,92 +138,147 @@ CBH_NetworkWindow::~CBH_NetworkWindow()
 
 CBH_NetworkWindow* CBH_NetworkWindow::GetInstance()
 {
-    if (m_pInstance == NULL || (m_pInstance->m_flags & (FLAG_CLOSING | FLAG_DEAD)) != 0) {
-        return new CBH_NetworkWindow();
+    // the original does not look at the window flags
+    if (m_pInstance == NULL) {
+        m_pInstance = new CBH_NetworkWindow();
     }
     return m_pInstance;
 }
 
 void CBH_NetworkWindow::ReleaseResources()
 {
-    if (m_upperBackground != NULL) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        app->m_surfaceManager->ReleaseSurface(m_upperBackground);
-        m_upperBackground = NULL;
-    }
+    // the original releases the surface by its resource name and keeps the pointer
+    static_cast<App*>(WindowApp::m_instance)->m_surfaceManager->ReleaseSurface("IDB_MENU_HONEYCOMD_UP");
 }
 
 void CBH_NetworkWindow::Paint(ICGraphics2d& graphics)
 {
-    CBaseScreen::Paint(graphics);
-    DrawTileImageHoriz(graphics, m_upperBackground, 0, GetTitleBarHeight(), m_width);
+    if (!CBH_GPSMap::weaponIsPainting) {
+        CBaseScreen::Paint(graphics);
+    }
 }
 
-void CBH_NetworkWindow::CreateAvatarWindow()
+Window* CBH_NetworkWindow::CreateAvatarWindow()
 {
+    Window* panel = new Window(false);
+    panel->SetHeightByContent(0, 0);
+    panel->SetPercentWidth(100, 0, 0);
+    panel->SetLayoutType(LAYOUT_SIMPLE);
+    panel->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
     const CAvatar* avatar = CBH_Player::GetInstance()->m_avatar;
     const char* resource = "IDB_FRAME_SELECTED";
-    if (avatar != NULL) {
+    if (avatar != NULL && avatar->m_imageResId != NULL) {
         resource = avatar->m_imageResId;
     }
     m_avatar = CreateMenuButton(resource, OpenAvatar);
-    m_avatar->SetCorner((m_content->m_width / 4 - m_avatar->m_width) / 2, 6 * App::Scale());
+    m_avatar->SetLayoutType(LAYOUT_SIMPLE);
+    m_avatar->SetAlign(ALIGN_HCENTER | ALIGN_TOP);
     m_avatar->setPressedImage("IDB_FRAME_SELECTED");
     m_avatar->SetBlinkingImage("IDB_FRAME_SELECTED");
-    m_content->AddToFront(m_avatar);
+    panel->AddToFront(m_avatar);
+    return panel;
 }
 
-void CBH_NetworkWindow::CreateInfoWindow()
+Window* CBH_NetworkWindow::CreateInfoWindow()
 {
-    int width = m_content->m_width / 4;
-    int scale = App::Scale();
-    m_profileInfo = AddLabel(m_content, XString(), 15, width, 8 * scale, width, 45 * scale);
-    m_inventory = AddLabel(m_content, XString(), 15, width, 55 * scale, width, 62 * scale);
+    Window* panel = new Window(false);
+    panel->SetPercentHeight(50, 0, 0);
+    CBH_Player* player = CBH_Player::GetInstance();
+    CFontMgr* fonts = CFontMgr::GetInstance();
+    TextWindow* name = new TextWindow(player->m_playerName, fonts->GetFont(11));
+    name->SetAlign(ALIGN_LEFT | ALIGN_BOTTOM);
+    panel->AddToFront(name, 0, 0);
+
+    XString levelText = XString::Format(ResString("IDS_SAFEHOUSE_LEVEL").c_str(), player->GetLevel());
+    TextWindow* level = new TextWindow(levelText, fonts->GetFont(11));
+    level->SetAlign(ALIGN_LEFT);
+    panel->AddToFront(level, 0, 1);
+
+    XString contractText = XString::Format(ResString("IDS_SAFEHOUSE_CONTRACTS").c_str(),
+                                           player->m_gameStats.m_successBounties);
+    TextWindow* contracts = new TextWindow(contractText, fonts->GetFont(12));
+    contracts->SetAlign(ALIGN_LEFT | ALIGN_TOP);
+    panel->AddToFront(contracts, 0, 2);
+
+    m_inventory = new TextWindow(fonts->GetFont(13));
+    m_inventory->SetAlign(ALIGN_LEFT | ALIGN_TOP);
+    panel->AddToFront(m_inventory, 0, 3);
+    UpdateOtherText();
+    return panel;
 }
 
-void CBH_NetworkWindow::CreateBarsWindow()
+Window* CBH_NetworkWindow::CreateBarsWindow()
 {
-    int scale = App::Scale();
-    int x = m_content->m_width / 2 + 12 * scale;
-    int width = m_content->m_width - x - 18 * scale;
-    int y = 3 * scale;
-    m_experience = AddProfileBar(m_content, 3, "IDB_HUD_ICON_EXP", x, y, width);
-    m_experience->m_displayFlags |= CBH_ProgressBar::MANUAL_PERCENT;
-    y += m_experience->m_height;
-    if (CBH_Player::GetInstance()->IsEnegyEnabled()) {
-        m_energy = AddProfileBar(m_content, 4, "IDB_HUD_ICON_ENERGY", x, y, width);
-        y += m_energy->m_height;
+    Window* panel = new Window(false);
+    int width = App::Scale() * 120;
+    int topSpacing = SScreenAdaptingConstant(25, 70)();
+    int bottomSpacing = SScreenAdaptingConstant(25, 50)();
+    CBH_Player* player = CBH_Player::GetInstance();
+
+    m_experience = new CBH_ProgressBar(3, width, -1);
+    m_experience->SetDescImage("IDB_HUD_ICON_EXP");
+    m_experience->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT | CBH_ProgressBar::MANUAL_PERCENT;
+    m_experience->SetOutsetSpacing(topSpacing, 0, 0, 0);
+    panel->AddToFront(m_experience, 0, 0);
+    if (player->IsEnegyEnabled()) {
+        m_energy = new CBH_ProgressBar(0, width, -1);
+        m_energy->SetMaxValue(player->GetMaxEnergy());
+        m_energy->SetCurrValue(player->m_energy);
+        m_energy->SetDescImage("IDB_HUD_ICON_ENERGY");
+        m_energy->SetOutsetSpacing(topSpacing, 0, 0, 0);
+        panel->AddToFront(m_energy, 1, 0);
     }
-    m_money = AddProfileBar(m_content, 3, "IDB_HUD_ICON_MONEY", x, y, width);
+    m_money = new CBH_ProgressBar(0, width, -1);
     m_money->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT | CBH_ProgressBar::HIDE_FILL;
-    y += m_money->m_height;
-    m_creditsBar = AddProfileBar(m_content, 3, "IDB_HUD_ICON_CREDITS", x, y, width);
+    m_money->SetTextAlign(TEXT_ALIGN_RIGHT);
+    m_money->SetCurrValue(player->m_cash);
+    m_money->SetDescImage("IDB_HUD_ICON_MONEY");
+    m_money->SetOutsetSpacing(0, 0, bottomSpacing, 0);
+    panel->AddToFront(m_money, 0, 1);
+
+    m_creditsBar = new CBH_ProgressBar(0, width, -1);
     m_creditsBar->m_displayFlags = CBH_ProgressBar::DISPLAY_CURRENT | CBH_ProgressBar::HIDE_FILL;
+    m_creditsBar->SetTextAlign(TEXT_ALIGN_RIGHT);
+    m_creditsBar->SetCurrValue(player->m_credits);
+    m_creditsBar->SetDescImage("IDB_HUD_ICON_CREDITS");
+    m_creditsBar->SetOutsetSpacing(0, 0, bottomSpacing, 0);
+    panel->AddToFront(m_creditsBar, 1, 1);
+    return panel;
 }
 
-void CBH_NetworkWindow::CreateWeaponWindow(int slot, const char* title, unsigned int command)
+Window* CBH_NetworkWindow::CreateWeaponWindow(int slot, const char* title, unsigned int command)
 {
-    int width = m_content->m_width * 35 / 100;
-    int x = m_content->m_width / 10 + slot * (m_content->m_width * 45 / 100);
-    int y = m_content->m_height / 2;
-    int titleHeight = 17 * App::Scale();
-    AddLabel(m_content, ResString(title), 9, x, y, width, titleHeight);
+    Window* panel = new Window(false);
+    CFontMgr* fonts = CFontMgr::GetInstance();
+    TextWindow* caption = new TextWindow(ResString(title), fonts->GetFont(9));
+    caption->SetAlign(ALIGN_HCENTER | ALIGN_VCENTER);
+    panel->AddToFront(caption, 0, 0);
+
     CBH_WeaponButton* button = new CBH_WeaponButton(0, slot, true, false, 0);
     button->m_command = command;
-    button->SetCorner(x, y + titleHeight);
-    button->ShowName();
+    button->m_commandParameter1 = 0;
+    button->m_commandParameter2 = 0;
+    button->m_commandParameter3 = 0;
+    panel->AddToFront(button, 0, 1);
+
+    CDH_Weapon* weapon = button->Weapon();
+    XString weaponName;
+    if (weapon != NULL) {
+        weaponName = weapon->GetName();
+    }
+    TextWindow* label = new TextWindow(weaponName, fonts->GetFont(15));
+    label->SetLayoutType(LAYOUT_SIMPLE);
+    label->SetAlign(ALIGN_HCENTER | ALIGN_BOTTOM);
+    button->AddToFront(label);
     m_weaponButtons[slot] = button;
-    m_weaponLabels[slot] = NULL;
-    m_weapons[slot] = NULL;
-    m_content->AddToFront(button);
+    m_weaponLabels[slot] = label;
+    m_weapons[slot] = weapon;
+    return panel;
 }
 
-void CBH_NetworkWindow::CreateMenuBar()
+Window* CBH_NetworkWindow::CreateMenuBar()
 {
     Window* container = new Window(false);
-    int height = 30 * m_content->m_height / 100;
-    container->SetLayoutType(LAYOUT_NONE);
-    container->SetRect(0, m_content->m_height - height, m_content->m_width, height, false);
     CBH_MainMenuBar* bar = new CBH_MainMenuBar(-1, -1, -1, -1);
     bar->SetPercentHeight(100, 0, 0);
     bar->SetPercentWidth(100, 0, 0);
@@ -195,8 +288,8 @@ void CBH_NetworkWindow::CreateMenuBar()
     const int count = sizeof(BUTTON_DESCRIPTION) / sizeof(BUTTON_DESCRIPTION[0]);
     for (int index = 0; index < count; ++index) {
         // The original allocates the copy first; a skipped leaderboard entry leaks it.
-        MenuButtonDesc* description = new MenuButtonDesc;
         if (index != 3 || GameCenter_Facade::GetInstance()->isGameCenterSupported() == true) {
+            MenuButtonDesc* description = new MenuButtonDesc;
             *description = BUTTON_DESCRIPTION[index];
             descriptions.addElement(description);
         }
@@ -204,19 +297,25 @@ void CBH_NetworkWindow::CreateMenuBar()
     bar->SetButtons(descriptions);
     SAFE_DELETE_VECTOR(descriptions);
     container->AddToFront(bar);
-    m_content->AddToFront(container);
+    return container;
 }
 
 void CBH_NetworkWindow::Init()
 {
-    CBaseScreen::Init();
-    Update();
+    CGameAnalytics::logSafehouseEnter();
 }
 
 void CBH_NetworkWindow::OnGetFocus()
 {
-    m_showingShop = false;
-    if (CTutorialManager::IsPlayerInTutorial()) {
+    const CAvatar* avatar = CBH_Player::GetInstance()->m_avatar;
+    if (avatar != NULL && avatar->m_imageResId != NULL) {
+        m_avatar->setImage(avatar->m_imageResId);
+    }
+    if (m_showingShop) {
+        m_showingShop = false;
+        CGameAnalytics::logSafehouseEnter();
+    }
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial()) {
         WindowApp::HandleTunnelCommand(-0x4b9aa0d3, 0, 0, 0);
     }
 }
@@ -227,6 +326,11 @@ void CBH_NetworkWindow::UpdateWeaponNames()
         CDH_Weapon* weapon = m_weaponButtons[slot]->Weapon();
         if (m_weapons[slot] != weapon) {
             m_weaponButtons[slot]->Update();
+            XString name;
+            if (weapon != NULL) {
+                name = weapon->GetName();
+            }
+            m_weaponLabels[slot]->SetText(name);
             m_weapons[slot] = weapon;
         }
     }
@@ -235,17 +339,12 @@ void CBH_NetworkWindow::UpdateWeaponNames()
 void CBH_NetworkWindow::UpdateOtherText()
 {
     CBH_Player* player = CBH_Player::GetInstance();
-    XString profile = XString::Format(L"%ls\n%ls %d\n%ls %d", player->m_playerName.c_str(),
-        ResString("IDS_SAFEHOUSE_LEVEL").c_str(), player->GetLevel(),
-        ResString("IDS_SAFEHOUSE_CONTRACTS").c_str(), player->m_completedMissionCount);
-    if (!(profile == m_profileInfo->m_text)) {
-        m_profileInfo->SetText(profile);
-    }
-    XString inventory = XString::Format(L"%ls %d\n%ls %d\n%ls %d\n%ls %d",
-        ResString("IDS_SAFEHOUSE_ARMOR").c_str(), player->m_armorDamageProof / 1000,
-        ResString("IDS_SAFEHOUSE_MEDKITS").c_str(), player->m_medkits,
-        ResString("IDS_SAFEHOUSE_PILLS").c_str(), player->GetPillsCount(),
-        ResString("IDS_SAFEHOUSE_SILENCER").c_str(), player->m_silentShotsCount);
+    XString format = XString::Format(L"%s\n%s\n%s\n%s",
+        ResString("IDS_SAFEHOUSE_ARMOR").c_str(), ResString("IDS_SAFEHOUSE_MEDKITS").c_str(),
+        ResString("IDS_SAFEHOUSE_PILLS").c_str(), ResString("IDS_SAFEHOUSE_SILENCER").c_str());
+    XString inventory = XString::Format(format.c_str(), player->m_armorDamageProof / 1000,
+                                        player->m_medkits, player->GetPillsCount(),
+                                        player->m_silentShotsCount);
     if (!(inventory == m_inventory->m_text)) {
         m_inventory->SetText(inventory);
     }
@@ -255,9 +354,9 @@ void CBH_NetworkWindow::Update()
 {
     UpdateWeaponNames();
     UpdateOtherText();
-    m_back->SetBlinking(CTutorialManager::IsNetworkCloseBlink());
-    m_avatar->SetBlinking(CTutorialManager::IsAvatarChoicePressBlink());
-    m_weaponButtons[1]->SetBlinking(CTutorialManager::IsWeaponChoicePressBlink());
+    m_back->SetBlinking(static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsNetworkCloseBlink());
+    m_avatar->SetBlinking(static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsAvatarChoicePressBlink());
+    m_weaponButtons[1]->SetBlinking(static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsWeaponChoicePressBlink());
     CBH_Player* player = CBH_Player::GetInstance();
     int next = player->GetXpForNextLvl();
     int previous = player->GetXpForCurrentLvl();
@@ -297,18 +396,18 @@ void CBH_NetworkWindow::OnCommand(Event& event)
         if (event.m_id == SelectSecondSlot) {
             slot = 1;
         }
-        if (CTutorialManager::CanChooseWeapon() && (!CTutorialManager::IsWeaponChoicePressBlink() || slot == 1)) {
+        if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->CanChooseWeapon() && (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsWeaponChoicePressBlink() || slot == 1)) {
             app->m_mainLayer->AddModal(new CMainItemScreen(0, slot));
             if (slot == 1) {
                 WindowApp::HandleTunnelCommand(0x21d908a0, 0, 0, 0);
             }
         }
     } else if (event.m_id == SwapCommand) {
-        if (!CTutorialManager::IsMenuBarBlocked()) {
+        if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsMenuBarBlocked()) {
             SwapWeapons();
         }
     } else if (event.m_id == OpenStore) {
-        if (!CTutorialManager::IsMenuBarBlocked()) {
+        if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsMenuBarBlocked()) {
             m_showingShop = true;
             CRegularShop::Show(CShopWindow::TAB_WEAPONS);
         }
@@ -322,32 +421,34 @@ void CBH_NetworkWindow::OnCommand(Event& event)
         const CAvatar* avatar = CBH_Player::GetInstance()->m_avatar;
         if (avatar != NULL && avatar->m_imageResId != NULL) {
             m_avatar->setImage(avatar->m_imageResId);
-            m_avatar->SetCorner((m_content->m_width / 4 - m_avatar->m_width) / 2, 6 * App::Scale());
         }
     } else if (event.m_id == OpenAchievements) {
-        if (!CTutorialManager::IsMenuBarBlocked()) {
+        if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsMenuBarBlocked()) {
             app->m_mainLayer->AddModal(new CAchievementsWindow());
         }
     } else if (event.m_id == OpenCareer) {
-        if (!CTutorialManager::IsMenuBarBlocked()) {
+        if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsMenuBarBlocked()) {
             app->m_mainLayer->AddModal(new CCareerWindow());
         }
     } else if (event.m_id == OpenLeaderboards) {
-        if (!CTutorialManager::IsMenuBarBlocked()) {
+        if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsMenuBarBlocked()) {
             GameCenter_Facade* gameCenter = GameCenter_Facade::GetInstance();
             if (gameCenter->isGameCenterSupported() && gameCenter->isAuthenticated()) {
                 gameCenter->RunLeaderboardsView(NULL);
+                CGameAnalytics::logLeaderboards();
             }
         }
     } else if (event.m_id == OpenGlobalNav) {
         CGameScene::ShowGGN();
         CGameAnalytics::logGMGEntered();
     } else if (event.m_id == -0x68dfb87c || event.m_id == 0x5f523cd9) {
-        if (CTutorialManager::CanCloseNetwork()) {
-            Close();
+        WindowApp::HandleTunnelCommand(-0x64191a07, 0, 0, 0);
+        if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->CanCloseNetwork()) {
+            if (CBH_Player::GetInstance()->GetTutorialState() == 11) {
+                CGameAnalytics::logTutorialEvents(CGameAnalytics::TUTORIAL_EVENT_LEFT_SAFEHOUSE);
+            }
+            ReverseEasy(FLAG_CLOSE_AFTER_EASY);
             WindowApp::PutEvent(Event::TUNNEL_COMMAND, 0x40067282, 0, 0, 0);
-        } else {
-            WindowApp::HandleTunnelCommand(-0x64191a07, 0, 0, 0);
         }
     } else {
         CBaseScreen::OnCommand(event);
@@ -360,7 +461,7 @@ void CBH_NetworkWindow::OnPointerEvent(Event& event)
 {
 }
 
-CImageButton* CBH_NetworkWindow::CreateSwapWeaponsWindow(unsigned int command)
+__attribute__((noinline)) CImageButton* CBH_NetworkWindow::CreateSwapWeaponsWindow(unsigned int command)
 {
     CImageButton* button = new CImageButton();
     button->AddImage("IDB_HUD_WEAPON_SWITCH_BUTTON", 0, 0);

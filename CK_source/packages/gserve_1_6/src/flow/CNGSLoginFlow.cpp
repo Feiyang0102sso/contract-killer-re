@@ -72,10 +72,10 @@ void CNGSLoginFlow::Start()
 void CNGSLoginFlow::PrepareStep(int step)
 {
     CNGSUtil::DebugLog("Login Flow - PrepareStep %i, %i", step, m_currentStep);
-    if (step == -1) {
-        step = m_currentStep;
-    } else {
+    if (step != -1) {
         m_currentStep = step;
+    } else {
+        step = m_currentStep;
     }
     if (step < 0 || step >= m_steps.Size()) {
         return;
@@ -85,7 +85,7 @@ void CNGSLoginFlow::PrepareStep(int step)
         m_remainingTimeout = m_steps[step]->GetTimeout();
         if (m_remainingTimeout == -1) {
             m_remainingTimeout = DefaultStepTimeoutMs;
-        } else if (m_remainingTimeout < MinimumStepTimeoutMs) {
+        } else if (m_remainingTimeout < (int)MinimumStepTimeoutMs) {  // signed in the original (bgt)
             m_remainingTimeout = MinimumStepTimeoutMs;
         }
     }
@@ -115,10 +115,10 @@ void CNGSLoginFlow::OnEvent(eLoginFlowEvent event, const char* caller)
 void CNGSLoginFlow::ExcuteStep(int step)
 {
     CNGSUtil::DebugLog("Login Flow - ExecuteStep %i, %i", step, m_currentStep);
-    if (step == -1) {
-        step = m_currentStep;
-    } else {
+    if (step != -1) {
         m_currentStep = step;
+    } else {
+        step = m_currentStep;
     }
     if (step >= 0 && step < m_steps.Size()) {
         CNGSUtil::DebugLog("Login Flow - Executing %s", m_steps[step]->GetName());

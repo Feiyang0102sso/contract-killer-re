@@ -1,4 +1,8 @@
 #include "CChallenge.h"
+#include "CSaveManager.h"
+#define AD_BANNER_SIZES_NO_MARGINS
+#include "AdBannerSizes.h"
+#undef AD_BANNER_SIZES_NO_MARGINS
 
 #include "App.h"
 #include "CBH_Player.h"
@@ -29,40 +33,17 @@ const int RewardCount = sizeof(RewardSections) / sizeof(RewardSections[0]);
 const unsigned int ChallengeMessageDurationSeconds = 86400;
 const long long ChallengeCompletedMessage = 1011;
 
-bool ReadOverrideAmount(COverrideManager& overrides, const CStrWChar& path,
-                        const wchar_t* key, int& amount)
+// the original resets the whole reward (store order as in the binary)
+void ResetReward(SChallengeReward& reward)
 {
-    unsigned long long value;
-    if (!overrides.FindIntAttribute(path, CStrWChar(key), &value) || value > INT_MAX) {
-        return false;
-    }
-    amount = static_cast<int>(value);
-    return true;
-}
-
-bool UpdateOverrideImage(SChallengeReward& reward, COverrideManager& overrides, const CStrWChar& path)
-{
-    CStrWChar image;
-    if (!overrides.FindStringAttribute(path, CStrWChar(L"image"), &image)) {
-        return false;
-    }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    const char* resource = app->InitResMap()->getResourceID(XString(image.GetWCharPtr()));
-    if (resource == NULL) {
-        return false;
-    }
-    reward.m_image = resource;
-    return true;
-}
-
-void ClearRewardAmounts(SChallengeReward& reward)
-{
+    reward.m_experience = 0;
     reward.m_credits = 0;
     reward.m_cash = 0;
-    reward.m_experience = 0;
     reward.m_itemAmount = 0;
     reward.m_itemId = 0;
     reward.m_itemManager = NULL;
+    reward.m_awarded = false;
+    reward.m_friendId = -1;
 }
 }
 
@@ -73,7 +54,7 @@ SChallengeReward::SChallengeReward()
 }
 
 CChallenge::CChallenge(TiXmlElement* element)
-    : m_rewards(new SChallengeReward*[RewardCount]), m_overrideRevision(0), m_day(0), m_softRewardCap(0),
+    : m_overrideRevision(0), m_day(0), m_softRewardCap(0),
       m_script(NULL), m_id(0), m_goal(0), m_finishTime(0), m_completedAt(0),
       m_active(false), m_hasCustomCheck(false), m_difficulty(0.0f)
 {
@@ -103,21 +84,40 @@ CChallenge::~CChallenge()
 
 void CChallenge::ParseRoot(TiXmlElement* element)
 {
-    m_id = CXmlHelper::GetAttributeValue(*element, "id").ToInt();
-    m_name = CXmlHelper::GetResString(*element, "name");
-    m_goal = CXmlHelper::GetAttributeValue(*element, "goal_value").ToInt();
-    m_day = CXmlHelper::GetAttributeValue(*element, "day").ToInt();
-    m_difficulty = CXmlHelper::GetAttributeValue(*element, "difficulty_coef").ToFloat();
-    m_softRewardCap = CXmlHelper::GetAttributeValue(*element, "soft_reward_cap").ToInt();
+    m_id = CXmlHelper::GetAttributeValue(element, "id").ToInt();
+    m_name = CXmlHelper::GetResString(element, "name");
+    m_goal = CXmlHelper::GetAttributeValue(element, "goal_value").ToInt();
+    m_day = CXmlHelper::GetAttributeValue(element, "day").ToInt();
+    m_difficulty = CXmlHelper::GetAttributeValue(element, "difficulty_coef").ToFloat();
+    m_softRewardCap = CXmlHelper::GetAttributeValue(element, "soft_reward_cap").ToInt();
 }
 
 void CChallenge::ParseRewards(TiXmlElement* element)
 {
-    m_rewards[0] = new SChallengeReward();
-    m_rewards[0]->m_image = "IDB_COOP_EXP_ICON";
-    m_rewards[1] = new SChallengeReward();
-    m_rewards[1]->m_image = "IDB_COOP_SOFT_CURRENCY_ICON";
-    m_rewards[2] = ParseReward(element->FirstChildElement(RewardSections[2]));
+    // Original: a reward only exists when its node is present; solo gives the computed XP,
+    // x1 gives four times that as cash, capped by m_softRewardCap.
+    m_rewards = new SChallengeReward*[RewardCount];
+    m_rewards[0] = NULL;
+    m_rewards[1] = NULL;
+    m_rewards[2] = NULL;
+    if (element->FirstChildElement("solo_reward") != NULL) {
+        m_rewards[0] = new SChallengeReward();
+        m_rewards[0]->m_image = "IDB_COOP_EXP_ICON";
+        m_rewards[0]->m_experience = CalculateSoloReward();
+    }
+    if (element->FirstChildElement("x1_reward") != NULL) {
+        m_rewards[1] = new SChallengeReward();
+        m_rewards[1]->m_image = "IDB_COOP_SOFT_CURRENCY_ICON";
+        int cash = m_softRewardCap;
+        if (CalculateSoloReward() * 4 < cash) {
+            cash = CalculateSoloReward() * 4;
+        }
+        m_rewards[1]->m_cash = cash;
+    }
+    TiXmlElement* second = element->FirstChildElement("x2_reward");
+    if (second != NULL) {
+        m_rewards[2] = ParseReward(second);
+    }
 }
 
 SChallengeReward* CChallenge::ParseReward(TiXmlElement* element)
@@ -241,12 +241,14 @@ int CChallenge::GetCurrProgress() const
 
 void CChallenge::CheckCompletion()
 {
-    if (!m_active || m_rewards[0]->m_awarded) {
+    if (!m_active) {
         return;
     }
     if (m_hasCustomCheck) {
         CallExternalCheckFunc();
-    } else if (m_goal > 0 && GetCurrProgress() >= m_goal) {
+        return;
+    }
+    if (GetCurrProgress() >= m_goal) {
         OnComplete();
     }
 }
@@ -264,14 +266,14 @@ void CChallenge::CallExternalCheckFunc()
 
 int CChallenge::CalculateSoloReward() const
 {
-    int level = CBH_Player::GetInstance()->GetLevel();
-    if (level <= 1) {
-        return 0;
+    // the original keeps the level as a float and subtracts the two XP limits as floats
+    float level = static_cast<float>(CBH_Player::GetInstance()->GetLevel());
+    if (level > 1.0f) {
+        float next = static_cast<float>(static_cast<App*>(WindowApp::m_instance)->InitProgressSystem()->GetMaxXPForLevel(static_cast<int>(level + 1.0f)));
+        float current = static_cast<float>(static_cast<App*>(WindowApp::m_instance)->InitProgressSystem()->GetMaxXPForLevel(static_cast<int>(level)));
+        return MathLib::Round(m_difficulty * ((next - current) / (2.0f * level + 63.0f)));
     }
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    CProgressSystem* progress = app->InitProgressSystem();
-    int difference = progress->GetMaxXPForLevel(level + 1) - progress->GetMaxXPForLevel(level);
-    return MathLib::Round(m_difficulty * (static_cast<float>(difference) / (2.0f * level + 63.0f)));
+    return 0;
 }
 
 void CChallenge::UpdateRewards() const
@@ -280,9 +282,10 @@ void CChallenge::UpdateRewards() const
         m_rewards[0]->m_experience = CalculateSoloReward();
     }
     if (!m_rewards[1]->m_awarded) {
-        int amount = CalculateSoloReward() * 4;
-        if (amount > m_softRewardCap) {
-            amount = m_softRewardCap;
+        int scaledReward = CalculateSoloReward() * 4;
+        int amount = m_softRewardCap;
+        if (scaledReward < amount) {
+            amount = scaledReward;
         }
         m_rewards[1]->m_cash = amount;
     }
@@ -345,38 +348,39 @@ void CChallenge::FriendInvited(int friendId)
 
 bool CChallenge::IsFriendInvited(int friendId)
 {
-    return m_invitedFriends.indexOf(friendId) >= 0;
+    return m_invitedFriends.indexOf(friendId) != -1;
 }
 
 SChallengeReward* CChallenge::GetRewardForFriend(int friendId)
 {
-    SChallengeReward* available = NULL;
-    for (int tier = 1; tier < RewardCount; ++tier) {
-        SChallengeReward* reward = m_rewards[tier];
-        if (reward->m_friendId == friendId) {
-            UpdateRewards();
-            return reward;
-        }
-        if (available == NULL && reward->m_friendId == -1 && !reward->m_awarded) {
-            available = reward;
-        }
-    }
-    if (available != NULL) {
+    // the original takes the first of the two friend tiers that is free (-1) or already this friend's
+    if (m_rewards[1]->m_friendId == -1 || m_rewards[1]->m_friendId == friendId) {
         UpdateRewards();
+        return m_rewards[1];
     }
-    return available;
+    if (m_rewards[2]->m_friendId == -1 || m_rewards[2]->m_friendId == friendId) {
+        UpdateRewards();
+        return m_rewards[2];
+    }
+    return NULL;
 }
 
 void CChallenge::CheckDelayedReward(int friendId)
 {
-    if (friendId < 0 || !m_rewards[0]->m_awarded) {
+    // the original: look the reward up, refresh the rewards, then pay once the first one is awarded
+    if (friendId == -1) {
         return;
     }
     SChallengeReward* reward = GetRewardForFriend(friendId);
-    if (reward != NULL && reward->m_friendId == friendId && !reward->m_awarded) {
-        reward->m_awarded = true;
-        GiveReward(reward);
+    if (reward == NULL) {
+        return;
     }
+    UpdateRewards();
+    if (!m_rewards[0]->m_awarded) {
+        return;
+    }
+    GiveReward(reward);
+    reward->m_awarded = true;
 }
 
 bool CChallenge::FriendCompleteChallenge(int friendId)
@@ -407,21 +411,18 @@ bool CChallenge::FriendCompleteChallenge(int friendId)
 
 void CChallenge::GiveReward(const SChallengeReward* reward) const
 {
-    CBH_Player* player = CBH_Player::GetInstance();
+    // the original asks for the player instance in every branch and does not check the item
     if (reward->m_experience > 0) {
-        player->AddXp(reward->m_experience, GAIN_SOURCE_CHALLENGE);
+        CBH_Player::GetInstance()->AddXp(reward->m_experience, GAIN_SOURCE_CHALLENGE);
     }
     if (reward->m_cash > 0) {
-        player->AddMoney(reward->m_cash, GAIN_SOURCE_CHALLENGE);
+        CBH_Player::GetInstance()->AddMoney(reward->m_cash, GAIN_SOURCE_CHALLENGE);
     }
     if (reward->m_credits > 0) {
-        player->AddCredits(reward->m_credits);
+        CBH_Player::GetInstance()->AddCredits(reward->m_credits);
     }
     if (reward->m_itemManager != NULL) {
-        CItem* item = reward->m_itemManager->getItemById(reward->m_itemId);
-        if (item != NULL) {
-            item->setAvailable(true);
-        }
+        reward->m_itemManager->getItemById(reward->m_itemId)->setAvailable(true);
     }
 }
 
@@ -439,6 +440,7 @@ const SChallengeReward* CChallenge::GetX1Reward() const
 
 const SChallengeReward* CChallenge::GetX2Reward() const
 {
+    UpdateRewards();
     return m_rewards[2];
 }
 
@@ -454,92 +456,89 @@ XString CChallenge::GetRewardString(const SChallengeReward* reward)
         return XString::Format(Window::ResString("IDS_CHALLENGE_REWARD_CREDITS").c_str(), reward->m_credits);
     }
     if (reward->m_itemManager != NULL) {
-        CItem* item = reward->m_itemManager->getItemById(reward->m_itemId);
-        if (item != NULL) {
-            return item->GetName();
-        }
+        return reward->m_itemManager->getItemById(reward->m_itemId)->GetName();
     }
-    return XString();
+    return XString("");
 }
 
 void CChallenge::Start(int finishTime)
 {
+    // the original neither resets the rewards nor the completion time here; it saves the manager
     m_finishTime = finishTime;
-    m_completedAt = 0;
     m_active = true;
     m_invitedFriends.removeAllElements();
-    for (int index = 0; index < RewardCount; ++index) {
-        m_rewards[index]->m_awarded = false;
-        m_rewards[index]->m_friendId = -1;
-        m_rewards[index]->m_friendName = XString();
-    }
+    static_cast<App*>(WindowApp::m_instance)->m_challengeManager->Save();
 }
 
 void CChallenge::Load(TiXmlElement* parent)
 {
-    XString tag = XString::Format(L"challenge_%u", m_id);
-    TiXmlElement* section = CXmlHelper::GetElement(parent, tag);
+    TiXmlElement* section = parent->FirstChildElement(XString::AnsiString(XString::Format(L"challenge_%u", m_id).c_str()));
     if (section == NULL) {
         return;
     }
-    m_active = CXmlHelper::GetIntAttributeValueOrUseDefault(section, "isAcive", 0) != 0;
-    m_finishTime = CXmlHelper::GetIntAttributeValueOrUseDefault(section, "finishTime", 0);
-    for (int index = 0; index < RewardCount; ++index) {
-        SChallengeReward* reward = m_rewards[index];
-        const TiXmlElement* entry = section->FirstChildElement(RewardSections[index]);
-        if (entry == NULL) {
-            continue;
-        }
-        reward->m_awarded = CXmlHelper::GetIntAttributeValueOrUseDefault(entry, "isAwarded", 0) != 0;
-        if (index == 0) {
-            reward->m_experience = CXmlHelper::GetIntAttributeValueOrUseDefault(entry, "reward", 0);
-        } else {
-            reward->m_friendId = CXmlHelper::GetIntAttributeValueOrUseDefault(entry, "friendId", -1);
-            reward->m_friendName = CXmlHelper::GetAttributeValueOptional(*entry, "friendName");
-            if (index == 1) {
-                reward->m_cash = CXmlHelper::GetIntAttributeValueOrUseDefault(entry, "reward", 0);
-            }
-        }
-    }
+    // Original: the reward nodes are not checked; each "reward" defaults to the current value.
+    m_active = CXmlHelper::GetAttributeValueOrUseDefault(section, "isAcive", XString("0")).ToBool();
+    TiXmlElement* solo = section->FirstChildElement("solo_reward");
+    m_rewards[0]->m_awarded = CXmlHelper::GetAttributeValueOrUseDefault(solo, "isAwarded", XString("0")).ToBool();
+    m_rewards[0]->m_experience = CXmlHelper::GetAttributeValueOrUseDefault(solo, "reward", XString(m_rewards[0]->m_experience)).ToInt();
+    m_finishTime = CXmlHelper::GetAttributeValueOrUseDefault(section, "finishTime", XString("0")).ToInt();
+    TiXmlElement* first = section->FirstChildElement("x1_reward");
+    m_rewards[1]->m_awarded = CXmlHelper::GetAttributeValueOrUseDefault(first, "isAwarded", XString("0")).ToBool();
+    m_rewards[1]->m_friendId = CXmlHelper::GetAttributeValueOrUseDefault(first, "friendId", XString("-1")).ToInt();
+    m_rewards[1]->m_cash = CXmlHelper::GetAttributeValueOrUseDefault(first, "reward", XString(m_rewards[1]->m_cash)).ToInt();
+    m_rewards[1]->m_friendName = CXmlHelper::GetAttributeValueOrUseDefault(first, "friendName", XString(""));
+    TiXmlElement* second = section->FirstChildElement("x2_reward");
+    m_rewards[2]->m_awarded = CXmlHelper::GetAttributeValueOrUseDefault(second, "isAwarded", XString("0")).ToBool();
+    m_rewards[2]->m_friendId = CXmlHelper::GetAttributeValueOrUseDefault(second, "friendId", XString("-1")).ToInt();
+    m_rewards[2]->m_friendName = CXmlHelper::GetAttributeValueOrUseDefault(second, "friendName", XString(""));
     LoadInvitedFirends(section);
 }
 
 void CChallenge::LoadInvitedFirends(TiXmlElement* section)
 {
-    const TiXmlElement* invited = section->FirstChildElement("invited_friends");
     m_invitedFriends.removeAllElements();
-    if (invited != NULL) {
-        for (const TiXmlElement* entry = invited->FirstChildElement("friend"); entry != NULL;
-             entry = entry->NextSiblingElement("friend")) {
-            int id = CXmlHelper::GetIntAttributeValueOrUseDefault(entry, "id", -1);
-            if (id >= 0 && !IsFriendInvited(id)) {
-                m_invitedFriends.addElement(id);
-            }
+    TiXmlElement* invited = section->FirstChildElement("invited_friends");
+    if (invited == NULL) {
+        return;
+    }
+    // Original: only -1 is skipped; duplicates are not filtered.
+    for (TiXmlElement* entry = invited->FirstChildElement("friend"); entry != NULL;
+         entry = entry->NextSiblingElement("friend")) {
+        int id = CXmlHelper::GetAttributeValueOrUseDefault(entry, "id", XString("-1")).ToInt();
+        if (id != -1) {
+            m_invitedFriends.addElement(id);
         }
     }
 }
 
 void CChallenge::Save(TiXmlElement* parent)
 {
-    XString tag = XString::Format(L"challenge_%u", m_id);
-    TiXmlElement* section = CXmlHelper::ObtainElement(parent, tag);
+    // Original: builds a fresh node, appends a copy of it to the parent and schedules a save.
+    TiXmlElement* section = new TiXmlElement(XString::AnsiString(XString::Format(L"challenge_%u", m_id).c_str()));
     section->SetAttribute("isAcive", m_active);
     section->SetAttribute("finishTime", m_finishTime);
-    for (int index = 0; index < RewardCount; ++index) {
-        const SChallengeReward* reward = m_rewards[index];
-        TiXmlElement* entry = CXmlHelper::ObtainElement(section, XString(RewardSections[index]));
-        entry->SetAttribute("isAwarded", reward->m_awarded);
-        if (index == 0) {
-            entry->SetAttribute("reward", reward->m_experience);
-        } else {
-            entry->SetAttribute("friendId", reward->m_friendId);
-            entry->SetAttribute("friendName", XString::AnsiString(reward->m_friendName.c_str()));
-            if (index == 1) {
-                entry->SetAttribute("reward", reward->m_cash);
-            }
-        }
-    }
+    TiXmlElement* solo = new TiXmlElement("solo_reward");
+    solo->SetAttribute("isAwarded", m_rewards[0]->m_awarded);
+    solo->SetAttribute("reward", m_rewards[0]->m_experience);
+    section->InsertEndChild(*solo);
+    delete solo;
+    TiXmlElement* first = new TiXmlElement("x1_reward");
+    first->SetAttribute("isAwarded", m_rewards[1]->m_awarded);
+    first->SetAttribute("friendId", m_rewards[1]->m_friendId);
+    first->SetAttribute("friendName", XString::AnsiString(m_rewards[1]->m_friendName.c_str()));
+    first->SetAttribute("reward", m_rewards[1]->m_cash);
+    section->InsertEndChild(*first);
+    delete first;
+    TiXmlElement* second = new TiXmlElement("x2_reward");
+    second->SetAttribute("isAwarded", m_rewards[2]->m_awarded);
+    second->SetAttribute("friendId", m_rewards[2]->m_friendId);
+    second->SetAttribute("friendName", XString::AnsiString(m_rewards[2]->m_friendName.c_str()));
+    section->InsertEndChild(*second);
+    delete second;
     SaveInvitedFriends(section);
+    parent->InsertEndChild(*section);
+    delete section;
+    static_cast<App*>(WindowApp::m_instance)->m_saveManager->SaveOnNextUpdate(false);
 }
 
 void CChallenge::SaveInvitedFriends(TiXmlElement* section)
@@ -549,83 +548,99 @@ void CChallenge::SaveInvitedFriends(TiXmlElement* section)
     for (int index = 0; index < m_invitedFriends.size(); ++index) {
         TiXmlElement* entry = new TiXmlElement("friend");
         entry->SetAttribute("id", m_invitedFriends[index]);
-        invited->LinkEndChild(entry);
+        invited->InsertEndChild(*entry);
+        delete entry;
     }
 }
 
 bool CChallenge::DoOverrideSoftReward(SChallengeReward* reward, COverrideManager& overrides, const XString& name)
 {
-    CStrWChar path(name.c_str());
-    int amount = 0;
-    bool hasAmount = ReadOverrideAmount(overrides, path, L"amount", amount);
-    if (hasAmount) {
-        ClearRewardAmounts(*reward);
-        reward->m_cash = amount;
+    // the original resets a reward of another kind first and does not range-check the values
+    if (reward->m_cash == 0) {
+        ResetReward(*reward);
     }
-    bool hasImage = UpdateOverrideImage(*reward, overrides, path);
-    return hasAmount || hasImage;
+    bool changed = false;
+    unsigned long long amount;
+    if (overrides.FindIntAttribute(CStrWChar(name.c_str()), CStrWChar(L"amount"), &amount)) {
+        reward->m_cash = static_cast<int>(amount);
+        changed = true;
+    }
+    CStrWChar image;
+    if (overrides.FindStringAttribute(CStrWChar(name.c_str()), CStrWChar(L"image"), &image)) {
+        reward->m_image = static_cast<App*>(WindowApp::m_instance)->InitResMap()->getResourceID(XString(image.GetWCharPtr()));
+        changed = true;
+    }
+    return changed;
 }
 
 bool CChallenge::DoOverrideCashReward(SChallengeReward* reward, COverrideManager& overrides, const XString& name)
 {
-    CStrWChar path(name.c_str());
-    int amount = 0;
-    bool hasAmount = ReadOverrideAmount(overrides, path, L"amount", amount);
-    if (hasAmount) {
-        ClearRewardAmounts(*reward);
-        reward->m_credits = amount;
+    if (reward->m_credits == 0) {
+        ResetReward(*reward);
     }
-    bool hasImage = UpdateOverrideImage(*reward, overrides, path);
-    return hasAmount || hasImage;
+    bool changed = false;
+    unsigned long long amount;
+    if (overrides.FindIntAttribute(CStrWChar(name.c_str()), CStrWChar(L"amount"), &amount)) {
+        reward->m_credits = static_cast<int>(amount);
+        changed = true;
+    }
+    CStrWChar image;
+    if (overrides.FindStringAttribute(CStrWChar(name.c_str()), CStrWChar(L"image"), &image)) {
+        reward->m_image = static_cast<App*>(WindowApp::m_instance)->InitResMap()->getResourceID(XString(image.GetWCharPtr()));
+        changed = true;
+    }
+    return changed;
 }
 
 bool CChallenge::DoOverrideItemReward(SChallengeReward* reward, COverrideManager& overrides, const XString& name)
 {
-    CStrWChar path(name.c_str());
-    CItemManager* manager = reward->m_itemManager;
-    int itemId = reward->m_itemId;
-    int amount = reward->m_itemAmount;
-    CStrWChar itemType;
-    bool hasType = overrides.FindStringAttribute(path, CStrWChar(L"item_type"), &itemType) != 0;
-    if (hasType) {
-        manager = App::GetItemManagerByName(XString(itemType.GetWCharPtr()));
+    // the original does not validate the item manager or the item id
+    if (reward->m_itemManager == NULL) {
+        ResetReward(*reward);
     }
-    bool hasId = ReadOverrideAmount(overrides, path, L"item_id", itemId);
-    bool hasAmount = ReadOverrideAmount(overrides, path, L"amount", amount);
+    CStrWChar itemType;
     bool changed = false;
-    if ((hasType || hasId || hasAmount) && manager != NULL && manager->getItemById(itemId) != NULL) {
-        ClearRewardAmounts(*reward);
-        reward->m_itemManager = manager;
-        reward->m_itemId = itemId;
-        reward->m_itemAmount = amount;
+    if (overrides.FindStringAttribute(CStrWChar(name.c_str()), CStrWChar(L"item_type"), &itemType)) {
+        reward->m_itemManager = App::GetItemManagerByName(XString(itemType.GetWCharPtr()));
         changed = true;
     }
-    bool hasImage = UpdateOverrideImage(*reward, overrides, path);
-    return changed || hasImage;
+    unsigned long long amount;
+    if (overrides.FindIntAttribute(CStrWChar(name.c_str()), CStrWChar(L"amount"), &amount)) {
+        reward->m_itemAmount = static_cast<int>(amount);
+        changed = true;
+    }
+    unsigned long long itemId;
+    if (overrides.FindIntAttribute(CStrWChar(name.c_str()), CStrWChar(L"item_id"), &itemId)) {
+        reward->m_itemId = static_cast<int>(itemId);
+        changed = true;
+    }
+    CStrWChar image;
+    if (overrides.FindStringAttribute(CStrWChar(name.c_str()), CStrWChar(L"image"), &image)) {
+        reward->m_image = static_cast<App*>(WindowApp::m_instance)->InitResMap()->getResourceID(XString(image.GetWCharPtr()));
+        changed = true;
+    }
+    return changed;
 }
 
 bool CChallenge::DoOverride(COverrideManager& overrides, const XString& name)
 {
-    CStrWChar path(name.c_str());
+    // the original reports a change whenever the attribute exists and does not validate the coefficient
     CStrWChar rewardType;
     bool changed = false;
-    if (overrides.FindStringAttribute(path, CStrWChar(L"reward"), &rewardType)) {
-        XString type(rewardType.GetWCharPtr());
-        if (type == L"cash") {
-            changed = DoOverrideCashReward(m_rewards[2], overrides, name);
-        } else if (type == L"soft") {
-            changed = DoOverrideSoftReward(m_rewards[2], overrides, name);
-        } else if (type == L"item") {
-            changed = DoOverrideItemReward(m_rewards[2], overrides, name);
+    if (overrides.FindStringAttribute(CStrWChar(name.c_str()), CStrWChar(L"reward"), &rewardType)) {
+        if (rewardType == L"cash") {
+            DoOverrideCashReward(m_rewards[2], overrides, name);
+        } else if (rewardType == L"soft") {
+            DoOverrideSoftReward(m_rewards[2], overrides, name);
+        } else if (rewardType == L"item") {
+            DoOverrideItemReward(m_rewards[2], overrides, name);
         }
+        changed = true;
     }
     CStrWChar value;
-    if (overrides.FindStringAttribute(path, CStrWChar(L"difficulty_coef"), &value)) {
-        float difficulty = XString(value.GetWCharPtr()).ToFloat();
-        if (isfinite(difficulty) && difficulty >= 0.0f) {
-            m_difficulty = difficulty;
-            changed = true;
-        }
+    if (overrides.FindStringAttribute(CStrWChar(name.c_str()), CStrWChar(L"difficulty_coef"), &value)) {
+        m_difficulty = XString(value.GetWCharPtr()).ToFloat();
+        changed = true;
     }
     return changed;
 }
@@ -634,7 +649,8 @@ bool CChallenge::CheckOverride()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     COverrideManager* overrides = app->m_overrideManager;
-    if (overrides == NULL || overrides->changesMark() == m_overrideRevision) {
+    // the original does not check the override manager for NULL
+    if (overrides->changesMark() == m_overrideRevision) {
         return false;
     }
     m_overrideRevision = overrides->changesMark();
@@ -643,17 +659,24 @@ bool CChallenge::CheckOverride()
 
 const XString& CChallenge::GetFriendName(int index)
 {
-    if (index == 0 || index == 1) {
-        return m_rewards[index + 1]->m_friendName;
+    switch (index) {
+    case 0:
+        return m_rewards[1]->m_friendName;
+    case 1:
+        return m_rewards[2]->m_friendName;
     }
-    static const XString empty;
-    return empty;
+    // the original returns a reference to a released temporary here (kept as in the binary)
+    return XString();
 }
 
 int CChallenge::GetFriendId(int index)
 {
-    if (index == 0 || index == 1) {
-        return m_rewards[index + 1]->m_friendId;
+    // the original is a switch with one load per case
+    switch (index) {
+    case 0:
+        return m_rewards[1]->m_friendId;
+    case 1:
+        return m_rewards[2]->m_friendId;
     }
     return -1;
 }

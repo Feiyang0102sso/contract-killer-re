@@ -208,7 +208,7 @@ void CGPSMapScreen::OnStateInterrupt(int state, Window*)
     if (state == 6) {
         PopState();
         // CK: the map builds itself in CBH_GPSMap::Init (run by AddToFront).
-        if (!CTutorialManager::IsAutoStartMission() && !app->m_soundManager->IsPlaying("IDM_MENU_MUSIC")) {
+        if (!static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsAutoStartMission() && !app->m_soundManager->IsPlaying("IDM_MENU_MUSIC")) {
             app->m_soundManager->PlayMusic("IDM_MENU_MUSIC", true, false);
         }
         AddToFront(m_map);

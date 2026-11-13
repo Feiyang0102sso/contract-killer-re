@@ -14,7 +14,7 @@ namespace {
 enum State {
     GPSMap = 1, HuntDayOver, HuntDayCompleted, EnterMission, LeaveMission, Mission, LevelUp = 8, Informant
 };
-const char DialogBackground[] = "IDB_DIALOG_WINDOW_BG";
+const char* const DialogBackground = "IDB_DIALOG_WINDOW_BG";
 }
 
 CGameScreen::CGameScreen()
@@ -26,8 +26,10 @@ CGameScreen::~CGameScreen()
 {
     App* app = static_cast<App*>(WindowApp::m_instance);
     app->m_surfaceManager->ReleaseSurface(DialogBackground);
-    delete m_mapCache;
-    m_mapCache = NULL;
+    if (m_mapCache != NULL) {
+        delete m_mapCache;
+        m_mapCache = NULL;
+    }
 }
 
 void CGameScreen::Init()

@@ -62,17 +62,9 @@ CEquipWeaponWindow::CEquipWeaponWindow(int weaponId)
     m_content->AddToFront(confirm);
 
     App* app = static_cast<App*>(WindowApp::m_instance);
-    CDH_BasicGameData* data = app->m_helper->GetGameData();
-    const CDH_Weapon* first = data->GetWeapon01(true);
-    const CDH_Weapon* second = data->GetWeapon02(true);
-    m_originalFirst = data->m_weaponIds[0];
-    m_originalSecond = data->m_weaponIds[1];
-    if (first != NULL) {
-        m_originalFirst = first->m_id;
-    }
-    if (second != NULL) {
-        m_originalSecond = second->m_id;
-    }
+    // Original: the equipped weapons are not checked for NULL.
+    m_originalFirst = app->m_helper->GetGameData()->GetWeapon01(true)->m_id;
+    m_originalSecond = app->m_helper->GetGameData()->GetWeapon02(true)->m_id;
 }
 
 Window* CEquipWeaponWindow::CreateTextWindow(const char* resource)

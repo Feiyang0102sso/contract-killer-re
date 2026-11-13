@@ -396,6 +396,14 @@ BOOL FBIsDeviceIPad() {
     navigationType:(UIWebViewNavigationType)navigationType {
   NSURL* url = request.URL;
 
+  // The feed endpoint can start a second navigation while the dialog is visible.
+  if ([[url absoluteString] compare:@"https://m.facebook.com/dialog/feed"] == NSOrderedSame) {
+    if (m_feedClicked) {
+      return NO;
+    }
+    m_feedClicked = YES;
+  }
+
   if ([url.scheme isEqualToString:@"fbconnect"]) {
     if ([[url.resourceSpecifier substringToIndex:8] isEqualToString:@"//cancel"]) {
       NSString * errorCode = [self getStringFromUrl:[url absoluteString] needle:@"error_code="];
@@ -633,9 +641,11 @@ BOOL FBIsDeviceIPad() {
 }
 
 - (void)dialogWillAppear {
+  m_feedClicked = NO;
 }
 
 - (void)dialogWillDisappear {
+  m_feedClicked = NO;
 }
 
 - (void)dialogDidSucceed:(NSURL *)url {

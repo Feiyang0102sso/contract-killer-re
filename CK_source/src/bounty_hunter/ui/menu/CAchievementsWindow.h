@@ -10,6 +10,9 @@ class CAchievementsWindow : public CBaseScreen {
 public:
     CAchievementsWindow();
     virtual ~CAchievementsWindow() {}
+
+private:
+    Window* m_achievementList;  // 0xd8
 };
 
 class AchievementInfoWindow : public ImageWindow {

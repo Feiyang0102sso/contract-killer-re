@@ -1,10 +1,12 @@
 #include "CWarTimeExecutor.h"
 
+#include "App.h"
 #include "CAttackExecutor.h"
 #include "CMovementExecutor.h"
 #include "CRunAwayExecutor.h"
 #include "CSwerveGame.h"
 #include "CUnit.h"
+#include "DGHelper.h"
 
 CWarTimeExecutor::CWarTimeExecutor(CUnitMind* mind)
     : IExecutor(mind), m_camera(-1), m_safe(false), m_retryBoss(true)
@@ -13,7 +15,9 @@ CWarTimeExecutor::CWarTimeExecutor(CUnitMind* mind)
 
 void CWarTimeExecutor::Tick(int)
 {
-    if (CSwerveGame::m_pInstance->GetCurrCamId() != m_camera) {
+    // the original reaches the game through the application
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    if (app->m_helper->m_swerveGame->GetCurrCamId() != m_camera) {
         CancelChildren();
         MoveToAttackPoint();
     }
@@ -21,12 +25,19 @@ void CWarTimeExecutor::Tick(int)
 
 void CWarTimeExecutor::MoveToAttackPoint()
 {
+    // the original checks unit and body, queues the move first and reads the camera through the application
     CUnit* unit = m_mind->GetUnit();
-    if (unit != NULL) {
-        m_camera = CSwerveGame::m_pInstance->GetCurrCamId();
-        m_safe = true;
-        AddMovementExecutorToAttackPoint(m_mind, unit->m_body.m_cellId, true);
+    if (unit == NULL) {
+        return;
     }
+    CUnitBody* body = unit->GetBody();
+    if (body == NULL) {
+        return;
+    }
+    m_safe = true;
+    AddMovementExecutorToAttackPoint(m_mind, body->m_cellId, true);
+    App* app = static_cast<App*>(WindowApp::m_instance);
+    m_camera = app->m_helper->m_swerveGame->GetCurrCamId();
 }
 
 void CWarTimeExecutor::OnChildFinished(EExecutosResult result)
@@ -35,53 +46,67 @@ void CWarTimeExecutor::OnChildFinished(EExecutosResult result)
         StartAttack();
         return;
     }
+    // Original 0xd1d84: the camera id is taken after a new attack point is requested; running away
+    // does not mark the unit here.
     CUnit* unit = m_mind->GetUnit();
-    if (unit == NULL) {
+    if (unit == NULL || unit->GetBody() == NULL) {
         return;
     }
-    m_camera = CSwerveGame::m_pInstance->GetCurrCamId();
     if (result == EXECUTOR_RESULT_FAILED && m_safe) {
         m_safe = false;
         AddMovementExecutorToAttackPoint(m_mind, unit->m_body.m_cellId, false);
-    } else if (unit->m_type == UnitBoss && m_retryBoss) {
-        CSwerveGame::m_pInstance->UnregisterAllDeadBodies();
+    } else {
+        if (unit->m_type != UnitBoss || !m_retryBoss) {
+            AddRunAwayExecutor(m_mind);
+            return;
+        }
+        if (CSwerveGame::m_pInstance != NULL) {
+            CSwerveGame::m_pInstance->UnregisterAllDeadBodies();
+        }
         m_retryBoss = false;
         AddMovementExecutorToAttackPoint(m_mind, unit->m_body.m_cellId, m_safe);
-    } else {
-        unit->MarkAsRunAway();
-        AddRunAwayExecutor(m_mind);
     }
+    m_camera = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->GetCurrCamId();
 }
 
 void CWarTimeExecutor::StartAttack()
 {
-    int camera = CSwerveGame::m_pInstance->GetCurrCamId();
+    int camera = static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->GetCurrCamId();
     if (m_safe) {
         DefinePointCharacteristics(camera);
         AddSafeAttackExecutor(m_mind, camera);
-    } else {
-        m_mind->GetUnit()->m_body.SetAttitude(PERSON_SHOT_STAND);
+        return;
+    }
+    CUnitBody* body = m_mind->GetUnit()->GetBody();
+    if (body != NULL) {
+        body->SetAttitude(PERSON_SHOT_STAND);
         AddUnsafeAttackExecutor(m_mind, camera);
     }
 }
 
 void CWarTimeExecutor::DefinePointCharacteristics(int camera)
 {
+    // the original checks the unit, then the body pointer and its map
     CUnit* unit = m_mind->GetUnit();
-    if (unit != NULL && unit->m_body.m_map != NULL) {
-        int cover = unit->m_body.m_map->GetHideBehaviour(unit->m_body.m_pointId, camera);
-        switch (cover) {
-        case 0:
-        case 3:
-            unit->m_body.SetAttitude(PERSON_SHOT_CROUCH);
-            break;
-        case 1:
-            unit->m_body.SetAttitude(PERSON_SHOT_WALL_LEFT);
-            break;
-        case 2:
-            unit->m_body.SetAttitude(PERSON_SHOT_WALL_RIGHT);
-            break;
-        }
+    if (unit == NULL) {
+        return;
+    }
+    CUnitBody* body = unit->GetBody();
+    if (body == NULL || body->m_map == NULL) {
+        return;
+    }
+    int cover = body->m_map->GetHideBehaviour(body->m_pointId, camera);
+    switch (cover) {
+    case 1:
+        body->SetAttitude(PERSON_SHOT_WALL_LEFT);
+        break;
+    case 2:
+        body->SetAttitude(PERSON_SHOT_WALL_RIGHT);
+        break;
+    case 0:
+    case 3:
+        body->SetAttitude(PERSON_SHOT_CROUCH);
+        break;
     }
 }
 

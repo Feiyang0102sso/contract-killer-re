@@ -89,32 +89,23 @@ CChangeAvatarWindow::CChangeAvatarWindow()
 
 void CChangeAvatarWindow::OnCommand(Event& event)
 {
+    // the original does not check the avatar level, keeps the event and always passes it on
     if (event.m_id == SelectAvatar) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        CAvatar* avatar = app->InitAvatarManager()->GetAvatar(event.m_param1);
-        CBH_Player* player = CBH_Player::GetInstance();
+        m_selectedId = event.m_param1;
+        m_selectedButton->m_firstChild->SetFlags(FLAG_VISIBLE | FLAG_ENABLED);
         CImageButton* button = reinterpret_cast<CImageButton*>(event.m_param2);
-        if (avatar != NULL && button != NULL && player->GetLevel() >= avatar->m_unlockLvl
-            && button != m_selectedButton) {
-            if (m_selectedFrame != NULL) {
-                m_selectedFrame->SetFlags(FLAG_VISIBLE | FLAG_ENABLED);
-            }
-            m_selectedId = avatar->m_id;
-            m_selectedButton = button;
-            m_selectedFrame = static_cast<ImageWindow*>(button->m_firstChild);
-            m_selectedFrame->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
-            player->SetAvatar(avatar);
-            WindowApp::HandleTunnelCommand(AvatarChanged, 0, 0, 0);
-        }
-        event.Clear();
-        return;
+        button->m_firstChild->ClearFlags(FLAG_VISIBLE | FLAG_ENABLED);
+        m_selectedButton = button;
+        CAvatar* avatar = static_cast<App*>(WindowApp::m_instance)->InitAvatarManager()->GetAvatar(m_selectedId);
+        CBH_Player::GetInstance()->SetAvatar(avatar);
+        WindowApp::HandleTunnelCommand(AvatarChanged, 0, 0, 0);
     }
     CBaseScreen::OnCommand(event);
 }
 
 void CChangeAvatarWindow::Update()
 {
-    if (CTutorialManager::IsPlayerInTutorial() && CTutorialManager::IsAvatarChoiceCloseBlink()) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial() && static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsAvatarChoiceCloseBlink()) {
         m_back->SetBlinking(true);
     }
 }

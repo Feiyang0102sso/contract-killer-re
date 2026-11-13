@@ -9,6 +9,11 @@ CVisualObject::CVisualObject() : m_copyCount(0)
 
 CVisualObject::~CVisualObject()
 {
+    // the original releases the template model explicitly and clears it inside the check
+    if (m_model.m_interface != NULL) {
+        m_model.m_interface->Release();
+        m_model.m_interface = NULL;
+    }
 }
 
 SwerveHelper::Group CVisualObject::GetModelCopy(const char* const& resource, const char* root)

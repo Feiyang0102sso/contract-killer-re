@@ -11,7 +11,8 @@
 #include <string.h>
 #include <wchar.h>
 
-CHash* g_text2d;
+/** Render texts of all system fonts, keyed by the Java hash of "<text><font address>" (file static in the original). */
+static CHash* g_text2d;
 
 static int HashJava(const wchar_t* text);
 
@@ -22,7 +23,7 @@ ICSystemFont* ICSystemFont::CreateInstance()
 
 CSystemFont_Cocoa::CSystemFont_Cocoa()
 {
-    m_classId = 0x4231dfda;
+    // the class id is set by ICSystemFont()
     m_antialias = true;
     m_fontColor = 0xffffffff;
     m_backgroundColor = 0x00ff00ff;
@@ -139,11 +140,11 @@ ICRenderText2d* CSystemFont_Cocoa::GetText2d(const ICSystemFont* font, const wch
 
 static int HashJava(const wchar_t* text)
 {
-    int length = wcslen(text);
     int hash = 0;
     int factor = 1;
     // Java String.hashCode, accumulated from the last character
-    for (int index = length - 1; index >= 0; index--) {
+    // (the original starts from the unsigned wcslen() - 1, so the first test is not folded)
+    for (int index = wcslen(text) - 1; index >= 0; index--) {
         hash += text[index] * factor;
         factor *= 31;
     }

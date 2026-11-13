@@ -31,14 +31,11 @@ CBH_PersonTypeManager::~CBH_PersonTypeManager()
 
 CBH_PersonType* CBH_PersonTypeManager::GetType(const XString& name) const
 {
-    CBH_PersonType* const* type = m_types.Get(name);
-    if (type == NULL && m_types.m_count != 0) {
-        type = m_types.GetAt(0, NULL);
+    // the original falls back to the first entry and looks the name up again
+    if (m_types.Get(name) == NULL) {
+        return *m_types.GetAt(0, NULL);
     }
-    if (type != NULL) {
-        return *type;
-    }
-    return NULL;
+    return *m_types.Get(name);
 }
 
 typedef char AssertPersonTypeManagerSize[sizeof(CBH_PersonTypeManager) == 0x10 ? 1 : -1];

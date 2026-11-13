@@ -9,6 +9,8 @@
 #include "CNGS_Platform.h"
 #include "CFacebookInterface.h"
 
+AppView* g_appView;
+
 
 
 // ---- constants ----

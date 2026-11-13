@@ -17,7 +17,7 @@ public:
     virtual void OnCommand(Event& event);
     virtual void OnGetFocus();
     virtual void OnLostFocus();
-    void OnStartClosing();
+    virtual void OnStartClosing();
     void UpdateXPBar(int delta);
     void SetLevelOnBar(int level);
     void SetOrigin(int x, int y);

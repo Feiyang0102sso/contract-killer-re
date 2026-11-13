@@ -132,9 +132,11 @@ public:
             if (instance == NULL) {
                 void* found = NULL;
                 app->m_singletons->Find(ClassId, &found);
-                instance = (ICGraphics2d*)found;
-                if (instance == NULL) {
+                // test the found pointer itself (cbnz in the original callers)
+                if (found == NULL) {
                     instance = CreateInstance();
+                } else {
+                    instance = (ICGraphics2d*)found;
                 }
                 app->m_graphics2d = instance;
             }

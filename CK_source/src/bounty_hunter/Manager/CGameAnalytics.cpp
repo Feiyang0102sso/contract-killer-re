@@ -1,5 +1,8 @@
 // CGameAnalytics.cpp - CK event names and arguments passed to the Flurry adapter.
 #include "CGameAnalytics.h"
+#define AD_BANNER_SIZES_NO_MARGINS
+#include "AdBannerSizes.h"
+#undef AD_BANNER_SIZES_NO_MARGINS
 #include "App.h"
 #include "CFlurry.h"
 #include "CFriendGatedMission.h"
@@ -7,7 +10,25 @@
 #include "CStrWChar.h"
 #include "CStdUtil_Cocoa.h"
 
-CStrChar CGameAnalytics::m_deferredToken;
+CStrChar CGameAnalytics::m_deferredToken("");
+
+/**
+ * Log one event whose details are a temporary XString. The original builds the CStrWChar inside an
+ * inlined helper: its stack slot comes first and the XString lives until the call returns.
+ */
+static inline void LogDetails(const char* eventName, const XString& details, int value, int extra)
+{
+    CStrWChar info(details.c_str());
+    CFlurry::LogCustomEvent(eventName, info.GetWCharPtr(), value, extra);
+}
+
+// Same as LogDetails with the current time; the original asks for the time after building the details.
+static inline void LogTimedDetails(const char* eventName, const XString& details)
+{
+    CStrWChar info(details.c_str());
+    int time = CStdUtil_Cocoa::GetTimeSeconds();
+    CFlurry::LogCustomEvent(eventName, info.GetWCharPtr(), time, 0);
+}
 
 void CGameAnalytics::logIAPBuyClicked(const XString& item)
 {
@@ -17,9 +38,7 @@ void CGameAnalytics::logIAPBuyClicked(const XString& item)
 
 void CGameAnalytics::logCameraUnlocked(int cameraId)
 {
-    XString id(cameraId);
-    CStrWChar details(id.c_str());
-    CFlurry::LogCustomEvent("BOUNTY_EVT_TYPE_ACTIVITY_CAMERA_UNLOCKED", details.GetWCharPtr(), 1, 0);
+    LogDetails("BOUNTY_EVT_TYPE_ACTIVITY_CAMERA_UNLOCKED", XString(cameraId), 1, 0);
 }
 
 void CGameAnalytics::logMissionReceived(const XString& mission, int source)
@@ -86,16 +105,12 @@ void CGameAnalytics::logMusicSwitch(bool enabled)
 
 void CGameAnalytics::logGservFbImported()
 {
-    XString time = GetTimeString();
-    CStrWChar details(time.c_str());
-    CFlurry::LogCustomEvent("BOUNTY_EVT_TYPE_GSERV_FB_IMPORTED", details.GetWCharPtr(), 1, 0);
+    LogDetails("BOUNTY_EVT_TYPE_GSERV_FB_IMPORTED", GetTimeString(), 1, 0);
 }
 
 void CGameAnalytics::logGservGcImported()
 {
-    XString time = GetTimeString();
-    CStrWChar details(time.c_str());
-    CFlurry::LogCustomEvent("BOUNTY_EVT_TYPE_GSERV_GC_IMPORTED", details.GetWCharPtr(), 1, 0);
+    LogDetails("BOUNTY_EVT_TYPE_GSERV_GC_IMPORTED", GetTimeString(), 1, 0);
 }
 
 void CGameAnalytics::logFriendInvited(const XString& name)
@@ -138,37 +153,27 @@ void CGameAnalytics::logReactixUsed(int missionId, int time)
 
 void CGameAnalytics::logSubContractAppear(unsigned int id)
 {
-    XString time = GetTimeString();
-    CStrWChar details(time.c_str());
-    CFlurry::LogCustomEvent("SUBCONTRACT_APPEAR", details.GetWCharPtr(), id, 0);
+    LogDetails("SUBCONTRACT_APPEAR", GetTimeString(), id, 0);
 }
 
 void CGameAnalytics::logSubContractDisappear(unsigned int id)
 {
-    XString time = GetTimeString();
-    CStrWChar details(time.c_str());
-    CFlurry::LogCustomEvent("SUBCONTRACT_DISAPPEAR", details.GetWCharPtr(), id, 0);
+    LogDetails("SUBCONTRACT_DISAPPEAR", GetTimeString(), id, 0);
 }
 
 void CGameAnalytics::logSubContractCollected(unsigned int id)
 {
-    XString time = GetTimeString();
-    CStrWChar details(time.c_str());
-    CFlurry::LogCustomEvent("SUBCONTRACT_COLLECTED", details.GetWCharPtr(), id, 0);
+    LogDetails("SUBCONTRACT_COLLECTED", GetTimeString(), id, 0);
 }
 
 void CGameAnalytics::logTutorialEvents(ETutorialEvent event)
 {
-    XString time = GetTimeString();
-    CStrWChar details(time.c_str());
-    CFlurry::LogCustomEvent("TUTORIAL_EVENTS", details.GetWCharPtr(), event, 0);
+    LogDetails("TUTORIAL_EVENTS", GetTimeString(), event, 0);
 }
 
 void CGameAnalytics::logVehicleMissionsMinigun(bool purchased)
 {
-    XString time = GetTimeString();
-    CStrWChar details(time.c_str());
-    CFlurry::LogCustomEvent("BOUNTY_EVT_TYPE_VEHICLE_MISSIONS_MINIGUN", details.GetWCharPtr(), purchased, 0);
+    LogDetails("BOUNTY_EVT_TYPE_VEHICLE_MISSIONS_MINIGUN", GetTimeString(), purchased, 0);
 }
 
 void CGameAnalytics::logGMGEntered()
@@ -186,7 +191,9 @@ void CGameAnalytics::logZombiesPromoPressed()
 void CGameAnalytics::logTrickShotEarned(const XString& name)
 {
     CStrWChar details(name.c_str());
-    CFlurry::LogCustomEvent("TRICK_SHOT_EARNED", details.GetWCharPtr(), CStdUtil_Cocoa::GetTimeSeconds(), 0);
+    // the original asks for the time before reading the details buffer
+    int time = CStdUtil_Cocoa::GetTimeSeconds();
+    CFlurry::LogCustomEvent("TRICK_SHOT_EARNED", details.GetWCharPtr(), time, 0);
 }
 
 void CGameAnalytics::logGameplayEnter(const XString& mission, int money, int experience)
@@ -276,7 +283,9 @@ void CGameAnalytics::logFriendsGatedCompleted(int missionId)
 void CGameAnalytics::logWeaponGatedCompleted(const XString& category)
 {
     CStrWChar details(category.c_str());
-    CFlurry::LogCustomEvent("WEAPON_GATED_COMPLETED", details.GetWCharPtr(), CStdUtil_Cocoa::GetTimeSeconds(), 0);
+    // the original asks for the time before reading the details buffer
+    int time = CStdUtil_Cocoa::GetTimeSeconds();
+    CFlurry::LogCustomEvent("WEAPON_GATED_COMPLETED", details.GetWCharPtr(), time, 0);
 }
 
 void CGameAnalytics::logItemEquipped(const XString& item, int, ECurrencyType)
@@ -293,16 +302,12 @@ void CGameAnalytics::logSwitchWeapon(const XString& mission, int id)
 
 void CGameAnalytics::logLevelGained(int level, int cash, int credits)
 {
-    XString text(cash);
-    CStrWChar info(text.c_str());
-    CFlurry::LogCustomEvent("BOUNTY_EVT_TYPE_PROGRESSION_LEVEL_ACHIEVED", info.GetWCharPtr(), level, credits);
+    LogDetails("BOUNTY_EVT_TYPE_PROGRESSION_LEVEL_ACHIEVED", XString(cash), level, credits);
 }
 
 void CGameAnalytics::logXPGain(int amount, int remaining)
 {
-    XString text(remaining);
-    CStrWChar info(text.c_str());
-    CFlurry::LogCustomEvent("BOUNTY_EVT_TYPE_PROGRESSION_EXP_GAINED", info.GetWCharPtr(), amount, 0);
+    LogDetails("BOUNTY_EVT_TYPE_PROGRESSION_EXP_GAINED", XString(remaining), amount, 0);
 }
 
 void CGameAnalytics::SendTapJoyID(const XString& id)
@@ -313,9 +318,7 @@ void CGameAnalytics::SendTapJoyID(const XString& id)
 
 void CGameAnalytics::SendAdMarvelID(int id)
 {
-    XString text = XString::Format(L"%d", id);
-    CStrWChar info(text.c_str());
-    CFlurry::LogCustomEvent("BOUNTY_EVT_TYPE_ADMARVEL_ID", info.GetWCharPtr(), 0, 0);
+    LogDetails("BOUNTY_EVT_TYPE_ADMARVEL_ID", XString::Format(L"%d", id), 0, 0);
 }
 
 void CGameAnalytics::SendPushTokenImpl(const char* token)
@@ -347,9 +350,7 @@ void CGameAnalytics::logCurrencyChange(const XString& source, int amount, ECurre
 
 void CGameAnalytics::logCurrentCash(int cash)
 {
-    XString text = XString::Format(L"%d", cash);
-    CStrWChar info(text.c_str());
-    CFlurry::LogCustomEvent("BOUNTY_EVT_TYPE_CURRENCY_TOTAL_SOFT", info.GetWCharPtr(), 0, 0);
+    LogDetails("BOUNTY_EVT_TYPE_CURRENCY_TOTAL_SOFT", XString::Format(L"%d", cash), 0, 0);
 }
 
 void CGameAnalytics::logGiftAccepted(int source, const XString& item)
@@ -385,14 +386,14 @@ void CGameAnalytics::logCurrencyRecieved(int money, int credits)
 
 void CGameAnalytics::logCurrentContractCredits(int credits)
 {
-    XString text = XString::Format(L"%d", credits);
-    CStrWChar info(text.c_str());
-    CFlurry::LogCustomEvent("BOUNTY_EVT_TYPE_CURRENCY_TOTAL_HARD", info.GetWCharPtr(), 0, 0);
+    LogDetails("BOUNTY_EVT_TYPE_CURRENCY_TOTAL_HARD", XString::Format(L"%d", credits), 0, 0);
 }
 
 void CGameAnalytics::logEnergyValue(int energy)
 {
-    CFlurry::LogCustomEvent("BOUNTY_EVT_TYPE_ENERGY_VALUE", static_cast<const wchar_t*>(NULL), energy, 0);
+    // the original builds an empty details string (its buffer is still NULL)
+    CStrWChar details;
+    CFlurry::LogCustomEvent("BOUNTY_EVT_TYPE_ENERGY_VALUE", details.GetWCharPtr(), energy, 0);
 }
 
 void CGameAnalytics::logItemViewed(const XString& item, int price, ECurrencyType type)
@@ -433,30 +434,22 @@ void CGameAnalytics::logRandomWeaponMissionPurchased(const XString& item, bool p
 
 void CGameAnalytics::logChalengeShared(unsigned int friendCount)
 {
-    XString time = GetTimeString();
-    CStrWChar info(time.c_str());
-    CFlurry::LogCustomEvent("CHALLENGE_SHARED", info.GetWCharPtr(), friendCount, 0);
+    LogDetails("CHALLENGE_SHARED", GetTimeString(), friendCount, 0);
 }
 
 void CGameAnalytics::logChalengeCompleted(EChallengeCompleteState state)
 {
-    XString text = XString::Format(L"%d", state);
-    CStrWChar details(text.c_str());
-    CFlurry::LogCustomEvent("CHALLENGE_COMPLETED", details.GetWCharPtr(), CStdUtil_Cocoa::GetTimeSeconds(), 0);
+    LogTimedDetails("CHALLENGE_COMPLETED", XString::Format(L"%d", state));
 }
 
 void CGameAnalytics::logAssassinsInviteAccepted(int friendId)
 {
-    XString time = GetTimeString();
-    CStrWChar details(time.c_str());
-    CFlurry::LogCustomEvent("ASSASSINS_INVITE_ACCEPTED", details.GetWCharPtr(), friendId, 0);
+    LogDetails("ASSASSINS_INVITE_ACCEPTED", GetTimeString(), friendId, 0);
 }
 
 void CGameAnalytics::logAssassinsInviteDeclined(int friendId)
 {
-    XString time = GetTimeString();
-    CStrWChar details(time.c_str());
-    CFlurry::LogCustomEvent("ASSASSINS_INVITE_DECLINED", details.GetWCharPtr(), friendId, 0);
+    LogDetails("ASSASSINS_INVITE_DECLINED", GetTimeString(), friendId, 0);
 }
 
 void CGameAnalytics::logIAPPurchased(const XString& item, int level)
@@ -521,16 +514,12 @@ XString CGameAnalytics::GetTimeString()
 
 void CGameAnalytics::logGservLogin(int networks)
 {
-    XString time = GetTimeString();
-    CStrWChar details(time.c_str());
-    CFlurry::LogCustomEvent("BOUNTY_EVT_TYPE_GSERV_LOGIN", details.GetWCharPtr(), networks, 0);
+    LogDetails("BOUNTY_EVT_TYPE_GSERV_LOGIN", GetTimeString(), networks, 0);
 }
 
 void CGameAnalytics::logGservLogout(int networks)
 {
-    XString time = GetTimeString();
-    CStrWChar details(time.c_str());
-    CFlurry::LogCustomEvent("BOUNTY_EVT_TYPE_GSERV_LOGOUT", details.GetWCharPtr(), networks, 0);
+    LogDetails("BOUNTY_EVT_TYPE_GSERV_LOGOUT", GetTimeString(), networks, 0);
 }
 
 void CGameAnalytics::logFriendAccepted(const XString& friendName, int amount)

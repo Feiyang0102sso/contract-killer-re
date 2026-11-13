@@ -13,8 +13,9 @@ static const char* const TOKENS[] = {
 };
 
 CPrivateData1::CPrivateData1()
-    : CSaveRestoreInterface(1001, 4, BACKING_STORE_ATTRIBUTES), m_hasProgress(0)
+    : CSaveRestoreInterface(1001, 4, BACKING_STORE_ATTRIBUTES)
 {
+    // the original constructor does not set m_hasProgress
     resetData();
 }
 

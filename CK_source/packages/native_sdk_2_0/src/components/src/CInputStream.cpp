@@ -155,8 +155,9 @@ unsigned int CInputStream::Available()
         if (m_error) {
             return 0;
         }
-        unsigned int remaining = m_length - m_position;
-        unsigned int sourceAvailable = m_source->Available();
+        // 原版按有符号数比较（movlt）
+        int remaining = m_length - m_position;
+        int sourceAvailable = m_source->Available();
         if (remaining < sourceAvailable) {
             return remaining;
         }

@@ -5,6 +5,7 @@
 #include "CFont.h"
 #include "CFontMgr.h"
 #include "CGPSHauntCamera.h"
+#include "CTutorialManager.h"
 #include "CXmlHelper.h"
 #include "DGHelper.h"
 
@@ -18,14 +19,13 @@ CGPSHaunt::CGPSHaunt(TiXmlNode* node) : m_listener(NULL)
             m_unlockLevel = level;
         }
     }
+    // Original 0x127964: both widths come from DGHelper::GetTextWidth.
     m_font = CFontMgr::GetInstance()->GetFont(GAME_FONT_DEFAULT);
+    m_nameWidth = static_cast<App*>(WindowApp::m_instance)->m_helper->GetTextWidth(
+        XString::AnsiString(m_levelText.c_str()), m_font);
     m_label = m_screenName;
-    m_labelWidth = 0;
-    m_nameWidth = 0;
-    if (m_font != NULL) {
-        m_labelWidth = m_font->MeasureTextWidth(m_label.c_str(), -1, -1, NULL);
-        m_nameWidth = m_font->MeasureTextWidth(m_levelText.c_str(), -1, -1, NULL);
-    }
+    m_labelWidth = static_cast<App*>(WindowApp::m_instance)->m_helper->GetTextWidth(
+        XString::AnsiString(m_label.c_str()), m_font);
     SetPressImage("IDB_GPS_ROUND_ICON_ANIM");
     UpdateState();
 }
@@ -57,24 +57,34 @@ void CGPSHaunt::ParseInfo(TiXmlNode* node)
 
 void CGPSHaunt::Update(long elapsed)
 {
-    for (int index = 0; index < m_cameras.size(); ++index) {
-        m_cameras[index]->Update(elapsed);
+    if (m_cameras.size() == 0) {
+        return;
     }
+    unsigned int index = 0;
+    do {
+        m_cameras[index++]->Update(elapsed);
+    } while (index < static_cast<unsigned int>(m_cameras.size()));
 }
 
 void CGPSHaunt::UpdateState()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
-    int level = CBH_Player::GetInstance()->GetLevel();
+    // Original 0x128050
+    if (static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsPlayerInTutorial() == true
+        && !static_cast<App*>(WindowApp::m_instance)->m_tutorialManager->IsHauntVisible(m_name)) {
+        m_state = 0;
+        m_visible = false;
+        return;
+    }
     m_visible = true;
-    m_state = 2;
-    if (level < m_unlockLevel) {
-        int threshold = app->m_helper->m_config.GetIntegerValueByToken("LEVEL_DIFF_HAUNT_BECOME_VISIBLE", true);
-        m_visible = m_unlockLevel - level <= threshold;
+    int levelDiff = CBH_Player::GetInstance()->GetLevel() - m_unlockLevel;
+    if (levelDiff >= 0) {
+        m_state = 2;
+    } else if (levelDiff >= -static_cast<App*>(WindowApp::m_instance)->m_helper->m_config.GetIntegerValueByToken(
+                   "LEVEL_DIFF_HAUNT_BECOME_VISIBLE", true)) {
         m_state = 1;
-        if (!m_visible) {
-            m_state = 0;
-        }
+    } else {
+        m_state = 0;
+        m_visible = false;
     }
     for (int index = 0; index < m_cameras.size(); ++index) {
         m_cameras[index]->UpdateState();
@@ -83,16 +93,17 @@ void CGPSHaunt::UpdateState()
 
 void CGPSHaunt::Paint(ICGraphics2d& graphics, int mapX, int mapY)
 {
-    if (m_visible) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        int x = mapX + GetX();
-        int y = mapY + GetY();
-        if (m_image != NULL) {
-            app->m_helper->DrawImage(m_image, x, y, 1.0f, 0, 0, 0.0f, 0);
-        }
-        if (m_font != NULL) {
-            m_font->PaintText(m_label.c_str(), -1, x + (m_width - m_labelWidth) / 2,
-                              y + m_height, m_labelWidth, m_font->GetFontHeight());
+    // Original 0x127bd8: hidden haunts (state 0) skip the icon; states 1 and 2 draw the icon and
+    // the label. The label y uses GetWidth() (original; the icons are square).
+    if (m_state != 0) {
+        if (m_state == 1 || m_state == 2) {
+            static_cast<App*>(WindowApp::m_instance)->m_helper->DrawImage(
+                GetImage(), GetX() + mapX, GetY() + mapY, 1.0f, 0, 0, 0.0f, 0);
+            m_font->PaintText(m_label.c_str(), -1, GetX() + mapX + GetWidth() / 2 - m_labelWidth / 2,
+                              GetY() + mapY + GetWidth(), -1, -1);
+            CRectangle label(GetX() + GetWidth() / 2 - m_labelWidth / 2, GetY() + GetHeight(),
+                             m_labelWidth, m_font->GetFontHeight());
+            setSubItem(0, label, mapX, mapY);
         }
         CGPSItem::Paint(graphics, mapX, mapY);
     }
@@ -125,28 +136,27 @@ void CGPSHaunt::SetHauntListener(CGPSHauntListener* listener)
 
 void CGPSHaunt::Save(TiXmlElement* parent)
 {
-    TiXmlElement* savedHaunt = parent->FirstChildElement("gps_haunt");
-    while (savedHaunt != NULL && !(CXmlHelper::GetAttributeValue(savedHaunt, "name") == m_name)) {
-        savedHaunt = savedHaunt->NextSiblingElement("gps_haunt");
-    }
-    if (savedHaunt == NULL) {
-        savedHaunt = new TiXmlElement("gps_haunt");
-        savedHaunt->SetAttribute("name", XString::AnsiString(m_name.c_str()));
-        parent->LinkEndChild(savedHaunt);
-    }
+    // Original 0x127f10: a fresh element is filled, copied into the parent and deleted
+    // (CBH_GPSMap::Save clears the map element first).
+    TiXmlElement* savedHaunt = new TiXmlElement("gps_haunt");
+    savedHaunt->SetAttribute("name", XString::AnsiString(m_name.c_str()));
     for (int index = 0; index < m_cameras.size(); ++index) {
         m_cameras[index]->Save(savedHaunt);
     }
+    parent->InsertEndChild(*savedHaunt);
+    delete savedHaunt;
 }
 
 void CGPSHaunt::Load(TiXmlElement* parent)
 {
-    for (TiXmlElement* haunt = parent->FirstChildElement("gps_haunt"); haunt != NULL;
-         haunt = haunt->NextSiblingElement("gps_haunt")) {
-        if (CXmlHelper::GetAttributeValue(haunt, "name") == m_name) {
+    // Original 0x127f94: every matching element is loaded (no break).
+    TiXmlElement* haunt = parent->FirstChildElement("gps_haunt");
+    while (haunt != NULL) {
+        XString name = CXmlHelper::GetAttributeValue(haunt, "name");
+        if (name == m_name) {
             LoadCameras(haunt);
-            break;
         }
+        haunt = haunt->NextSiblingElement("gps_haunt");
     }
     UpdateState();
 }

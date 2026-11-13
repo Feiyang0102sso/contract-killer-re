@@ -11,9 +11,10 @@ public:
     virtual void ParseStats(const TiXmlElement& stats);
     virtual XString getUIDString() const;
     virtual XString GetStatsString() const;
-    virtual bool isAvailable() const { return false; }
+    virtual bool isAvailable() const { return m_available; }
 
     int m_medkits; // 0x5c
+    bool m_available; // 0x60 cleared by the constructor, read by isAvailable()
 };
 
 #endif

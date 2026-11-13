@@ -45,8 +45,8 @@ public:
     /** Type key of a 32-bit unsigned argument: CStringToKey("uint32"). */
     enum { ArgumentType_UInt32 = 0x013f9702 };
 
-    /** Most arguments a message carries. */
-    enum { MaxArguments = 25 };
+    /** The CK pool reserves 0xc0 bytes per message, with 0x30 bytes before the arguments. */
+    enum { MaxArguments = 12 };
 
     /** One argument: a type key, an element count (0 = the value itself is in m_data) and the data. */
     struct Argument {

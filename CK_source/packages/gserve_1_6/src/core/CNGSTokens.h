@@ -25,6 +25,7 @@ static const char NGS_AVATAR_ATTRIBUTES_TOKEN[] = "avatarattributes";           
 static const char NGS_MESSAGE_TYPE_AVATAR_UPDATE_ITEM_STATS[] = "ngs.avatar.update.item.stats";    // added by b025x
 static const char NGS_USER_TOKEN[] = "user";                                                // added by b025x
 static const char NGS_REGISTER_AVATAR_TOKEN[] = "registeravatar";                           // added by b025x
+static const char NGS_MESSAGE_TYPE_AVATAR_QUERY[] = "ngs.avatar.query";
 static const char NGS_MESSAGE_TYPE_AVATAR_QUERY_ATTRIBUTES[] = "ngs.avatar.query.attributes";      // added by b025x
 static const char NGS_GAME_ID_TOKEN[] = "gameid";                                           // added by b025x
 static const char NGS_FILENAME_TOKEN[] = "filename";                                        // added by b025x

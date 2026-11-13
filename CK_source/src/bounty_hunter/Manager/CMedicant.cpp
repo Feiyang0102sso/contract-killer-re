@@ -5,8 +5,9 @@
 #include "App.h"
 
 CMedicant::CMedicant()
-    : CItem(0), m_medkits(0)
+    : CItem(0), m_available(false)
 {
+    // the original leaves m_medkits for ParseStats()
 }
 
 void CMedicant::setAvailable(bool)
@@ -38,4 +39,5 @@ XString CMedicant::GetStatsString() const
     return result;
 }
 
-typedef char AssertCMedicantSize[sizeof(CMedicant) == 0x60 ? 1 : -1];
+// CMedicantManager allocates 0x64 bytes per item in the original
+typedef char AssertCMedicantSize[sizeof(CMedicant) == 0x64 ? 1 : -1];

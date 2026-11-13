@@ -22,8 +22,12 @@ protected:
     XString m_field13c;
     XString m_leftText;
     XString m_rightText;
-    ImageRes m_selector[3];
-    ImageRes m_splitter[3];
+    ImageRes m_selectorLeft;
+    ImageRes m_selectorMiddle;
+    ImageRes m_selectorRight;
+    ImageRes m_splitterLeft;
+    ImageRes m_splitterMiddle;
+    ImageRes m_splitterRight;
     CDH_ButtonWidget* m_leftButton;
     CDH_ButtonWidget* m_rightButton;
     Window* m_buttons;

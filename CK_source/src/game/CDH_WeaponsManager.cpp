@@ -146,18 +146,14 @@ Vector<XString> CDH_WeaponsManager::GetUnlockedWeapons(int level) const
 
 void CDH_WeaponsManager::load3dResources(int id, bool forMenu)
 {
-    CDH_Weapon* weapon = GetWeaponById(id);
-    if (weapon != NULL) {
-        weapon->loadWeaponModel(forMenu);
-    }
+    // the original does not check for an unknown id
+    GetWeaponById(id)->loadWeaponModel(forMenu);
 }
 
 void CDH_WeaponsManager::release3dResources(int id)
 {
-    CDH_Weapon* weapon = GetWeaponById(id);
-    if (weapon != NULL) {
-        weapon->releaseWeaponModel();
-    }
+    // the original does not check for an unknown id
+    GetWeaponById(id)->releaseWeaponModel();
 }
 
 int CDH_WeaponsManager::GetAvailableWeapons(Vector<CDH_Weapon*>& weapons)
@@ -186,7 +182,7 @@ int CDH_WeaponsManager::GetUnavailableWeapons(Vector<CDH_Weapon*>& weapons)
 
 CItem* CDH_WeaponsManager::getItemByInternalId(int index)
 {
-    if (index >= 0 && index < m_weapons.size()) {
+    if (index < m_weapons.size()) {  // the original does not test index >= 0
         return m_weapons[index];
     }
     return NULL;

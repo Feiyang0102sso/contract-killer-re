@@ -24,7 +24,6 @@ public:
     virtual void Load(TiXmlElement* parent);
     virtual void OnClick();
     virtual void SetVisible(bool visible);
-    virtual bool CheckHit(int x, int y, CGPSItem** item);
 
     void ParseNode(TiXmlNode* node);
     void ParseInfo(TiXmlNode* node);

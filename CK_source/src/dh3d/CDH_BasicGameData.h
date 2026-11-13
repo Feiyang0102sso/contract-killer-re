@@ -28,7 +28,14 @@ public:
     /** Put weapon `weaponId` into slot `slot` (slot 0 also makes it active; it becomes active when none is). */
     void SetWeapon(int slot, int weaponId);
     /** Weapon of slot `slot`. */
-    CDH_Weapon* GetWeapon(int slot);
+    /** Weapon of `slot` (inline in the original: no symbol of its own; -Os would keep the call). */
+    __attribute__((always_inline)) CDH_Weapon* GetWeapon(int slot)
+    {
+        if (slot == 0) {
+            return GetWeapon01(true);
+        }
+        return GetWeapon02(true);
+    }
     CDH_Weapon* GetActiveWeapon();
     /** Make the weapon of slot `slot` active (the other slot's one when it is empty). */
     void SetActiveWeapon(int slot);

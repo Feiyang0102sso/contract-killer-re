@@ -39,24 +39,24 @@ void CEnemyWeaponType::ParseInfo(TiXmlNode* node)
 void CEnemyWeaponType::ParseModel(TiXmlNode* node)
 {
     if (node != NULL) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        m_modelResource = app->InitResMap()->getResourceID(CXmlHelper::GetAttributeValue(node, "m3g"));
+        // the original reads the attribute before asking for the resource map
+        XString value = CXmlHelper::GetAttributeValue(node, "m3g");
+        m_modelResource = static_cast<App*>(WindowApp::m_instance)->InitResMap()->getResourceID(value);
     }
 }
 
 void CEnemyWeaponType::ParseSounds(TiXmlNode* node)
 {
     if (node != NULL) {
-        App* app = static_cast<App*>(WindowApp::m_instance);
-        m_shootSound = app->InitResMap()->getResourceID(CXmlHelper::GetAttributeValue(node, "shoot"));
+        // the original reads the attribute before asking for the resource map
+        XString value = CXmlHelper::GetAttributeValue(node, "shoot");
+        m_shootSound = static_cast<App*>(WindowApp::m_instance)->InitResMap()->getResourceID(value);
     }
 }
 
 void CEnemyWeaponType::LoadModel() const
 {
-    if (m_modelResource == NULL) {
-        return;
-    }
+    // the original does not check the resource name
     SwerveHelper::Object3D model = App::LoadObject3D(m_modelResource);
     if (model != NULL) {
         XString::AnsiString dummyName(m_dummyName.c_str());
@@ -69,17 +69,16 @@ SwerveHelper::Group CEnemyWeaponType::GetModelCopy() const
     if (m_model == NULL) {
         LoadModel();
     }
-    if (m_model == NULL) {
-        return SwerveHelper::Group();
-    }
+    // the original does not check the model after loading
     ++m_modelCopies;
     return SwerveHelper::FullObjectDuplicate(SwerveHelper::Group(m_model), 0);
 }
 
 void CEnemyWeaponType::ReleaseModelCopy() const
 {
-    if (m_modelCopies > 0 && --m_modelCopies == 0) {
-        m_model = SwerveHelper::Object3D();
+    // the original does not test for a positive count first
+    if (--m_modelCopies == 0) {
+        m_model.Clear();
     }
 }
 

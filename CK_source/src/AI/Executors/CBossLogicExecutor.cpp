@@ -1,9 +1,9 @@
 #include "CBossLogicExecutor.h"
 
 #include "App.h"
+#include "DGHelper.h"
 #include "CHuntingInfo.h"
 #include "CRunAwayExecutor.h"
-#include "CSquad.h"
 #include "CSwerveGame.h"
 #include "CUnit.h"
 
@@ -14,33 +14,31 @@ CBossLogicExecutor::CBossLogicExecutor(CUnitMind* mind, bool scripted)
 
 void CBossLogicExecutor::Tick(int elapsed)
 {
-    CHumanLogicExecutor::Tick(elapsed);
-    if (m_mind->GetExecutor(L"CStunExecutor") != NULL) {
+    // Original 0xd02d4: the escape check runs before the human logic tick (no stun check).
+    CUnit* unit = m_mind->GetUnit();
+    if (unit == NULL) {
         return;
     }
-    CUnit* unit = m_mind->GetUnit();
-    if (unit != NULL && CSwerveGame::m_pInstance->m_bossMustEscape && !m_reacted && !unit->m_invulnerable) {
+    if (static_cast<App*>(WindowApp::m_instance)->m_helper->m_swerveGame->m_bossMustEscape && !m_reacted
+        && !unit->m_invulnerable) {
         CancelChildren();
+        AddRunAwayExecutor(m_mind);
         m_reacted = true;
         unit->MarkAsRunAway();
-        if (unit->m_squad != NULL) {
-            unit->m_squad->LeaveSquad(unit);
-        }
-        AddRunAwayExecutor(m_mind);
     }
+    CHumanLogicExecutor::Tick(elapsed);
 }
 
 void CBossLogicExecutor::OnReceiveDamage()
 {
-    App* app = static_cast<App*>(WindowApp::m_instance);
+    if (static_cast<App*>(WindowApp::m_instance)->m_huntingInfo->IsAmbush() || m_reacted) {
+        return;
+    }
     CUnit* unit = m_mind->GetUnit();
-    if (!app->m_huntingInfo->IsAmbush() && !m_reacted && unit != NULL && unit->m_wounded && unit->m_hp > 0) {
+    if (unit != NULL && unit->m_wounded && unit->m_hp > 0) {
         CancelChildren();
-        m_reacted = true;
-        if (unit->m_squad != NULL) {
-            unit->m_squad->LeaveSquad(unit);
-        }
         AddRunAwayExecutor(m_mind);
+        m_reacted = true;
     }
 }
 
