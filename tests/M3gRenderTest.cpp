@@ -787,6 +787,54 @@ TEST(M3gRenderIsolate, AccumulatingMeshes)
     ReleaseRoots(nativeRoots);
 }
 
+/**
+ * Diagnostics (CK_RENDER_HIDE=<file name>,<user id>[,<world time>]): where is a node? The file's
+ * World is drawn by the native backend with the node and without it (rendering switched off); the
+ * pair is saved as render_compare\<file>_node<id>.bmp (with | without | difference).
+ */
+TEST(M3gRenderIsolate, WhereIsNode)
+{
+    const char* spec = SDL_getenv("CK_RENDER_HIDE");
+    if (spec == nullptr) {
+        GTEST_SKIP() << "set CK_RENDER_HIDE=<file name>,<user id>[,<world time>]";
+    }
+    char wanted[64] = {};
+    int userId = 0;
+    int worldTime = DrawTime;
+    sscanf(spec, "%63[^,],%d,%d", wanted, &userId, &worldTime);
+    GameHarness* harness = GameHarness::Get();
+    ASSERT_NE(harness, nullptr);
+    harness->RunFrames(3);
+    ISwerve* native = NativeRuntime();
+    ASSERT_TRUE(native != nullptr && CreateTarget());
+    Handle graphics = CreateObject(native, ClassGraphics3D);
+    const M3gFile* file = nullptr;
+    static std::vector<M3gFile> files = M3gFiles();
+    for (const M3gFile& candidate : files) {
+        if (FileName(candidate) == wanted) {
+            file = &candidate;
+        }
+    }
+    ASSERT_NE(file, nullptr) << wanted;
+    std::vector<Handle> roots;
+    ASSERT_EQ(LoadWith(native, ReadM3gFile(*file), roots), 0);
+    ASSERT_TRUE(Supports(roots[0], ClassWorld));
+    int validity = 0;
+    Call<int>(roots[0], slot::object3d::animate, worldTime, &validity);
+    Handle node = nullptr;
+    Call<int>(roots[0], slot::object3d::find, userId, &node);
+    ASSERT_NE(node, nullptr) << "no node " << userId;
+    const std::vector<uint8_t> with = Draw(graphics, roots[0]);
+    SetRendering(node, false);
+    const std::vector<uint8_t> without = Draw(graphics, roots[0]);
+    int lit = 0;
+    const double share = DifferingShare(with, without, lit);
+    fprintf(stderr, "Render hide: %s node %d covers %.2f%% of the picture\n", wanted, userId, share * 100.0);
+    SavePictures(std::string(wanted) + "_node" + std::to_string(userId), with, without);
+    Release(node);
+    ReleaseRoots(roots);
+}
+
 std::string ParamName(const testing::TestParamInfo<M3gFile>& info)
 {
     return FileName(info.param);

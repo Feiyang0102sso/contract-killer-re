@@ -4,139 +4,126 @@
 
 ## Overview
 
-This project is based on `BountyHunter`, the main executable of Glu Mobile's *Contract Killer* for iOS, version 1.5.2. The original is a fat armv6 + armv7 file; this project **recovers the armv7 slice only**.
+This project rebuilds the game for PC on top of the iOS source code.
 
-The armv7 slice is not stripped and keeps its full STABS debug map: the source path, object name and function ownership of all 763 compile units, plus the original link order. The source tree, file split and function order follow that map.
+The game source is a 1:1 reconstruction of the main program `BountyHunter` from the iOS 1.5.2 release, see the [original iOS reconstruction (`ori_IOS` branch)](https://github.com/Feiyang0102sso/contract-killer-re/tree/ori_IOS). On PC it is compiled natively for x86. The parts of the original that depend on iOS are replaced by the bridge layer below.
 
-The goal is a **1:1 source recovery**: compiling the recovered source with the original toolchain should give a `BountyHunter` that is byte-identical to the original armv7 slice. Fixing the game's own bugs is out of scope; original behavior, bugs included, is kept as is.
+## Bridge layer
 
-Only a highly trustworthy source makes later fixes and ports worth doing.
+The game code (`CK_source/src/`, `CK_source/packages/`) is compiled as is; the few changes it needs are wrapped in `#ifdef CK_PC` and marked `PORT:`. The bridge layer lives in [`CK_source/pc_port/`](CK_source/pc_port/) and replaces everything that is specific to the iOS platform:
 
-## Compiler, SDK and third-party libraries
+| Original iOS | PC version | Location |
+| --- | --- | --- |
+| App lifecycle, touch | SDL3 window and events; mouse and keyboard are turned into the original touch controls | `platform_sdl/Applet.cpp`, `Controls.cpp` |
+| OpenGL ES 1.1 | Desktop OpenGL compatibility context. The game draws into a 1024×768 framebuffer, which is scaled to the window keeping its aspect ratio | `platform_sdl/GlesDesktop.cpp`, `Graphics.cpp` |
+| OpenAL | OpenAL Soft | `platform_sdl/Audio.cpp` |
+| Intro movie player | Decoded by Windows' built-in Media Foundation; one left click skips it | `platform_sdl/Movie.cpp` |
+| System font (dynamic text) | Windows system font; the original bitmap fonts are unchanged | `platform_sdl/SystemFont.cpp` |
+| Files and saves | Win32 wide-character paths, so the game can live in a non-ASCII directory; saves go to `saves/` next to the EXE | `platform_sdl/Files.cpp` |
+| Ads, analytics, online services, in-app purchases | Empty implementations, the game runs offline | `stubs/` |
+| Swerve 3D engine | Two switchable backends, see below | `swerve_compat/`, `swerve_native/` |
 
-The original binary does not record its compiler version. The versions below are backed by per-function machine-code comparison, the build path in the debug map, and version strings inside the binary. The toolchain was determined on CKZ first and then checked on CK: Lua, TinyXML and other objects built with it match the CK original byte for byte in the vast majority of functions.
+### m3g engine
 
-> ✅ aligned　⚠️ same version, one point cannot be fully verified　❓ original version unknown
+The original 3D engine, Swerve, is a precompiled ARM library without source. The game only calls it through function tables: the first word of every object points to a table of functions, and the game calls them by slot. Putting our own functions in the same slots therefore replaces the whole engine.
+
+CK uses an older Swerve than CKZ, with a different slot layout. The slot numbers are not guessed: [`make_swerve_slots.py`](scripts/make_swerve_slots.py) reads the vtable initialiser of every class in the original engine core and generates [`SwerveSlots.h`](CK_source/pc_port/swerve_native/SwerveSlots.h) (slot number → original function name); the native backend fills each slot by function name.
+
+`[graph] Engine` in `BountyHunter.cfg` selects the backend:
+
+| Value | Backend | Notes |
+| --- | --- | --- |
+| `m3g` (default) | Native m3gcore | Swerve's object interface reimplemented (`swerve_native/`) on [m3gcore](CK_source/pc_port/3rd_party/m3gcore/), the C implementation of Nokia M3G 1.1. Runs natively on x86 at a high frame rate |
+| `swerve` | Original Swerve | Unicorn emulates, inside the process, the original ARMv7 engine core `swerve-arm.bin` (`swerve_compat/`; assembled from `swerve_core.s` by the build). Behaves exactly like the original but is slower; mainly used for comparison |
+
+Both backends have been compared on all 234 M3G files of the game (scene data, animation, picking and rendered pictures); results and known differences are in [`tests/README.md`](tests/README.md).
+
+## Windows x86 build
 
 ### Toolchain
 
-| Component | Original | This project | Aligned | Notes |
-| --- | --- | --- | :---: | --- |
-| Compiler | Apple clang 3.0 | clang-211.12 (shipped with Xcode 4.2.1 4D502) | ⚠️ | Determined from code-generation traits (see CKZ); CK's own code and third-party libraries align with this version as well |
-| Assembler | cctools as | cctools-809 (the external `as` of the same Xcode; clang with `-no-integrated-as`) | ⚠️ | Determined from encodings: low-register `add` inside IT blocks is T1 in the original, while clang's integrated assembler only emits T2 |
-| Linker | ld64 | ld64-127.2 (same Xcode) | ⚠️ | The original targets iOS 3.0 and uses the old LINKEDIT layout (`__DATA,__dyld` section, `crt1.o` entry); the dylib list and order come from the original; the whole file is not byte-identical yet |
-| iOS SDK | — | iPhoneOS 5.0 SDK (same Xcode) | ⚠️ | `-miphoneos-version-min=3.0`; the sdk field of the original `LC_VERSION_MIN` is 0, so the binary cannot confirm it |
-| Flags | — | `-Os -g -fno-strict-aliasing -fvisibility=hidden`<br>C++: `-fno-rtti -fno-exceptions`<br>Objective-C++: `-fno-rtti` | ✅ | Inferred from byte-identical functions; all original Glu symbols are private extern, which proves `-fvisibility=hidden` |
-| Build path | `/Applications/buildAgent/work/1365410bc639d1a3/` | same (bind mount) | ✅ | `__FILE__` strings and the compile directory in the debug info match the original |
+| Component | Version | How to get it |
+| --- | --- | --- |
+| Visual Studio | 2022 or 2026 | Install it yourself with the Windows C++ x86 tools and the Windows SDK; it provides MSBuild, headers, libraries and `rc.exe` |
+| Python | 3.11 or later | Install it yourself; a `.venv` in the repository or its parent directory is preferred, or set the MSBuild property `CkPython` |
+| LLVM (`clang-cl`, `lld-link`) | 21.1.8 | Downloaded, verified and installed to `.cache/deps/` by [`prepare_toolchain.py`](scripts/prepare_toolchain.py) on the first build; needs internet access |
+| SDL3, OpenAL Soft, Unicorn, m3gcore, GoogleTest | See [`3rd_party/README.md`](CK_source/pc_port/3rd_party/README.md) | Included in the repository |
 
-Xcode 4.2.1's clang, as and ld are x86_64 Mach-O programs. This project runs them directly on Linux through [maloader](https://github.com/shinh/maloader) with three patches, see `toolchain/patches/maloader.patch`.
+Double-click `build_pc.bat` in the repository root to build; it finds the installed Visual Studio through `vswhere`. You can also open `vs/ck_pc.sln` and build `Release | Win32`.
 
-### Third-party libraries
+The result is `bin/Win32/Release/BountyHunter.exe`. The build puts `SDL3.dll`, `OpenAL32.dll` and `BountyHunter.cfg` next to the EXE, and [`make_swerve_image.py`](scripts/make_swerve_image.py) assembles `swerve-arm.bin` there from `swerve_core.s`.
 
-"Functions" is the per-function comparison against the original (identical / different).
+`build_pc.bat tests` builds the test program `BountyHunter_tests.exe`, see [`tests/README.md`](tests/README.md).
 
-| Library | Version | Source | Functions | Notes |
-| --- | --- | --- | --- | --- |
-| Lua | 5.1.4 | upstream + Glu changes | 466 / 10 | Compiled as C++ |
-| LuaBridge | 0.2 | upstream + Glu changes | 4 / 1 | CK still uses 0.2's `indexer` / `newindexer` (CKZ moved to `__index`) |
-| TinyXML | 2.5 | upstream | 114 / 0 | |
-| libjpeg | 6b | upstream + Glu changes | 152 / 0 | |
-| libpng | 1.2.41 | upstream + Glu changes | 97 / 8 | |
-| libogg | 1.1.3 | upstream | 28 / 1 | |
-| libvorbis | 1.2.0 | upstream + Glu private changes | 133 / 0 | |
-| zlib (inflate) | 1.2.3 | upstream | 12 / 0 | Only the inflate part is in the original |
-| Facebook iOS SDK (FBConnect) | ❓ | upstream | 158 / 1 | |
-| ASIHTTPRequest | ❓ | upstream | 138 / 1 | |
-| Reachability | ❓ | Apple sample code + Glu private changes | 12 / 0 | |
-| Swerve engine core | — | **assembly lifted from the original binary** | byte-identical | A prebuilt library without symbols in the original (380,452 bytes), see below |
-| Tapjoy | 8.1.5 | recovered from machine code | 166 / 266 | Built from source inside the Glu project; another 124 functions not compared |
-| PlayHaven | 2.9.0 | recovered from machine code | 81 / 130 | Same; another 48 functions not compared |
-| AdColony, Flurry, AdMarvel, AdMob | — | not recovered | — | Internal code of these ad/analytics SDKs is not recovered. AdColony, Flurry and AdMarvel each have a replacement layer that is **not original code**, switched by `CK_ADS_COMPAT` (off by default, taking the original failure callbacks); see `CK_source/stubs/ads/` |
+### Game assets
 
-The Swerve engine core is a prebuilt static library in the original. It is kept as assembly source in `CK_source/packages/swerve/code/cocoa/libs/swerve_core.s` and is byte-identical to the original after relocation to the original addresses.
+The assets are not included. Take them from the original ipa (`Payload/BountyHunter.app/`) and copy them to `bin/Win32/Release/assets/` by hand:
 
-Glu's own ad integration layer (`AdManager`, `TapjoyManager`, `CPHManager` and others) is Glu code and counts toward the results below.
-
-## Results
-
-![CK 1.5.2 function recovery overview](docs/piechart/function-overview.en.png)
-
-All code except the ad SDKs has been written; 90.29% of the functions are identical to the original. Counted in bytes, 71.52% of the bytes are identical.
-
-Two more levels are verified:
-
-- **Data**: of the 1,751 data symbols outside the ad SDKs (constants, vtables, ObjC metadata and so on), none differ; 94.97% are byte-identical and the rest have unverifiable tails or names the original lacks.
-- **Link**: of the 11,219 source functions in the linked binary, 2,789 have the original's raw bytes, and another 6,774 differ only in addresses and match after normalization.
-
-Per-function status: [function table](docs/function-table.en.html).
-
-## Rebuild
-
-The build runs on Linux. On Windows the scripts create a dedicated WSL distro under this repository's `.wsl\` directory; it does not use drive C and does not touch existing WSL distros.
-
-### Requirements
-
-| Item | Requirement |
+| File | Contents |
 | --- | --- |
-| System | Windows 10 / 11 (x64) with WSL 2, or x86_64 Ubuntu 24.04 |
-| WSL | If missing, run `wsl --install --no-distribution` in an administrator PowerShell and reboot |
-| Xcode 4.2.1 | **Bring your own**: `installxcode_421_lion.dmg` (4D502, 1.8 GB, SHA-256 `a9bb2633…a52ef835`); downloading needs an Apple ID, see below |
-| Downloaded automatically | Ubuntu 24.04 WSL image, apt packages, maloader source |
-| Disk | About 8 GB (the distro's virtual disk; it does not shrink after the dmg's temporary files are removed) |
+| `BountyHunter.big` | Game data archive |
+| `xga.big` | 1024×768 graphics archive |
+| `vga.big` | 960×640 graphics archive, also used at 1024×768 |
+| `en.big` | English text archive |
+| `res_map.dat` | Resource name map |
+| `glu_logo_landscape.m4v` | Glu intro movie |
+| `ck_logo_1024x768.m4v` | Contract Killer intro movie |
 
-To download Xcode 4.2.1, sign in to Apple Developer and open in the browser
+The required files are all listed in [`AssetPaths.h`](CK_source/pc_port/platform_sdl/AssetPaths.h). Startup checks each of them and reports the full path of every missing one. The intro also plays `glu_logo_audio.wav`, so copying the app's other asset files along is recommended.
 
-```
-https://developer.apple.com/services-account/download?path=/Developer_Tools/xcode_4.2.1_for_lion_21265/installxcode_421_lion.dmg
-```
+The assets and saves folders can also be given on the command line: `BountyHunter.exe [assets folder] [saves folder]`.
 
-The More Downloads page itself loops through redirects, so use this address. Put the file in `toolchain\xcode\`. The scripts unpack only five component packages: `clang`, `iPhoneSDK5_0`, and `iPhoneHostSideTools`, `iPhoneSDKTools`, `DeveloperToolsCLI`, which hold ld, as and the other tools.
+Running needs a graphics driver with a desktop OpenGL compatibility context and framebuffer objects, plus the x86 Visual C++ runtime.
 
-### Steps (Windows)
+## Configuration
 
-1. **Set up** (once): double-click `setup.bat`. If the dmg is elsewhere, run `setup.bat <dmg path>` from a command line. The script:
-   - downloads the Ubuntu 24.04 WSL image and imports it as the distro `ck-build` (disk under `.wsl\`);
-   - installs the build dependencies, builds maloader at a fixed commit and applies the patches;
-   - checks the dmg's SHA-256, unpacks the needed Xcode components, and finally runs clang and ld through maloader as a self-check.
-2. **Build**: double-click `build.bat`. It compiles all 701 object files (only changed files are recompiled) and links `BountyHunter`. `build.bat -c` compiles without linking; `build.bat -B` recompiles everything.
-3. The product is `_output\BountyHunter`, next to `BountyHunter.sha256`, the link arguments `link.args` and the link log `link.log`.
+Settings are read from `BountyHunter.cfg` next to the EXE.
 
-If you already have a WSL distro with this toolchain (for example the CKZ one), skip setup, set `CK_DISTRO=<distro name>` and run `build.bat`. The two projects do not collide: CK uses `/work/ck_src` and `/work/ck_build`, while Xcode and maloader are shared.
+| Key | Default | Effect |
+| --- | --- | --- |
+| `[common] Title` | `Contract Killer` | Window title |
+| `[graph] Engine` | `m3g` | 3D engine: `m3g` is the native m3gcore; `swerve` is the original Swerve emulated by Unicorn, slower, used for comparison |
+| `[graph] WindowWidth` / `WindowHeight` | `2048` / `1536` | Window size, scaled down proportionally when larger than the desktop |
+| `[graph] FullScreen` | `0` | Borderless full screen; the picture stays 4:3 with black bars at the sides |
+| `[graph] VSync` | `1` | Vertical sync |
+| `[game] DrawFPS` | `1` | Show the frame rate in the top-left corner |
+| `[debug] DebugMode` | `0` | Open a console window and enable the debug hotkey F9 (dump the next frame) |
+| `[debug] FpsLog` | `0` | Log frame rate, frame time and CPU time every second; needs `DebugMode=1` |
 
-Object files are reproducible: a forced rebuild of the same source gives byte-identical copies of all 701 `.o` files. The hash of `BountyHunter` changes with every rebuild because ld64 writes each object's modification time into the debug map (N_OSO entries); everything else is byte-identical.
+## Controls
 
-### Steps (Linux)
+During a mission the mouse is captured and hidden; in menus and on the map the left button clicks. Bindings are defined in [`KeyBindings.h`](CK_source/pc_port/platform_sdl/KeyBindings.h); rebuild after changing them.
 
-On x86_64 Ubuntu 24.04 the same scripts run directly:
-
-```bash
-sudo bash toolchain/setup_distro.sh /path/to/installxcode_421_lion.dmg
-```
-
-```bash
-sudo bash toolchain/build.sh
-```
-
-The build uses `/work` and creates the original build paths under `/Applications/buildAgent/...` and `/Developer/...` (bind mounts and symlinks), so a dedicated VM or container is recommended.
-
-### Running
-
-You need a jailbroken armv7 iOS device. Replace the main executable `BountyHunter` of Contract Killer 1.5.2 with the product. The product contains only the armv7 slice and does not support armv6 devices. Played on an iPad with iOS 6.1.3.
-
-## Layout
-
-| Path | Contents |
+| Input | Action |
 | --- | --- |
-| `CK_source/` | Recovered source, mirroring the original build machine's root; relative paths under `packages/` and `src/` match the original |
-| `CK_source/stubs/ads/` | Switch `CKAdsCompat.h` and notes for the ad/analytics replacement layer (the layer is not original code) |
-| `toolchain/` | Setup and build scripts, maloader patch, original link order `link_order.txt` |
-| `docs/` | Function table and overview charts |
-| `setup.bat` / `build.bat` | One-click entry points for Windows |
+| Move mouse | Turn the view |
+| Left button | Fire (hold) |
+| Right button | Scope in / out |
+| Wheel | Zoom while scoped |
+| `Shift` | Steady (hold breath, hold) |
+| `R` | Reload |
+| `Q` / `E` | Switch weapon |
+| `C` | Take / leave cover |
+| `H` | Medkit |
+| `F` | Slow-motion pill |
+| `G` | Ultrasound emitter |
+| `Esc` | Pause |
+
+## Cheat codes
+
+Type the letters once the game has loaded; there is no input box. `C` and `H` are also mission keys, so typing them on the map is best.
+
+| Code | Effect |
+| --- | --- |
+| `chm` | Cash +9,999,999, gold set to 99,999 (the map shows five digits of gold) |
+| `chxp` | Level +1 |
+| `chxxp` | Level +10 |
+| `chxxxp` | Top level (70) |
 
 ## Disclaimer
 
-- This project is not affiliated with, authorized or endorsed by Glu Mobile or its affiliates.
-- The Contract Killer names, trademarks, art, audio, levels and other game content, as well as the original program, belong to their respective owners.
-- This repository contains recovered source, build scripts and **the Swerve engine core assembly generated from the original binary**. It contains no original executable, game data or Xcode. You need a legally obtained copy of the game to run it.
-- This project is for study, research and preservation only, not for commercial use.
+- This project has no affiliation with Glu Mobile or its affiliates, and is not authorized or endorsed by them.
+- The names, trademarks, art, audio, levels and other game content of the Contract Killer series, as well as the original program, are the property of their respective owners.
+- This repository contains recovered source, build scripts and **the Swerve engine core assembly generated from the original binary**. It contains no original executable and no game data; you need legally obtained game assets to run it.
+- This project is for learning, research and preservation only, and must not be used commercially.
 - The code is provided "as is", without warranty of any kind; use at your own risk.

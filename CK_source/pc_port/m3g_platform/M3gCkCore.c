@@ -11,10 +11,11 @@
  * Group.removeChild without m3gcore's bone check.
  *
  * m3gcore refuses to remove a node flagged hasBones (M3G_INVALID_VALUE), and m3gNodeDuplicate
- * copies that flag to clones. CUnitBody::Behead duplicates the head group of a zombie skeleton,
- * flies it with SwerveBallistics and removes it after 3 seconds; with the check the copy stayed in
- * the world forever. Probed on the ARM backend: Swerve removes such a copy (getParent is null
- * afterwards). The flag is restored after the removal, it only drives transform invalidation.
+ * copies that flag to clones. In CKZ, CUnitBody::Behead duplicates the head group of a zombie
+ * skeleton, flies it with SwerveBallistics and removes it after 3 seconds; with the check the copy
+ * stayed in the world forever. Probed on CKZ's ARM backend: Swerve removes such a copy (getParent is
+ * null afterwards). CK has no beheading; the extension keeps Swerve's behaviour for any removal.
+ * The flag is restored after the removal, it only drives transform invalidation.
  */
 M3G_API void ckM3gRemoveChild(M3GGroup group, M3GNode child)
 {

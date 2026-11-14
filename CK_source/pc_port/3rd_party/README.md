@@ -13,7 +13,7 @@
 
 Unicorn 源码包含两处 Win32 修补。 `qemu/accel/tcg/translate-all.c` 将最后一次 JIT 内存提交限制在已保留的地址范围内。`qemu/include/qemu/compiler.h` 为 ClangCL 保留 ARM 向量访问所需的对齐属性。
 
-另有一处性能修补（注释标 `CKZ:`）。`qemu/accel/tcg/cputlb.c` 的 `notdirty_write` 改为按 Unicorn 映射权限判断页面是否可执行，并且不再因 `*_UNMAPPED` hook 拒绝清除 dirty（新增的 `uc_mem_access_hook_installed` 在 `qemu/include/exec/exec-all.h`）。上游按 TLB 的 `addr_code` 判断，而 ARM 关闭 MMU 时所有页都可执行，结果每次写内存都要走慢路径。修补后，Swerve 升级界面的加载卡顿由约 1.5 秒降到约 0.7 秒，动画期间的模拟耗时约降为原来的四分之一。
+另有一处性能修补（注释标 `CKZ:`）。`qemu/accel/tcg/cputlb.c` 的 `notdirty_write` 改为按 Unicorn 映射权限判断页面是否可执行，并且不再因 `*_UNMAPPED` hook 拒绝清除 dirty（新增的 `uc_mem_access_hook_installed` 在 `qemu/include/exec/exec-all.h`）。上游按 TLB 的 `addr_code` 判断，而 ARM 关闭 MMU 时所有页都可执行，结果每次写内存都要走慢路径。修补后，CKZ 的 Swerve 升级界面加载卡顿由约 1.5 秒降到约 0.7 秒，动画期间的模拟耗时约降为原来的四分之一（数据在 CKZ 上测得，CK 用的是同一份 Unicorn）。
 
 ## m3gcore
 
@@ -27,7 +27,7 @@ Unicorn 源码包含两处 Win32 修补。 `qemu/accel/tcg/translate-all.c` 将�
 | --- | --- |
 | `include/EGL/egl.h` + `CkEgl.cpp` | 假 EGL。桌面上只有 SDL 创建的那一个 GL 上下文，并且一直是激活状态，所以 m3gcore 的配置、上下文、surface 查询都按「只有这一个上下文」来回答；surface 只记录尺寸，供 `m3gBindEGLSurfaceTarget` 使用。 |
 | `M3gPlatform.cpp` | M3G 段解压：游戏的 zlib 只有 inflate，没有 `uncompress`，所以这里手动调 inflate。另有日志、断言，以及原生位图/窗口查询（不支持，返回失败）。 |
-| `M3gCkCore.c` + `include/M3gCkExtensions.h` | m3gcore 的编译入口：`#include` 原样的 `m3g_core.c`（unity build），再追加需要内部结构的扩展函数。`ckM3gRemoveChild`：移除节点时跳过 m3gcore 的 `hasBones` 检查（m3gcore 复制节点时会把这个标志带给克隆体，斩首飞出的头颅因此无法移除；原版 Swerve 允许移除，已在 ARM 后端探测确认）。`ckM3gGetSwerveTriangleIndices`：按 Swerve 的顶点顺序输出三角形索引（见下表）。 |
+| `M3gCkCore.c` + `include/M3gCkExtensions.h` | m3gcore 的编译入口：`#include` 原样的 `m3g_core.c`（unity build），再追加需要内部结构的扩展函数。`ckM3gRemoveChild`：移除节点时跳过 m3gcore 的 `hasBones` 检查（m3gcore 复制节点时会把这个标志带给克隆体，CKZ 里斩首飞出的头颅因此无法移除；原版 Swerve 允许移除，已在 CKZ 的 ARM 后端探测确认。CK 没有斩首，保留它是为了与 Swerve 行为一致）。`ckM3gGetSwerveTriangleIndices`：按 Swerve 的顶点顺序输出三角形索引（见下表）。 |
 
 m3g 加载测试在仓库根目录的 `tests/tests_tools/M3gLoadTest.cpp`，只编进测试程序：设置环境变量 `CK_M3G_LOADTEST=<目录>` 后，用 m3gcore 加载目录里所有 `.m3g` 并逐个打印结果。
 
