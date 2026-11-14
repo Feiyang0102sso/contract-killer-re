@@ -87,6 +87,7 @@ Settings are read from `BountyHunter.cfg` next to the EXE.
 | `[graph] FullScreen` | `0` | Borderless full screen; the picture stays 4:3 with black bars at the sides |
 | `[graph] VSync` | `1` | Vertical sync |
 | `[game] DrawFPS` | `1` | Show the frame rate in the top-left corner |
+| `[game] KeyHints` | `1` | Show the bound key on each mission HUD button (a blood splat badge) |
 | `[debug] DebugMode` | `0` | Open a console window and enable the debug hotkey F9 (dump the next frame) |
 | `[debug] FpsLog` | `0` | Log frame rate, frame time and CPU time every second; needs `DebugMode=1` |
 
@@ -108,6 +109,7 @@ During a mission the mouse is captured and hidden; in menus and on the map the l
 | `F` | Slow-motion pill |
 | `G` | Ultrasound emitter |
 | `Esc` | Pause |
+| `S` | In-mission shop |
 
 ## Cheat codes
 

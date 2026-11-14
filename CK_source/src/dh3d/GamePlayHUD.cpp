@@ -36,6 +36,13 @@
 #include "SwerveHelper.h"
 #include "ICStdUtil.h"
 
+#ifdef CK_PC
+// PORT: defined by the desktop platform layer (pc_port/platform_sdl/KeyHints.cpp).
+namespace ck {
+Window* CreateKeyHintWindow(GamePlayHUD* hud);
+}
+#endif
+
 // Scope view of the zoomed weapon (0xe4 bytes), drawn by GamePlayHUD::Paint.
 class GamePlayHUD::CZoomedScopeWindow : public ViewWindow {
 public:
@@ -164,6 +171,11 @@ GamePlayHUD::GamePlayHUD()
     m_experienceHud = new CBH_GPSHud(true);
     m_experienceHud->SetOutsetSpacing(0, SScreenAdaptingConstant(150, 300)());
     AddToFront(m_experienceHud);
+#ifdef CK_PC
+    // PORT: desktop key hints over the HUD buttons (pc_port/platform_sdl/KeyHints.cpp); added last,
+    // so it is the front child and is painted over the other HUD children.
+    AddToFront(ck::CreateKeyHintWindow(this));
+#endif
 }
 
 void GamePlayHUD::InitFireButton()

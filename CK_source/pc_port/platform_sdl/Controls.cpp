@@ -11,6 +11,7 @@
 #include "CApplet.h"
 #include "CBH_TriggerButton.h"
 #include "CDH_GameSoftkeyWidget.h"
+#include "CImageButton.h"
 #include "CSwerveGame.h"
 #include "CZoomSliderControl.h"
 #include "Collision.h"
@@ -180,6 +181,8 @@ bool TriggerAction(CApplet& applet, GameAction action)
         return true;
     case GameAction::Pause:
         return TapWindow(applet, hud->m_pauseButton);
+    case GameAction::Shop:
+        return TapWindow(applet, hud->m_ingameShop);
     }
     return false;
 }

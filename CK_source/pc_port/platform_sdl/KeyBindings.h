@@ -17,6 +17,7 @@ enum class GameAction {
     Pill,       // slow motion pill (Reactix)
     Ultrasound, // ultrasound emitter: stuns the enemies
     Pause,
+    Shop,       // in-mission shop (the $ button)
 };
 
 struct KeyBinding {
@@ -47,6 +48,7 @@ constexpr KeyBinding KeyBindings[] = {
     { SDLK_F, GameAction::Pill },
     { SDLK_G, GameAction::Ultrasound },
     { SDLK_ESCAPE, GameAction::Pause },
+    { SDLK_S, GameAction::Shop },
 };
 
 constexpr MouseButtonBinding MouseButtonBindings[] = {

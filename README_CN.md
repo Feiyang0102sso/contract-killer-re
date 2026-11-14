@@ -87,6 +87,7 @@ CK 用的是比 CKZ 更老的一版 Swerve，槽位布局和 CKZ 不同。槽号
 | `[graph] FullScreen` | `0` | 无边框全屏，画面保持 4:3，两侧留黑边 |
 | `[graph] VSync` | `1` | 垂直同步 |
 | `[game] DrawFPS` | `1` | 在画面左上角显示帧率 |
+| `[game] KeyHints` | `1` | 在关卡 HUD 按钮上显示对应键位（血迹徽章） |
 | `[debug] DebugMode` | `0` | 打开控制台黑框，并启用调试热键 F9（导出下一帧） |
 | `[debug] FpsLog` | `0` | 每秒记录帧率、帧耗时和 CPU 时间，需 `DebugMode=1` |
 
@@ -108,6 +109,7 @@ CK 用的是比 CKZ 更老的一版 Swerve，槽位布局和 CKZ 不同。槽号
 | `F` | 慢动作药片 |
 | `G` | 超声波发射器 |
 | `Esc` | 暂停 |
+| `S` | 关卡内商店 |
 
 ## 作弊码
 
