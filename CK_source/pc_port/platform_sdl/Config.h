@@ -10,9 +10,14 @@ namespace ck {
 // Read from the folder of the executable; the build copies the repository's copy there.
 constexpr wchar_t ConfigFileName[] = L"BountyHunter.cfg";
 
+// Values of [graph] Engine.
+constexpr const char* EngineM3g = "m3g";       // native m3gcore runtime (swerve_native)
+constexpr const char* EngineSwerve = "swerve"; // original ARM Swerve core run by Unicorn
+
 /** Settings of BountyHunter.cfg. LoadConfig fills every field, from the file or from its default. */
 struct Config {
     std::string title;  // [common] Title
+    std::string engine; // [graph] Engine: EngineM3g or EngineSwerve
     int windowWidth;    // [graph] WindowWidth
     int windowHeight;   // [graph] WindowHeight
     bool fullScreen;    // [graph] FullScreen
@@ -34,6 +39,7 @@ struct ConfigKey {
 
 inline const ConfigKey ConfigKeys[] = {
     { "common", "Title",        "Contract Killer",          &Config::title,  nullptr,              nullptr },
+    { "graph",  "Engine",       "m3g",                      &Config::engine, nullptr,              nullptr },
     { "graph",  "WindowWidth",  "2048",                     nullptr,         &Config::windowWidth, nullptr },
     { "graph",  "WindowHeight", "1536",                     nullptr,         &Config::windowHeight, nullptr },
     { "graph",  "FullScreen",   "0",                        nullptr,         nullptr,              &Config::fullScreen },

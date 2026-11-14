@@ -21,6 +21,10 @@
     <ClCompile Include="..\CK_source\pc_port\stubs\OfflinePlatform.cpp" />
     <ClCompile Include="..\CK_source\pc_port\swerve_compat\ArmImports.cpp" />
     <ClCompile Include="..\CK_source\pc_port\swerve_compat\ArmMachine.cpp" />
+    <ClCompile Include="..\CK_source\pc_port\swerve_native\NativeRuntime.cpp;..\CK_source\pc_port\swerve_native\NativeScene.cpp;..\CK_source\pc_port\swerve_native\NativeTransform.cpp;..\CK_source\pc_port\swerve_native\NativeLoader.cpp;..\CK_source\pc_port\swerve_native\NativeImage.cpp;..\CK_source\pc_port\swerve_native\NativeGraphics3D.cpp;..\CK_source\pc_port\swerve_native\SwerveExtendedM3g.cpp">
+      <AdditionalIncludeDirectories>$(CkThirdParty)\m3gcore\inc;$(CkPort)m3g_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ObjectFileName>$(IntDir)swerve_native\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\CK_source\packages\native_sdk_2_0\src\cocoa\src\NPMalloc.cpp" />
     <ClCompile Include="..\CK_source\packages\native_sdk_2_0\src\cocoa\src\NPMem.cpp" />
     <ClCompile Include="$(CkThirdParty)\powervr\PVRTDecompress.cpp">
@@ -49,9 +53,13 @@
     <ClInclude Include="..\CK_source\pc_port\swerve_compat\SwvPort.h" />
     <ClInclude Include="..\CK_source\pc_port\swerve_compat\twb_queryinterface.h" />
     <ClInclude Include="..\CK_source\pc_port\swerve_compat\tws.h" />
+    <ClInclude Include="..\CK_source\pc_port\swerve_native\NativeBackend.h" />
+    <ClInclude Include="..\CK_source\pc_port\swerve_native\NativeRuntime.h" />
+    <ClInclude Include="..\CK_source\pc_port\swerve_native\SwerveSlots.h" />
     <None Include="..\CK_source\pc_port\swerve_compat\ArmImportNames.inc" />
     <None Include="..\scripts\prepare_toolchain.py" />
     <None Include="..\scripts\make_arm_headers.py" />
     <None Include="..\scripts\make_swerve_image.py" />
+    <None Include="..\scripts\make_swerve_slots.py" />
   </ItemGroup>
 </Project>

@@ -6,6 +6,7 @@
 #include "../platform_sdl/Host.h"
 #include "../platform_sdl/Config.h"
 #include "ArmBackend.h"
+#include "../swerve_native/NativeBackend.h"
 #ifdef CK_TESTS
 #include "../../../tests/tests_tools/ArmProfiler.h"
 #endif
@@ -473,6 +474,11 @@ extern "C" int decompress_AcceptBytes(void* userData, int size, const unsigned c
 
 extern "C" int swvNew(ISwerve** swerve)
 {
-    fprintf(stderr, "Swerve backend: ARM emulation\n");
+    // Backend switch, [graph] Engine in BountyHunter.cfg: the native m3gcore runtime (m3g) or the
+    // emulated original (swerve), kept for A/B comparison.
+    if (ck::config.engine != ck::EngineSwerve) {
+        return ck::native::CreateSwerve(swerve);
+    }
+    fprintf(stderr, "Swerve backend: ARM emulation (Engine=%s)\n", ck::EngineSwerve);
     return ck::arm::CreateSwerve(swerve);
 }

@@ -14,8 +14,13 @@ if not defined CK_MSBUILD (
     goto finish
 )
 echo Using MSBuild: "%CK_MSBUILD%"
+rem "build_pc.bat tests" builds the test program (vs\ck_tests.vcxproj, tests\) instead of the game.
 set "CK_TARGET=ck_pc"
 set "CK_EXE=BountyHunter.exe"
+if /i "%~1"=="tests" (
+    set "CK_TARGET=ck_tests"
+    set "CK_EXE=BountyHunter_tests.exe"
+)
 "%CK_MSBUILD%" "%CD%\vs\ck_pc.sln" /m /t:%CK_TARGET% /p:Configuration=Release /p:Platform=Win32
 if errorlevel 1 (
     echo Build failed.

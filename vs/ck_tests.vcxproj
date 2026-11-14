@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3C8E2A51-6B4D-4E7A-9F1C-5D2B8A63E7C4}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>ck_tests</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '18.0'">v145</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '17.0'">v143</PlatformToolset>
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="Win32.props" />
+  <Import Project="GameCompile.props" />
+  <PropertyGroup>
+    <!-- Test program next to the game: same folder, assets, saves and BountyHunter.cfg (tests\README.md). -->
+    <TargetName>BountyHunter_tests</TargetName>
+    <CkGoogleTest>$(CkThirdParty)\googletest-1.15.2</CkGoogleTest>
+    <CkOpenALImport>$(IntDir)OpenAL32.lib</CkOpenALImport>
+    <LinkToolPath>$(CkLlvm)</LinkToolPath>
+    <LinkToolExe>lld-link.exe</LinkToolExe>
+    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <ForcedIncludeFiles>new</ForcedIncludeFiles>
+      <!-- CK_TESTS switches the platform layer's test hooks on (Applet.cpp, ArmMachine.cpp). -->
+      <PreprocessorDefinitions>CK_TESTS;GTEST_HAS_RTTI=0;GTEST_HAS_EXCEPTIONS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(CkGoogleTest)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <!-- A window program: no console unless DebugMode=1 opens one (Log.cpp). The entry stays wmain. -->
+      <SubSystem>Windows</SubSystem>
+      <EntryPointSymbol>wmainCRTStartup</EntryPointSymbol>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <BaseAddress>0x10000000</BaseAddress>
+      <AdditionalDependencies>$(CkSDL)\lib\x86\SDL3.lib;$(CkOpenALImport);opengl32.lib;user32.lib;gdi32.lib;winmm.lib;dbghelp.lib;mfplat.lib;mfreadwrite.lib;mfuuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/errorlimit:0 %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(CkAddressSanitizer)' == 'true'">
+    <Link>
+      <AdditionalDependencies>$(VCToolsInstallDir)lib\x86\clang_rt.asan_dynamic-i386.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/WHOLEARCHIVE:&quot;$(VCToolsInstallDir)lib\x86\clang_rt.asan_dynamic_runtime_thunk-i386.lib&quot; %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="HostSources.props" />
+  <ItemGroup>
+    <ClCompile Include="..\tests\TestProgram.cpp" />
+    <ClCompile Include="..\tests\GameHarness.cpp" />
+    <ClCompile Include="..\tests\BigArchive.cpp" />
+    <ClCompile Include="..\tests\SwerveBackends.cpp" />
+    <ClCompile Include="..\tests\M3gBackendTest.cpp" />
+    <ClCompile Include="..\tests\M3gRenderTest.cpp">
+      <AdditionalIncludeDirectories>$(CkThirdParty)\m3gcore\inc;$(CkPort)m3g_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\tests\tests_tools\ArmProfiler.cpp" />
+    <ClCompile Include="..\tests\tests_tools\TestTools.cpp" />
+    <ClCompile Include="..\tests\tests_tools\M3gLoadTest.cpp">
+      <AdditionalIncludeDirectories>$(CkThirdParty)\m3gcore\inc;$(CkPort)m3g_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="$(CkGoogleTest)\src\gtest-all.cc">
+      <AdditionalIncludeDirectories>$(CkGoogleTest);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ObjectFileName>$(IntDir)external\</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="..\tests\TestProgram.h" />
+    <ClInclude Include="..\tests\GameHarness.h" />
+    <ClInclude Include="..\tests\BigArchive.h" />
+    <ClInclude Include="..\tests\SwerveBackends.h" />
+    <ClInclude Include="..\tests\tests_tools\ArmProfiler.h" />
+    <ClInclude Include="..\tests\tests_tools\TestTools.h" />
+    <ClInclude Include="..\tests\tests_tools\M3gLoadTest.h" />
+    <None Include="..\tests\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="ck_game.vcxproj">
+      <Project>{843D472A-4247-41B8-915E-4311D565D831}</Project>
+    </ProjectReference>
+    <ProjectReference Include="unicorn_arm.vcxproj">
+      <Project>{67EC55D4-5160-4284-A1D2-AD095E4F1FE2}</Project>
+    </ProjectReference>
+    <ProjectReference Include="m3gcore.vcxproj">
+      <Project>{D6456C8A-7BCE-494A-9361-835C1CBFA89F}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="CreateOpenALImportLibrary" BeforeTargets="Link"
+          Inputs="$(MSBuildProjectFullPath);$(CkOpenAL)\libs\Win32\OpenAL32.def" Outputs="$(CkOpenALImport)">
+    <Exec Command="&quot;$(VCToolsInstallDir)bin\Hostx64\x86\lib.exe&quot; /nologo /machine:x86 /def:&quot;$(CkOpenAL)\libs\Win32\OpenAL32.def&quot; /name:OpenAL32.dll /out:&quot;$(CkOpenALImport)&quot;" />
+  </Target>
+  <Target Name="CopyRuntimeLibraries" AfterTargets="Build">
+    <Copy SourceFiles="$(CkSDL)\lib\x86\SDL3.dll;$(CkOpenAL)\bin\Win32\soft_oal.dll"
+          DestinationFiles="$(OutDir)SDL3.dll;$(OutDir)OpenAL32.dll" SkipUnchangedFiles="true" />
+    <!-- The repository's BountyHunter.cfg is the master copy: every build puts it next to the exe. -->
+    <Copy SourceFiles="$(CkRoot)BountyHunter.cfg" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Copy Condition="'$(CkAddressSanitizer)' == 'true'"
+          SourceFiles="$(VCToolsInstallDir)bin\Hostx64\x86\clang_rt.asan_dynamic-i386.dll"
+          DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+  <!-- The ARM image of the Swerve core is assembled from swerve_core.s next to the exe. -->
+  <Target Name="BuildSwerveImage" AfterTargets="Build">
+    <Exec Command="&quot;$(CkPython)&quot; &quot;$(CkScripts)\make_swerve_image.py&quot; --output &quot;$(OutDir)swerve-arm.bin&quot;" />
+  </Target>
+</Project>

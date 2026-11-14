@@ -66,6 +66,9 @@
     <ProjectReference Include="unicorn_arm.vcxproj">
       <Project>{67EC55D4-5160-4284-A1D2-AD095E4F1FE2}</Project>
     </ProjectReference>
+    <ProjectReference Include="m3gcore.vcxproj">
+      <Project>{D6456C8A-7BCE-494A-9361-835C1CBFA89F}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Target Name="CreateOpenALImportLibrary" BeforeTargets="Link"

@@ -130,8 +130,12 @@ void LoadConfig(const std::filesystem::path& file)
     if (!config.debugMode) {
         config.fpsLog = false;
     }
-    fprintf(stderr, "Config: window %dx%d, fullscreen %d, vsync %d, draw fps %d, debug %d, fps log %d\n",
-            config.windowWidth, config.windowHeight, config.fullScreen, config.vSync,
+    if (config.engine != EngineM3g && config.engine != EngineSwerve) {
+        fprintf(stderr, "Config: unknown Engine \"%s\", %s used\n", config.engine.c_str(), EngineM3g);
+        config.engine = EngineM3g;
+    }
+    fprintf(stderr, "Config: engine %s, window %dx%d, fullscreen %d, vsync %d, draw fps %d, debug %d, fps log %d\n",
+            config.engine.c_str(), config.windowWidth, config.windowHeight, config.fullScreen, config.vSync,
             config.drawFps, config.debugMode, config.fpsLog);
 }
 
